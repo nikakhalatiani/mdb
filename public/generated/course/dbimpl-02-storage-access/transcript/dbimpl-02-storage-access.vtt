@@ -1,0 +1,4689 @@
+WEBVTT
+
+1
+00:00:01.500 --> 00:00:03.560
+Welcome to the lecture on database implementation.
+
+2
+00:00:04.480 --> 00:00:12.280
+So in the last lecture, we have looked at buffer management and how the database system organizes data and pages.
+
+3
+00:00:12.420 --> 00:00:13.960
+And these pages are buffered in memory.
+
+4
+00:00:14.320 --> 00:00:18.400
+And these are the low-level primitives basically of which we build everything else.
+
+5
+00:00:18.760 --> 00:00:22.960
+But for most high-level operation, pages are built too low-level.
+
+6
+00:00:23.100 --> 00:00:28.080
+So we rarely think in raw pages, I mean sometimes we do, but most of the time,
+
+7
+00:00:30.140 --> 00:00:35.000
+So we have data structures that are larger than a page, and we need a mechanism to handle
+
+8
+00:00:35.000 --> 00:00:35.260
+these.
+
+9
+00:00:35.480 --> 00:00:41.320
+The traditional way to organize data structures that cross multiple pages in the database
+
+10
+00:00:41.320 --> 00:00:43.460
+system are so-called segments.
+
+11
+00:00:44.460 --> 00:00:46.580
+Now, what do we need segments for?
+
+12
+00:00:46.700 --> 00:00:49.060
+It means the most obvious example are relations.
+
+13
+00:00:49.320 --> 00:00:53.520
+So if you want to store a relation in the database system, relations most likely larger
+
+14
+00:00:53.520 --> 00:00:55.520
+than a page if there's a lot of data in there.
+
+15
+00:00:55.520 --> 00:01:01.280
+Therefore, we need a mechanism to organize something into multiple pages.
+
+16
+00:01:02.380 --> 00:01:04.720
+But relations are not the only thing we store.
+
+17
+00:01:04.960 --> 00:01:07.300
+There are also many other things that we store in the database system,
+
+18
+00:01:07.400 --> 00:01:09.700
+for example, index structures, B3 or something.
+
+19
+00:01:09.940 --> 00:01:13.680
+It also consists of multiple pages and we need some mechanism to organize this.
+
+20
+00:01:14.060 --> 00:01:16.900
+Or internal data structures, for example, free space management.
+
+21
+00:01:17.080 --> 00:01:20.280
+So it tells us where there's free space available and so on.
+
+22
+00:01:20.920 --> 00:01:25.300
+And for management purposes, it's very convenient to treat this set of pages
+
+23
+00:01:25.520 --> 00:01:26.220
+as an entity.
+
+24
+00:01:26.500 --> 00:01:28.240
+Therefore, for example, if somebody does
+
+25
+00:01:28.840 --> 00:01:30.300
+drop table statement,
+
+26
+00:01:30.600 --> 00:01:34.120
+so if we send a secret statement that says
+
+27
+00:01:34.720 --> 00:01:37.860
+drop table foo, then of course,
+
+28
+00:01:38.800 --> 00:01:41.220
+this means we must now deallocate,
+
+29
+00:01:43.820 --> 00:01:46.800
+dealloc page number 11,
+
+30
+00:01:47.840 --> 00:01:50.380
+page number 17 and so on.
+
+31
+00:01:50.680 --> 00:01:53.360
+So this is, therefore we need a way to
+
+32
+00:01:53.860 --> 00:02:01.400
+talk about a set of pages, and we can manipulate them as entities. And so we do
+
+33
+00:02:01.400 --> 00:02:05.760
+this as a segment. Now what is a segment? In the first approximation a segment is
+
+34
+00:02:05.760 --> 00:02:12.840
+like a file in a file system. In a file system you create a new file and
+
+35
+00:02:12.840 --> 00:02:17.100
+then you can store data and you can read it back. This is more or less like we do
+
+36
+00:02:17.100 --> 00:02:20.920
+in a segment. Now I say more or less because there are some differences. For
+
+37
+00:02:20.920 --> 00:02:22.620
+For example, in a traditional file,
+
+38
+00:02:23.340 --> 00:02:25.920
+we expect that if, let's look at a file.
+
+39
+00:02:26.420 --> 00:02:27.680
+So if you have a file,
+
+40
+00:02:27.760 --> 00:02:29.840
+if you start here, then we'll start writing data.
+
+41
+00:02:30.300 --> 00:02:32.160
+So then you write here, of course.
+
+42
+00:02:32.720 --> 00:02:34.060
+So the file grows as needed.
+
+43
+00:02:34.260 --> 00:02:36.560
+So this is just as we also need to in a database system.
+
+44
+00:02:37.300 --> 00:02:39.720
+But we see that when we do write,
+
+45
+00:02:39.920 --> 00:02:42.720
+first we do write one, two, three, four, five.
+
+46
+00:02:42.920 --> 00:02:46.180
+So this is the order that we get in a file.
+
+47
+00:02:46.620 --> 00:02:49.200
+In the segment, we do not necessarily have this.
+
+48
+00:02:50.920 --> 00:02:53.280
+a file system, I took two things.
+
+49
+00:02:53.380 --> 00:02:54.520
+First is the amount of storage.
+
+50
+00:02:54.720 --> 00:02:57.040
+Second, there's an inherent order.
+
+51
+00:02:57.580 --> 00:03:00.120
+In a segment, there's not an inherent order.
+
+52
+00:03:02.280 --> 00:03:03.900
+And for good reasons, actually.
+
+53
+00:03:04.140 --> 00:03:06.300
+There are technical reasons why we don't want this.
+
+54
+00:03:06.580 --> 00:03:08.940
+Therefore, it's only a rough analogy.
+
+55
+00:03:09.180 --> 00:03:11.000
+So in a segment, it could be that we allocate
+
+56
+00:03:11.000 --> 00:03:13.320
+a number of pages, then we allocate another number
+
+57
+00:03:13.320 --> 00:03:15.760
+of pages, and then later, perhaps we allocate
+
+58
+00:03:15.760 --> 00:03:16.360
+something in the middle.
+
+59
+00:03:16.520 --> 00:03:17.700
+So this can happen.
+
+60
+00:03:18.260 --> 00:03:20.080
+So if allocation evolves,
+
+61
+00:03:21.020 --> 00:03:23.240
+and so this is a bit different from a file.
+
+62
+00:03:23.920 --> 00:03:26.040
+But we will come back to the difference in a moment
+
+63
+00:03:26.040 --> 00:03:27.680
+when we talk about different kinds of segments.
+
+64
+00:03:28.080 --> 00:03:30.220
+Just keep in mind, in the first approximation,
+
+65
+00:03:30.380 --> 00:03:32.860
+a segment is like a file-like structure.
+
+66
+00:03:32.920 --> 00:03:34.340
+So we allocate multiple pages
+
+67
+00:03:34.340 --> 00:03:35.980
+and we can grow the segment over time.
+
+68
+00:03:36.320 --> 00:03:37.400
+There are some differences,
+
+69
+00:03:37.660 --> 00:03:39.380
+linearity is usually not guaranteed.
+
+70
+00:03:40.200 --> 00:03:42.480
+Therefore, another way to think about a segment
+
+71
+00:03:42.480 --> 00:03:44.720
+instead of a file is perhaps to think of it
+
+72
+00:03:44.720 --> 00:03:45.720
+like virtual memory.
+
+73
+00:03:47.780 --> 00:03:49.760
+familiar with this from operating systems.
+
+74
+00:03:50.800 --> 00:03:54.780
+So when you look at what in an operating system,
+
+75
+00:03:54.940 --> 00:03:58.480
+we have an address space, a virtual address space
+
+76
+00:03:58.480 --> 00:03:59.180
+that we can address.
+
+77
+00:03:59.300 --> 00:04:02.260
+This is then mapped to physical data.
+
+78
+00:04:02.340 --> 00:04:04.280
+So this is also something similar to the segment.
+
+79
+00:04:04.400 --> 00:04:07.340
+So the segment allows me to talk about pages.
+
+80
+00:04:07.520 --> 00:04:09.660
+And the database system itself, the lower layers,
+
+81
+00:04:09.800 --> 00:04:12.840
+know how to map this conceptual page to a physical page.
+
+82
+00:04:12.920 --> 00:04:14.880
+So this is also the thing with the segment.
+
+83
+00:04:16.060 --> 00:04:18.580
+Now what is the interface that the segment offers to us?
+
+84
+00:04:18.780 --> 00:04:22.840
+So the most primitive interface of course is allocate and release.
+
+85
+00:04:23.100 --> 00:04:28.840
+So we can say I need a new page or you can say I forget this page, I don't need this page anymore.
+
+86
+00:04:29.120 --> 00:04:31.220
+So allocation happens all the time.
+
+87
+00:04:31.360 --> 00:04:33.440
+Of course if we grow it, it's more data than we allocate.
+
+88
+00:04:34.340 --> 00:04:38.720
+Now release is a bit more rare, but this can happen for example if you have a Btree and then
+
+89
+00:04:38.720 --> 00:04:41.300
+you delete something and then the Btree node is no longer needed.
+
+90
+00:04:41.300 --> 00:04:43.100
+then we can tell the database,
+
+91
+00:04:43.300 --> 00:04:45.240
+okay, here this page is free, I don't need this,
+
+92
+00:04:45.340 --> 00:04:46.500
+you can use it for something else.
+
+93
+00:04:46.980 --> 00:04:50.080
+So the basic imperative is allocate and release.
+
+94
+00:04:51.980 --> 00:04:54.080
+Then there are some other operations that we can do.
+
+95
+00:04:54.880 --> 00:04:57.220
+We can iterate over all pages,
+
+96
+00:04:57.360 --> 00:04:59.500
+so we can read from the beginning to the end.
+
+97
+00:04:59.580 --> 00:05:01.720
+This is very convenient if you want to do a table scan,
+
+98
+00:05:01.820 --> 00:05:03.700
+for example, so if you want to read everything
+
+99
+00:05:03.700 --> 00:05:04.880
+that is stored in a relation,
+
+100
+00:05:05.020 --> 00:05:07.100
+then we iterate over all the pages of the relation.
+
+101
+00:05:08.740 --> 00:05:10.540
+And so as the example I already gave,
+
+102
+00:05:11.300 --> 00:05:14.460
+whole segment if somebody does a drop table statement.
+
+103
+00:05:14.780 --> 00:05:17.100
+So says, please release all data.
+
+104
+00:05:17.540 --> 00:05:20.460
+And then this happens.
+
+105
+00:05:21.540 --> 00:05:24.680
+Now, this is something that I mentioned before here, we say
+
+106
+00:05:24.680 --> 00:05:30.220
+optionally offers a linear address space, or perhaps I should say, by default, we do
+
+107
+00:05:30.220 --> 00:05:32.480
+not get a linear address space.
+
+108
+00:05:32.740 --> 00:05:34.460
+Now, what does this mean?
+
+109
+00:05:34.840 --> 00:05:40.160
+So first let's make an example of this.
+
+110
+00:05:41.300 --> 00:05:42.400
+So this is my database system.
+
+111
+00:05:42.640 --> 00:05:44.000
+And then I have here relation one,
+
+112
+00:05:44.160 --> 00:05:45.440
+and this stores some data.
+
+113
+00:05:46.180 --> 00:05:47.580
+Then we store some single relation one.
+
+114
+00:05:48.480 --> 00:05:51.640
+Then afterwards, somebody else creates
+
+115
+00:05:51.640 --> 00:05:54.180
+some single relation data and some relation two.
+
+116
+00:05:55.400 --> 00:05:58.720
+Then again, some more data is inserted in relation one.
+
+117
+00:05:59.700 --> 00:06:00.420
+No problem.
+
+118
+00:06:01.400 --> 00:06:03.540
+So, as you mean, if we just grow over time,
+
+119
+00:06:03.640 --> 00:06:05.920
+you see that the segment here is not contiguous.
+
+120
+00:06:06.120 --> 00:06:08.660
+So we have here a number of pages in the first,
+
+121
+00:06:08.660 --> 00:06:14.000
+in the relation, and here is another number of pages that are not text each other, but
+
+122
+00:06:14.000 --> 00:06:14.520
+it doesn't matter.
+
+123
+00:06:14.720 --> 00:06:14.900
+It's okay.
+
+124
+00:06:15.000 --> 00:06:16.180
+So we can handle this.
+
+125
+00:06:16.420 --> 00:06:21.400
+Now what happens is, somebody does a SQL statement.
+
+126
+00:06:21.620 --> 00:06:33.360
+We say, drop table R2, and then suddenly we have a hole.
+
+127
+00:06:35.140 --> 00:06:41.060
+So now what the database system will do is, if you know R1 will allocate new pages, we
+
+128
+00:06:41.060 --> 00:06:45.900
+could grow at the end of course, but we don't do this, or at least potentially we don't
+
+129
+00:06:45.900 --> 00:06:50.140
+do this, because we might recognize there's a hole between these two parts that I can
+
+130
+00:06:50.140 --> 00:06:50.540
+close.
+
+131
+00:06:51.200 --> 00:06:54.560
+So if you could say instead of growing at the end, you grow here.
+
+132
+00:06:55.820 --> 00:06:57.780
+So then you make the hole smaller.
+
+133
+00:06:59.000 --> 00:07:06.980
+Even more fancy, if you look at this page here, we just say we can allocate and release new pages.
+
+134
+00:07:08.440 --> 00:07:12.620
+Usually what the systems do is something that is even more strange perhaps,
+
+135
+00:07:12.880 --> 00:07:17.160
+at least if you're only familiar with simple malloc free locations.
+
+136
+00:07:17.160 --> 00:07:20.760
+So you could, you can say the segment,
+
+137
+00:07:20.880 --> 00:07:24.600
+here segment.alloc.
+
+138
+00:07:28.700 --> 00:07:30.680
+So traditionally we say I need one page.
+
+139
+00:07:31.300 --> 00:07:33.400
+Now you could say for example,
+
+140
+00:07:34.700 --> 00:07:36.220
+or instead of saying one page,
+
+141
+00:07:36.400 --> 00:07:37.980
+I know so much data is coming.
+
+142
+00:07:38.220 --> 00:07:42.760
+You say, okay, I would like to have five pages,
+
+143
+00:07:43.360 --> 00:07:44.620
+because I see more pages.
+
+144
+00:07:44.880 --> 00:07:46.240
+Then what can happen here is,
+
+145
+00:07:47.160 --> 00:07:48.260
+and says, oh, you know,
+
+146
+00:07:48.420 --> 00:07:50.320
+here's a very convenient space available for you.
+
+147
+00:07:50.560 --> 00:07:53.400
+Then it says, okay, you get this page here
+
+148
+00:07:53.400 --> 00:07:57.300
+and you asked me for five pages, but I gave you eight.
+
+149
+00:07:58.720 --> 00:08:01.180
+So you get more pages than you asked for.
+
+150
+00:08:02.360 --> 00:08:06.200
+Now, and this is of course a bit surprising,
+
+151
+00:08:06.340 --> 00:08:08.420
+but so now everything is R1.
+
+152
+00:08:08.580 --> 00:08:11.060
+And this closing this hole is a very good idea
+
+153
+00:08:11.060 --> 00:08:13.580
+because then we, from an IO perspective,
+
+154
+00:08:13.820 --> 00:08:15.880
+then we have everything again next to each other.
+
+155
+00:08:17.640 --> 00:08:19.700
+So we can nicely sequentially scan this.
+
+156
+00:08:19.700 --> 00:08:21.800
+This is very good to reconstruct this.
+
+157
+00:08:21.960 --> 00:08:24.500
+So you get this answer here, you ask for five,
+
+158
+00:08:24.700 --> 00:08:26.800
+but you get, for example, seven.
+
+159
+00:08:27.160 --> 00:08:28.600
+So that's a whole is gone.
+
+160
+00:08:30.460 --> 00:08:33.300
+And so the interface here is even more complex.
+
+161
+00:08:33.600 --> 00:08:35.720
+So I said here, allocate five and reality,
+
+162
+00:08:36.120 --> 00:08:40.460
+for you can tell it, can give it two numbers.
+
+163
+00:08:40.700 --> 00:08:45.280
+For example, you could say, I need at least n pages.
+
+164
+00:08:45.440 --> 00:08:46.620
+So I could say, for example, one,
+
+165
+00:08:47.160 --> 00:08:51.740
+at least one page, but if you have more,
+
+166
+00:08:51.900 --> 00:08:54.880
+I think I can make use of five, for example.
+
+167
+00:08:55.400 --> 00:08:59.100
+And so this is basically the minimum,
+
+168
+00:08:59.820 --> 00:09:02.880
+and this here is a preferred size.
+
+169
+00:09:04.960 --> 00:09:07.700
+But nevertheless, the system can decide to give you even more,
+
+170
+00:09:07.900 --> 00:09:09.940
+because if it would just give you five,
+
+171
+00:09:10.300 --> 00:09:13.540
+then there's a small gap here remaining.
+
+172
+00:09:13.780 --> 00:09:15.120
+So if you would use five,
+
+173
+00:09:15.120 --> 00:09:17.840
+then you would have here two pages left.
+
+174
+00:09:18.380 --> 00:09:19.800
+And who can you give two pages?
+
+175
+00:09:19.940 --> 00:09:21.240
+So two pages is very little.
+
+176
+00:09:21.440 --> 00:09:26.460
+So we don't like to have small fragments of pages
+
+177
+00:09:26.460 --> 00:09:27.180
+sitting around.
+
+178
+00:09:27.460 --> 00:09:29.980
+Therefore we give you more than you asked for.
+
+179
+00:09:30.140 --> 00:09:32.280
+And now the database system, sorry,
+
+180
+00:09:32.400 --> 00:09:35.140
+the segment must make use of this.
+
+181
+00:09:35.240 --> 00:09:36.320
+But usually there's not a problem.
+
+182
+00:09:36.800 --> 00:09:39.420
+I mean, we will talk about free space management later,
+
+183
+00:09:39.720 --> 00:09:41.580
+but just saying, this is not a problem
+
+184
+00:09:41.580 --> 00:09:42.400
+because then the relation,
+
+185
+00:09:42.400 --> 00:09:43.640
+and we just have more space,
+
+186
+00:09:44.860 --> 00:09:45.860
+it's currently empty,
+
+187
+00:09:46.140 --> 00:09:48.040
+but when new tuppets are inserted in the future,
+
+188
+00:09:48.140 --> 00:09:49.700
+then the space will be filled.
+
+189
+00:09:49.860 --> 00:09:51.560
+So we can make use of the space,
+
+190
+00:09:51.680 --> 00:09:52.500
+at least in the long run.
+
+191
+00:09:52.660 --> 00:09:53.480
+Immediately, perhaps not,
+
+192
+00:09:53.580 --> 00:09:54.960
+but in the long run we can.
+
+193
+00:09:55.220 --> 00:09:57.020
+And therefore we take this,
+
+194
+00:09:57.340 --> 00:09:59.600
+and the great benefit of doing so
+
+195
+00:09:59.600 --> 00:10:02.480
+is that we greatly reduce the fragmentation problem.
+
+196
+00:10:02.880 --> 00:10:06.040
+So if you ever have implemented
+
+197
+00:10:06.040 --> 00:10:07.320
+a memory allocator yourself,
+
+198
+00:10:07.480 --> 00:10:09.500
+or if you look at how memory allocators work,
+
+199
+00:10:09.900 --> 00:10:11.260
+so often you have a problem that
+
+200
+00:10:12.400 --> 00:10:14.520
+patterns of allocation and release.
+
+201
+00:10:15.180 --> 00:10:19.360
+So you allocate something, then you allocate something else.
+
+202
+00:10:20.140 --> 00:10:24.940
+And then some more allocation, then you release something.
+
+203
+00:10:26.580 --> 00:10:28.640
+And then you do more allocation.
+
+204
+00:10:28.980 --> 00:10:33.080
+And then what often happens is you have here fragmentation,
+
+205
+00:10:33.180 --> 00:10:34.800
+which means you have small space left.
+
+206
+00:10:35.060 --> 00:10:36.140
+It's a small space here.
+
+207
+00:10:36.240 --> 00:10:38.360
+Nobody can make use of the space, because it's too small
+
+208
+00:10:38.360 --> 00:10:39.360
+to put anything useful.
+
+209
+00:10:39.660 --> 00:10:42.000
+And it just sits there between two blocks.
+
+210
+00:10:42.780 --> 00:10:48.540
+difficult to make use of this. And here in the segment world we avoid this
+
+211
+00:10:48.540 --> 00:10:52.880
+problem, namely if the moment that this plus guy would ask for the space you
+
+212
+00:10:52.880 --> 00:10:57.040
+would tell him, okay you wanted only so much but you get more, namely to fill this
+
+213
+00:10:57.040 --> 00:11:02.320
+gap completely, please make good use of this. So this is how the allocation in
+
+214
+00:11:02.320 --> 00:11:08.720
+the segment world works. Great for physical layout, so we greatly
+
+215
+00:11:08.720 --> 00:11:13.880
+reduces allocations so everything is good. Of course this has some perhaps surprising
+
+216
+00:11:13.880 --> 00:11:18.180
+consequences. Namely what happens is if you insert data in your database system,
+
+217
+00:11:18.300 --> 00:11:22.440
+yes you insert and you just write the first tuple, second tuple, third tuple,
+
+218
+00:11:22.940 --> 00:11:29.720
+fourth tuple and so on. And then at some point and you do select you most of the time will get
+
+219
+00:11:29.720 --> 00:11:33.780
+them back in the same order that you inserted. So you get them back one, two, three, four and so on.
+
+220
+00:11:33.780 --> 00:11:45.880
+But over time, because of this filling hold behavior, it could be that the tuple number 2000 and 2001 happened to be ordered between these two,
+
+221
+00:11:46.000 --> 00:11:50.400
+because there was a convenient free space available between them if you just fill them.
+
+222
+00:11:51.020 --> 00:11:57.600
+So it means that insertion order does not necessarily correspond to the result of a query.
+
+223
+00:11:59.000 --> 00:12:03.180
+First time you see this you might be surprised, but this is the technically reason for this.
+
+224
+00:12:03.780 --> 00:12:07.440
+But because, as I said, a segment is not really a file.
+
+225
+00:12:07.700 --> 00:12:10.440
+So a segment has no inherent order.
+
+226
+00:12:10.600 --> 00:12:13.240
+So we are allowed to insert data in the middle.
+
+227
+00:12:13.380 --> 00:12:17.740
+So basically, if this is my first data chunk, and this is my second data chunk, it's perfectly
+
+228
+00:12:17.740 --> 00:12:20.540
+fine to insert my third data chunk in the middle.
+
+229
+00:12:20.740 --> 00:12:21.820
+So we accept this.
+
+230
+00:12:22.580 --> 00:12:24.740
+So then we have a nonlinear order.
+
+231
+00:12:24.920 --> 00:12:27.300
+So the insert order does not correspond to result order.
+
+232
+00:12:27.980 --> 00:12:30.320
+And that we do this is a good idea, actually.
+
+233
+00:12:30.820 --> 00:12:34.020
+And this also matches the semantic of relations,
+
+234
+00:12:34.120 --> 00:12:35.360
+because if you think about this,
+
+235
+00:12:36.280 --> 00:12:38.600
+a relation has no inherent order.
+
+236
+00:12:38.940 --> 00:12:40.800
+So if you do a select star from relation,
+
+237
+00:12:41.760 --> 00:12:42.900
+so if you do this,
+
+238
+00:12:43.840 --> 00:12:46.240
+then you'll have no idea in which order
+
+239
+00:12:46.240 --> 00:12:47.960
+you will get the tuppets back.
+
+240
+00:12:48.080 --> 00:12:48.880
+It's not defined.
+
+241
+00:12:49.300 --> 00:12:50.580
+If you want an order,
+
+242
+00:12:50.740 --> 00:12:52.380
+then you have to do an order by.
+
+243
+00:12:52.660 --> 00:12:53.960
+If you don't do an order by,
+
+244
+00:12:55.280 --> 00:12:57.300
+then it's undefined what you get.
+
+245
+00:12:57.860 --> 00:13:00.880
+And therefore we are free to do exactly this.
+
+246
+00:13:01.840 --> 00:13:06.900
+Now there are a few cases, although I must say in the lecture I think we will not talk
+
+247
+00:13:06.900 --> 00:13:12.180
+about any of them, but there are a few data structures that want to have a so-called linear
+
+248
+00:13:12.180 --> 00:13:13.140
+address space.
+
+249
+00:13:13.740 --> 00:13:23.480
+So which means that a segment that absolutely wants that if the iteration order corresponds
+
+250
+00:13:23.480 --> 00:13:24.320
+to insertion order.
+
+251
+00:13:24.320 --> 00:13:27.420
+So that at once you insert the first block,
+
+252
+00:13:27.660 --> 00:13:28.900
+and then the second block,
+
+253
+00:13:29.000 --> 00:13:30.600
+that's the third block must come afterwards.
+
+254
+00:13:31.340 --> 00:13:33.520
+So there are basically two ways to guarantee this.
+
+255
+00:13:33.680 --> 00:13:35.220
+Either you really put the thread block
+
+256
+00:13:35.220 --> 00:13:36.600
+behind the last block,
+
+257
+00:13:36.980 --> 00:13:39.700
+but then you have potentially problems with holes,
+
+258
+00:13:39.880 --> 00:13:42.060
+or you do insert it in the middle,
+
+259
+00:13:42.220 --> 00:13:44.220
+but you remember what the original order was.
+
+260
+00:13:44.360 --> 00:13:45.360
+And then if somebody has iteration,
+
+261
+00:13:45.860 --> 00:13:48.200
+you first read one, and then two, and then three.
+
+262
+00:13:48.620 --> 00:13:53.060
+So if you have to guarantee linearity,
+
+263
+00:13:54.320 --> 00:13:55.860
+then this costs you something.
+
+264
+00:13:56.000 --> 00:13:58.800
+There's some overhead for providing this.
+
+265
+00:13:58.920 --> 00:14:00.300
+So this is basically like a file.
+
+266
+00:14:00.460 --> 00:14:02.500
+Now, so this is approximately like a file.
+
+267
+00:14:03.500 --> 00:14:06.360
+By default, we do not do this for good reasons.
+
+268
+00:14:06.900 --> 00:14:09.280
+If you have to provide this,
+
+269
+00:14:09.400 --> 00:14:10.820
+then this costs us something
+
+270
+00:14:10.820 --> 00:14:12.400
+because we must remember the order.
+
+271
+00:14:13.760 --> 00:14:15.280
+Okay, so, but in general,
+
+272
+00:14:15.640 --> 00:14:18.520
+segments are very convenient interface.
+
+273
+00:14:18.860 --> 00:14:22.200
+So this allows us to easily think about
+
+274
+00:14:22.200 --> 00:14:26.440
+sets of tuples, sorry, set of pages,
+
+275
+00:14:26.700 --> 00:14:28.780
+and to manipulate them quite conveniently.
+
+276
+00:14:29.080 --> 00:14:36.200
+So a segment is basically the logical collection of data
+
+277
+00:14:36.200 --> 00:14:39.100
+we have in our database system, in organizing pages.
+
+278
+00:14:40.400 --> 00:14:41.880
+Now, one question is,
+
+279
+00:14:42.020 --> 00:14:46.940
+how do we organize pages in segments?
+
+280
+00:14:47.240 --> 00:14:49.160
+Well, basically the same problem happens
+
+281
+00:14:49.160 --> 00:14:53.460
+if you want to decide how to organize blocks on disk to,
+
+282
+00:14:53.820 --> 00:14:55.460
+they say the same problems,
+
+283
+00:14:55.680 --> 00:14:58.360
+organize blocks on disk to your database system.
+
+284
+00:14:58.480 --> 00:14:59.540
+This is the same problem.
+
+285
+00:14:59.920 --> 00:15:03.400
+So how do we allocate physical storage units,
+
+286
+00:15:03.560 --> 00:15:06.120
+pages or blocks to a logical container?
+
+287
+00:15:06.760 --> 00:15:10.680
+And basically there are three kinds of approaches
+
+288
+00:15:10.680 --> 00:15:11.560
+that we want to look at.
+
+289
+00:15:12.480 --> 00:15:14.800
+The left and right are the most extreme.
+
+290
+00:15:15.580 --> 00:15:20.320
+The one in the middle is a middle ground, so a compromise between these two.
+
+291
+00:15:20.640 --> 00:15:22.900
+So the most extreme on the left, static file mapping.
+
+292
+00:15:23.140 --> 00:15:28.780
+This just says in the catalog, I remember that, for example, the segment starts on this
+
+293
+00:15:28.780 --> 00:15:31.920
+page, page 11, and then is so large.
+
+294
+00:15:32.620 --> 00:15:33.180
+Yeah, that's it.
+
+295
+00:15:34.580 --> 00:15:37.560
+Two numbers, first page, number of pages, very easy.
+
+296
+00:15:38.720 --> 00:15:42.860
+and it cost me very little, no space overhead,
+
+297
+00:15:43.060 --> 00:15:44.320
+or the performance is good.
+
+298
+00:15:44.760 --> 00:15:46.540
+But of course it's not very flexible,
+
+299
+00:15:46.840 --> 00:15:49.180
+because I can do this once and then that's it.
+
+300
+00:15:49.340 --> 00:15:50.580
+So it's called static file mapping.
+
+301
+00:15:51.340 --> 00:15:54.280
+So the other extreme is the one on the right hand side,
+
+302
+00:15:54.580 --> 00:15:57.100
+dynamic block mapping, where in the catalog
+
+303
+00:15:57.100 --> 00:15:59.900
+you have basically a list of all pages.
+
+304
+00:16:00.180 --> 00:16:03.360
+And then you say, okay, the first page is this one,
+
+305
+00:16:03.460 --> 00:16:04.820
+the second page is that one,
+
+306
+00:16:04.920 --> 00:16:06.460
+the third page is that one, and so on.
+
+307
+00:16:07.560 --> 00:16:09.260
+Or perhaps I shouldn't put the number differently.
+
+308
+00:16:09.680 --> 00:16:12.380
+So I say here, the number one, two, three are here,
+
+309
+00:16:12.540 --> 00:16:17.060
+and then this corresponds to physical page number 11, 15, 20,
+
+310
+00:16:17.060 --> 00:16:18.000
+or something like this.
+
+311
+00:16:18.360 --> 00:16:20.600
+So this is dynamic block mapping.
+
+312
+00:16:21.040 --> 00:16:24.980
+You have a dynamic list, and each points to a single page.
+
+313
+00:16:25.260 --> 00:16:27.160
+This, of course, gives you the maximum flexibility,
+
+314
+00:16:27.420 --> 00:16:28.740
+but it's also quite expensive.
+
+315
+00:16:29.080 --> 00:16:33.020
+And you see this box here itself,
+
+316
+00:16:33.140 --> 00:16:34.580
+this list can become quite large,
+
+317
+00:16:34.820 --> 00:16:36.680
+because for every page, you need an entry.
+
+318
+00:16:37.560 --> 00:16:38.440
+This is also problematic.
+
+319
+00:16:39.340 --> 00:16:43.260
+The middle ground between this here is the so called dynamic extent mapping, which says
+
+320
+00:16:43.260 --> 00:16:44.980
+we have a catalog, this contains a list.
+
+321
+00:16:45.200 --> 00:16:50.620
+But this list does not point to single pages, instead you point to extents, which means
+
+322
+00:16:50.620 --> 00:16:52.060
+to sequences of pages.
+
+323
+00:16:52.320 --> 00:16:56.760
+For example, here you could say page number 4711.
+
+324
+00:16:57.120 --> 00:17:00.840
+At this point here we have 20 pages.
+
+325
+00:17:04.260 --> 00:17:06.780
+So then we have one entry that points to a block.
+
+326
+00:17:07.560 --> 00:17:13.440
+another entry here points to another block. So this gives you flexibility in the dynamic block
+
+327
+00:17:13.440 --> 00:17:18.260
+mapping, but it's not as large as the dynamic block mapping. So we have a more compact representation
+
+328
+00:17:18.840 --> 00:17:22.480
+and so basically it's a mix between static file and dynamic block.
+
+329
+00:17:24.020 --> 00:17:31.220
+So the different pros and cons I think I've already said. Static file mapping is very simple
+
+330
+00:17:31.220 --> 00:17:36.960
+to implement, it's very low overhead, but resizing is difficult or impossible, depends on how you
+
+331
+00:17:37.560 --> 00:17:40.500
+but it's very problematic to resize.
+
+332
+00:17:41.440 --> 00:17:43.640
+First case, you might have to copy all the data,
+
+333
+00:17:44.060 --> 00:17:45.420
+which of course we don't want to do.
+
+334
+00:17:45.720 --> 00:17:47.240
+So this resizing is difficult.
+
+335
+00:17:48.720 --> 00:17:51.220
+Dynamic block mapping, this is the most flexible
+
+336
+00:17:51.220 --> 00:17:54.880
+because we can map each entry here to a block.
+
+337
+00:17:55.320 --> 00:17:58.280
+But problem is we have high administrative overhead,
+
+338
+00:17:58.440 --> 00:17:59.420
+we have additional interactions
+
+339
+00:17:59.420 --> 00:18:01.100
+also what we don't want to do.
+
+340
+00:18:01.780 --> 00:18:05.060
+So the dynamic extent mapping can grow,
+
+341
+00:18:05.060 --> 00:18:07.840
+but has less O-whites than the dynamic block mapping.
+
+342
+00:18:08.080 --> 00:18:13.860
+So in most cases, we will prefer the extent-based mapping.
+
+343
+00:18:14.040 --> 00:18:15.300
+So the dynamic is the middle one.
+
+344
+00:18:15.480 --> 00:18:16.660
+This is what we will prefer.
+
+345
+00:18:18.240 --> 00:18:21.060
+And I will see if we say a bit about implementation.
+
+346
+00:18:22.620 --> 00:18:26.160
+So the dynamic extent mapping grows by adding a new extent.
+
+347
+00:18:26.380 --> 00:18:28.380
+So basically, I have my mapping here at the beginning,
+
+348
+00:18:28.520 --> 00:18:32.040
+and then I need a little data, so I allocate a bit of space.
+
+349
+00:18:32.040 --> 00:18:35.140
+So then when my relation, for example, grows,
+
+350
+00:18:35.360 --> 00:18:38.520
+then just say, okay, here you have another segment,
+
+351
+00:18:38.720 --> 00:18:40.700
+and here you have another segment, and so on.
+
+352
+00:18:44.120 --> 00:18:46.100
+And the trick here is,
+
+353
+00:18:46.380 --> 00:18:48.080
+what you should do when you implement this,
+
+354
+00:18:48.260 --> 00:18:50.620
+you should grow this here exponentially,
+
+355
+00:18:50.900 --> 00:18:53.300
+which means that the second block
+
+356
+00:18:53.300 --> 00:18:56.440
+is a certain factor larger than the first block, and so on.
+
+357
+00:18:56.600 --> 00:18:57.100
+For example,
+
+358
+00:18:58.760 --> 00:19:01.180
+for example, factor 1.25,
+
+359
+00:19:02.040 --> 00:19:04.820
+Of course it's design choice which factor you use,
+
+360
+00:19:04.920 --> 00:19:06.860
+but there should be an exponential factor between them.
+
+361
+00:19:07.160 --> 00:19:09.220
+Now, why do you want to use an exponential factor
+
+362
+00:19:09.220 --> 00:19:12.000
+between extender and extender block sizes?
+
+363
+00:19:12.480 --> 00:19:14.480
+The great advantage of doing this
+
+364
+00:19:14.480 --> 00:19:16.700
+is that this bounds the number of extents.
+
+365
+00:19:18.140 --> 00:19:20.040
+I hope this is easy to see.
+
+366
+00:19:20.240 --> 00:19:21.620
+Now to illustrate this,
+
+367
+00:19:21.900 --> 00:19:24.460
+let's assume we will use not factor 1.25,
+
+368
+00:19:24.780 --> 00:19:26.900
+because there's a mass so difficult to do
+
+369
+00:19:26.900 --> 00:19:27.860
+without a calculator.
+
+370
+00:19:28.140 --> 00:19:31.040
+Let's assume we would use a factor of two,
+
+371
+00:19:32.040 --> 00:19:33.940
+that usually we do not do.
+
+372
+00:19:34.100 --> 00:19:35.360
+So two is a bit aggressive.
+
+373
+00:19:36.120 --> 00:19:37.800
+For example, if you have a factor of two,
+
+374
+00:19:40.440 --> 00:19:43.060
+then of course the first block here has a size,
+
+375
+00:19:43.200 --> 00:19:45.780
+let's say one, we will not start with one usually,
+
+376
+00:19:45.880 --> 00:19:46.480
+but I'm saying larger,
+
+377
+00:19:46.640 --> 00:19:48.520
+but let's assume the first one is one,
+
+378
+00:19:48.680 --> 00:19:51.880
+then of course we have two, then we have four, and so on.
+
+379
+00:19:51.980 --> 00:19:55.420
+So then after 10 steps, we have 1024.
+
+380
+00:19:56.460 --> 00:20:06.760
+And after 32 steps, we have something like 4 gigabytes, and so on.
+
+381
+00:20:06.860 --> 00:20:13.460
+We grow, and what we know is that the total number of extents that we have will be less
+
+382
+00:20:13.460 --> 00:20:14.780
+or equal to 64.
+
+383
+00:20:15.260 --> 00:20:15.660
+Why?
+
+384
+00:20:15.860 --> 00:20:18.900
+Because our address, we run out of address space after 64.
+
+385
+00:20:19.100 --> 00:20:22.680
+We cannot address them, at least on a 64-bit architecture, we cannot address them.
+
+386
+00:20:23.100 --> 00:20:26.700
+So we know that we will never have more than 64 extents.
+
+387
+00:20:26.880 --> 00:20:30.720
+And this is of course a very good thing, because this means that if you look back at this picture,
+
+388
+00:20:31.020 --> 00:20:33.880
+we can limit the size of this here one.
+
+389
+00:20:34.000 --> 00:20:38.180
+So this box, the size of this box has a limited size.
+
+390
+00:20:41.660 --> 00:20:43.600
+Which is a very good thing.
+
+391
+00:20:43.600 --> 00:20:49.380
+While in the dynamic block mapping, this here has unlimited size.
+
+392
+00:20:53.140 --> 00:21:00.100
+So if we implement exponential growth, then the dynamic extent mapping has a limited size.
+
+393
+00:21:01.940 --> 00:21:05.620
+And it depends on the factor we choose, we can bound it.
+
+394
+00:21:06.020 --> 00:21:09.080
+But usually this will be a few hundred at most.
+
+395
+00:21:09.400 --> 00:21:10.860
+So we have a few hundred entries.
+
+396
+00:21:10.860 --> 00:21:12.840
+and this makes our life much easier
+
+397
+00:21:12.840 --> 00:21:15.700
+because then we can store this interaction,
+
+398
+00:21:15.860 --> 00:21:16.960
+which we also have to store somewhere.
+
+399
+00:21:17.100 --> 00:21:18.180
+For example, we can guarantee
+
+400
+00:21:18.700 --> 00:21:20.860
+that this interaction always fits on a single page
+
+401
+00:21:20.860 --> 00:21:23.020
+just because it cannot grow beyond this.
+
+402
+00:21:24.360 --> 00:21:26.200
+Okay, therefore this point here
+
+403
+00:21:26.200 --> 00:21:29.040
+this greatly reduces complexity of implementation
+
+404
+00:21:29.900 --> 00:21:31.880
+and also improves I.O.
+
+405
+00:21:31.880 --> 00:21:35.720
+because when I have more and more consecutive pieces
+
+406
+00:21:35.720 --> 00:21:38.760
+of pages, this means I will do more and more
+
+407
+00:21:38.760 --> 00:21:44.680
+sequential I.O., this is a very good thing. Because sequential I.O. is faster than random I.O.,
+
+408
+00:21:44.680 --> 00:21:50.380
+therefore we greatly prefer that we have large sequential spans. And we get this here by using
+
+409
+00:21:50.380 --> 00:21:58.620
+this trick of exponentially growing each entry in my extent mapping. Now, I said in the beginning,
+
+410
+00:21:58.780 --> 00:22:03.960
+we have different kinds of segments, for example relations, indexes, and so on. We have many,
+
+411
+00:22:03.960 --> 00:22:06.380
+many different types of segments that we store.
+
+412
+00:22:06.560 --> 00:22:08.900
+And here we want to briefly classify them
+
+413
+00:22:10.620 --> 00:22:11.820
+using different dimensions.
+
+414
+00:22:12.100 --> 00:22:13.360
+So our first dimension here is
+
+415
+00:22:13.360 --> 00:22:16.360
+we have private versus public segments.
+
+416
+00:22:16.480 --> 00:22:17.240
+Now, what does this mean?
+
+417
+00:22:17.540 --> 00:22:19.520
+Private segment is something that is internal
+
+418
+00:22:19.520 --> 00:22:20.600
+to the data systems.
+
+419
+00:22:20.640 --> 00:22:21.880
+The user does not see this.
+
+420
+00:22:21.900 --> 00:22:23.520
+And usually shouldn't care.
+
+421
+00:22:23.700 --> 00:22:25.620
+Yeah, so this is some, for example,
+
+422
+00:22:25.640 --> 00:22:29.580
+we need some space to store which segments we have.
+
+423
+00:22:29.940 --> 00:22:31.740
+This is most likely a private segment.
+
+424
+00:22:31.880 --> 00:22:33.500
+So this is something that the user does not see.
+
+425
+00:22:33.960 --> 00:22:36.680
+While a public segment is an example, a relation.
+
+426
+00:22:36.880 --> 00:22:38.880
+The relation of course is something that the user sees
+
+427
+00:22:38.880 --> 00:22:40.800
+and we want to show it to user and say,
+
+428
+00:22:40.920 --> 00:22:41.800
+hey, this is so large.
+
+429
+00:22:42.000 --> 00:22:45.120
+And so if you ever use an administrative tool
+
+430
+00:22:45.120 --> 00:22:47.520
+and a database system, you might have seen this.
+
+431
+00:22:47.700 --> 00:22:51.900
+Like it tells you which kind of data occupies which space.
+
+432
+00:22:52.100 --> 00:22:55.300
+So therefore here we have public and private segments.
+
+433
+00:22:57.100 --> 00:23:00.320
+Now the second dimension here is permanent versus temporary.
+
+434
+00:23:01.540 --> 00:23:05.720
+The relation of course is permanent here because we don't want to lose our data.
+
+435
+00:23:06.000 --> 00:23:11.460
+So this is that we store forever as a permanent segment.
+
+436
+00:23:12.000 --> 00:23:16.720
+Now temporary segments we might have, for example, if we have a query that produces
+
+437
+00:23:16.720 --> 00:23:24.060
+intermediate results, so you perform a complex sort or group by, and this intermediate result
+
+438
+00:23:24.060 --> 00:23:25.960
+is so large that it does not fit in memory.
+
+439
+00:23:26.560 --> 00:23:28.660
+The database system must store it somewhere.
+
+440
+00:23:30.320 --> 00:23:32.480
+it can use a temporary segment.
+
+441
+00:23:33.020 --> 00:23:33.800
+So a piece of data,
+
+442
+00:23:33.960 --> 00:23:36.540
+this piece of data is allocated for the query,
+
+443
+00:23:36.740 --> 00:23:38.120
+but when the query is gone,
+
+444
+00:23:38.360 --> 00:23:39.140
+we can throw it away.
+
+445
+00:23:39.960 --> 00:23:41.080
+So we don't keep it,
+
+446
+00:23:41.200 --> 00:23:43.520
+we can only store it as long as my query is running.
+
+447
+00:23:45.120 --> 00:23:45.920
+And by the way,
+
+448
+00:23:46.020 --> 00:23:47.820
+for the system it's important to know
+
+449
+00:23:47.820 --> 00:23:49.620
+if the segment is permanent versus temporary.
+
+450
+00:23:49.900 --> 00:23:51.080
+Because for a temporary segment,
+
+451
+00:23:51.140 --> 00:23:52.260
+we don't really care so much.
+
+452
+00:23:52.460 --> 00:23:53.580
+If my system crashes,
+
+453
+00:23:53.920 --> 00:23:55.820
+then the temporary data is lost anyway,
+
+454
+00:23:56.060 --> 00:23:56.660
+so we don't care,
+
+455
+00:23:56.820 --> 00:23:58.300
+so we don't have to spend a lot of effort.
+
+456
+00:23:58.300 --> 00:24:01.400
+while the permanent segments of course we must keep alive,
+
+457
+00:24:01.720 --> 00:24:05.420
+therefore we must be more conservative in what we do with our data.
+
+458
+00:24:07.060 --> 00:24:10.420
+Okay, a third dimension is largely historically if you ask me,
+
+459
+00:24:10.640 --> 00:24:13.600
+because they exist in commercial data systems,
+
+460
+00:24:13.720 --> 00:24:15.900
+but few people ever see them.
+
+461
+00:24:16.100 --> 00:24:18.640
+So we have automatic versus manual segments,
+
+462
+00:24:18.980 --> 00:24:21.180
+most of the segments nowadays are automatic.
+
+463
+00:24:21.720 --> 00:24:23.640
+Now what is the difference here, the question is,
+
+464
+00:24:23.980 --> 00:24:26.800
+can you automatically access the data or do you have to do anything?
+
+465
+00:24:28.300 --> 00:24:30.840
+makes sense if, for example, your data is stored
+
+466
+00:24:30.840 --> 00:24:32.380
+on near-line storage.
+
+467
+00:24:32.540 --> 00:24:34.420
+So it's not online, but the user has to do something.
+
+468
+00:24:35.340 --> 00:24:37.320
+For example, install an external disk.
+
+469
+00:24:37.620 --> 00:24:39.080
+Usually we don't want to do this,
+
+470
+00:24:39.180 --> 00:24:41.300
+but you have to install some physical medium
+
+471
+00:24:41.300 --> 00:24:42.540
+until you access the data.
+
+472
+00:24:42.760 --> 00:24:46.200
+So this is an example of manual segments
+
+473
+00:24:46.200 --> 00:24:48.400
+where users to access this.
+
+474
+00:24:48.620 --> 00:24:50.220
+I think this is meant largely out of fashion.
+
+475
+00:24:50.400 --> 00:24:51.920
+Most segments nowadays are automatic.
+
+476
+00:24:52.220 --> 00:24:54.520
+And so we don't want to manually do something.
+
+477
+00:24:54.880 --> 00:24:56.960
+But of course, this system do support this.
+
+478
+00:24:58.360 --> 00:24:59.980
+segments that are not always available.
+
+479
+00:25:01.260 --> 00:25:04.900
+And the last dimension here is with recovery or without recovery,
+
+480
+00:25:05.040 --> 00:25:07.440
+so this is related to what I said before.
+
+481
+00:25:07.680 --> 00:25:09.860
+So an example of intermediate results.
+
+482
+00:25:10.100 --> 00:25:14.160
+In my relations with my real data, of course, I need recovery,
+
+483
+00:25:14.320 --> 00:25:18.060
+which means if I crash, I must reconstruct all the data so that nothing is lost.
+
+484
+00:25:19.000 --> 00:25:23.000
+But if I have just intermediate results, then I don't need recovery.
+
+485
+00:25:23.140 --> 00:25:24.080
+I can just throw them away.
+
+486
+00:25:25.120 --> 00:25:28.160
+Another example of something where you might not need a recovery,
+
+487
+00:25:28.300 --> 00:25:31.280
+but he's potentially not, is,
+
+488
+00:25:32.640 --> 00:25:34.000
+or as I said, might not.
+
+489
+00:25:34.180 --> 00:25:37.160
+Might not in the sense that mostly people recover
+
+490
+00:25:37.160 --> 00:25:40.020
+this regardless, but I know a few people who don't.
+
+491
+00:25:40.320 --> 00:25:44.380
+So the example I say now is an exception, if you wish.
+
+492
+00:25:44.480 --> 00:25:46.440
+Mostly the system will recover this.
+
+493
+00:25:46.640 --> 00:25:48.860
+But there are some people who do not recover
+
+494
+00:25:48.860 --> 00:25:50.940
+as the index structures, like B-trees.
+
+495
+00:25:52.200 --> 00:25:55.340
+Now, why don't they recover the index structures?
+
+496
+00:25:55.340 --> 00:25:58.960
+The argument is, first, crashes are rare.
+
+497
+00:25:59.480 --> 00:26:01.640
+So most of the time, the system doesn't crash.
+
+498
+00:26:02.080 --> 00:26:05.680
+So the system works all the time, and then if you shut it down, then we shut it down
+
+499
+00:26:05.680 --> 00:26:08.020
+in a clean fashion, so nothing bad happens.
+
+500
+00:26:08.400 --> 00:26:12.540
+A real crash, like a power failure or so, a real hard crash is rare.
+
+501
+00:26:13.460 --> 00:26:18.380
+And in the example with index structures, you could say, in the unlikely event that
+
+502
+00:26:18.380 --> 00:26:23.560
+my system goes down in a hard crash, then of course my index structure on disk might
+
+503
+00:26:23.560 --> 00:26:24.220
+be corrupted.
+
+504
+00:26:25.340 --> 00:26:30.500
+consistent state, but I can always throw away my index structure and rebuild it.
+
+505
+00:26:30.700 --> 00:26:34.940
+Because the index points to the original data, therefore I can forget all my index structures
+
+506
+00:26:36.380 --> 00:26:38.780
+and I can just rebuild them if needed.
+
+507
+00:26:39.560 --> 00:26:41.640
+Now is it worthwhile to do this?
+
+508
+00:26:41.780 --> 00:26:45.740
+It depends on how likely it is that you crash and how fast your index reconstruction is.
+
+509
+00:26:45.960 --> 00:26:51.580
+But let's say I know a few people who have implemented this, who say I don't recover
+
+510
+00:26:51.580 --> 00:26:52.140
+my index.
+
+511
+00:26:53.000 --> 00:26:55.020
+advantage of course is that index is faster
+
+512
+00:26:55.020 --> 00:26:57.320
+so you pay less overhead
+
+513
+00:26:57.320 --> 00:26:58.800
+for updating your index
+
+514
+00:26:58.800 --> 00:27:00.380
+so you speed up your index
+
+515
+00:27:00.380 --> 00:27:02.980
+you willingly
+
+516
+00:27:02.980 --> 00:27:05.200
+accept that your index might be corrupted
+
+517
+00:27:05.960 --> 00:27:07.280
+but if this
+
+518
+00:27:07.280 --> 00:27:08.960
+is really rare then you say okay
+
+519
+00:27:08.960 --> 00:27:10.900
+we accept this and if this happens
+
+520
+00:27:10.900 --> 00:27:13.280
+then just throw it away and rebuild my index
+
+521
+00:27:14.680 --> 00:27:15.240
+yeah
+
+522
+00:27:15.240 --> 00:27:17.080
+so this is the four main
+
+523
+00:27:17.080 --> 00:27:18.900
+dimensions with which we can differentiate
+
+524
+00:27:18.900 --> 00:27:20.320
+different types of segments
+
+525
+00:27:22.860 --> 00:27:27.240
+combination you choose, this differs in how complicated this segment is and how
+
+526
+00:27:27.240 --> 00:27:31.580
+much effort or how much cost this segment causes when you for example update.
+
+527
+00:27:33.980 --> 00:27:36.860
+Recovery for example costs you something or permanent solute of course
+
+528
+00:27:36.860 --> 00:27:44.560
+positives cost you something. Actually this may be talk of course we come to
+
+529
+00:27:44.560 --> 00:27:49.340
+this when we talk about recovery in the lecture but I'm just saying writing
+
+530
+00:27:49.340 --> 00:27:55.940
+something permanent to disk is surprisingly difficult. So it's much more
+
+531
+00:27:55.940 --> 00:27:59.200
+difficult than you might think perhaps at first glance. Now why is it difficult?
+
+532
+00:27:59.720 --> 00:28:05.600
+Just as a teaser to what we will look at later. I said a page is for example
+
+533
+00:28:07.840 --> 00:28:14.820
+16 kilobyte in size. Now you say I changed something in my page so I want to
+
+534
+00:28:14.820 --> 00:28:20.740
+write it to disk. So how do you do this? How do you write the 16 kilobyte of data to disk?
+
+535
+00:28:21.720 --> 00:28:27.780
+Now there are different interfaces which you could use. For example, the most primitive one
+
+536
+00:28:27.780 --> 00:28:36.440
+perhaps is a P-Write. So this is the most simple interface. We just say give it here, give it a
+
+537
+00:28:36.440 --> 00:28:49.820
+file handle and then you give it a pointer here to the buffer pointer and you give it a size for
+
+538
+00:28:49.820 --> 00:28:55.500
+in this case 16 kilobyte and then the operating system will do the write for you. Okay this is
+
+539
+00:28:55.500 --> 00:29:03.660
+most simple way to write. Now what is bad about this interface is you don't know what operating
+
+540
+00:29:03.660 --> 00:29:14.620
+system will do. In particular, it could be that during this period, if you are really
+
+541
+00:29:14.620 --> 00:29:21.080
+unlucky, you get a power failure. Now, what part of the 16 kilobytes has been written
+
+542
+00:29:21.080 --> 00:29:28.160
+to disk? Everything? Nothing? Only the first half? You have no idea. This also depends
+
+543
+00:29:28.160 --> 00:29:33.440
+on the hardware. For example, there are some battery buffer disk graphs, which by the way
+
+544
+00:29:33.660 --> 00:29:41.100
+great idea. A battery buffer disk drives where you can put your write in a buffer and then the
+
+545
+00:29:41.100 --> 00:29:45.180
+drive guarantees you that it will write out everything because if a power failure happens
+
+546
+00:29:45.180 --> 00:29:49.000
+it will use a battery and then to write out whatever is in the buffer. So this greatly
+
+547
+00:29:49.000 --> 00:29:53.400
+simplifies your life. But if you don't have a battery buffer disk drive then you might get a
+
+548
+00:29:53.400 --> 00:29:57.420
+partial write which means for example that everything up until here has been written
+
+549
+00:29:57.420 --> 00:30:02.460
+and the rest has not. This is an absolutely nightmare. It's very difficult to prevent,
+
+550
+00:30:04.620 --> 00:30:08.920
+These are things that you have to care about when you want to have permanent storage.
+
+551
+00:30:09.120 --> 00:30:11.540
+If you have temporary storage, then you say, who cares?
+
+552
+00:30:11.760 --> 00:30:15.980
+If I have a partial write, and only the first half of my page is written, then I crash,
+
+553
+00:30:16.460 --> 00:30:20.820
+I don't care at all, because the moment I come back, I will throw away the temporary data anyway.
+
+554
+00:30:21.340 --> 00:30:23.800
+So you can choose a cheaper write mechanism,
+
+555
+00:30:24.740 --> 00:30:27.920
+if you want to do this permanently, usually you will write twice.
+
+556
+00:30:28.160 --> 00:30:32.160
+This is a standard technique to guarantee persistency here.
+
+557
+00:30:34.140 --> 00:30:39.380
+And if you don't want to do this, and you know the data is temporary, then you say,
+
+558
+00:30:39.480 --> 00:30:41.260
+okay, I don't care, I just write this and this.
+
+559
+00:30:41.600 --> 00:30:46.520
+So this just shows you that the knowledge about the segment has quite some effect on
+
+560
+00:30:46.520 --> 00:30:51.440
+how you can operate with your hardware and with your operating system.
+
+561
+00:30:53.180 --> 00:30:54.120
+Okay, oops, sorry.
+
+562
+00:30:56.540 --> 00:30:59.160
+Now, which kind of segments do we have in our system?
+
+563
+00:30:59.880 --> 00:31:03.040
+Usually, a database system will have at least two low-level segments.
+
+564
+00:31:03.660 --> 00:31:08.800
+sense that you don't see them. I mean of course in the lecture we talk about them, but as a user you
+
+565
+00:31:08.800 --> 00:31:13.900
+have no idea what these are. So the first segment that you will have is
+
+566
+00:31:13.900 --> 00:31:18.920
+so-called segment inventory which basically keeps track of all pages that
+
+567
+00:31:18.920 --> 00:31:24.160
+are allocated to segments. This is perhaps to come back to the file system
+
+568
+00:31:24.160 --> 00:31:28.880
+analogy, this is like a directory of segments on top of your files.
+
+569
+00:31:30.640 --> 00:31:38.060
+So we need a way to remember which, so if you have a segment number one, two, three,
+
+570
+00:31:38.100 --> 00:31:44.760
+consists of, no, whatever, for example page number 11, 10 pages and so on.
+
+571
+00:31:44.860 --> 00:31:49.500
+So this kind of information must be stored somewhere and this somewhere is
+
+572
+00:31:49.500 --> 00:31:55.080
+so-called segment inventory. So this must organize educating pages to segments.
+
+573
+00:31:55.080 --> 00:32:00.020
+okay and for this we can implement this as extend list or page table or
+
+574
+00:32:00.020 --> 00:32:04.360
+different many different ways we can implement this. So this is the most low
+
+575
+00:32:04.360 --> 00:32:10.060
+level primitive basic that we need and the second low level segment that we usually
+
+576
+00:32:10.060 --> 00:32:15.040
+will have is the so-called free space inventory so this keeps track of free
+
+577
+00:32:15.040 --> 00:32:22.300
+pages so we must know which pages are free. So first of course we have
+
+578
+00:32:22.300 --> 00:32:24.140
+There are actually two kinds of free space inventory.
+
+579
+00:32:24.660 --> 00:32:27.340
+One is that it really knows which page is unused.
+
+580
+00:32:27.740 --> 00:32:32.380
+So this allows me to grow a segment so that if I need pages for a segment, I must be able
+
+581
+00:32:32.380 --> 00:32:33.460
+to find this.
+
+582
+00:32:33.540 --> 00:32:35.120
+For this we need free space inventory.
+
+583
+00:32:35.680 --> 00:32:40.540
+And we also need a second mechanism that depends on how you implement this.
+
+584
+00:32:40.620 --> 00:32:43.940
+Might be inside actually the first one or might be a separate data structure.
+
+585
+00:32:44.360 --> 00:32:45.560
+There are different ways to build this.
+
+586
+00:32:45.700 --> 00:32:51.280
+We need a second mechanism that says, okay, I want to insert a tuple of size 200 bytes.
+
+587
+00:32:52.300 --> 00:32:57.980
+for this tupper. This is also what we call a free space inventory. Now these two aspects,
+
+588
+00:32:58.400 --> 00:33:04.040
+free page versus free space on a page might be the same data structure or might not. It depends on
+
+589
+00:33:04.040 --> 00:33:09.620
+your implementation. And we can implement this also differently. For example, we can use a simple
+
+590
+00:33:09.620 --> 00:33:14.260
+bitmap. If you just want to figure out which page is completely free, we use one bit per page
+
+591
+00:33:14.260 --> 00:33:18.900
+and this tells me that okay this page is free, you can put a segment on this or this page is
+
+592
+00:33:20.320 --> 00:33:27.800
+occupied and then we might then for example remember how much is occupied or
+
+593
+00:33:27.800 --> 00:33:31.860
+just say it's occupied yes or no. But this is not the only way to implement this.
+
+594
+00:33:31.900 --> 00:33:36.660
+We can also use free extents with basically a list of free pages. So this is just like
+
+595
+00:33:37.340 --> 00:33:42.160
+basically you can for example implement this by saying all free pages are
+
+596
+00:33:42.160 --> 00:33:46.780
+allocated to certain special segments that owns all the free space.
+
+597
+00:33:46.780 --> 00:33:48.620
+There is also one way to implement this.
+
+598
+00:33:50.780 --> 00:33:54.680
+So these are the internal segments that are not user facing.
+
+599
+00:33:55.280 --> 00:33:58.520
+There are of course also user facing segments that people really care about.
+
+600
+00:33:58.740 --> 00:34:00.640
+For example the schema.
+
+601
+00:34:01.020 --> 00:34:06.200
+So the database schema must be stored somewhere so that we know which relations exist and
+
+602
+00:34:06.200 --> 00:34:07.000
+all this kind of stuff.
+
+603
+00:34:07.180 --> 00:34:08.880
+So the database schema must exist somewhere.
+
+604
+00:34:09.200 --> 00:34:11.640
+Then we need segments for relations.
+
+605
+00:34:11.840 --> 00:34:16.120
+Each relation is most likely a segment so that we can store all the tuples in a relation
+
+606
+00:34:16.780 --> 00:34:27.340
+You might have temp segments, like if we need intermediate results for queries, so if you want to store this somewhere, then this is stored in the temp segment.
+
+607
+00:34:27.780 --> 00:34:35.660
+We might also have, for example, index structures and so on. Index structures and many other things.
+
+608
+00:34:36.820 --> 00:34:42.780
+So these are the classical things that we store in database systems.
+
+609
+00:34:42.940 --> 00:34:46.840
+For each of them we will most likely have a different segment type even.
+
+610
+00:34:48.940 --> 00:34:56.460
+Okay, now when we talk about how database system works internally, so in particular concerning storage,
+
+611
+00:34:57.000 --> 00:34:59.660
+there are two dimensions that we are particularly interested in.
+
+612
+00:34:59.660 --> 00:35:10.180
+namely how do you first how do you perform page replacement concerning
+
+613
+00:35:10.180 --> 00:35:14.460
+updates and most of both the images effect updates as the first how you
+
+614
+00:35:14.460 --> 00:35:19.040
+perform page replacement and second how do you cope with write out when you're
+
+615
+00:35:19.040 --> 00:35:22.900
+done with the transactions these two dimensions here are called force and
+
+616
+00:35:22.900 --> 00:35:29.100
+steel okay now what does this mean so if he if he are my system runs a steel
+
+617
+00:35:29.900 --> 00:35:36.060
+This means I can take away a page even though the page contains an uncommitted change.
+
+618
+00:35:36.960 --> 00:35:39.300
+So let's say this is a page.
+
+619
+00:35:40.940 --> 00:35:43.240
+So let's say if this is page number 11.
+
+620
+00:35:43.960 --> 00:35:49.160
+So as long as this page is unmodified I can clearly throw it away all the time.
+
+621
+00:35:49.460 --> 00:35:54.600
+Because if I run out of memory I just throw away the page no problem because I can just read it back from disk.
+
+622
+00:35:54.920 --> 00:35:55.920
+Okay this is the easy case.
+
+623
+00:35:55.920 --> 00:36:00.440
+So now the not so easy case is somebody here has performed an update.
+
+624
+00:36:01.120 --> 00:36:08.940
+Now the data is modified. So page is dirty. Again I run out of memory. Now what
+
+625
+00:36:08.940 --> 00:36:15.700
+do I do? Am I allowed to remove page 11 from memory? So can I steal page
+
+626
+00:36:15.700 --> 00:36:22.860
+number 11? And clearly if I can do this then I have more flexibility because I
+
+627
+00:36:22.860 --> 00:36:28.780
+can reuse memory as I need, it doesn't matter if it's modified or not. The downside is if I do this
+
+628
+00:36:28.780 --> 00:36:36.220
+then suddenly I must remember that my page 11 contains dirty data because this update here
+
+629
+00:36:37.040 --> 00:36:44.480
+was not committed yet. So nobody else must see this. Also if for example I crash, I assume I steal
+
+630
+00:36:44.480 --> 00:36:49.980
+the page, I write it to disk, then I crash, then I come back up again, then this update here must be
+
+631
+00:36:49.980 --> 00:36:54.540
+gone and because it was not committed therefore this update here must be removed from the page
+
+632
+00:36:54.540 --> 00:37:01.540
+so still gives me flexibility but also cost me something second dimension is force now the
+
+633
+00:37:01.540 --> 00:37:08.720
+question of forces again i have a page with a change here yeah page number 17 contains also
+
+634
+00:37:08.720 --> 00:37:15.640
+some kind of update now the transactions that performs this update commits yeah and
+
+635
+00:37:17.360 --> 00:37:18.900
+And now what do we do about this?
+
+636
+00:37:19.620 --> 00:37:21.740
+So what do we do about this page here?
+
+637
+00:37:23.900 --> 00:37:27.320
+Do we write this to disk in the moment that the commit comes?
+
+638
+00:37:27.460 --> 00:37:29.040
+So this is called a force strategy.
+
+639
+00:37:29.620 --> 00:37:34.740
+So force means if the commit comes, I write all pages that are affected by this transaction
+
+640
+00:37:34.740 --> 00:37:35.220
+to disk.
+
+641
+00:37:38.200 --> 00:37:43.800
+Of course, the advantage is if I crash afterwards, everything is on disk.
+
+642
+00:37:45.640 --> 00:37:49.200
+on disk. Disadvantages are I write to disk more often than I have to.
+
+643
+00:37:50.340 --> 00:37:54.020
+Because every time somebody commits I write it to disk. If I write a no-for
+
+644
+00:37:54.020 --> 00:37:58.680
+strategy then I can keep it in memory. Of course this means now that
+
+645
+00:37:58.680 --> 00:38:02.140
+potentially a page is never written to disk. If a page is updated
+
+646
+00:38:03.800 --> 00:38:08.000
+all the time, so a frequent update to this page, then this page will always be
+
+647
+00:38:08.000 --> 00:38:12.060
+hot and always be modified and potentially nobody writes it to disk.
+
+648
+00:38:12.060 --> 00:38:16.560
+It could be that you have days or months of a dirty page that is not going to disk if
+
+649
+00:38:16.560 --> 00:38:17.340
+you are really unlucky.
+
+650
+00:38:18.160 --> 00:38:20.900
+So this is also not so good, so you don't like this.
+
+651
+00:38:21.820 --> 00:38:26.900
+If you want to avoid this, then of course we also must build some complicated mechanism.
+
+652
+00:38:27.580 --> 00:38:29.980
+So now which quadrant do we want to leave?
+
+653
+00:38:30.780 --> 00:38:33.980
+So the easiest box of course is this one.
+
+654
+00:38:35.040 --> 00:38:40.140
+So this is the easy box, but unfortunately we want to be the opposite.
+
+655
+00:38:42.160 --> 00:38:50.620
+usually this one here. And I said we want to be steal no force which means we can evict a page
+
+656
+00:38:50.620 --> 00:38:54.880
+from memory even though it's dirty and we don't write it to the disk even though the transaction
+
+657
+00:38:54.880 --> 00:38:59.980
+is committed. So this is what we want to do we want to be steal no force but this is the most
+
+658
+00:38:59.980 --> 00:39:05.400
+complicated one. Okay and we will come in later the lecture come to a recovery and we will look
+
+659
+00:39:05.400 --> 00:39:13.120
+exactly these problems again. Now one problem with dirty changes is we are
+
+660
+00:39:13.120 --> 00:39:17.300
+not the only one who uses the database system. There is one transaction that uses the database system.
+
+661
+00:39:17.400 --> 00:39:20.540
+This can of course modify all the changes that it wants until the commit comes.
+
+662
+00:39:21.120 --> 00:39:26.360
+But what about the other users? The other users are not allowed to see my
+
+663
+00:39:26.360 --> 00:39:34.020
+changes until I did a commit. How do we ensure this? Of course one
+
+664
+00:39:35.660 --> 00:39:43.140
+So if this is my page, so this is page 11, then I have modified something here.
+
+665
+00:39:43.560 --> 00:39:48.920
+I could just say, as long as this here is not committed, nobody else is allowed to read this page.
+
+666
+00:39:49.860 --> 00:39:55.700
+Easy or relatively easy to implement, so we just lock the page, say nobody else can read it.
+
+667
+00:39:57.740 --> 00:40:02.460
+But it's undesirable to do this, because you get poor concurrency from this.
+
+668
+00:40:02.460 --> 00:40:05.880
+because nobody else can read the page, everybody blocks on this.
+
+669
+00:40:07.260 --> 00:40:10.480
+Also we have this recovery problem. Remember when
+
+670
+00:40:10.480 --> 00:40:14.280
+we said here on this slide, when we run a steel strategy
+
+671
+00:40:14.280 --> 00:40:17.200
+it could be that the modified data goes to disk.
+
+672
+00:40:18.000 --> 00:40:22.180
+If we crash, we must somehow get back to the original data. How do we do this?
+
+673
+00:40:23.120 --> 00:40:24.380
+Also not so easy.
+
+674
+00:40:28.780 --> 00:40:33.860
+Now one particular elegant or nice way to cope with this problem is the so-called shadow
+
+675
+00:40:33.860 --> 00:40:34.360
+paging.
+
+676
+00:40:34.780 --> 00:40:36.380
+Now what is the idea of shadow paging?
+
+677
+00:40:38.200 --> 00:40:41.720
+The idea is that you have your...
+
+678
+00:40:41.720 --> 00:40:45.580
+So let's say I start with my database system and just fill seven pages.
+
+679
+00:40:46.240 --> 00:40:46.880
+So this is...
+
+680
+00:40:46.880 --> 00:40:47.660
+Oh sorry, six pages.
+
+681
+00:40:47.920 --> 00:40:50.460
+This is my original dataset, this one.
+
+682
+00:40:50.580 --> 00:40:51.260
+Here's six pages.
+
+683
+00:40:52.040 --> 00:41:01.040
+the first six pages. Now if somebody modifies page six, if you take this page here and modify
+
+684
+00:41:01.040 --> 00:41:08.180
+this, what we do is we create a copy of six. Now let's call this seven. So we have a copy
+
+685
+00:41:08.180 --> 00:41:15.240
+of six. This is page seven. And then we have a page table that says which page is current.
+
+686
+00:41:15.240 --> 00:41:19.000
+As here we say page 7 is the current page.
+
+687
+00:41:20.320 --> 00:41:29.380
+Now if the transaction who brought, who multiplied page 6 to 7 crashes, then we can just undo
+
+688
+00:41:29.380 --> 00:41:32.420
+this update in this directory here because we still have the page 6.
+
+689
+00:41:34.380 --> 00:41:39.660
+So we can just undo this change here and then we are back to where we come from.
+
+690
+00:41:39.660 --> 00:41:48.880
+Also, if a concord transaction comes, then it can just read the page 6 and not the page 7 and it still gets a correct version.
+
+691
+00:41:49.020 --> 00:41:58.520
+The same here later, we updated page number 3, then we end up to this page number 8 and we modify page number 8 and everybody else can still read the page 3.
+
+692
+00:41:58.520 --> 00:42:06.620
+Now if the transaction that modifies 5, 6 and 8 did commit, then this becomes the official page.
+
+693
+00:42:07.440 --> 00:42:13.800
+And then now of course internally pages, original pages were 6 and 3.
+
+694
+00:42:13.980 --> 00:42:18.060
+These become free, so then we can reuse them and put other data on this.
+
+695
+00:42:18.260 --> 00:42:20.120
+This is so called shadow paging.
+
+696
+00:42:20.520 --> 00:42:22.500
+Basically we have logical pages.
+
+697
+00:42:22.680 --> 00:42:26.540
+So here you see in this example here we have six logical pages.
+
+698
+00:42:28.520 --> 00:42:30.220
+This is 6 of course, not a 4.
+
+699
+00:42:33.040 --> 00:42:34.540
+6 logical pages.
+
+700
+00:42:36.380 --> 00:42:38.600
+These are somehow mapped to physical pages.
+
+701
+00:42:38.980 --> 00:42:40.280
+We use the page table.
+
+702
+00:42:41.740 --> 00:42:44.520
+The dirty page, a page that is not committed yet,
+
+703
+00:42:45.980 --> 00:42:47.160
+is stored in a shadow copy.
+
+704
+00:42:47.300 --> 00:42:50.280
+We have both copies available, both the original ones at the shadow.
+
+705
+00:42:50.720 --> 00:42:53.040
+Then at some point, of course, we make it official again.
+
+706
+00:42:53.520 --> 00:42:56.520
+So we copy here the 6 to 6.
+
+707
+00:42:59.200 --> 00:43:01.860
+6827 and then its official page and then that's it.
+
+708
+00:43:02.700 --> 00:43:08.600
+So it's a relatively simple mechanism to implement and provides both recovery and transaction isolation.
+
+709
+00:43:08.860 --> 00:43:15.000
+Great. So the advantages of shadow paging are that the clean data is always available on disk,
+
+710
+00:43:16.500 --> 00:43:19.260
+easy to recover and we can use the transaction isolation.
+
+711
+00:43:19.680 --> 00:43:25.520
+Now the downside is, two downsides. First, my page access logic is more complicated
+
+712
+00:43:25.520 --> 00:43:32.860
+because I must always look into this page table interaction here to check which page should I read
+
+713
+00:43:32.860 --> 00:43:40.720
+and what is the current version of the data that you look at. This is also already not so nice,
+
+714
+00:43:40.860 --> 00:43:44.840
+but this is not what really stopped people from doing this. The more unpleasant part is this one
+
+715
+00:43:44.840 --> 00:43:52.060
+here. Distraced data locality. This is really really an unpleasant behavior because if you
+
+716
+00:43:52.060 --> 00:43:57.320
+think about this, in the original data here, all pages were next to each other. Here, 1, 2, 3, 4, 5, 6.
+
+717
+00:43:57.700 --> 00:44:03.020
+So, if I want to read them, I just start with one, then sequentially read them from disk. This is, of course, as fast as I can be.
+
+718
+00:44:03.920 --> 00:44:09.220
+Now, if I have a shadow page table like this, then I have no longer a
+
+719
+00:44:09.220 --> 00:44:15.620
+sequential run. I have here a sequential run, then here a sequential run, then here a sequential run,
+
+720
+00:44:15.980 --> 00:44:21.980
+and here a sequential run. Basically, I have four runs instead of one. So, in worst case, I do three
+
+721
+00:44:22.520 --> 00:44:29.640
+seeks. Now if you include the first things and even four. So here we have a seek, here we have a seek, here we have a seek, here we have a seek.
+
+722
+00:44:31.160 --> 00:44:35.540
+So we no longer have nice sequential access patterns. So I have random I.O.
+
+723
+00:44:35.820 --> 00:44:40.960
+And remember random I.O. is slow, therefore people don't like this.
+
+724
+00:44:42.060 --> 00:44:46.400
+Nowadays very few people use this on disk based systems. Because on a disk based
+
+725
+00:44:46.400 --> 00:44:51.500
+system it's so terrible to do a seek. So extremely expensive. And therefore you
+
+726
+00:44:52.940 --> 00:44:59.580
+On the other hand, as I mentioned last time, hardware is changing too and on an SSD for
+
+727
+00:44:59.580 --> 00:45:03.380
+example it might be less disastrous than on a rotating disk.
+
+728
+00:45:03.760 --> 00:45:07.760
+Even on SSDs there are problems with this but let's say it's not as bad.
+
+729
+00:45:08.520 --> 00:45:11.920
+Or even more extreme example, in main memory you can do this.
+
+730
+00:45:12.200 --> 00:45:16.140
+Because main memory has little effects with random O, I mean it is not true.
+
+731
+00:45:16.140 --> 00:45:21.680
+There are also some random effects, but this only occurs within a page.
+
+732
+00:45:21.800 --> 00:45:26.020
+If you jump from one page to another, it doesn't matter, because it's the same if it's physically
+
+733
+00:45:26.020 --> 00:45:26.960
+next to you or not.
+
+734
+00:45:27.320 --> 00:45:31.900
+So within memory, you can implement something like shadow paging to isolate transactions.
+
+735
+00:45:32.200 --> 00:45:34.020
+And there it's actually affordable to do this.
+
+736
+00:45:34.320 --> 00:45:40.800
+So shadow paging is still interesting to use, but not on a disk-based system, only for other
+
+737
+00:45:40.800 --> 00:45:41.340
+applications.
+
+738
+00:45:43.520 --> 00:45:48.340
+Now, instead of shadow paging, you can also implement a different strategy.
+
+739
+00:45:49.600 --> 00:45:52.320
+It looks a bit different, but it's conceptually quite similar.
+
+740
+00:45:52.840 --> 00:45:59.640
+So it has a similar idea, namely, we also have original data and we have a copy, but this
+
+741
+00:45:59.640 --> 00:46:02.060
+here is now called a delta file.
+
+742
+00:46:05.100 --> 00:46:07.340
+So how does this work?
+
+743
+00:46:07.340 --> 00:46:11.680
+So this is my original data. So let's say I have here again six pages.
+
+744
+00:46:13.060 --> 00:46:21.040
+Oops, sorry. One, two, three, four, five, six. Now I assume I want to update page number six.
+
+745
+00:46:21.680 --> 00:46:29.420
+Then what I do is I copy six to my delta. So this is my delta here. I copy six to my delta,
+
+746
+00:46:29.420 --> 00:46:38.300
+then I have it here and I change it here to 6 prime. Okay, so after I make my copy I can change
+
+747
+00:46:38.300 --> 00:46:47.480
+it in place. Now when I commit, so if somebody, if my transactions that manipulate C to C prime
+
+748
+00:46:47.480 --> 00:46:53.180
+just commit, then I just throw away 6 because I no longer need it, it has been committed. If my
+
+749
+00:46:53.180 --> 00:47:02.700
+transaction aborts, then I still have the 6, then I forget the content of 6' and
+
+750
+00:47:02.700 --> 00:47:09.140
+instead I copy my 6 back into the abort. I copy my 6 into 6'.
+
+751
+00:47:10.600 --> 00:47:14.640
+So I use the delta for recovery. Of course I can also use it for
+
+752
+00:47:14.640 --> 00:47:18.800
+transaction isolation because I still have the copy available. But the thing is
+
+753
+00:47:18.800 --> 00:47:24.440
+the copies vanish over time. So if a transaction ends either with a commit or a board, afterwards
+
+754
+00:47:24.440 --> 00:47:31.920
+the copy is gone. So conceptually I update in place, I just delay the in place update. Or let's
+
+755
+00:47:31.920 --> 00:47:39.240
+say I have the original data still in the delta file. Now of course we can implement a delta file
+
+756
+00:47:39.240 --> 00:47:44.000
+in two flavors. Namely the question is where do you put the original data and where do you put
+
+757
+00:47:44.000 --> 00:47:50.840
+the data, dirty data. So what I draw first was I had the original data, the unmodified
+
+758
+00:47:50.840 --> 00:47:58.700
+data in the delta and then the modified data in the main file. Both have pros and cons.
+
+759
+00:47:58.820 --> 00:48:03.800
+If you do this then of course a commit is cheap because on the commit I just throw away the data.
+
+760
+00:48:04.380 --> 00:48:09.380
+But an abort is expensive because I must copy back the page. If I do the other way around,
+
+761
+00:48:09.380 --> 00:48:15.240
+If you store the dirty data in the delta and the clean data in the original file, then
+
+762
+00:48:15.240 --> 00:48:18.260
+the commit is expensive and the abort is cheap.
+
+763
+00:48:18.480 --> 00:48:19.960
+Because an abort doesn't do anything.
+
+764
+00:48:21.520 --> 00:48:25.580
+And now, which of the ones should we prefer?
+
+765
+00:48:26.220 --> 00:48:28.400
+Depends on what you optimize for a commit or abort.
+
+766
+00:48:28.500 --> 00:48:30.940
+I would say usually you optimize for a commit.
+
+767
+00:48:31.380 --> 00:48:36.240
+Because you assume that most of your transactions will commit, so abort should be the exception
+
+768
+00:48:36.240 --> 00:48:38.320
+and therefore let's make the commit cheap.
+
+769
+00:48:38.560 --> 00:48:41.360
+So we put the original data in the delta
+
+770
+00:48:42.280 --> 00:48:44.840
+and the modified data in the main file.
+
+771
+00:48:45.340 --> 00:48:47.620
+And then the commit is cheap and the rollback is expensive.
+
+772
+00:48:47.760 --> 00:48:49.320
+This is usually what we want to prefer.
+
+773
+00:48:49.460 --> 00:48:50.700
+But you could implement, of course, both.
+
+774
+00:48:53.700 --> 00:48:56.380
+Now, delta files have some advantages of shadow paging.
+
+775
+00:48:56.920 --> 00:48:59.760
+First of all, the best advantage, if you ask me,
+
+776
+00:48:59.880 --> 00:49:01.700
+is we preserve data locality.
+
+777
+00:49:01.860 --> 00:49:03.740
+So afterwards, after everything is committed,
+
+778
+00:49:03.740 --> 00:49:06.220
+where data is again nicely consecutive on disk,
+
+779
+00:49:06.320 --> 00:49:07.820
+so we get a nice read performance.
+
+780
+00:49:08.040 --> 00:49:09.060
+This is what we want.
+
+781
+00:49:09.240 --> 00:49:10.800
+So we don't mess up locality.
+
+782
+00:49:11.480 --> 00:49:13.960
+Also, we don't mix up clean and dirty pages
+
+783
+00:49:13.960 --> 00:49:14.820
+and different files.
+
+784
+00:49:15.440 --> 00:49:18.420
+This also makes your recovery easier.
+
+785
+00:49:18.640 --> 00:49:20.060
+It's easier to recover from this,
+
+786
+00:49:20.740 --> 00:49:24.860
+but for me, locality is the most advantageous thing.
+
+787
+00:49:25.360 --> 00:49:26.960
+Now, of course, there are some disadvantages.
+
+788
+00:49:28.420 --> 00:49:29.920
+First, we do more I.O.
+
+789
+00:49:30.280 --> 00:49:32.060
+And because in the moment, I do a copy here,
+
+790
+00:49:34.060 --> 00:49:35.640
+I originally had one page.
+
+791
+00:49:36.240 --> 00:49:38.540
+Before I modify, let's say this is page 6,
+
+792
+00:49:38.760 --> 00:49:42.720
+before I modify page 6 I must make a copy and write it to disk.
+
+793
+00:49:42.960 --> 00:49:44.200
+That's why I have a copy on disk.
+
+794
+00:49:44.600 --> 00:49:46.020
+So this of course cost me all.
+
+795
+00:49:46.800 --> 00:49:48.360
+Now the second write is free.
+
+796
+00:49:48.600 --> 00:49:54.000
+If I do 6' or 6' doesn't matter because I still have my original 6
+
+797
+00:49:55.060 --> 00:49:56.560
+as long as nobody commits.
+
+798
+00:49:56.840 --> 00:49:58.360
+Now if I commit, of course I copy it back.
+
+799
+00:49:58.560 --> 00:49:59.580
+Then I write again.
+
+800
+00:49:59.580 --> 00:50:07.300
+but I must do for every update I must do one additional write. So this is a disadvantage.
+
+801
+00:50:07.940 --> 00:50:14.600
+I do more I.O. and second disadvantage of course is that either the commit or the abort becomes more expensive.
+
+802
+00:50:14.740 --> 00:50:20.020
+It depends on how you implement it. So the way I said we store the original data in an extra file,
+
+803
+00:50:20.140 --> 00:50:26.720
+since abort becomes more expensive, the commit is cheap. You can choose which one you want to make cheap.
+
+804
+00:50:26.720 --> 00:50:30.780
+And of course you also have to keep track on the data pages, which is also not so super trivial.
+
+805
+00:50:31.400 --> 00:50:38.160
+Remember we have multiple threads, we have concurrently updated this, but we can definitely implement this.
+
+806
+00:50:40.840 --> 00:50:46.020
+Regardless of the disadvantages, the delta files are usually preferable over shadow paging.
+
+807
+00:50:46.160 --> 00:50:52.380
+So if I would implement a system, I would rather prefer delta files than shadow paging because of this problem here.
+
+808
+00:50:53.040 --> 00:50:54.320
+Preserve data locality.
+
+809
+00:50:54.320 --> 00:50:59.720
+This is a really great property because in the long run we get better performance when
+
+810
+00:50:59.720 --> 00:51:01.840
+if my data is nicely consecutive.
+
+811
+00:51:02.220 --> 00:51:03.860
+So the delta file is actually quite a good idea.
+
+812
+00:51:05.640 --> 00:51:10.860
+Okay, so this brings me to the end of the storage part.
+
+813
+00:51:11.680 --> 00:51:16.060
+Now next we want to at least start a bit with looking at the access path.
+
+814
+00:51:16.860 --> 00:51:23.920
+I said access path, this is kind of a generalization of index structures and relations.
+
+815
+00:51:24.360 --> 00:51:26.980
+the data that you store in your database system.
+
+816
+00:51:28.440 --> 00:51:33.280
+And so we, to orchestrate the access to the data,
+
+817
+00:51:33.480 --> 00:51:36.640
+we need some different data structures
+
+818
+00:51:36.640 --> 00:51:38.160
+and that we will look at, of course,
+
+819
+00:51:38.280 --> 00:51:39.880
+in this order that we write here.
+
+820
+00:51:40.020 --> 00:51:42.680
+So first we need some kind of free space management.
+
+821
+00:51:42.940 --> 00:51:44.280
+So as I mentioned this before,
+
+822
+00:51:44.420 --> 00:51:46.160
+so we need some mechanism to figure out
+
+823
+00:51:47.320 --> 00:51:49.920
+where is free space where they can put more data.
+
+824
+00:51:50.120 --> 00:51:52.460
+And this has to happen reasonably fast.
+
+825
+00:51:54.320 --> 00:51:57.880
+Then we need data structures for the data itself.
+
+826
+00:52:00.920 --> 00:52:04.000
+So, first of all, this is internal if you wish.
+
+827
+00:52:04.320 --> 00:52:04.720
+This is here.
+
+828
+00:52:07.120 --> 00:52:12.500
+To know where to put data, this is, let's say it's relations for example.
+
+829
+00:52:14.840 --> 00:52:20.180
+Then we need some data structures for unusually large data.
+
+830
+00:52:21.320 --> 00:52:26.880
+For example, extreme example of course, a blobs, binary large objects, or even more harmless,
+
+831
+00:52:27.040 --> 00:52:28.120
+large strings.
+
+832
+00:52:29.960 --> 00:52:33.820
+So if the user stores gives me a large string, I might have to do something.
+
+833
+00:52:34.440 --> 00:52:36.100
+Large strings, we need that for this.
+
+834
+00:52:37.400 --> 00:52:40.820
+And finally of course we need index structures to speed up access.
+
+835
+00:52:41.100 --> 00:52:45.720
+Because if I have many million tuples in my database, I usually don't want to look at
+
+836
+00:52:45.720 --> 00:52:46.180
+all of them.
+
+837
+00:52:46.180 --> 00:52:51.400
+just if a search was a specific one and need some way to speed up the search.
+
+838
+00:52:51.700 --> 00:52:56.160
+Okay, so these are the four parts and we now want to look at them in sequence.
+
+839
+00:52:56.800 --> 00:53:01.920
+Today I will not be able to look at all of them, but at least I will start looking at
+
+840
+00:53:02.560 --> 00:53:04.020
+the first two points.
+
+841
+00:53:06.660 --> 00:53:08.220
+So free space inventory.
+
+842
+00:53:08.600 --> 00:53:15.720
+So the first question is, a user doesn't insert and gives me a tupper and might know for example
+
+843
+00:53:16.180 --> 00:53:20.300
+My tuple has a size of, I don't know, let's say tuple.
+
+844
+00:53:22.040 --> 00:53:25.040
+My tuple might have a size of, for example, 200 bytes.
+
+845
+00:53:26.960 --> 00:53:28.020
+Where do I put it?
+
+846
+00:53:28.600 --> 00:53:31.280
+And particularly if you see not all tuples are the same size.
+
+847
+00:53:31.560 --> 00:53:36.120
+Could be there's the next tuple or the previous tuple is a tuple of a short string.
+
+848
+00:53:36.220 --> 00:53:40.360
+Therefore, the previous tuple might just have, for example, 50 bytes.
+
+849
+00:53:44.020 --> 00:53:50.400
+And I might have to put them in different places because I organize my data in pages.
+
+850
+00:53:50.680 --> 00:53:53.180
+So my pages have a certain field degree.
+
+851
+00:53:53.500 --> 00:53:55.320
+So this is page, page one.
+
+852
+00:53:55.920 --> 00:53:57.080
+And this is page two.
+
+853
+00:53:57.360 --> 00:54:00.060
+And then this here might be full up to here.
+
+854
+00:54:00.280 --> 00:54:02.400
+And this here might be full up to here.
+
+855
+00:54:02.780 --> 00:54:07.720
+And then clearly a small tuple I can squeeze in here.
+
+856
+00:54:07.720 --> 00:54:10.740
+but a larger tuple might only fit in here.
+
+857
+00:54:11.260 --> 00:54:13.160
+And this, by the way, if I do this in different order,
+
+858
+00:54:13.280 --> 00:54:15.680
+so if I do the second tuple after this,
+
+859
+00:54:16.260 --> 00:54:19.400
+let's call this tuple 2 and tuple 1,
+
+860
+00:54:19.580 --> 00:54:23.920
+could be that tuple 1 ends up here because there's enough space,
+
+861
+00:54:24.700 --> 00:54:27.780
+tuple 1, while tuple 2 has to go here,
+
+862
+00:54:28.000 --> 00:54:29.900
+or can go here, tuple 1 cannot go here.
+
+863
+00:54:30.240 --> 00:54:33.240
+Tuple 2 can go here because there's enough free space.
+
+864
+00:54:34.120 --> 00:54:41.060
+And this is also cause for when a selection order, so the results order when you select
+
+865
+00:54:41.060 --> 00:54:43.540
+does not correspond to insert order.
+
+866
+00:54:44.040 --> 00:54:48.820
+Just because of the free space at the end of a page, could be that something small does
+
+867
+00:54:48.820 --> 00:54:50.300
+still fit and something large doesn't.
+
+868
+00:54:50.740 --> 00:54:54.720
+Okay, now we need a way to figure out where should we put this.
+
+869
+00:54:56.120 --> 00:55:06.780
+And yeah, so we need to quickly find out what is a page that can still hold 200 bytes or some other amount of space.
+
+870
+00:55:07.180 --> 00:55:12.020
+Now the traditional way to do this is to use a so-called free space bitmap,
+
+871
+00:55:13.320 --> 00:55:17.780
+which basically means that for each page in your segment, you have a large array.
+
+872
+00:55:19.060 --> 00:55:19.860
+No, sorry.
+
+873
+00:55:20.180 --> 00:55:23.840
+You have a large array that for each page in your segment contains an entry.
+
+874
+00:55:25.320 --> 00:55:28.720
+Usually not even one byte, just half a byte per page.
+
+875
+00:55:29.160 --> 00:55:33.240
+Of course you can be more generous and give it one byte per page, and you can be more accurate.
+
+876
+00:55:33.800 --> 00:55:35.840
+But a traditional implementation looks something like this.
+
+877
+00:55:36.040 --> 00:55:43.340
+You just give four bits, which means half a byte, so one nibble, half a byte, half a byte per page.
+
+878
+00:55:43.560 --> 00:55:48.720
+So four bits describes the first page, the next four bits describes the second page, and so on.
+
+879
+00:55:49.060 --> 00:55:52.340
+So here we describe the field degree for each page.
+
+880
+00:55:52.880 --> 00:55:57.920
+and we maintain this for each page and now if an insert comes and wants to insert new data
+
+881
+00:55:57.920 --> 00:56:04.900
+then we look at this array and then we figure out okay what is a page that contains enough free space
+
+882
+00:56:05.420 --> 00:56:10.880
+for my tupple and the first page that doesn't contain enough free space I insert two and then
+
+883
+00:56:10.880 --> 00:56:19.320
+of course I update this field degree if it has changed. Okay so this is a high level here we have
+
+884
+00:56:19.320 --> 00:56:28.320
+bitmap and for every page we reserve for example 4 bit then we store the field degree.
+
+885
+00:56:28.760 --> 00:56:33.280
+Now one question of course is do you store how much data do you store or do you store
+
+886
+00:56:33.280 --> 00:56:39.540
+how much free space do you have? It doesn't really matter yes because if one is just so
+
+887
+00:56:39.540 --> 00:56:52.180
+So we know that free is equal to page size minus used.
+
+888
+00:56:52.460 --> 00:56:56.080
+So it does not really matter if you store used or free.
+
+889
+00:56:57.340 --> 00:57:02.060
+Both is basically the same.
+
+890
+00:57:02.240 --> 00:57:04.180
+You can compute one from the other.
+
+891
+00:57:06.780 --> 00:57:14.040
+Usually I would say you will store used, so how much you have used, just because then
+
+892
+00:57:14.040 --> 00:57:21.840
+we have conveniently can interpret all zeros here as pages empty. But this is really up to you,
+
+893
+00:57:22.020 --> 00:57:29.100
+so this doesn't really matter. Both is fine. Just one of the two you will use. Okay, so now we must
+
+894
+00:57:29.780 --> 00:57:34.100
+encodes the fill degree of a page in four bits. And of course, four bits is not a lot.
+
+895
+00:57:34.700 --> 00:57:39.120
+Some systems are even more crazy and use only two bits or even one bit per page.
+
+896
+00:57:39.640 --> 00:57:42.880
+I think this is not good. One bit is really too little.
+
+897
+00:57:43.580 --> 00:57:49.820
+Two bits is a bit better, but also not very accurate. With four bits, we can already write a bit more accurate information.
+
+898
+00:57:50.400 --> 00:57:54.480
+At least we have 16 different states that we can have.
+
+899
+00:57:55.600 --> 00:57:58.460
+Of course, the more bits you have, the more accurate you are.
+
+900
+00:57:59.180 --> 00:58:02.560
+So more bits you use, the larger your free space inventory becomes.
+
+901
+00:58:03.180 --> 00:58:07.740
+And now you could say, hey, disks are free or disks are cheap, I don't care about space
+
+902
+00:58:07.740 --> 00:58:09.280
+utilization, let's use 8-bit.
+
+903
+00:58:09.940 --> 00:58:13.540
+But the problem is also if you make it larger, scanning it becomes slower.
+
+904
+00:58:13.760 --> 00:58:17.100
+So you have a certain incentive of making it small.
+
+905
+00:58:17.680 --> 00:58:21.440
+But nevertheless, I think 4-bit is the minimum that you want to use.
+
+906
+00:58:23.020 --> 00:58:25.160
+Okay, so let's assume we use 4 bits.
+
+907
+00:58:25.160 --> 00:58:33.780
+So now how can we encode my use, my space utilization with just 4 bits?
+
+908
+00:58:34.240 --> 00:58:37.920
+One way to do this is to say I just do linear interpolation.
+
+909
+00:58:38.160 --> 00:58:48.380
+Yes, basically I encode there in these 4 bits size of my data divided by page size divided by 2 to the power of number of bits.
+
+910
+00:58:48.380 --> 00:58:57.780
+For example, if I use 4 bits and by 16, so I say here, data size divided by 1 16th of the page size and then round it up.
+
+911
+00:58:58.960 --> 00:59:09.900
+If I round this up, it uses as field degree, then I can, from the 4 bits, decide do I have enough space for my incoming tuple.
+
+912
+00:59:10.100 --> 00:59:17.860
+Of course, there is some inaccuracy because I always round up, which means that my accuracy is only page size divided by 16.
+
+913
+00:59:18.380 --> 00:59:26.220
+if you have a 16 kilobyte page and then I have 16 states then my my my blocking
+
+914
+00:59:26.220 --> 00:59:31.020
+factor here is one kilobyte so I basically the last kilobyte I cannot
+
+915
+00:59:31.020 --> 00:59:36.520
+fill easily and because the moment that I cross into the last kilobyte by page
+
+916
+00:59:36.520 --> 00:59:41.640
+looks full yeah my my field degree will be maximum it's a moment that I come
+
+917
+00:59:41.640 --> 00:59:45.340
+in this is last one kilobyte of the page so that means it's a bit difficult to
+
+918
+00:59:45.340 --> 00:59:55.480
+makes a page completely full. So this is a bit of a problem so I might have a problem of loss of accuracy.
+
+919
+00:59:56.100 --> 01:00:05.380
+Therefore I can say instead of having a linear scale I prefer a logarithmic scale.
+
+920
+01:00:05.680 --> 01:00:14.720
+So instead of doing linear correlation I say I store the logarithms and then I can describe the extremes very well.
+
+921
+01:00:15.340 --> 01:00:26.620
+here now we use logarithms of text size. So this here means 1, 2, 4, 3 is 4, 8, 16 and so on.
+
+922
+01:00:26.800 --> 01:00:32.240
+So the exponential growth and this of course allows me to describe the small values very precisely.
+
+923
+01:00:32.580 --> 01:00:34.960
+While in linear interpolation it loses accuracy.
+
+924
+01:00:34.960 --> 01:00:45.500
+see. Or you, if you do this by the way, you probably don't want to do this with text size,
+
+925
+01:00:45.680 --> 01:00:55.820
+you want to do this with free size. Because we prefer the case when we nearly run out of space,
+
+926
+01:00:55.960 --> 01:01:01.720
+we want to know this, then we want to make it completely full. Or of course you could do even
+
+927
+01:01:01.720 --> 01:01:07.320
+a combination of two, for example, you could say I am linear, so I have 16 possible values.
+
+928
+01:01:07.500 --> 01:01:13.600
+Let's say I use eight of the values with a linear scale and then, oh sorry, here's a linear one,
+
+929
+01:01:13.860 --> 01:01:20.760
+eight for the linear and then eight for logarithmic scale. This is probably even better because with
+
+930
+01:01:20.760 --> 01:01:24.780
+the logarithm, there's a problem that at some point the values become too large and we don't
+
+931
+01:01:24.780 --> 01:01:31.160
+care about them anymore. So you might use a combination of these. Also, you mean, my example
+
+932
+01:01:33.520 --> 01:01:35.400
+smallest value is one, then we have,
+
+933
+01:01:35.440 --> 01:01:39.140
+so we have one, two, four, eight, and so on.
+
+934
+01:01:39.260 --> 01:01:42.820
+This is, we probably do not care about one and two,
+
+935
+01:01:43.500 --> 01:01:46.040
+because no tupper will have only one byte or two bytes.
+
+936
+01:01:46.140 --> 01:01:49.200
+So we might have alignment, and so on.
+
+937
+01:01:49.320 --> 01:01:51.240
+So we might, might be that our tuppers
+
+938
+01:01:51.240 --> 01:01:52.820
+are multiple of four, for example, anyway.
+
+939
+01:01:53.680 --> 01:01:56.500
+So therefore I know my smallest possible value is four,
+
+940
+01:01:56.780 --> 01:02:00.040
+and then I go only exponential afterwards.
+
+941
+01:02:01.720 --> 01:02:03.900
+carefully hand constructed tables that says for example,
+
+942
+01:02:10.440 --> 01:02:18.140
+value 15 means full, value 14 means four byte left,
+
+943
+01:02:18.280 --> 01:02:19.840
+or we didn't four bytes, but perhaps two is more,
+
+944
+01:02:20.100 --> 01:02:21.720
+and let's say eight byte left,
+
+945
+01:02:22.200 --> 01:02:27.680
+then 15 means 16 left, 60, sorry,
+
+946
+01:02:28.580 --> 01:02:29.400
+go the wrong direction.
+
+947
+01:02:31.720 --> 01:02:46.760
+13 of course. 13 means 16 left, 12 means 32 left, 11 means 64, 10 means 128 and
+
+948
+01:02:57.900 --> 01:02:59.560
+Then, afterwards we go to linear.
+
+949
+01:03:00.540 --> 01:03:07.040
+Then we, I was going the wrong direction, the numbers here.
+
+950
+01:03:10.820 --> 01:03:14.880
+9, 8, and afterwards we do linear scale, for example.
+
+951
+01:03:15.820 --> 01:03:18.920
+This is linear scale.
+
+952
+01:03:19.540 --> 01:03:29.540
+This allows me to make my pages fairly full and I still can describe the rest of the pages
+
+953
+01:03:29.560 --> 01:03:31.640
+using a nice linear scale.
+
+954
+01:03:32.000 --> 01:03:34.140
+So this is some kind of encoding you will choose.
+
+955
+01:03:34.800 --> 01:03:41.400
+Then these four bits are actually sufficient to describe your fill degree of your page quite accurately.
+
+956
+01:03:41.540 --> 01:03:45.840
+So we can find for every table an appropriate place where we can insert this.
+
+957
+01:03:47.240 --> 01:03:49.860
+We use this to encode the free space.
+
+958
+01:03:50.060 --> 01:03:54.020
+I already said it doesn't really matter if you encode the free space or the used space.
+
+959
+01:03:55.300 --> 01:03:58.460
+because one is just page-minus-the-assass,
+
+960
+01:03:58.460 --> 01:03:59.500
+so it doesn't matter what you use,
+
+961
+01:03:59.680 --> 01:04:02.440
+but with a few bits we describe which state we are,
+
+962
+01:04:02.560 --> 01:04:06.380
+then we choose whatever we need for our insert
+
+963
+01:04:06.380 --> 01:04:08.420
+to find an appropriate page.
+
+964
+01:04:09.460 --> 01:04:11.640
+Okay, so how do we use this?
+
+965
+01:04:11.820 --> 01:04:16.380
+So when we insert data, we compute the required free-stress inventory entry.
+
+966
+01:04:16.520 --> 01:04:20.540
+For example, I might require that, if I now describe used instead of free,
+
+967
+01:04:20.540 --> 01:04:28.160
+I might require that my page has an entry of at most seven because I know that if it is seven or less my data fits
+
+968
+01:04:28.960 --> 01:04:35.680
+So then I scan the free space inventory for a matching entry and then I insert the data on this page and of course I
+
+969
+01:04:35.680 --> 01:04:38.820
+Update the entry if I go to a next if my search
+
+970
+01:04:39.460 --> 01:04:44.840
+Was large enough to cross into the next free space inventory category then of course we update the entry.
+
+971
+01:04:45.280 --> 01:04:47.240
+So this is the idea. We scan insert.
+
+972
+01:04:50.000 --> 01:04:52.780
+Now, so this is pretty simple to implement.
+
+973
+01:04:53.020 --> 01:04:56.220
+Only problem is, this can be surprisingly expensive.
+
+974
+01:04:57.180 --> 01:04:59.320
+The problem is, if I scan this inventory,
+
+975
+01:04:59.500 --> 01:05:00.780
+then I have a linear effort.
+
+976
+01:05:01.380 --> 01:05:04.540
+Yes, I start with the first page and then I check.
+
+977
+01:05:04.880 --> 01:05:06.260
+Of course, I have a linear effort.
+
+978
+01:05:06.580 --> 01:05:07.680
+Now, the free space inventory,
+
+979
+01:05:07.680 --> 01:05:09.560
+it's safe is not so super large.
+
+980
+01:05:10.220 --> 01:05:12.240
+Yes, it's pretty small.
+
+981
+01:05:12.440 --> 01:05:14.380
+If you have 16 kilobabit pages,
+
+982
+01:05:14.560 --> 01:05:17.060
+then one page of free space inventory is enough
+
+983
+01:05:17.240 --> 01:05:19.820
+to cover half of a gigabyte of data.
+
+984
+01:05:20.240 --> 01:05:22.120
+So you don't have a lot of pages,
+
+985
+01:05:22.340 --> 01:05:24.020
+but nevertheless it costs you something.
+
+986
+01:05:24.440 --> 01:05:27.140
+And I can tell you from personal experience,
+
+987
+01:05:27.240 --> 01:05:28.560
+the first time I implemented this,
+
+988
+01:05:28.860 --> 01:05:31.920
+I implemented this naively, so I was about the book,
+
+989
+01:05:32.280 --> 01:05:34.940
+and I then read some experiments and everything worked great.
+
+990
+01:05:36.160 --> 01:05:41.060
+And then I started inserting 10 gigabytes of data,
+
+991
+01:05:41.440 --> 01:05:44.420
+and suddenly the system became slower and slower.
+
+992
+01:05:46.420 --> 01:05:48.760
+And now why does this happen?
+
+993
+01:05:48.860 --> 01:05:54.680
+Of course, if you have 10 gigabytes of data, we have 20 pages with free specimen, each
+
+994
+01:05:54.680 --> 01:05:56.520
+of them contains a few thousand entries.
+
+995
+01:05:57.120 --> 01:06:03.260
+As we are checking thousands and thousands of entries, and this costs something.
+
+996
+01:06:03.440 --> 01:06:07.280
+So suddenly my performance was dominated by scanning the free specimen.
+
+997
+01:06:07.580 --> 01:06:09.740
+So this was costing performance.
+
+998
+01:06:10.160 --> 01:06:11.400
+Of course, it's a bad idea.
+
+999
+01:06:12.600 --> 01:06:14.860
+So now how can we make this scan cheaper?
+
+1000
+01:06:16.700 --> 01:06:21.440
+Pretty easily actually, because we know that there are only 16 free space inventory values
+
+1001
+01:06:21.440 --> 01:06:21.740
+anyway.
+
+1002
+01:06:21.960 --> 01:06:22.380
+We know this.
+
+1003
+01:06:22.860 --> 01:06:29.280
+And therefore we can cache the next matching page or perhaps the next set of pages, a range
+
+1004
+01:06:29.280 --> 01:06:29.740
+of pages.
+
+1005
+01:06:30.660 --> 01:06:34.520
+And so we just remember what is the next page that has this entry.
+
+1006
+01:06:35.920 --> 01:06:40.080
+And this cache works very well because most pages are static.
+
+1007
+01:06:41.400 --> 01:06:45.060
+them to the database and then most of the time you don't do anything with them.
+
+1008
+01:06:45.160 --> 01:06:48.240
+They just sit there and you read them perhaps later but you don't modify it
+
+1009
+01:06:48.240 --> 01:06:51.900
+most of the time. Of course it could be that you do a bulk operation that you
+
+1010
+01:06:51.900 --> 01:06:54.780
+delete all entries or so that's okay that from time to time it
+
+1011
+01:06:54.780 --> 01:06:59.200
+the cache has to be invalidated but most of the time the cache will be
+
+1012
+01:06:59.200 --> 01:07:02.140
+correct. So if you just remember the last the first if you just remember the
+
+1013
+01:07:02.140 --> 01:07:05.380
+first page with the first with a certain fsi value
+
+1014
+01:07:05.840 --> 01:07:08.760
+then this then I never have to check before
+
+1015
+01:07:08.760 --> 01:07:15.240
+I just check after. So this is my inventory and I might remember for example the first page with an entry of seven is here
+
+1016
+01:07:15.240 --> 01:07:19.280
+So if somebody asked me for seven I go here and I start checking
+
+1017
+01:07:20.000 --> 01:07:24.140
+Now this should be the correct page. If not, if it's not the correct page
+
+1018
+01:07:24.900 --> 01:07:27.420
+Continue to the right until I find the first
+
+1019
+01:07:28.100 --> 01:07:34.080
+Correct matching page and then of course I update my cache. So I never again
+
+1020
+01:07:34.080 --> 01:07:37.640
+search for the page with the value of seven
+
+1021
+01:07:38.760 --> 01:07:40.700
+than this cache value here.
+
+1022
+01:07:40.700 --> 01:07:41.440
+So this is my cache.
+
+1023
+01:07:44.360 --> 01:07:46.960
+And so I only scan the end of my
+
+1024
+01:07:46.960 --> 01:07:49.120
+three space inventory and never check before.
+
+1025
+01:07:49.940 --> 01:07:51.660
+And now it could be, as I said,
+
+1026
+01:07:51.760 --> 01:07:53.480
+that somebody deletes something in the middle here.
+
+1027
+01:07:54.040 --> 01:07:56.180
+Then of course I have to perform the delete.
+
+1028
+01:07:56.480 --> 01:07:58.580
+Then of course I must update my cache,
+
+1029
+01:07:58.720 --> 01:07:59.720
+but this happens rarely.
+
+1030
+01:08:00.640 --> 01:08:01.660
+Most of the time we don't do this.
+
+1031
+01:08:02.020 --> 01:08:04.560
+Then I read the rest again,
+
+1032
+01:08:04.800 --> 01:08:06.700
+but then after the first scan
+
+1033
+01:08:06.700 --> 01:08:12.380
+again I catch this and I will never look at this again okay and this works quite
+
+1034
+01:08:12.380 --> 01:08:16.100
+well because segments tend to grow at the end so that we are most of the time
+
+1035
+01:08:16.100 --> 01:08:21.740
+we only event at the end then we don't have this expensive checking here okay
+
+1036
+01:08:21.740 --> 01:08:30.040
+so and then we then we perform allocations then we benefit from the
+
+1037
+01:08:30.040 --> 01:08:34.940
+knowledge of the application knowledge that we have yes of this by the way true
+
+1038
+01:08:36.880 --> 01:08:41.700
+Pages we have made, the example previously when we talked about segments, and also about tuples.
+
+1039
+01:08:42.280 --> 01:08:47.800
+Like for example, you could say, hey, I, so either you allocate a phase of data or you
+
+1040
+01:08:47.800 --> 01:08:49.400
+insert, for example, a number of tuples.
+
+1041
+01:08:49.460 --> 01:08:54.240
+If somebody has an insert statement, yeah, so here you have an, for example, if a statement
+
+1042
+01:08:54.240 --> 01:09:01.520
+looks like this, insert into R, then here we do a select.
+
+1043
+01:09:04.380 --> 01:09:09.240
+So then of course we have a single tuple that is currently coming and we need a space for
+
+1044
+01:09:09.240 --> 01:09:09.880
+the single tuple.
+
+1045
+01:09:10.060 --> 01:09:14.200
+Yeah, but we already know, or we could know, that there will be more tuples coming.
+
+1046
+01:09:14.440 --> 01:09:18.800
+So we know because the select produces a number of tuples, we might know this and we can make
+
+1047
+01:09:18.800 --> 01:09:19.700
+use of this knowledge.
+
+1048
+01:09:20.260 --> 01:09:25.420
+Another example here is that we might, where we need allocations, very large data items,
+
+1049
+01:09:25.520 --> 01:09:29.540
+we talk about them, not today but in the next section, but it's also something where we
+
+1050
+01:09:32.160 --> 01:09:38.760
+And so what we want of course is that allocations are close to each other and what we can do
+
+1051
+01:09:39.320 --> 01:09:43.000
+when allocating is we can give the system hints. Basically we say
+
+1052
+01:09:43.580 --> 01:09:47.840
+it's a single tuple, therefore say allocate and need for example 200 bytes.
+
+1053
+01:09:48.600 --> 01:09:52.340
+Yeah, the same minimum is 200 because I must put the next tuple in there.
+
+1054
+01:09:53.540 --> 01:09:54.200
+200 bytes.
+
+1055
+01:09:54.940 --> 01:09:59.640
+But I could know already that there are more tuples coming.
+
+1056
+01:10:01.520 --> 01:10:06.460
+minimum but if you have for example space for I don't know it's 20 kilobytes this is good
+
+1057
+01:10:07.640 --> 01:10:17.540
+I'm sorry kilobytes yeah so therefore the system can make use of this information say okay 20 or
+
+1058
+01:10:17.540 --> 01:10:23.500
+200 is a minimum but if I have a better spot to fit the 20 I will do this and I will give the
+
+1059
+01:10:23.500 --> 01:10:27.760
+caller 20 kilobytes until of course that you have 20 kilobytes and then you can place the next
+
+1060
+01:10:27.760 --> 01:10:29.600
+also next to the first one.
+
+1061
+01:10:29.720 --> 01:10:32.020
+So this way we reduce fragmentation.
+
+1062
+01:10:32.220 --> 01:10:35.960
+So we tend to, we prefer to put data next to each other.
+
+1063
+01:10:37.260 --> 01:10:39.600
+And we might be even more crazy for templates,
+
+1064
+01:10:39.700 --> 01:10:42.580
+we will not do this because we have nothing we can put there.
+
+1065
+01:10:42.700 --> 01:10:44.620
+But for segments, I made the example already,
+
+1066
+01:10:44.980 --> 01:10:46.540
+where we might do over allocation.
+
+1067
+01:10:46.840 --> 01:10:51.120
+So where the segment, the user of the segment says,
+
+1068
+01:10:51.300 --> 01:10:52.640
+I need five pages.
+
+1069
+01:10:52.980 --> 01:10:55.260
+I said I prefer two pages,
+
+1070
+01:10:55.440 --> 01:10:57.340
+but I know how to make use of five pages.
+
+1071
+01:10:57.760 --> 01:11:01.240
+And the system regardless says, you asked me for at most five, but you know, I had seven.
+
+1072
+01:11:01.480 --> 01:11:06.160
+Please take the seven because it fits better in my allocation and my memory layout if you take seven.
+
+1073
+01:11:06.580 --> 01:11:09.080
+And therefore, it gives you more than you asked for.
+
+1074
+01:11:09.160 --> 01:11:10.140
+So it's called over-allocation.
+
+1075
+01:11:10.760 --> 01:11:12.880
+And by doing so, we reduce fragmentation.
+
+1076
+01:11:13.220 --> 01:11:15.460
+And this is a really nice thing.
+
+1077
+01:11:17.220 --> 01:11:24.500
+And I would say perhaps a bit unfortunately, regular programming languages do not support this.
+
+1078
+01:11:24.500 --> 01:11:28.340
+even though I think more people could benefit from this.
+
+1079
+01:11:28.880 --> 01:11:31.680
+So this is actually a very good interface.
+
+1080
+01:11:32.580 --> 01:11:38.460
+In an example where this makes sense, even though leaving the world of database systems,
+
+1081
+01:11:38.940 --> 01:11:42.980
+if you think about something like a vector, in a programming language,
+
+1082
+01:11:43.460 --> 01:11:50.280
+so let's say you need memory for, for example, vector int, and then here we have a .
+
+1083
+01:11:50.920 --> 01:11:55.460
+So then we insert here, we do, we push back, so we grow.
+
+1084
+01:12:01.020 --> 01:12:02.700
+Yeah, so we grow over time.
+
+1085
+01:12:02.960 --> 01:12:04.060
+And of course at some point
+
+1086
+01:12:04.060 --> 01:12:05.480
+the physical memory must be increased.
+
+1087
+01:12:05.600 --> 01:12:07.860
+So first it's small, then as we grow,
+
+1088
+01:12:07.940 --> 01:12:09.840
+we make it larger and larger.
+
+1089
+01:12:10.400 --> 01:12:13.140
+Yeah, and the funny thing is,
+
+1090
+01:12:14.440 --> 01:12:16.840
+so for example the vector itself might say,
+
+1091
+01:12:16.840 --> 01:12:24.740
+okay now I please I need space for 20 entries. Now internally this memory is
+
+1092
+01:12:24.740 --> 01:12:30.240
+allocated either from the C library or from the operating system and this
+
+1093
+01:12:30.240 --> 01:12:35.400
+underlying layer will have a kind of blocking factor too. This is just
+
+1094
+01:12:35.400 --> 01:12:40.920
+something that is invisible to you. So basically what you ask for
+
+1095
+01:12:40.920 --> 01:12:45.740
+amount of memory for example now so this year if it's C++ it will perform a call
+
+1096
+01:12:46.840 --> 01:12:52.520
+example and this call of you might internally for example call malloc so
+
+1097
+01:12:52.520 --> 01:12:56.980
+this is a low-level allocation primitive from C we could say for example malloc
+
+1098
+01:12:56.980 --> 01:13:05.100
+don't know I need for 20 entries I need good overhead let's say I need 88 bytes
+
+1099
+01:13:05.100 --> 01:13:10.260
+for example yeah and of course you can get back a pointer here and you know for
+
+1100
+01:13:10.260 --> 01:13:14.840
+sure that this pointer here has enough space for 88 bytes.
+
+1101
+01:13:16.020 --> 01:13:18.880
+But it could be, so you asked for 88,
+
+1102
+01:13:20.920 --> 01:13:25.320
+but it could be that in reality this has enough space
+
+1103
+01:13:25.320 --> 01:13:27.420
+for, for example, 96.
+
+1104
+01:13:28.060 --> 01:13:31.400
+Because of how the allocation internally works,
+
+1105
+01:13:31.640 --> 01:13:33.620
+the malloc cannot give you arbitrarily
+
+1106
+01:13:33.620 --> 01:13:34.860
+small pieces of data.
+
+1107
+01:13:34.960 --> 01:13:35.960
+It depends on implementation.
+
+1108
+01:13:36.220 --> 01:13:38.160
+But most malloc implementations cannot give you
+
+1109
+01:13:38.160 --> 01:13:39.920
+arbitrarily small pieces of implementation.
+
+1110
+01:13:40.260 --> 01:13:43.620
+you asked 288 but you got 96 but you don't know this.
+
+1111
+01:13:44.180 --> 01:13:45.820
+So you got more than you asked for,
+
+1112
+01:13:46.100 --> 01:13:48.280
+but you have no way to know this.
+
+1113
+01:13:48.440 --> 01:13:50.980
+Now if you could know that you got more,
+
+1114
+01:13:51.180 --> 01:13:53.600
+then the vector could be smarter and could realize,
+
+1115
+01:13:53.780 --> 01:13:55.520
+oh, I wanted to grow to 20,
+
+1116
+01:13:55.640 --> 01:13:58.340
+but in reality I grew to have enough space now
+
+1117
+01:13:58.340 --> 01:14:02.080
+for example, 20, what did I say, 21 at least.
+
+1118
+01:14:02.760 --> 01:14:04.900
+So you can make use of this extra space.
+
+1119
+01:14:06.700 --> 01:14:09.580
+Would be great, unfortunately there's no portable way
+
+1120
+01:14:10.260 --> 01:14:12.340
+In fact, there is a way to do this.
+
+1121
+01:14:15.080 --> 01:14:21.520
+I don't remember the name, but I have to look it up in a moment.
+
+1122
+01:14:25.500 --> 01:14:39.840
+So there's a function here that is called malloc usableSize.
+
+1123
+01:14:43.460 --> 01:14:49.720
+This is not, unfortunately, not super portable. In Linux you can do this.
+
+1124
+01:14:49.720 --> 01:14:52.060
+I was saying it's not a POSIX function even.
+
+1125
+01:14:52.300 --> 01:14:53.220
+Let me briefly check.
+
+1126
+01:14:54.040 --> 01:14:55.700
+No, it's not a POSIX function.
+
+1127
+01:14:56.080 --> 01:14:58.420
+So this is a GNU extension here.
+
+1128
+01:14:58.520 --> 01:14:59.200
+It's not standardized.
+
+1129
+01:15:00.260 --> 01:15:01.740
+Unfortunately, there's no standard way
+
+1130
+01:15:01.740 --> 01:15:02.800
+to do this GNU extension.
+
+1131
+01:15:04.140 --> 01:15:06.480
+So then you can ask the melancholytect is this.
+
+1132
+01:15:06.540 --> 01:15:07.940
+So how much space do I have?
+
+1133
+01:15:10.780 --> 01:15:12.860
+So you could exactly do this trick.
+
+1134
+01:15:13.140 --> 01:15:14.860
+Use the extra space that you got.
+
+1135
+01:15:15.000 --> 01:15:16.580
+And it would be a good idea to do this.
+
+1136
+01:15:16.780 --> 01:15:18.440
+Only problem is we make other tools
+
+1137
+01:15:19.720 --> 01:15:21.620
+So we'd be unhappy if you do this.
+
+1138
+01:15:23.180 --> 01:15:25.360
+Or actually in this case address center
+
+1139
+01:15:25.360 --> 01:15:27.740
+will just tell you exactly how much you allocated.
+
+1140
+01:15:27.940 --> 01:15:30.220
+So it will not give you useful answer back.
+
+1141
+01:15:30.900 --> 01:15:33.520
+So malloc usable size is a bit fishy.
+
+1142
+01:15:33.920 --> 01:15:37.640
+But in principle this idea of using over-allocation
+
+1143
+01:15:37.640 --> 01:15:38.520
+is a very good idea.
+
+1144
+01:15:38.740 --> 01:15:40.640
+Database systems do this routinely.
+
+1145
+01:15:41.360 --> 01:15:42.600
+Programming languages do not.
+
+1146
+01:15:42.740 --> 01:15:43.460
+But perhaps they should.
+
+1147
+01:15:43.760 --> 01:15:45.620
+Because if you do over-allocation
+
+1148
+01:15:45.620 --> 01:15:47.620
+it helps you to fight fragmentation.
+
+1149
+01:15:49.400 --> 01:15:54.420
+Okay, now so much for the allocation.
+
+1150
+01:15:54.740 --> 01:16:01.000
+So up to now we talked about figuring out where do we find enough space to store my data.
+
+1151
+01:16:01.300 --> 01:16:06.900
+Now we have to think about what do I really put in my, so how do I put my records in a
+
+1152
+01:16:06.900 --> 01:16:07.240
+page.
+
+1153
+01:16:07.440 --> 01:16:11.560
+I realized this page should have enough space and I must somehow physically do this.
+
+1154
+01:16:12.420 --> 01:16:16.200
+And the traditional way to do this is to use a so-called slotted page.
+
+1155
+01:16:17.680 --> 01:16:28.480
+I just checked my time. So I have only quarter an hour left. I think I will stop here. I will not do slot bases.
+
+1156
+01:16:28.640 --> 01:16:36.620
+Perhaps you remember slotted pages from the introduction to databases. Then great. Please look at this again.
+
+1157
+01:16:37.100 --> 01:16:43.320
+Because this is what databases really internally use. But I will need more than 15 minutes to talk about slotted pages.
+
+1158
+01:16:43.320 --> 01:16:47.940
+and I don't want to cut the explanation in the middle, therefore I stop here.
+
+1159
+01:16:48.180 --> 01:16:54.120
+So I'm just saying tuples are internally stored in pages, stored in pages that we will look
+
+1160
+01:16:54.120 --> 01:17:00.040
+at in the next lecture, and we use the free space inventory to figure out which page has
+
+1161
+01:17:00.040 --> 01:17:01.260
+enough free space to fit a tuple.
+
+1162
+01:17:02.080 --> 01:17:08.100
+Okay, then on top of this, in the next lecture we will build pages with tuples, which can
+
+1163
+01:17:08.100 --> 01:17:09.880
+be used to handle extents.
+
+1164
+01:17:09.880 --> 01:17:12.600
+If we look at the record layout, how does that mean?
+
+1165
+01:17:12.720 --> 01:17:15.440
+Here we just draw a box, what is stored inside this box.
+
+1166
+01:17:15.620 --> 01:17:17.640
+So this is where we look at the next lecture.
+
+1167
+01:17:18.060 --> 01:17:20.720
+And then what we do if my record is too large for pages,
+
+1168
+01:17:20.720 --> 01:17:22.180
+this is also what we cover next.
+
+1169
+01:17:22.580 --> 01:17:26.860
+Okay, so I will stop here today, and then I hope you also,
+
+1170
+01:17:27.440 --> 01:17:29.380
+I don't, unfortunately cannot attend,
+
+1171
+01:17:29.440 --> 01:17:32.100
+but at least listen to my lecture next week.
+
+1172
+01:17:32.300 --> 01:17:32.540
+Okay.

@@ -1,0 +1,4577 @@
+WEBVTT
+
+1
+00:00:01.240 --> 00:00:12.000
+Welcome to the lecture on database implementation. Today we want to look at the first big part of database architecture, namely storage.
+
+2
+00:00:12.920 --> 00:00:16.840
+So the problem that we want to address here is conceptually very simple.
+
+3
+00:00:17.220 --> 00:00:26.340
+So on the upper end here we have application data, we have some kind of user data that is semantically stored in the database.
+
+4
+00:00:26.340 --> 00:00:29.920
+And as a lower level, we have how the data is really stored.
+
+5
+00:00:30.120 --> 00:00:32.180
+Like at the lowest level, of course, we have the physical drive.
+
+6
+00:00:32.620 --> 00:00:35.660
+This is something where the data is physically written to.
+
+7
+00:00:35.920 --> 00:00:40.460
+Then we might have a logical drive on top of this, for example, because of a rate array
+
+8
+00:00:40.460 --> 00:00:41.420
+or volume manager.
+
+9
+00:00:41.700 --> 00:00:47.280
+So this here, from our perspective, usually is the drive, if you wish.
+
+10
+00:00:47.700 --> 00:00:52.080
+So there's a drive here, logical, physical drive.
+
+11
+00:00:52.300 --> 00:00:53.520
+Then we have a file system.
+
+12
+00:00:53.520 --> 00:00:55.920
+that is provided to us by the operating system,
+
+13
+00:00:56.820 --> 00:01:00.300
+and then there must be some magical component in between,
+
+14
+00:01:00.620 --> 00:01:03.040
+that somehow maps the application data
+
+15
+00:01:03.040 --> 00:01:04.580
+down to the file system.
+
+16
+00:01:04.900 --> 00:01:07.300
+So the question is now, how do we do this?
+
+17
+00:01:07.720 --> 00:01:09.680
+And it's not so obvious how to do this,
+
+18
+00:01:09.820 --> 00:01:11.700
+because there are design choices that we can do.
+
+19
+00:01:11.820 --> 00:01:13.100
+For example, the first question is,
+
+20
+00:01:13.220 --> 00:01:14.960
+should we use the file system at all?
+
+21
+00:01:15.380 --> 00:01:18.560
+Because we could say, we want to forget the file system,
+
+22
+00:01:18.700 --> 00:01:22.100
+instead we want to directly access the disk drive.
+
+23
+00:01:23.520 --> 00:01:25.460
+Historically, this is what database systems have done.
+
+24
+00:01:25.860 --> 00:01:28.600
+As well, they have preferred not to use a file system,
+
+25
+00:01:28.720 --> 00:01:31.140
+but instead directly access the drive,
+
+26
+00:01:31.340 --> 00:01:33.020
+because this gives you more control.
+
+27
+00:01:33.220 --> 00:01:35.780
+So you have more fine-grained control,
+
+28
+00:01:36.560 --> 00:01:37.600
+how data is stored.
+
+29
+00:01:38.140 --> 00:01:40.960
+But in the long run, people stopped doing this
+
+30
+00:01:40.960 --> 00:01:43.260
+because for administrator, it's a pain
+
+31
+00:01:43.260 --> 00:01:46.300
+if the database system uses raw disk access
+
+32
+00:01:46.300 --> 00:01:47.340
+instead of file systems,
+
+33
+00:01:47.780 --> 00:01:49.440
+backups much more difficult and so on.
+
+34
+00:01:49.500 --> 00:01:51.820
+So people went away from doing this over the time.
+
+35
+00:01:53.520 --> 00:01:56.920
+So we can, we have degrees of freedom
+
+36
+00:01:56.920 --> 00:01:59.220
+in how we map application data to the drive
+
+37
+00:01:59.220 --> 00:02:01.540
+and we want to look at different aspects of this.
+
+38
+00:02:01.740 --> 00:02:04.200
+So this is what this part is all about.
+
+39
+00:02:05.980 --> 00:02:08.240
+Now when talking about storage,
+
+40
+00:02:08.460 --> 00:02:11.360
+we have of course a number of different requirements
+
+41
+00:02:11.360 --> 00:02:12.760
+that we want to satisfy.
+
+42
+00:02:13.380 --> 00:02:17.560
+First one is we want data independence.
+
+43
+00:02:18.060 --> 00:02:20.060
+Now what does this mean data independence?
+
+44
+00:02:20.060 --> 00:02:26.640
+So we want to decouple the data and the physical storage.
+
+45
+00:02:26.780 --> 00:02:28.180
+Now why do we want to do this?
+
+46
+00:02:28.600 --> 00:02:35.980
+First, what is absolutely important here is, we do not want that the application knows
+
+47
+00:02:35.980 --> 00:02:37.700
+how the data is physically stored.
+
+48
+00:02:37.960 --> 00:02:44.140
+So basically my application here, we write it once and then I store it to my disk.
+
+49
+00:02:44.460 --> 00:02:49.900
+And then later I can change my disk, for example I can buy new disks or I can for example
+
+50
+00:02:50.060 --> 00:02:56.260
+migrate from a rotating disk to SSDs or can introduce a rate array or might even
+
+51
+00:02:56.260 --> 00:03:01.340
+introduce network components. Its application should be totally unaffected
+
+52
+00:03:01.340 --> 00:03:06.000
+by this. The application logic has to be decoupled from physical storage. This is a
+
+53
+00:03:06.000 --> 00:03:11.000
+very good property because this gives us a freedom to reorganize my
+
+54
+00:03:11.000 --> 00:03:17.600
+hardware as it makes sense if data grows or excess patterns change without doing
+
+55
+00:03:17.600 --> 00:03:24.080
+anything with the application. So data independence means we shield the user or I should say the
+
+56
+00:03:24.080 --> 00:03:28.540
+application of the real user because real users usually don't even allow to access the database
+
+57
+00:03:28.540 --> 00:03:33.560
+but we shield the application from physical storage. This we call data independence.
+
+58
+00:03:36.260 --> 00:03:43.000
+Next point here is scalability. We want of course that the database system scales to nearly
+
+59
+00:03:43.000 --> 00:03:46.520
+arbitrary data sizes. Of course we can only say nearly because at some point
+
+60
+00:03:46.520 --> 00:03:51.460
+we will not be able to scale, but if for example you can address 2 to the power of 64
+
+61
+00:03:52.840 --> 00:03:58.800
+bytes, this is a reasonably large number. So this is an okay size. So this is usually what
+
+62
+00:03:58.800 --> 00:04:08.380
+we consider large enough. So we want to scale to very large sizes and still even though we do this,
+
+63
+00:04:08.380 --> 00:04:10.060
+we want, of course, fast access.
+
+64
+00:04:12.360 --> 00:04:16.000
+So this means we must have a way, for example,
+
+65
+00:04:16.200 --> 00:04:19.980
+to jump to an arbitrary data element in my data.
+
+66
+00:04:20.260 --> 00:04:25.900
+So implicitly, this means we need some mechanism to say,
+
+67
+00:04:26.080 --> 00:04:28.220
+okay, please retrieve this individual value.
+
+68
+00:04:28.380 --> 00:04:30.740
+So we take one individual data item,
+
+69
+00:04:30.900 --> 00:04:32.840
+and we want to be able to retrieve this
+
+70
+00:04:32.840 --> 00:04:34.660
+without reading everything else.
+
+71
+00:04:35.520 --> 00:04:38.720
+because if you would know that you only need
+
+72
+00:04:38.720 --> 00:04:40.220
+sequential access to your data,
+
+73
+00:04:40.400 --> 00:04:42.580
+you could make different implementation choices
+
+74
+00:04:42.580 --> 00:04:45.380
+than if you need to be able to jump
+
+75
+00:04:45.380 --> 00:04:46.560
+in the middle of the data.
+
+76
+00:04:46.800 --> 00:04:49.180
+But we assume that you must jump
+
+77
+00:04:49.180 --> 00:04:50.060
+into the middle of the data,
+
+78
+00:04:50.180 --> 00:04:52.760
+which is clear why you need this.
+
+79
+00:04:52.860 --> 00:04:54.560
+Because if somebody says something like this,
+
+80
+00:04:54.680 --> 00:04:57.200
+if you say, I've retrieved something from my database,
+
+81
+00:04:57.840 --> 00:05:00.040
+select star from R,
+
+82
+00:05:07.740 --> 00:05:12.060
+where key is equal to 1, 2, 3,
+
+83
+00:05:12.180 --> 00:05:14.420
+then of course we expect that this query here is fast.
+
+84
+00:05:14.880 --> 00:05:17.100
+So we expect that we get an answer to this
+
+85
+00:05:18.760 --> 00:05:20.960
+in a few milliseconds at most,
+
+86
+00:05:21.300 --> 00:05:22.560
+hopefully faster.
+
+87
+00:05:23.020 --> 00:05:26.320
+And this means we need to definitely leave random access
+
+88
+00:05:26.320 --> 00:05:28.220
+to data as we use the boxes.
+
+89
+00:05:30.040 --> 00:05:32.620
+Of course, we also want to be able to update arbitrary data.
+
+90
+00:05:33.620 --> 00:05:37.820
+Again, this rules out some storage alternatives.
+
+91
+00:05:37.980 --> 00:05:39.300
+For example, what you could do is,
+
+92
+00:05:40.000 --> 00:05:41.820
+we don't do this, but what you could do is
+
+93
+00:05:41.820 --> 00:05:42.980
+you could take all your data,
+
+94
+00:05:43.120 --> 00:05:46.120
+compress it very tightly into a nice condensed format.
+
+95
+00:05:46.560 --> 00:05:48.960
+This has, of course, also advantages if you do this.
+
+96
+00:05:49.620 --> 00:05:52.600
+But in general, we don't want to do this.
+
+97
+00:05:52.780 --> 00:05:54.540
+At least not everything in one big block,
+
+98
+00:05:54.700 --> 00:05:57.340
+because otherwise, individual data access is difficult
+
+99
+00:05:57.340 --> 00:06:01.500
+and updates individual data items is usually not possible.
+
+100
+00:06:01.820 --> 00:06:05.520
+So therefore, this rules out some different implementations.
+
+101
+00:06:06.640 --> 00:06:09.240
+Okay, the third big part is reliability.
+
+102
+00:06:10.260 --> 00:06:13.400
+So once we have written something into the database,
+
+103
+00:06:13.620 --> 00:06:16.740
+and it's committed, we must never lose this again.
+
+104
+00:06:17.220 --> 00:06:20.100
+So the database is supposed to be a very, very durable
+
+105
+00:06:20.100 --> 00:06:21.740
+and reliable storage medium.
+
+106
+00:06:22.020 --> 00:06:24.400
+So if you write, you will never lose this.
+
+107
+00:06:24.400 --> 00:06:30.100
+even if we have a power failure, hardware crash, software failure.
+
+108
+00:06:30.700 --> 00:06:35.940
+So even error situations we must survive and we must never lose data.
+
+109
+00:06:36.440 --> 00:06:41.820
+So these are the requirements. And of course we have some more, but these are the three most important requirements.
+
+110
+00:06:43.160 --> 00:06:46.900
+And now we must think about how do we get all this.
+
+111
+00:06:48.440 --> 00:06:57.640
+Now what we could do is, we could just write one big program and say, okay this is my database and
+
+112
+00:06:57.640 --> 00:07:03.180
+then just every time we do something when we go to disk, we read something from disk or we write
+
+113
+00:07:03.180 --> 00:07:07.360
+something to disk, then we think about all these problems that we might have and then we hardcode
+
+114
+00:07:07.360 --> 00:07:15.500
+them in this moment. This is not desirable. You should not do this. So implementing everything
+
+115
+00:07:16.900 --> 00:07:21.560
+here in the slides because it's implementing it in bare metal, so directly on the device,
+
+116
+00:07:22.260 --> 00:07:30.840
+is very difficult and also is not desirable because we want to be able to maintain and evolve the
+
+117
+00:07:30.840 --> 00:07:41.500
+system. Like you see hardware changes over time. In the past, everybody had a hard disk and then
+
+118
+00:07:41.500 --> 00:07:43.440
+In the case, same kind of case, some component,
+
+119
+00:07:43.680 --> 00:07:46.460
+and then perhaps a cache, and then cache.
+
+120
+00:07:47.100 --> 00:07:49.140
+I can't read this.
+
+121
+00:07:49.780 --> 00:07:51.780
+Just write a C for cache.
+
+122
+00:07:52.260 --> 00:07:54.920
+Then you have a cache, and then some other parts up top.
+
+123
+00:07:55.040 --> 00:07:57.680
+So this is how traditionally the system was.
+
+124
+00:07:58.740 --> 00:08:00.560
+Then over time, hardware changed.
+
+125
+00:08:00.880 --> 00:08:02.840
+For nowadays, for example, and very frequently,
+
+126
+00:08:03.020 --> 00:08:04.480
+you don't have a hard disk anymore.
+
+127
+00:08:04.680 --> 00:08:05.520
+You have an SSD.
+
+128
+00:08:07.260 --> 00:08:10.700
+And you could say SSD, hard disk, all the same.
+
+129
+00:08:11.500 --> 00:08:15.080
+It's not completely true. These are very similar, but they're not the same.
+
+130
+00:08:15.260 --> 00:08:17.960
+SSD has different performance characteristics,
+
+131
+00:08:18.100 --> 00:08:21.720
+and you might want to change something in this system if you have an SSD.
+
+132
+00:08:22.200 --> 00:08:26.320
+But nevertheless, you want to be able to replace one hardware technology with the other
+
+133
+00:08:26.320 --> 00:08:28.600
+without rewriting the rest of the stack.
+
+134
+00:08:28.800 --> 00:08:33.380
+Because on top of this, we might have something here like query processing and whatever.
+
+135
+00:08:33.980 --> 00:08:38.840
+And we don't want to rewrite everything just because I switched from hard disks to SSD.
+
+136
+00:08:39.440 --> 00:08:41.260
+So we must decouple them somehow.
+
+137
+00:08:42.500 --> 00:08:48.560
+And the traditional way to do this, and actually it's a pretty good idea to do this, is to
+
+138
+00:08:48.560 --> 00:08:50.200
+use a so-called layer architecture.
+
+139
+00:08:50.460 --> 00:08:58.040
+So which means you cut your database into different layers of functionality, and each
+
+140
+00:08:58.040 --> 00:09:06.420
+layer implements some specific feature, and the layers only talk to each other, only talk
+
+141
+00:09:06.420 --> 00:09:08.160
+to layers that are directly next to each other.
+
+142
+00:09:08.160 --> 00:09:14.040
+So you have here layer 1, so you have layer 2, and you have layer 3, and so on.
+
+143
+00:09:14.300 --> 00:09:20.020
+And we say that these two talk to each other, and these two talk to each other,
+
+144
+00:09:20.460 --> 00:09:23.060
+but layer 3 does not talk to layer 1.
+
+145
+00:09:24.120 --> 00:09:28.480
+And if you build such an architecture, you can replace layers relatively easily.
+
+146
+00:09:28.640 --> 00:09:34.920
+Because if I, for example, replace my layer L1 with a new implementation, let's call it L1',
+
+147
+00:09:34.920 --> 00:09:40.620
+we for example decided that hard disks are old-fashioned, we no longer want to do this,
+
+148
+00:09:40.720 --> 00:09:46.920
+we do everything in SSDs and because we know that for example that SSDs only support block
+
+149
+00:09:46.920 --> 00:09:53.920
+arrays then so we cannot erase an arbitrary small piece of data but just blocks, therefore we change
+
+150
+00:09:53.920 --> 00:09:59.500
+some implementation things. We might want to do this and if we do this we have to change something
+
+151
+00:09:59.500 --> 00:10:04.380
+in L2 because L2 now must be aware of this property, but L3 is unaffected.
+
+152
+00:10:05.040 --> 00:10:10.440
+This means that changes don't evolve through the whole code base, but just to neighboring layers.
+
+153
+00:10:10.620 --> 00:10:15.380
+This is a very good property. So a layer architecture is very frequently a good idea.
+
+154
+00:10:15.840 --> 00:10:22.320
+So if you can do this, writing systems in layers is a good thing. Now you might know a similar layer
+
+155
+00:10:22.320 --> 00:10:26.740
+architecture, for example, from the network stack, which also builds pieces upon pieces.
+
+156
+00:10:26.740 --> 00:10:31.560
+Like on the lowest layer you might have something like IPs and on top of this you might have
+
+157
+00:10:31.560 --> 00:10:33.240
+UDP or TCP or this kind of thing.
+
+158
+00:10:33.820 --> 00:10:38.060
+On top of this you have applications so you stack them on top of each other and you do
+
+159
+00:10:38.060 --> 00:10:39.560
+it similar for a database system.
+
+160
+00:10:40.280 --> 00:10:40.360
+Okay?
+
+161
+00:10:42.020 --> 00:10:44.300
+Now the question is which layers do we have?
+
+162
+00:10:46.780 --> 00:10:52.300
+This is not always the same with different systems cut it somewhat differently but as
+
+163
+00:10:52.300 --> 00:10:56.460
+you will see on the slide because it's just an overview but on the next slide
+
+164
+00:10:57.380 --> 00:11:01.200
+many systems tend to have a similar layer architecture not exactly the same
+
+165
+00:11:01.200 --> 00:11:06.020
+but very similar but first let's look at a very simplified layer architecture
+
+166
+00:11:06.020 --> 00:11:10.800
+this just gives you an idea what we have. Then we say on the lowest level here of
+
+167
+00:11:10.800 --> 00:11:16.300
+course we have to see this is this cylinder here this is my physical
+
+168
+00:11:16.300 --> 00:11:19.660
+storage at some point of course I have a right data to some physical medium
+
+169
+00:11:20.200 --> 00:11:28.080
+SSD or hard disk. Now on top of this we have the storage layer. So this is what we are
+
+170
+00:11:28.080 --> 00:11:32.500
+currently looking at in the lecture. So storage layer is what we are interested in. And as a
+
+171
+00:11:34.120 --> 00:11:40.980
+component there is we have a database buffer which means the database buffers data in memory instead
+
+172
+00:11:40.980 --> 00:11:46.180
+of going to disk because of course memory is much faster than disk. So we buffer in memory and we
+
+173
+00:11:46.180 --> 00:11:51.680
+talk to the hardware below us, we orchestrate the read and write from
+
+174
+00:11:51.680 --> 00:11:58.420
+physical storage. So this is the functionality of the storage layer and the storage layer
+
+175
+00:11:58.420 --> 00:12:04.740
+exposes to the next layer pages. As you hopefully remember from your introduction
+
+176
+00:12:04.740 --> 00:12:10.220
+to databases, that databases tend to store data organized in pages. We of
+
+177
+00:12:10.220 --> 00:12:14.680
+course we also repeat this in the lecture, but so we have a fixed sized page that
+
+178
+00:12:17.320 --> 00:12:23.080
+here and using this page as the next layer, so called access layer, now manages
+
+179
+00:12:23.080 --> 00:12:29.300
+records which means individual tuples and access pairs, so index structures and
+
+180
+00:12:29.300 --> 00:12:34.200
+extents and these kind of things. This is what the access layer does and the
+
+181
+00:12:34.200 --> 00:12:39.360
+access layer exposes to the next higher layer records. The access layer
+
+182
+00:12:39.360 --> 00:12:43.900
+says, okay we have a set of records you can read this or you can write this and
+
+183
+00:12:43.900 --> 00:13:00.280
+And sitting on top of this we have the query layer. So the query layer now this runs queries, so performance translates SQL into some executable form, performance optimization and so on. And this runs this query. And this just thinks in records.
+
+184
+00:13:01.360 --> 00:13:06.200
+And then of course, to expose again one step piers to the application.
+
+185
+00:13:06.540 --> 00:13:10.660
+The interface of the application is now declarative queries and set of records.
+
+186
+00:13:10.900 --> 00:13:14.320
+So we get declarative queries in and we get sets of records out.
+
+187
+00:13:15.620 --> 00:13:18.920
+So this is a very simple layer architecture.
+
+188
+00:13:19.180 --> 00:13:22.580
+We say storage is everything that talks about pages.
+
+189
+00:13:23.360 --> 00:13:25.940
+Access layer does everything that talks about records.
+
+190
+00:13:26.100 --> 00:13:29.820
+And query layer talks about queries and sets of records as results.
+
+191
+00:13:30.400 --> 00:13:36.000
+a bit simplified but this makes it easy to understand. And now if you look at this
+
+192
+00:13:36.000 --> 00:13:40.740
+layer architecture closer you see that the query layer knows nothing, at least
+
+193
+00:13:40.740 --> 00:13:44.640
+in the first approximation, knows nothing about the storage layer. So if we should
+
+194
+00:13:44.640 --> 00:13:50.500
+decide to say, oh those pages, we don't want to do pages, instead let's do, what
+
+195
+00:13:50.500 --> 00:13:54.960
+could we actually do? I mean everybody basically does pages but we could decide
+
+196
+00:13:55.960 --> 00:14:13.260
+say we use instead we just map records in memory. So if you decide to do this we
+
+197
+00:14:13.260 --> 00:14:20.600
+don't do a paging anymore we just directly map physical record in my
+
+198
+00:14:21.420 --> 00:14:26.360
+memory for example using a map or something similar techniques so if you
+
+199
+00:14:26.360 --> 00:14:30.140
+want to do this I'm not saying it's a good idea to do this here but you could
+
+200
+00:14:30.140 --> 00:14:34.280
+you could implement it like this and then we would have to change the excess
+
+201
+00:14:34.280 --> 00:14:37.600
+layer because of course excess layer would be affected but the query layer
+
+202
+00:14:37.600 --> 00:14:41.760
+knows nothing about this so clearly it doesn't care yeah so this means we can
+
+203
+00:14:41.760 --> 00:14:45.900
+do even such a drastic change and this is a drastic change we can do such a
+
+204
+00:14:45.900 --> 00:14:50.080
+drastic change without rewriting the whole system we just have to adjust some
+
+205
+00:14:50.780 --> 00:14:55.780
+This is the benefits of using a layer architecture.
+
+206
+00:14:58.160 --> 00:15:03.620
+Now what we have seen is that layers can be characterized by the data items that they manipulate.
+
+207
+00:15:03.960 --> 00:15:07.180
+We said the lowest layer talks about pages, next one about records and so on.
+
+208
+00:15:08.460 --> 00:15:11.600
+A lower layer offers functionalities to the next higher layer.
+
+209
+00:15:12.040 --> 00:15:17.840
+They build more and more high-level constructs based upon the lower layers.
+
+210
+00:15:17.840 --> 00:15:22.280
+and this means that each layer has only limited complexity.
+
+211
+00:15:22.480 --> 00:15:25.400
+And this is good, because we want that layers are something
+
+212
+00:15:25.400 --> 00:15:26.960
+that we can think about what they're doing,
+
+213
+00:15:27.080 --> 00:15:28.920
+we understand them, we can change them.
+
+214
+00:15:29.040 --> 00:15:30.340
+Changing is a pretty important thing.
+
+215
+00:15:30.700 --> 00:15:32.520
+Database systems have to evolve over time
+
+216
+00:15:32.520 --> 00:15:36.380
+because of use cases change, hardware change, and so on.
+
+217
+00:15:36.480 --> 00:15:37.780
+We have to evolve the system,
+
+218
+00:15:37.920 --> 00:15:40.200
+and therefore we want to keep the complexity manageable.
+
+219
+00:15:41.840 --> 00:15:44.340
+Yeah, it's very roughly what we've seen is
+
+220
+00:15:44.340 --> 00:15:45.900
+we start with a physical layer,
+
+221
+00:15:47.820 --> 00:15:57.720
+Now, some talking to the rating system, then on top of this we have a low level functionality, like records, then high level we have queries.
+
+222
+00:15:58.460 --> 00:15:58.520
+Okay?
+
+223
+00:15:59.380 --> 00:16:06.280
+Now, this architecture in general makes sense, so you want to build it roughly like this, but the architecture is too simple.
+
+224
+00:16:06.640 --> 00:16:08.200
+In reality, you need more components.
+
+225
+00:16:09.680 --> 00:16:13.420
+Therefore, we now look at a bit more detailed architecture.
+
+226
+00:16:13.420 --> 00:16:19.320
+is still somewhat simplified, but it's a bit more detailed architecture that really looks
+
+227
+00:16:19.320 --> 00:16:26.920
+like existing systems, roughly. Okay, so this is a more detailed architecture. Again, we start from
+
+228
+00:16:26.920 --> 00:16:36.420
+the bottom, so we start with a physical storage, external storage, and now on top of this, we have
+
+229
+00:16:36.420 --> 00:16:41.460
+the file interface.
+
+230
+00:16:42.240 --> 00:16:45.160
+And we say the access from the outside,
+
+231
+00:16:45.360 --> 00:16:48.600
+so what comes in is, somebody says I want to read block K
+
+232
+00:16:48.600 --> 00:16:50.280
+and I want to write block K.
+
+233
+00:16:50.900 --> 00:16:53.180
+So I want to read and write something.
+
+234
+00:16:54.360 --> 00:16:57.160
+And now this must then be mapped,
+
+235
+00:16:57.840 --> 00:17:00.120
+if we really talk about the physical system,
+
+236
+00:17:00.260 --> 00:17:04.420
+this has to be mapped to things like track and cylinder.
+
+237
+00:17:06.420 --> 00:17:12.860
+what this really is because most of you probably don't even use a rotating disk
+
+238
+00:17:12.860 --> 00:17:18.340
+anymore at home. Nowadays there's little reason to do this. If you
+
+239
+00:17:18.340 --> 00:17:24.500
+think about how a rotating disk look like, we had a... so this is a disk and then of
+
+240
+00:17:24.500 --> 00:17:32.780
+course this rotates here, for example like this, we rotate and then we had a read-write head.
+
+241
+00:17:34.360 --> 00:17:44.520
+So this is for example here. Then we had a right head that can move in and out.
+
+242
+00:17:46.720 --> 00:17:51.460
+Rotating of course around this here. So this is if you rotate around this.
+
+243
+00:17:52.420 --> 00:18:00.200
+And then I didn't place a rotation point right. So we can move the
+
+244
+00:18:00.200 --> 00:18:04.500
+disk get in and out even though my physics here doesn't work. I should have moved the points somewhere else.
+
+245
+00:18:06.600 --> 00:18:11.280
+And this means if you want to read or write something from the disk, we have to tell the disk,
+
+246
+00:18:11.360 --> 00:18:18.360
+okay, how far in and out are you? And this is what we usually call a track. And then the track,
+
+247
+00:18:18.480 --> 00:18:27.440
+so one way around here, this is then cut into segments and so on. So we have different ways to address this disk.
+
+248
+00:18:28.680 --> 00:18:32.500
+Okay, if you want to really talk to the physical device, we have to understand this.
+
+249
+00:18:33.540 --> 00:18:37.800
+And now, usually nowadays we don't want to do this first because you have to understand
+
+250
+00:18:37.800 --> 00:18:40.620
+how the alpha looks like and who wants to do this.
+
+251
+00:18:41.140 --> 00:18:43.900
+And then we might have, as I said, we might have an SSD instead.
+
+252
+00:18:44.160 --> 00:18:49.820
+And even nowadays, even rotating disks have moved away from using this track cylinder
+
+253
+00:18:49.820 --> 00:18:53.860
+addressing tool instead, or logically block addressing and so on.
+
+254
+00:18:53.860 --> 00:19:02.480
+but yeah so if you extract away from all this nevertheless we somehow have to map my my conceptual
+
+255
+00:19:02.480 --> 00:19:06.720
+block so i say i have a file i want to read a block in a file and must maps this to physical
+
+256
+00:19:06.720 --> 00:19:11.440
+storage device somehow yeah and for this we also need some data structures you see as mentioned
+
+257
+00:19:11.440 --> 00:19:17.220
+here we like we need a free space inventory so we must know okay what on the disk is still free
+
+258
+00:19:17.220 --> 00:19:18.980
+and we need to extend tables and so on.
+
+259
+00:19:19.680 --> 00:19:27.520
+Now, so this is a very low layer and you might wish to say, I don't care about file system
+
+260
+00:19:29.180 --> 00:19:34.840
+and I just delegate this whole problem here to the operating system and then somebody
+
+261
+00:19:34.840 --> 00:19:36.180
+else does this problem for me.
+
+262
+00:19:36.700 --> 00:19:41.700
+Then still all these interfaces exist but the operating system can do this for me and
+
+263
+00:19:41.700 --> 00:19:44.000
+then I just don't care, just go to the next file level.
+
+264
+00:19:45.360 --> 00:19:50.560
+This is possible, definitely, but you have to realize that you, and it's not only possible,
+
+265
+00:19:50.680 --> 00:19:52.400
+but most systems in fact do this.
+
+266
+00:19:52.680 --> 00:19:57.460
+Most systems say, I don't want to mess with this physical storage, I delegate this operating
+
+267
+00:19:57.460 --> 00:19:57.900
+system.
+
+268
+00:19:58.860 --> 00:20:01.640
+But of course you lose control if you do this.
+
+269
+00:20:02.600 --> 00:20:04.520
+And now why would you care?
+
+270
+00:20:05.760 --> 00:20:08.880
+Think back about this example that I did of a rotating disk.
+
+271
+00:20:10.000 --> 00:20:12.920
+So this is my rotating disk, it is supposed to be a circle.
+
+272
+00:20:13.760 --> 00:20:15.960
+And so this is my rotation point.
+
+273
+00:20:16.500 --> 00:20:18.660
+And now this rotates here with a fixed speed.
+
+274
+00:20:18.920 --> 00:20:25.560
+So like for example, I don't know, something like 6300 rotations per minute or something.
+
+275
+00:20:26.400 --> 00:20:30.420
+And so we have fixed rotation speed.
+
+276
+00:20:30.840 --> 00:20:35.960
+And then we have a head that can reach for example either here or here.
+
+277
+00:20:35.960 --> 00:20:37.700
+That's because we can move it in and out.
+
+278
+00:20:39.640 --> 00:20:45.420
+And clearly what you quickly realize is that if you read something from the outer rim,
+
+279
+00:20:46.040 --> 00:20:49.100
+this is faster than if you read it from the inner part.
+
+280
+00:20:49.580 --> 00:20:50.940
+Now, why is this the case?
+
+281
+00:20:51.800 --> 00:20:54.400
+Because the rotation speed of the disk is fixed.
+
+282
+00:20:54.840 --> 00:20:57.200
+So we have a fixed number of rotations per minute.
+
+283
+00:20:59.200 --> 00:21:04.760
+And this means that on the outer rim, we pass a longer track here.
+
+284
+00:21:06.880 --> 00:21:11.080
+distance, so the track on the outer rim is longer than the track on the inner rim.
+
+285
+00:21:12.340 --> 00:21:17.120
+This just means that we see more track per second, so to say.
+
+286
+00:21:17.280 --> 00:21:20.720
+So we have a higher speed relative to the surface
+
+287
+00:21:20.720 --> 00:21:25.100
+on the outer part than on the inner part. This means if data is placed
+
+288
+00:21:25.100 --> 00:21:28.420
+on the outer part, you can read it faster than on the other part.
+
+289
+00:21:29.440 --> 00:21:33.300
+And sometimes you might care about this. For example, if you want to win a
+
+290
+00:21:33.300 --> 00:21:39.340
+benchmark. If you look at the numbers, at least in the past, when nowadays people are using
+
+291
+00:21:39.340 --> 00:21:46.060
+SSDs, but in the past, if you look at what people did in the well-known TPCH benchmark,
+
+292
+00:21:46.380 --> 00:21:51.260
+you can look it up if you search for this, you can find specification like how much hardware
+
+293
+00:21:51.260 --> 00:21:58.140
+they use and so on. If you look at this, you realize that people bought far more drives
+
+294
+00:21:58.140 --> 00:21:59.200
+than they needed.
+
+295
+00:21:59.980 --> 00:22:05.340
+Let's say if they had needed one terabyte disk space for the benchmark,
+
+296
+00:22:05.820 --> 00:22:09.860
+they bought for example five or ten terabyte disk space.
+
+297
+00:22:10.080 --> 00:22:12.280
+Now you could ask yourself why do this?
+
+298
+00:22:12.400 --> 00:22:14.800
+So why should we buy more disks than we need?
+
+299
+00:22:14.940 --> 00:22:15.860
+Because this costs money.
+
+300
+00:22:16.260 --> 00:22:20.180
+Yes, it costs money, but if your disk is nearly empty,
+
+301
+00:22:20.600 --> 00:22:22.020
+or only partially full,
+
+302
+00:22:22.220 --> 00:22:25.600
+you can put all your data on the outer part of the disk,
+
+303
+00:22:26.740 --> 00:22:28.120
+and not on the inner part.
+
+304
+00:22:28.300 --> 00:22:31.480
+And you want to do this because the outer part is faster than the inner part.
+
+305
+00:22:31.980 --> 00:22:34.840
+It also brings you a performance advantage to do this.
+
+306
+00:22:35.160 --> 00:22:38.040
+So having empty disks is a good idea from a performance perspective.
+
+307
+00:22:38.260 --> 00:22:39.620
+At least if you don't care about money.
+
+308
+00:22:39.880 --> 00:22:42.800
+But if you want to win a benchmark, you usually don't care about money that much.
+
+309
+00:22:42.940 --> 00:22:44.480
+You just want to be fast.
+
+310
+00:22:45.020 --> 00:22:46.880
+Therefore, this kind of control is attractive.
+
+311
+00:22:48.240 --> 00:22:52.400
+Okay, so this is a very low-end layer here.
+
+312
+00:22:52.580 --> 00:22:54.000
+It might be in the operating system.
+
+313
+00:22:55.600 --> 00:23:00.460
+talk about that really all database systems have now is a so-called database buffer.
+
+314
+00:23:01.180 --> 00:23:05.380
+So what the buffer does is my interface is I want to access a page J or want to release
+
+315
+00:23:05.380 --> 00:23:07.100
+a page J. So this is my interface.
+
+316
+00:23:07.360 --> 00:23:09.980
+Somebody says I need a certain page, please give it to me.
+
+317
+00:23:10.260 --> 00:23:13.560
+And at some point of course you say I'm done with the page, you can have it back.
+
+318
+00:23:15.120 --> 00:23:22.140
+And so therefore my interface to the outside here is a page or alternatively you might
+
+319
+00:23:22.140 --> 00:23:29.380
+In addition, we might also want to know something about segments. We talk about segments later, but primarily perhaps pages.
+
+320
+00:23:29.680 --> 00:23:35.440
+We need pages. Of course, this layer maps the page to the block.
+
+321
+00:23:36.880 --> 00:23:40.580
+If somebody says, please read page number,
+
+322
+00:23:40.580 --> 00:23:47.740
+So somebody says read page number this one here and then this is internally mapped into
+
+323
+00:23:49.200 --> 00:23:58.740
+file 7 block 12. So this is how this mapping works. And then of course the operating system
+
+324
+00:23:58.740 --> 00:24:05.000
+can read this from this file and this block and then you have it. Okay and internally the buffer
+
+325
+00:24:05.000 --> 00:24:12.340
+manager needs a page table and a block map to know which page to have a memory, where
+
+326
+00:24:12.340 --> 00:24:15.300
+is it and so on. How does this map to the page and this kind of structures.
+
+327
+00:24:16.780 --> 00:24:23.600
+If you go to the next level, this is now the record access layer. Here the interface is
+
+328
+00:24:23.600 --> 00:24:31.600
+okay I want to read a record or want to write a record and so this layer here
+
+329
+00:24:31.600 --> 00:24:39.920
+maps physical records to pages and segments okay so a segment first we talk
+
+330
+00:24:39.920 --> 00:24:43.880
+about sequence data first approximation a segment is like like a logical file so
+
+331
+00:24:43.880 --> 00:24:50.960
+like a logical file in the database this is what we call a segment okay and so we
+
+332
+00:24:50.960 --> 00:24:56.660
+map physical records to pages and we do this also again using data structures
+
+333
+00:24:56.660 --> 00:25:01.060
+like free space inventory page index and so on so this tells us okay which
+
+334
+00:25:02.140 --> 00:25:06.640
+which segments sit to sit where and so on where do a free space where can I
+
+335
+00:25:06.640 --> 00:25:11.160
+insert something so this is information we have in the record access and here
+
+336
+00:25:11.160 --> 00:25:15.940
+we are talking about physical records physical record means basically so this
+
+337
+00:25:18.920 --> 00:25:20.060
+This is bytes.
+
+338
+00:25:22.200 --> 00:25:23.460
+We have some bytes.
+
+339
+00:25:25.100 --> 00:25:28.040
+This byte block here has a number.
+
+340
+00:25:28.460 --> 00:25:32.420
+Again, let's call this record number 456.
+
+341
+00:25:32.760 --> 00:25:34.320
+This is now physical record.
+
+342
+00:25:35.320 --> 00:25:40.240
+This is what we manage here. On top of this, we have the record interface.
+
+343
+00:25:40.500 --> 00:25:43.060
+This one talks about logical records.
+
+344
+00:25:43.060 --> 00:25:51.320
+Okay, so now here we say for example I have a student and a student here,
+
+345
+00:25:53.860 --> 00:26:06.480
+a student record and the key of this student here might be 123. Okay, and then of course a name and
+
+346
+00:26:06.480 --> 00:26:08.480
+and so on.
+
+347
+00:26:10.140 --> 00:26:12.240
+Okay, so now this is a logical record.
+
+348
+00:26:13.100 --> 00:26:14.480
+And the record interface maps
+
+349
+00:26:15.320 --> 00:26:16.920
+logical records to physical records.
+
+350
+00:26:17.080 --> 00:26:18.600
+So the interface to the outside here
+
+351
+00:26:18.600 --> 00:26:20.460
+now is coming from top
+
+352
+00:26:20.460 --> 00:26:22.420
+is a logical
+
+353
+00:26:22.420 --> 00:26:24.400
+record ID if you have this or a key for
+
+354
+00:26:24.400 --> 00:26:26.520
+example, there is some way to describe this
+
+355
+00:26:26.520 --> 00:26:28.500
+record. And then this is
+
+356
+00:26:28.500 --> 00:26:30.420
+mapped to a physical record and the
+
+357
+00:26:30.420 --> 00:26:31.980
+data structures here that we have here
+
+358
+00:26:31.980 --> 00:26:34.300
+are now access
+
+359
+00:26:34.300 --> 00:26:39.220
+path. Now access path is the first approximation in index, for example B tree.
+
+360
+00:26:39.700 --> 00:26:45.020
+So access path and we have a physical schema so we know okay how is this record
+
+361
+00:26:45.020 --> 00:26:48.640
+really stored physically. So this is what we have and then we map it to the next
+
+362
+00:26:48.640 --> 00:26:53.860
+lower level. And then on top of this record interface we have the query
+
+363
+00:26:53.860 --> 00:27:00.440
+interface and now this one here talks about really selects for example to get
+
+364
+00:27:00.440 --> 00:27:14.400
+SQL as input, where records output, for example, select star from students, where
+
+365
+00:27:24.740 --> 00:27:28.260
+where studentid equals 123.
+
+366
+00:27:28.700 --> 00:27:32.660
+So this is the query interface in SQL.
+
+367
+00:27:34.180 --> 00:27:37.520
+This is then mapped down to the logical record,
+
+368
+00:27:37.700 --> 00:27:39.620
+down to the physical record with the next layer.
+
+369
+00:27:39.620 --> 00:27:45.620
+and so on. And so the QnA interface exposes to the outside relations and views, so we tell the
+
+370
+00:27:45.620 --> 00:27:51.860
+outside, oh we have the student relation and so on, and we map queries on these relations and views
+
+371
+00:27:51.860 --> 00:27:57.860
+down to logical record access. And for this we need here as data structures the logical schema,
+
+372
+00:27:57.960 --> 00:28:01.380
+so we must know which relation exists, which attributes do they have, and so on, this logical
+
+373
+00:28:01.380 --> 00:28:07.080
+schema, and integrity constraints, like what is the primary key, do we have non-line constraints,
+
+374
+00:28:07.080 --> 00:28:12.100
+and so on. So this is a query layer and then on the very top of course we have the application
+
+375
+00:28:12.100 --> 00:28:16.060
+and the application just things in relation to views and SQL. So there is nothing about the
+
+376
+00:28:16.060 --> 00:28:22.820
+implementation. So this is a bit more detailed, still abstracting away, but this is roughly how
+
+377
+00:28:23.720 --> 00:28:28.580
+a database system is organized. And indeed most database systems look roughly like this.
+
+378
+00:28:29.640 --> 00:28:34.580
+Okay now there are some pieces that we are still missing. The most important one
+
+379
+00:28:34.580 --> 00:28:38.920
+Then, we are missing transaction isolation and recovery.
+
+380
+00:28:39.040 --> 00:28:41.500
+We will talk about both in the lecture.
+
+381
+00:28:42.280 --> 00:28:49.020
+Now the reason why we don't draw this in this picture here is because, unfortunately, these
+
+382
+00:28:49.020 --> 00:28:50.720
+two tend to be layer cutting.
+
+383
+00:28:50.980 --> 00:28:54.240
+So this is difficult to keep them just hidden in one layer.
+
+384
+00:28:54.460 --> 00:28:59.220
+So different layers must know at least a bit about how recovery works and how transaction
+
+385
+00:28:59.220 --> 00:28:59.960
+isolation works.
+
+386
+00:28:59.960 --> 00:29:08.260
+This makes this very nice picture a bit more messy, but nevertheless, so these are just two more components that we need.
+
+387
+00:29:09.400 --> 00:29:11.160
+So just to give a
+
+388
+00:29:11.160 --> 00:29:16.860
+30 second summary, transaction isolation means how do we shield concurrent users of the database from each other?
+
+389
+00:29:17.040 --> 00:29:21.960
+So that they can operate on same data without producing wrong results. And
+
+390
+00:29:22.820 --> 00:29:27.660
+recovery means how do we cope with errors, either user error or
+
+391
+00:29:27.660 --> 00:29:32.180
+an operating system or hardware failure. So how do you do this? How we recover
+
+392
+00:29:32.180 --> 00:29:37.800
+without losing data? We can look at these components later. Okay, so but
+
+393
+00:29:37.800 --> 00:29:41.820
+nevertheless this is a reasonable approximation to a database
+
+394
+00:29:41.820 --> 00:29:49.140
+architecture. Now some database systems deviate a bit from this. Like what I said
+
+395
+00:29:49.140 --> 00:29:52.940
+previously, most database systems nowadays delegate the drive access to
+
+396
+00:29:52.940 --> 00:29:57.640
+the branding system. So this component here might be missing from your database
+
+397
+00:29:57.660 --> 00:30:01.060
+system instead we just say hey the operating system does it for me I don't care.
+
+398
+00:30:01.820 --> 00:30:05.300
+So this is the case in some systems so then we are missing in the bottom layer.
+
+399
+00:30:06.800 --> 00:30:11.500
+Some people go even further and say buffer manager oh let's delegate all this
+
+400
+00:30:11.500 --> 00:30:16.500
+here to the operating system too. So we just say operating system can do this for me.
+
+401
+00:30:16.880 --> 00:30:23.240
+I replace my buffer management basically with a call to mMAP. So mMAP is if you
+
+402
+00:30:23.240 --> 00:30:30.260
+don't know this is a system call that says please map a file into my my address
+
+403
+00:30:30.260 --> 00:30:35.660
+base so I can access this data as if I would have loaded it into memory.
+
+404
+00:30:35.940 --> 00:30:43.000
+This is very easy to use as long as you're only reading. So the moment you
+
+405
+00:30:43.000 --> 00:30:49.000
+start writing then suddenly this is not so easy anymore. Therefore what we wrote
+
+406
+00:30:49.000 --> 00:30:55.740
+yeah it's tricky. Reading from the operating system with MAP works fine.
+
+407
+00:30:55.920 --> 00:31:01.380
+Writing is a problem because of the things like recovery. Now because if you
+
+408
+00:31:01.380 --> 00:31:05.540
+write through an MAP you don't know when this write happens. The operating system
+
+409
+00:31:05.540 --> 00:31:10.220
+can perform the write any moment it wants. You have no control over it. You can
+
+410
+00:31:10.220 --> 00:31:15.080
+force it to write but you cannot prevent it from writing. This makes life
+
+411
+00:31:15.080 --> 00:31:19.880
+hard because some could be that it does a partial write like let just make an
+
+412
+00:31:19.880 --> 00:31:25.540
+example here let's assume we have two pages here that it's called this p1 and p2
+
+413
+00:31:25.540 --> 00:31:30.840
+and we have modified both so yes a yes from right is some right is in the
+
+414
+00:31:30.840 --> 00:31:34.860
+operating system for some reason decided oh I'm running out of memory so let's
+
+415
+00:31:34.860 --> 00:31:38.860
+write this one here to disk so this is written this is not written so the right
+
+416
+00:31:38.860 --> 00:31:43.300
+box is not written then we present my system crashes so power goes away so in
+
+417
+00:31:45.080 --> 00:31:51.480
+this is a sort of inconsistent data, all kinds of problems. Now you can dance around all these problems,
+
+418
+00:31:51.740 --> 00:31:53.520
+but it's not so easy anymore.
+
+419
+00:31:54.680 --> 00:32:01.540
+Yeah, and I'm just saying so some people do this, delegate the buffer management to the Braiding system, but most people don't.
+
+420
+00:32:02.000 --> 00:32:02.980
+Okay, and then
+
+421
+00:32:03.580 --> 00:32:07.380
+from the other side, other end of the spectrum, I said my interface here is SQL,
+
+422
+00:32:08.240 --> 00:32:13.900
+and usually this is the case. A few systems allow you to bypass the SQL layer and say, oh,
+
+423
+00:32:15.080 --> 00:32:20.060
+doing, you can directly access logical records without sending SQL queries if you want.
+
+424
+00:32:21.660 --> 00:32:23.380
+Not so common, but a few people allow this.
+
+425
+00:32:23.480 --> 00:32:28.400
+I'm just saying, some people deviate from this picture a bit, but most systems follow
+
+426
+00:32:28.400 --> 00:32:29.580
+this layer architecture.
+
+427
+00:32:31.420 --> 00:32:38.700
+Okay, now when we talk about the architecture of the system, we must of course always keep
+
+428
+00:32:38.700 --> 00:32:41.680
+in mind on what hardware are we running.
+
+429
+00:32:41.680 --> 00:32:45.800
+So hardware has changed a lot in the last 30-40 years.
+
+430
+00:32:47.500 --> 00:32:54.300
+And therefore we also must say 40 years because this is roughly how old database systems are.
+
+431
+00:32:54.500 --> 00:32:58.700
+At least if you count the relational database systems, hierarchical systems are even older.
+
+432
+00:32:59.880 --> 00:33:06.960
+And if the hardware changes so much, then we must of course somehow do this in our system too.
+
+433
+00:33:07.120 --> 00:33:08.120
+So we must change our system.
+
+434
+00:33:08.120 --> 00:33:13.680
+For a very long time we were dominated by what you most likely know, Moore's law.
+
+435
+00:33:13.840 --> 00:33:19.220
+Moore's law said the number of transistors on a chip doubles every 18 months.
+
+436
+00:33:19.460 --> 00:33:20.360
+The exponential growth.
+
+437
+00:33:22.120 --> 00:33:26.760
+Of course, we all know that exponential growth cannot be sustained infinitely,
+
+438
+00:33:27.140 --> 00:33:34.560
+because at some point you will have at least theoretically more transistors than atoms in the universe.
+
+439
+00:33:34.560 --> 00:33:37.160
+So clearly this cannot go on forever.
+
+440
+00:33:37.500 --> 00:33:39.340
+But for a long time this was true.
+
+441
+00:33:39.800 --> 00:33:44.260
+The number of transistors did indeed double roughly every 18 months.
+
+442
+00:33:44.880 --> 00:33:48.120
+And indirectly this drove a number of other parameters too.
+
+443
+00:33:48.260 --> 00:33:50.780
+Like we had exponential growth in memory size too.
+
+444
+00:33:52.020 --> 00:33:54.460
+This is also no longer true.
+
+445
+00:33:54.800 --> 00:33:58.380
+I mean memory is still growing but not as fast as it did in the past.
+
+446
+00:33:58.920 --> 00:34:02.800
+So we have large memory but much larger memory than we had before.
+
+447
+00:34:05.500 --> 00:34:13.160
+Also CPU speed did grow exponentially. This is no longer true and it's already no longer true for quite a while.
+
+448
+00:34:13.980 --> 00:34:21.660
+CPUs no longer get faster for a number of reasons. The main reason is power and heat.
+
+449
+00:34:21.660 --> 00:34:31.020
+So therefore CPUs do not get faster any longer, but at least what is happening is that the
+
+450
+00:34:31.020 --> 00:34:32.280
+number of cores is growing.
+
+451
+00:34:33.160 --> 00:34:38.080
+Not as fast as in the past perhaps, but the number of cores is growing.
+
+452
+00:34:38.300 --> 00:34:43.620
+So you can buy CPUs that have 32 or even 64 cores on a single die.
+
+453
+00:34:43.940 --> 00:34:45.720
+This is an immense number of cores.
+
+454
+00:34:46.140 --> 00:34:50.700
+So there is something going on, but speed itself is no longer going up as it did in
+
+455
+00:34:50.700 --> 00:34:51.020
+the past.
+
+456
+00:34:52.300 --> 00:34:57.140
+And also what grew exponentially, at least in the past, was hard disk size.
+
+457
+00:34:57.540 --> 00:34:59.860
+This starts to get problematic.
+
+458
+00:35:00.700 --> 00:35:05.440
+Two, of course, hard disks are coming to the limits of physics.
+
+459
+00:35:05.860 --> 00:35:13.140
+We cannot make the read-write head arbitrarily small, otherwise we cannot read write reliably.
+
+460
+00:35:13.840 --> 00:35:16.160
+So there are some limits to density.
+
+461
+00:35:17.140 --> 00:35:22.760
+and so capacity does not grow as much as it did in the past but nevertheless for a long time it
+
+462
+00:35:22.760 --> 00:35:28.940
+did grow very quickly nowadays it does not you know one unfortunate aspect that I want to mention
+
+463
+00:35:28.940 --> 00:35:37.440
+here is this one the last one sorry I messed up my line here so hard disk capacity grow
+
+464
+00:35:37.440 --> 00:35:42.180
+exponentially over a long time which means you could buy larger and larger disks so if you wait
+
+465
+00:35:42.180 --> 00:35:44.660
+if you guess the disk is much larger than it was before.
+
+466
+00:35:45.340 --> 00:35:47.640
+So the hard disk size did grow in the past,
+
+467
+00:35:47.860 --> 00:35:51.600
+but what did not grow, unfortunately, was excess time.
+
+468
+00:35:52.060 --> 00:35:54.000
+So excess time means how long does it take me
+
+469
+00:35:54.000 --> 00:35:58.120
+to access an arbitrary piece of data on my disk.
+
+470
+00:35:58.320 --> 00:36:01.060
+And the excess time is in the ballpark,
+
+471
+00:36:01.160 --> 00:36:02.600
+or it depends on the hard disk and so on,
+
+472
+00:36:02.880 --> 00:36:06.420
+but it is in the ballpark of 4 milliseconds, roughly.
+
+473
+00:36:07.200 --> 00:36:11.320
+And this did not change at all, basically, for the last 20 years.
+
+474
+00:36:12.180 --> 00:36:16.400
+So if you buy a hard disk today or buy a hard disk that is 20 years old, it has the same
+
+475
+00:36:16.400 --> 00:36:16.920
+access time.
+
+476
+00:36:17.580 --> 00:36:18.680
+Which is very sad.
+
+477
+00:36:19.600 --> 00:36:25.960
+And this has implications, which means you do not want to access a random piece of data
+
+478
+00:36:25.960 --> 00:36:27.680
+on your disk because it is very slow.
+
+479
+00:36:28.540 --> 00:36:34.340
+And the reason of course for this 4 milliseconds is because you had to move your right head
+
+480
+00:36:34.340 --> 00:36:36.020
+into position, wait for rotation and so on.
+
+481
+00:36:36.100 --> 00:36:36.900
+So this didn't happen.
+
+482
+00:36:37.120 --> 00:36:41.360
+On the other hand, even though hard disks did not increase, something else did happen,
+
+483
+00:36:42.180 --> 00:36:44.540
+We got SSDs.
+
+484
+00:36:44.700 --> 00:36:49.140
+And SSDs do have much better access time than hard disks.
+
+485
+00:36:49.480 --> 00:36:54.620
+Now the downside is they are more expensive and so on, but even there are things happening.
+
+486
+00:36:55.200 --> 00:37:00.220
+So nowadays probably we can bet on having SSDs available.
+
+487
+00:37:00.940 --> 00:37:01.820
+Okay, so hardware is changing.
+
+488
+00:37:03.720 --> 00:37:09.020
+Now another thing that we are interested in is because we not only have one piece of hardware
+
+489
+00:37:09.020 --> 00:37:11.860
+that we are using, but we have a hierarchy, a so called memory hierarchy.
+
+490
+00:37:12.480 --> 00:37:16.320
+The memory hierarchy is pretty important for us because there is a lot of implications
+
+491
+00:37:16.320 --> 00:37:18.560
+on performance and storage.
+
+492
+00:37:20.140 --> 00:37:23.800
+Now here let's start in the top.
+
+493
+00:37:24.080 --> 00:37:30.480
+So if you look at the top of my hierarchy, the fastest things that I have is my CPU register.
+
+494
+00:37:30.720 --> 00:37:33.520
+Here we just write register, we can write the CPU register.
+
+495
+00:37:35.360 --> 00:37:41.280
+and so this is fast as I can that I have and I can access this in each instruction basically
+
+496
+00:37:41.280 --> 00:37:48.380
+and I my access time yes is a ballpark of one nanosecond has a very very fast access to a CPU
+
+497
+00:37:48.380 --> 00:37:56.720
+register now but so this is the fastest that I have but I don't have a lot of this now how many
+
+498
+00:37:56.720 --> 00:38:02.080
+register how much do I have depends of course on which CPU architecture you are using and if you
+
+499
+00:38:03.280 --> 00:38:07.980
+architecture. First I hope you all use a 64-bit architecture.
+
+500
+00:38:08.700 --> 00:38:14.640
+I assume this is the case. Nowadays there is absolutely no reason to use a 32-bit
+
+501
+00:38:14.640 --> 00:38:20.960
+architecture. Just for reference, on a 32-bit architecture which you should not
+
+502
+00:38:20.960 --> 00:38:25.980
+use, we had something like six general-purpose registers.
+
+503
+00:38:28.540 --> 00:38:33.800
+You see my 6 looks like a G. 6 general purpose registers.
+
+504
+00:38:34.240 --> 00:38:42.940
+So, 6x4 bytes, which means we have 24 bytes.
+
+505
+00:38:43.940 --> 00:38:48.540
+This is a very low number.
+
+506
+00:38:49.080 --> 00:38:50.920
+So, you definitely don't want to do this.
+
+507
+00:38:51.460 --> 00:38:58.780
+Okay, now if you use the 64-bit architecture, then we have 16 general purpose registers.
+
+508
+00:38:59.020 --> 00:38:59.700
+This is much more.
+
+509
+00:39:01.060 --> 00:39:07.940
+And we have 16 times 8, which means we have 128 bytes.
+
+510
+00:39:10.580 --> 00:39:13.020
+So this is much more, but still not a lot.
+
+511
+00:39:13.020 --> 00:39:19.360
+So we have something like 128 bytes or so in registers.
+
+512
+00:39:20.180 --> 00:39:24.060
+And this is the fastest that we have, but it's limited in space.
+
+513
+00:39:24.680 --> 00:39:29.720
+Now if you go further down the hierarchy, each CPU has caches.
+
+514
+00:39:30.400 --> 00:39:36.240
+Usually we have L1 cache which depends, but in the ballpark, usually L1 block is the same.
+
+515
+00:39:36.620 --> 00:39:39.980
+L1 cache is usually like 32 kilobytes of space.
+
+516
+00:39:39.980 --> 00:39:46.280
+this is still pretty fast. Then we have L2 cache which is already quite a bit slower.
+
+517
+00:39:47.240 --> 00:39:51.580
+And this is, yeah, depends on which system we have and so on. But let's say in the ballpark
+
+518
+00:39:51.580 --> 00:40:03.940
+of 512 kilobytes size, and then we have L3 cache. And this is, let's say in the ballpark of 16 megabytes.
+
+519
+00:40:04.600 --> 00:40:08.860
+Depends on the processor you have. Also you have L3 cache is usually shared between cores,
+
+520
+00:40:09.980 --> 00:40:16.980
+better than it is but nevertheless so this is roughly the size that we have and one problem
+
+521
+00:40:16.980 --> 00:40:22.800
+is the further down we get here the larger we are but also the slower we are l3 cache is
+
+522
+00:40:22.800 --> 00:40:33.020
+significantly slower much slower than l1 cache and so if we so you remember we started with one
+
+523
+00:40:33.020 --> 00:40:38.640
+little nanosecond in the register in the cache we might have a time of roughly 10 nanoseconds
+
+524
+00:40:39.980 --> 00:40:44.860
+depending on where in the hierarchy you are, but let's say 10 nanoseconds is something.
+
+525
+00:40:45.100 --> 00:40:48.560
+So you already lose a factor of 10 by going from registers to caches.
+
+526
+00:40:49.360 --> 00:40:53.500
+Now if you go further down, if you go out beyond my cache size, I go to main memory.
+
+527
+00:40:53.940 --> 00:40:57.780
+Now main memory I have many gigabytes, so it's much, much larger. So I have many gigabytes,
+
+528
+00:40:58.180 --> 00:41:01.840
+even you can even buy a machine with a terabyte or two terabytes of main memory
+
+529
+00:41:02.620 --> 00:41:06.200
+is not exactly cheap, but affordable. It costs a few thousand euro.
+
+530
+00:41:06.200 --> 00:41:09.960
+You can buy a machine with 1000TB for not too extreme price.
+
+531
+00:41:10.640 --> 00:41:14.760
+So this is very large, so it's good, but it's also much slower.
+
+532
+00:41:15.080 --> 00:41:21.220
+So again we use a factor of 10 compared to caches, and a factor of 100 compared to registers.
+
+533
+00:41:21.700 --> 00:41:24.180
+So it's much larger, but much slower.
+
+534
+00:41:25.580 --> 00:41:31.560
+Okay, then if you go to one layer further, so if you step beyond main memory, if you
+
+535
+00:41:31.560 --> 00:41:35.160
+go to external storage, now even more extreme things happen.
+
+536
+00:41:36.340 --> 00:41:41.220
+again grows dramatically. Now we have definitely terabytes per hand, potentially
+
+537
+00:41:42.460 --> 00:41:48.120
+many terabytes. So this is pretty large but it's also very very slow. So I said
+
+538
+00:41:48.120 --> 00:41:52.500
+rotating this has four millisecond response time, well this is really
+
+539
+00:41:52.500 --> 00:41:59.400
+terrible. So nanosecond to milliseconds, you know, there's a different order
+
+540
+00:41:59.400 --> 00:42:03.100
+that we are skipping here. Namely microseconds are sitting between these two.
+
+541
+00:42:03.100 --> 00:42:09.900
+So this is now really, really, really slow. External storage is terribly slow compared to memory.
+
+542
+00:42:11.000 --> 00:42:16.540
+Now if you don't have a hard disk but an SSD, then we are back again to microseconds, so that's better.
+
+543
+00:42:17.040 --> 00:42:19.100
+But nevertheless, even microseconds is much slower than nanoseconds.
+
+544
+00:42:20.260 --> 00:42:23.780
+So external storage is large but slow.
+
+545
+00:42:25.220 --> 00:42:29.380
+Now you might, so this is external online storage, which we usually talk about.
+
+546
+00:42:29.380 --> 00:42:37.380
+Now you might have near-line storage. I think personally that near-line storage went a bit out of fashion.
+
+547
+00:42:38.240 --> 00:42:40.300
+Few people I think use near-line storage.
+
+548
+00:42:40.580 --> 00:42:53.220
+The near-line storage means is the external storage that you can access, but you need a moment to, for example, spin up a disk or do some other mechanical thing to start the external storage.
+
+549
+00:42:53.220 --> 00:42:58.900
+so the archive storage and then so nearline storage then we have offline storage this is
+
+550
+00:42:58.900 --> 00:43:07.900
+usually tape yeah so this here many cases means tape and so this is where we can store data for
+
+551
+00:43:07.900 --> 00:43:14.080
+a long time and of course this tape is huge we can store petabytes of data and tape very large
+
+552
+00:43:15.100 --> 00:43:22.040
+another good thing is that the tape doesn't use power yes you store something on the tape you can
+
+553
+00:43:23.220 --> 00:43:25.140
+You can read it when you need it.
+
+554
+00:43:25.220 --> 00:43:30.440
+It takes a while because you sent a robot fetching the tape, put it into a drive,
+
+555
+00:43:31.140 --> 00:43:32.520
+rewind it to the back position.
+
+556
+00:43:33.360 --> 00:43:34.900
+Accessing tape is really, really slow.
+
+557
+00:43:35.100 --> 00:43:36.980
+You see the time is written here as minutes.
+
+558
+00:43:37.280 --> 00:43:39.580
+It could be that we have to wait a minute or two.
+
+559
+00:43:40.900 --> 00:43:44.300
+But it's cheap, uses no power and very large.
+
+560
+00:43:48.540 --> 00:43:50.600
+These are the traditional layers.
+
+561
+00:43:50.600 --> 00:43:56.640
+There are some trade-offs you can do. For example, I once read that Facebook uses here as Nearline storage,
+
+562
+00:43:57.660 --> 00:44:07.160
+uses Blu-rays instead of tape. Now why Blu-rays? The argument is that first, like tape,
+
+563
+00:44:07.400 --> 00:44:12.800
+a Blu-ray doesn't use power if you don't use it, and a Blu-ray is a bit faster to access than tape,
+
+564
+00:44:12.900 --> 00:44:16.980
+because the tape is really, really, really slow. Also, rewinding the tape takes a long time.
+
+565
+00:44:17.620 --> 00:44:21.620
+Blu-ray, you have to send a robot to fetch the Blu-ray into the drive, but afterwards
+
+566
+00:44:21.620 --> 00:44:27.760
+you can jump to a position. So it's a bit more fast and excess than send a tape.
+
+567
+00:44:27.860 --> 00:44:35.280
+So you have some choices here. But nevertheless, we will have a hierarchy of storage mediums and
+
+568
+00:44:35.740 --> 00:44:39.980
+the fastest one will be limited in size. So this is the reality that we have and we must somehow
+
+569
+00:44:39.980 --> 00:44:45.020
+cope with this in the database architecture. The database must try to keep the frequently
+
+570
+00:44:46.980 --> 00:44:51.060
+it can for example here so this is usually what we assume we want to keep everything that we
+
+571
+00:44:51.060 --> 00:44:56.760
+access frequently in memory ideally you even want to keep it in cache if you can yeah but definitely
+
+572
+00:44:56.760 --> 00:45:05.440
+you want to give it memory and we go down there only if you have to okay so this is what i already
+
+573
+00:45:05.440 --> 00:45:12.360
+mentioned so we have huge gaps between the hierarchy levels so traditionally the gap between main
+
+574
+00:45:12.360 --> 00:45:15.660
+memory disk is the most important one because this is such a huge factor in
+
+575
+00:45:15.660 --> 00:45:19.920
+performance but also the other steps are interested in like it's a step between
+
+576
+00:45:19.920 --> 00:45:23.360
+memory and cache because the cache is much faster than memory so we care about
+
+577
+00:45:23.360 --> 00:45:28.720
+this and in general a data system must try to maximize locality which means we
+
+578
+00:45:28.720 --> 00:45:33.160
+try to keep all the data that access frequently high up in the hierarchy and
+
+579
+00:45:33.160 --> 00:45:42.200
+fast access so this is what we want to have okay and so if you think about
+
+580
+00:45:42.360 --> 00:45:47.520
+storage. Hard disk is still the dominant external storage. Now this might be
+
+581
+00:45:47.520 --> 00:45:54.560
+changing currently. I would guess that at least from newly installed systems SSDs
+
+582
+00:45:54.560 --> 00:46:06.140
+are probably more prominent than hard disks probably. Now there's all different
+
+583
+00:46:06.140 --> 00:46:10.920
+factors here. SSDs of course are faster. The downside is they are more expensive.
+
+584
+00:46:11.780 --> 00:46:18.740
+But the numbers are going down so probably in the long run hard disk will
+
+585
+00:46:18.740 --> 00:46:23.720
+be completely replaced by SSDs. But nevertheless people are still using hard
+
+586
+00:46:23.720 --> 00:46:28.020
+disk for storage because you can get very very large hard disks cheaply.
+
+587
+00:46:28.300 --> 00:46:33.400
+This of course makes it attractive. Now downside of hard disk is we have a
+
+588
+00:46:33.400 --> 00:46:38.120
+rotating platter with mechanical effects we have so we have to wait something
+
+589
+00:46:38.120 --> 00:46:41.860
+is in correct position and so on and here we have a transfer rate of something
+
+590
+00:46:41.860 --> 00:46:49.420
+like 150 megabyte per second and which is not so super fast of course and but
+
+591
+00:46:49.420 --> 00:46:53.080
+even worse you have a seek time here of three milliseconds I said previously
+
+592
+00:46:53.080 --> 00:46:56.640
+said four I think three milliseconds might actually be optimistic it depends
+
+593
+00:46:56.640 --> 00:47:01.780
+on your drive that you have and so but nevertheless so let's say three to four
+
+594
+00:47:04.880 --> 00:47:09.560
+And the interesting thing is, transfer rate you can buy.
+
+595
+00:47:10.240 --> 00:47:17.320
+Now why? I mean, if one disk gives me 150 MB per second, I can just build a rate array,
+
+596
+00:47:17.440 --> 00:47:20.220
+which means I take many of these drives here,
+
+597
+00:47:23.160 --> 00:47:27.260
+so I can do many of these drives, install them in parallel,
+
+598
+00:47:28.020 --> 00:47:38.120
+So then, if you build a rate of this, then I can read with 1.5 GB per second.
+
+599
+00:47:38.220 --> 00:47:39.060
+Well, this is not too bad.
+
+600
+00:47:39.180 --> 00:47:44.020
+I mean, more than a gigabyte per second, this is a serious performance if I just read multiple
+
+601
+00:47:44.020 --> 00:47:44.940
+disk drives in parallel.
+
+602
+00:47:45.120 --> 00:47:47.380
+So this means transfer rate I can buy.
+
+603
+00:47:47.560 --> 00:47:48.540
+I just buy a second drive.
+
+604
+00:47:49.520 --> 00:47:49.940
+Okay?
+
+605
+00:47:50.320 --> 00:47:56.340
+But seek time I can unfortunately not buy because of these mechanical effects.
+
+606
+00:47:57.260 --> 00:48:02.220
+jump in arbitrary position in my rate, I still have to wait until this corresponding disk
+
+607
+00:48:02.220 --> 00:48:08.140
+that contains the data that I need has moved the head to the correct position and has rotated
+
+608
+00:48:08.140 --> 00:48:13.960
+the data to be under the head. So I cannot do much about seek time, I can by transfer rate,
+
+609
+00:48:14.060 --> 00:48:20.340
+I cannot improve seek time significantly. This means that there is a huge imbalance between
+
+610
+00:48:20.340 --> 00:48:24.520
+random and sequential I.O. So if I read something sequentially from disk, sequentially means I
+
+611
+00:48:24.520 --> 00:48:28.500
+start reading here, then I just read until the end. So this is a sequential read.
+
+612
+00:48:29.140 --> 00:48:32.320
+Start at some position, then read sequentially. This is
+
+613
+00:48:33.240 --> 00:48:36.340
+reasonably fast and I can make it arbitrarily fast by spending money.
+
+614
+00:48:36.540 --> 00:48:40.560
+I just buy more disks and I can make it fast. Okay, sequential I.O.
+
+615
+00:48:40.820 --> 00:48:44.220
+is somewhat okay. Random I.O. Random means this is my data.
+
+616
+00:48:44.400 --> 00:48:47.780
+I just read this and this and this. So I just jump.
+
+617
+00:48:48.600 --> 00:48:51.800
+This I cannot improve much and this is much much much much slower.
+
+618
+00:48:55.100 --> 00:49:02.320
+The database must understand this problem and therefore the database must try to use sequential
+
+619
+00:49:02.320 --> 00:49:07.300
+access. So we want to read sequential if we can because this is much better than jumping around
+
+620
+00:49:07.300 --> 00:49:13.480
+the disk. Unfortunately the problem is going even worse because the transfer rate in fact
+
+621
+00:49:13.480 --> 00:49:19.040
+is improving. So if you buy a newer disk you might read something with 200 MB per second,
+
+622
+00:49:19.720 --> 00:49:23.860
+if you have a faster disk, but the seek time does not improve much.
+
+623
+00:49:24.160 --> 00:49:26.340
+Probably not at all. Seek time is unaffected.
+
+624
+00:49:27.060 --> 00:49:30.460
+So seek time is more or less fixed. Transfer rate improves all the time.
+
+625
+00:49:30.600 --> 00:49:33.520
+So it means the difference between sequential and random becomes worse.
+
+626
+00:49:35.800 --> 00:49:38.040
+Now, this is concerned with rotating disks.
+
+627
+00:49:38.140 --> 00:49:39.940
+If you have an SSD, then of course we have better
+
+628
+00:49:42.360 --> 00:49:44.300
+random access time, but even there
+
+629
+00:49:45.200 --> 00:49:48.060
+you have an asymmetry here, because
+
+630
+00:49:49.340 --> 00:50:19.020
+If you read one byte at random, so if you say, so this is my storage medium, and I go here and I read one byte, and I read one byte, one byte, and so on, so you read single bytes, and if you do this, for example, 16 times, to read 16 times in total, 16 times, or if you say, I go here, and I read 16 bytes on block, so, and from one part here, this would be much faster than the other one.
+
+631
+00:50:19.040 --> 00:50:27.200
+on even on an SSD. And SSDs of course have other problems like reading in SSDs is fine,
+
+632
+00:50:27.500 --> 00:50:33.740
+writing is not so great because you cannot erase arbitrary pieces of the, so you must always erase
+
+633
+00:50:33.740 --> 00:50:39.520
+full blocks and so write behavior of SSDs is a bit problematic. And another worrying thing about
+
+634
+00:50:39.520 --> 00:50:45.080
+SSDs is write endurance because at some point if you write too much on your SSD, your SSD dies.
+
+635
+00:50:45.080 --> 00:50:48.540
+You cannot write up much amount of data on your SSDs.
+
+636
+00:50:48.660 --> 00:50:51.800
+There is a limited amount of data that you can write until the disk drive is dead.
+
+637
+00:50:53.200 --> 00:50:55.420
+So this doesn't matter much for your personal photos.
+
+638
+00:50:55.460 --> 00:50:58.980
+If you just store some data that you have, it's not a problem.
+
+639
+00:50:59.220 --> 00:51:02.400
+But if you have a database system that constantly writes to a disk,
+
+640
+00:51:02.580 --> 00:51:07.040
+writes all the time, then write endurance becomes an issue.
+
+641
+00:51:08.000 --> 00:51:11.680
+Therefore, SSDs are not 100% trouble-free either.
+
+642
+00:51:12.480 --> 00:51:17.700
+But regardless, I think the future is definitely SSDs or some other technology.
+
+643
+00:51:17.920 --> 00:51:21.020
+So we will move away from rotating disks in the long run.
+
+644
+00:51:21.320 --> 00:51:26.820
+Currently still, people are using the rotating disks for database systems.
+
+645
+00:51:28.440 --> 00:51:32.020
+Okay, now how we can make disks faster?
+
+646
+00:51:32.580 --> 00:51:37.880
+So first observation is we do not want to move the disk head for every single tuple.
+
+647
+00:51:37.880 --> 00:51:40.080
+because moving a diskette is terribly expensive.
+
+648
+00:51:40.440 --> 00:51:41.920
+Therefore, we don't want to do this.
+
+649
+00:51:42.580 --> 00:51:46.740
+Instead, once we have moved a diskette, we want to load something larger,
+
+650
+00:51:47.020 --> 00:51:48.780
+so that the movement has amortized.
+
+651
+00:51:48.900 --> 00:51:51.540
+We get a large amount of data with one excess.
+
+652
+00:51:52.360 --> 00:51:54.860
+Typically, what we read is a so-called page.
+
+653
+00:51:55.500 --> 00:51:57.800
+A page is basically a fixed-size piece of data.
+
+654
+00:51:58.660 --> 00:52:00.940
+Now, the question is, how large is a page?
+
+655
+00:52:01.040 --> 00:52:06.000
+This is not so easy to answer, because this depends on many factors.
+
+656
+00:52:07.880 --> 00:52:13.040
+people have used 4KB pages. And if you remember your lecture on operating systems, you might have
+
+657
+00:52:13.040 --> 00:52:20.500
+encountered 4KB pages too, because the operating system uses for hardware reasons, also uses 4KB.
+
+658
+00:52:20.600 --> 00:52:27.120
+4KB has been traditionally the size of the page. We say, we read 4KB and write 4KB,
+
+659
+00:52:27.180 --> 00:52:34.440
+and never anything smaller than this. And now 4KB is the historical number. Nowadays,
+
+660
+00:52:34.440 --> 00:52:39.460
+you probably prefer something larger, for example, 16 kilobytes or perhaps even more,
+
+661
+00:52:39.520 --> 00:52:44.980
+32, 64 kilobytes. And so using a larger page is usually an advantage.
+
+662
+00:52:46.020 --> 00:52:51.620
+There's a trade-off. So if you use have larger pages, this means you do less access to disk,
+
+663
+00:52:52.340 --> 00:52:56.500
+because you get more data from the response access. This is good for performance.
+
+664
+00:52:57.260 --> 00:53:02.120
+Therefore, you want your page to be reasonably large. On the other hand, the downside of having
+
+665
+00:53:02.120 --> 00:53:08.440
+a large page is that if you read a page then you just need a tiny piece of data here from
+
+666
+00:53:08.440 --> 00:53:11.480
+this page because we are just interested in this small tuple and nothing else.
+
+667
+00:53:12.080 --> 00:53:17.120
+The larger my page is the more memory I waste because I always read a full page.
+
+668
+00:53:17.720 --> 00:53:22.300
+So if my page is too large I waste a lot of memory for data that I don't care about.
+
+669
+00:53:22.840 --> 00:53:23.780
+So this is also not good.
+
+670
+00:53:24.500 --> 00:53:26.740
+Therefore you don't want to make it arbitrarily large.
+
+671
+00:53:27.220 --> 00:53:31.980
+But definitely multiple kilobytes probably 16, 32 or something like this.
+
+672
+00:53:32.120 --> 00:53:33.580
+This is a typical size.
+
+673
+00:53:35.160 --> 00:53:40.500
+In some niche use cases, people even started using megabyte pages.
+
+674
+00:53:41.740 --> 00:53:46.040
+Usually they only do this if they are pretty sure that they will need a whole page.
+
+675
+00:53:46.240 --> 00:53:53.080
+For example, if you have an analytical system, a system that analyzes large amounts of data and reads all of this,
+
+676
+00:53:53.180 --> 00:53:59.160
+so usually without using index structures, if you are pretty sure that you will need most of the page anyway,
+
+677
+00:53:59.160 --> 00:54:04.020
+so a large part of the page, then you can afford to use larger pages like for example a megabyte page.
+
+678
+00:54:05.060 --> 00:54:08.680
+If you are in a transaction processing system that jumps to arbitrary pieces of data,
+
+679
+00:54:08.840 --> 00:54:13.060
+then you don't want to have doses, then you want to have smaller pages. It's a trade-off.
+
+680
+00:54:14.900 --> 00:54:21.820
+Okay, now inside the database system itself, the page height is very, very visible. This is a
+
+681
+00:54:22.500 --> 00:54:28.720
+very visible thing because I always do IO in page sizes. So this is the smartest thing
+
+682
+00:54:28.720 --> 00:54:36.720
+I can read and write as a page. Also for buffering, so if I catch something in memory, if I allocate
+
+683
+00:54:36.720 --> 00:54:42.700
+memory, this is often done in page sizes. So pages are used for buffering often for
+
+684
+00:54:42.700 --> 00:54:49.460
+allocation, also for recovery. So if I crash and I come back, I must restore the content
+
+685
+00:54:49.460 --> 00:54:54.640
+of the database as it was before and this is done on a page level so the page is very very visible
+
+686
+00:54:58.260 --> 00:55:02.340
+but even though we made a page larger to avoid going to disk all the time
+
+687
+00:55:02.340 --> 00:55:08.660
+the disk is as a page is still too small to completely hide random i.o and because even
+
+688
+00:55:09.220 --> 00:55:15.720
+if you read one page and then the next page and so on on a rotating disk we still in worst case
+
+689
+00:55:15.720 --> 00:55:20.360
+have to wait until the disk is rotated or we might have to move to this case.
+
+690
+00:55:20.520 --> 00:55:23.220
+So this cost me many microseconds, five even milliseconds,
+
+691
+00:55:23.780 --> 00:55:26.900
+waiting just to do a page read and another page read.
+
+692
+00:55:27.100 --> 00:55:30.740
+Therefore, we want to read sequential pages if you can.
+
+693
+00:55:31.220 --> 00:55:36.480
+And database systems use typically two techniques to speed this up.
+
+694
+00:55:36.920 --> 00:55:37.920
+First is read ahead.
+
+695
+00:55:38.940 --> 00:55:41.160
+So you see, if this is my database system,
+
+696
+00:55:41.900 --> 00:55:42.960
+so I have many pages.
+
+697
+00:55:43.900 --> 00:55:51.780
+So this is page 1, page 2, page 3, page 4.
+
+698
+00:55:51.960 --> 00:55:54.180
+Now you see a query reached page 1.
+
+699
+00:55:55.100 --> 00:55:57.040
+Then you see it reads page 2.
+
+700
+00:55:57.360 --> 00:56:01.160
+And then the system says if you read page 1 and then page 2,
+
+701
+00:56:01.360 --> 00:56:03.800
+most likely you will also need page 3.
+
+702
+00:56:03.980 --> 00:56:06.280
+So even though you only asked me for page 2,
+
+703
+00:56:06.560 --> 00:56:09.520
+I will in the background already read page 3,
+
+704
+00:56:09.640 --> 00:56:11.800
+anticipating that you will most likely need this.
+
+705
+00:56:12.960 --> 00:56:16.780
+is the moment that somebody reads page 3, we don't have to fetch it because it's already there.
+
+706
+00:56:16.900 --> 00:56:22.140
+And we might even in this moment start reading page 4 because we say, oh I understand that this
+
+707
+00:56:22.140 --> 00:56:27.540
+is a select query or some scan query and therefore most likely they will need the other pages to
+
+708
+00:56:27.540 --> 00:56:33.260
+then just read them even before they access. This is called what we call read ahead. So reading more
+
+709
+00:56:33.260 --> 00:56:39.680
+than what we currently need and this helps us to avoid or to hide the latency of doing random IO.
+
+710
+00:56:40.660 --> 00:56:43.120
+So this concept reads the same for writes.
+
+711
+00:56:43.600 --> 00:56:47.060
+So if you have modified the number of pages, so let's say this is modified, this is modified
+
+712
+00:56:47.060 --> 00:56:47.460
+and so on.
+
+713
+00:56:47.980 --> 00:56:53.940
+And then when we want to write changes to disk, we collect, we figure out, okay, all
+
+714
+00:56:53.940 --> 00:56:56.040
+pages that are modified, we sort them.
+
+715
+00:56:56.220 --> 00:57:01.580
+So we figure out, okay, even though you might have modified page four first, then page two,
+
+716
+00:57:01.680 --> 00:57:07.620
+then page five, we can reorder them to do this, write back as P4, P5, and then P2.
+
+717
+00:57:07.620 --> 00:57:12.280
+and so then we can nice our sequential access pattern and we do this in the
+
+718
+00:57:12.280 --> 00:57:15.660
+background again to hide the latency from the I.O.
+
+719
+00:57:15.960 --> 00:57:20.780
+Okay so we try to hide that you have to wait for the hardware if you can.
+
+720
+00:57:22.500 --> 00:57:30.060
+Now they have mentioned this already before so when we access disk this is
+
+721
+00:57:30.060 --> 00:57:34.840
+pretty slow and to hide this we use something that we call buffer management.
+
+722
+00:57:34.840 --> 00:57:39.240
+This means that pages that I cast frequently are cached in memory.
+
+723
+00:57:40.160 --> 00:57:43.920
+So if somebody wants to access this page again, we just give them the copy they have in memory.
+
+724
+00:57:44.300 --> 00:57:48.840
+But of course at some point we must write it back to disk because if you shut down or crash,
+
+725
+00:57:49.760 --> 00:57:52.980
+then we must have the data on persistent storage.
+
+726
+00:57:53.980 --> 00:57:57.720
+Therefore, from time to time we write data back to disk.
+
+727
+00:57:58.180 --> 00:58:00.620
+Also because we run out of memory simply.
+
+728
+00:58:00.620 --> 00:58:07.340
+because let's say I might have 64 GB memory but I might have 2 TB data,
+
+729
+00:58:07.560 --> 00:58:09.480
+therefore I cannot keep everything in memory.
+
+730
+00:58:09.600 --> 00:58:15.060
+We just keep what is frequently used or what we currently use and everything else is stored on disk.
+
+731
+00:58:15.160 --> 00:58:20.340
+So we discard of write back when we write on of memory.
+
+732
+00:58:21.960 --> 00:58:27.020
+And now here this is already a look ahead to what we covered later in the lecture.
+
+733
+00:58:27.020 --> 00:58:33.420
+this has to be covered with recovery because remember you always assume that
+
+734
+00:58:33.420 --> 00:58:40.280
+we can crash at any point in time and to survive this even though we do buffering
+
+735
+00:58:40.280 --> 00:58:43.380
+means that the buffer component and the recovery component must talk to each
+
+736
+00:58:43.380 --> 00:58:47.140
+other so they must understand what is written to disk what's not written to
+
+737
+00:58:47.140 --> 00:58:51.420
+disk and they must do this in a careful way and so that we can survive power
+
+738
+00:58:51.420 --> 00:58:56.380
+failures but we do this later in the lecture okay now it's buffer measure
+
+739
+00:58:57.020 --> 00:59:01.540
+pretty simple because my interface is just two functions first function is
+
+740
+00:59:01.540 --> 00:59:07.000
+traditionally called fix or another name perhaps would be to say load on our
+
+741
+00:59:07.000 --> 00:59:10.760
+perhaps loads not really a better name because it could be the data or perhaps
+
+742
+00:59:10.760 --> 00:59:16.240
+fix you can make causes excess also as a traditional name is fix to fix for
+
+743
+00:59:16.240 --> 00:59:21.600
+example if I want to access a certain page I say I want to access page number
+
+744
+00:59:22.580 --> 00:59:30.540
+page number 11 and then second parameter I skip in a moment and then the buffer manager says okay I
+
+745
+00:59:30.540 --> 00:59:37.520
+have the page for you and it's here and gives me back a pointer to the memory so now I can directly
+
+746
+00:59:37.520 --> 00:59:42.700
+access the page because I have a copy of the page in memory okay and this in memory buffer I can now
+
+747
+00:59:42.700 --> 00:59:48.140
+do whatever I want I can read I can write I can do whatever I want yeah one two three and it is
+
+748
+00:59:48.140 --> 00:59:53.900
+in there and I can manipulate this page until I'm done. When I'm done I call
+
+749
+00:59:53.900 --> 00:59:58.300
+unfix and unfix says basically I'm finished you can now release the memory
+
+750
+00:59:58.300 --> 01:00:02.880
+or not. I no longer need it. As long as it's fixed of course we cannot discard
+
+751
+01:00:02.880 --> 01:00:08.700
+the page because if the page is fixed it means someone is accessing it. When
+
+752
+01:00:08.700 --> 01:00:13.260
+it's done then we call unfix. So if it's fixed we get it and then we call
+
+753
+01:00:13.260 --> 01:00:19.360
+unfix and then the system can discard or write it back also.
+
+754
+01:00:20.360 --> 01:00:24.540
+Okay now you see that fix and fix get two additional parameters not only page
+
+755
+01:00:24.540 --> 01:00:29.240
+number but something else. Now the fix one here gets a flag do we need shared
+
+756
+01:00:29.240 --> 01:00:37.500
+access yes or no. Here we could for example say shared and shared access
+
+757
+01:00:37.500 --> 01:00:41.980
+means I only read because if I read a page somebody else can read the same
+
+758
+01:00:43.260 --> 01:00:49.700
+many people can read the same page. So shared access means reading. If I want to change the page,
+
+759
+01:00:49.940 --> 01:00:59.740
+so then of course say no it's not shared but exclusive. And in exclusive mode only one
+
+760
+01:01:00.600 --> 01:01:05.040
+transaction is allowed or one query. Let's say we didn't talk about transaction yet. Let's say only
+
+761
+01:01:05.040 --> 01:01:11.220
+one query or only one user is allowed to have exclusive access to a page at the same time.
+
+762
+01:01:11.220 --> 01:01:16.000
+and when you have exclusive access then you can modify it okay and when you
+
+763
+01:01:16.000 --> 01:01:20.600
+unfix a page you must tell the system if you did modify it because just because
+
+764
+01:01:20.600 --> 01:01:24.300
+you were allowed to modify it does not necessarily mean that you did modify
+
+765
+01:01:24.300 --> 01:01:27.920
+because could be that you have for example a delete statement let's say
+
+766
+01:01:27.920 --> 01:01:39.160
+something like this as you say you have let's write it you have delete from our
+
+767
+01:01:40.080 --> 01:01:40.600
+where
+
+768
+01:01:42.700 --> 01:01:43.940
+x less than 5.
+
+769
+01:01:44.360 --> 01:01:45.480
+So what happens now,
+
+770
+01:01:46.380 --> 01:01:48.780
+this is a page from, let's say,
+
+771
+01:01:49.820 --> 01:01:51.240
+a page from
+
+772
+01:01:51.240 --> 01:01:52.440
+the relation R.
+
+773
+01:01:52.820 --> 01:01:54.840
+So now, because I want to delete,
+
+774
+01:01:55.120 --> 01:01:57.360
+I fetch this page, say, I want to modify this,
+
+775
+01:01:57.520 --> 01:01:58.960
+please give this to me, if you say,
+
+776
+01:01:59.480 --> 01:02:01.300
+yeah, fix, exclusive.
+
+777
+01:02:04.280 --> 01:02:05.540
+Okay, now I check
+
+778
+01:02:06.440 --> 01:02:07.800
+the entries on the page,
+
+779
+01:02:09.300 --> 01:02:11.320
+15, I see, oh, none of them
+
+780
+01:02:11.320 --> 01:02:12.540
+are less than 5.
+
+781
+01:02:13.980 --> 01:02:14.420
+Sorry.
+
+782
+01:02:16.860 --> 01:02:17.300
+Therefore,
+
+783
+01:02:17.700 --> 01:02:21.380
+even though I access the page
+
+784
+01:02:21.380 --> 01:02:23.220
+exclusively, they later decide
+
+785
+01:02:23.220 --> 01:02:25.280
+that I will not modify it because there
+
+786
+01:02:25.280 --> 01:02:26.940
+were no qualifying templates. Therefore, I just
+
+787
+01:02:26.940 --> 01:02:29.320
+unfix it. I said, no, I
+
+788
+01:02:29.320 --> 01:02:31.340
+did not modify it. You can discard
+
+789
+01:02:31.340 --> 01:02:33.120
+it if you want. But
+
+790
+01:02:33.120 --> 01:02:35.340
+if I did, if the
+
+791
+01:02:35.340 --> 01:02:37.280
+content was not a 7 but was a
+
+792
+01:02:37.280 --> 01:02:38.160
+3, for example,
+
+793
+01:02:39.500 --> 01:02:45.460
+Then I would delete it. So I would take the three and I would cross it out. So I would delete it.
+
+794
+01:02:45.660 --> 01:02:48.360
+And then I would in my unfix say, oh this is dirty.
+
+795
+01:02:50.100 --> 01:02:51.440
+Okay, this is dirty.
+
+796
+01:02:53.080 --> 01:02:54.480
+Please write it back to disk.
+
+797
+01:02:55.540 --> 01:02:57.920
+So this is interface. Fixed.
+
+798
+01:02:58.700 --> 01:03:04.700
+Shared or exclusive and unfixed. Did you modify it? Yes or no? Of course you are only allowed to modify if you have exclusive access.
+
+799
+01:03:04.980 --> 01:03:06.980
+If you have shared access you are not allowed to modify.
+
+800
+01:03:09.360 --> 01:03:11.700
+Now, how do you implement such a buffer manager?
+
+801
+01:03:12.020 --> 01:03:15.020
+After all, we are in the lecture on database implementation.
+
+802
+01:03:15.820 --> 01:03:16.720
+So how do you implement this?
+
+803
+01:03:16.880 --> 01:03:28.020
+A buffer manager is, at least in the first approximation, roughly a hash table that maps page numbers to the physical pages.
+
+804
+01:03:28.240 --> 01:03:31.320
+For this we use something that we call a buffer frame.
+
+805
+01:03:31.540 --> 01:03:34.320
+A buffer frame basically is a description of a page.
+
+806
+01:03:34.320 --> 01:03:36.120
+So you have a big hash table here on the left.
+
+807
+01:03:36.280 --> 01:03:37.360
+So this is my big hash table.
+
+808
+01:03:37.900 --> 01:03:39.820
+Now if somebody wants to, for example,
+
+809
+01:03:40.100 --> 01:03:44.840
+say I want to access page number 4711.
+
+810
+01:03:45.220 --> 01:03:46.580
+So I want to take this one.
+
+811
+01:03:46.880 --> 01:03:47.900
+Then I hash it.
+
+812
+01:03:50.900 --> 01:03:54.280
+And I end up in this slot in my hash table.
+
+813
+01:03:56.080 --> 01:03:59.140
+Okay, and now I check the entries in my hash table.
+
+814
+01:03:59.240 --> 01:04:00.320
+Here in this case I have two entries.
+
+815
+01:04:00.560 --> 01:04:03.200
+I go to my first entry, my first buffer frame.
+
+816
+01:04:04.320 --> 01:04:14.900
+page number 4711 if the end says yes then I acquire here a ledger let's talk about the moments roughly
+
+817
+01:04:14.900 --> 01:04:20.280
+something like mutex I know I protect the page now and then I can follow this pointer here to
+
+818
+01:04:20.280 --> 01:04:26.760
+the real data you see the data itself so the page content is not stored in the buffer frame but
+
+819
+01:04:26.760 --> 01:04:31.760
+somewhere else. The buffer frame just points to the real data.
+
+820
+01:04:31.960 --> 01:04:40.640
+So basically I have some huge mode of memory somewhere and the page sits, for
+
+821
+01:04:40.640 --> 01:04:46.100
+example this here might point into my buffer range. This contains now the
+
+822
+01:04:46.100 --> 01:04:49.740
+page currently. This can change over time of course it can because I can
+
+823
+01:04:49.740 --> 01:04:54.380
+discard the page, load somebody else and so on. But the buffer frame is a
+
+824
+01:04:54.380 --> 01:05:00.880
+hash table entries at points to the real real content of the page okay and in a
+
+825
+01:05:00.880 --> 01:05:05.200
+because I can have hash collisions could be there two pages end up in the same
+
+826
+01:05:05.200 --> 01:05:09.620
+hash table slot safe of course of can have a second buffer frame this was and
+
+827
+01:05:09.620 --> 01:05:15.340
+again also points to another to another page yes roughly how we have learned a
+
+828
+01:05:15.340 --> 01:05:21.840
+buffer manager now we need some more mechanism yeah like because you know it's
+
+829
+01:05:21.840 --> 01:05:25.060
+buffer manager is a hotspot basically everybody's trying to access a buffer
+
+830
+01:05:25.060 --> 01:05:28.980
+manager simultaneously because all queries will frequently access a buffer
+
+831
+01:05:28.980 --> 01:05:33.760
+manager and you must make sure that this is safe because pages new pages get
+
+832
+01:05:33.760 --> 01:05:38.760
+loaded pages get evicted and so on so a lot of things are happening and you must
+
+833
+01:05:38.760 --> 01:05:43.640
+do this in a threat safe manner and therefore we must protect the buffer
+
+834
+01:05:43.640 --> 01:05:47.960
+manager itself also with a ledge or actually with multiple ledges because if
+
+835
+01:05:47.960 --> 01:05:54.120
+If you would just use one ledge, as I said, first approximation, a ledge is a mutex or
+
+836
+01:05:54.120 --> 01:05:55.940
+more precisely a read writer log.
+
+837
+01:05:56.120 --> 01:06:00.320
+So we protect the Lash table against cocoon.excess.
+
+838
+01:06:00.480 --> 01:06:05.260
+If I would use just one ledge here, then everybody would constantly fight for the ledge.
+
+839
+01:06:05.580 --> 01:06:07.860
+Assume query 1 wants to read this page.
+
+840
+01:06:09.080 --> 01:06:12.100
+Query 2 wants to read that page.
+
+841
+01:06:12.220 --> 01:06:13.440
+Sorry, I messed it up.
+
+842
+01:06:13.440 --> 01:06:19.180
+that page. Now before accessing this chain you must first protect yourself
+
+843
+01:06:19.180 --> 01:06:23.020
+against concurrent updates because you must make sure that nobody evicts the
+
+844
+01:06:23.020 --> 01:06:27.900
+page while you currently try to check the buffer frame. Now what you could do is
+
+845
+01:06:27.900 --> 01:06:33.940
+that Q1 grabs this ledge here, so you grab this ledge, and Q2 grabs the same
+
+846
+01:06:33.940 --> 01:06:37.740
+ledge. Then as long as you have a ledge you check and if you are done you release
+
+847
+01:06:37.740 --> 01:06:42.140
+the ledge. You could do it like this but you don't want to because otherwise you
+
+848
+01:06:43.440 --> 01:06:45.820
+because only one thread is allowed to access a buffer matcher.
+
+849
+01:06:46.340 --> 01:06:51.500
+Instead, what you do instead is, within each entry here, you have a small latch.
+
+850
+01:06:54.200 --> 01:06:58.840
+Therefore, now you can lock each chain entry individually.
+
+851
+01:06:59.400 --> 01:07:01.820
+This one gets this latch here, this one gets that latch.
+
+852
+01:07:03.500 --> 01:07:06.620
+So you no longer have the problems that they are fighting against each other,
+
+853
+01:07:06.760 --> 01:07:09.020
+if they are accessing different pages.
+
+854
+01:07:09.480 --> 01:07:12.140
+You must protect yourself against this.
+
+855
+01:07:14.100 --> 01:07:21.040
+Okay, and the buffer frame, so this record we have seen before, this remembers what is
+
+856
+01:07:21.040 --> 01:07:23.480
+the state of a certain page that I have in the buffer.
+
+857
+01:07:24.420 --> 01:07:31.720
+Okay, so first of course we have the page number because we must know for which page
+
+858
+01:07:31.720 --> 01:07:32.640
+I will be currently responsible.
+
+859
+01:07:32.980 --> 01:07:36.680
+Then we have the ledge, a read writer log that protects the page.
+
+860
+01:07:36.780 --> 01:07:42.280
+A read writer log means that we can lock the ledge either in shared and exclusive mode,
+
+861
+01:07:43.700 --> 01:07:49.260
+So you can have many people who get the same ledge in shared mode but only one who gets an exclusive mode.
+
+862
+01:07:49.380 --> 01:07:50.880
+So it's a classical read-viter log.
+
+863
+01:07:53.840 --> 01:07:57.380
+And now this ledge is already noted on the slide.
+
+864
+01:07:57.600 --> 01:08:00.600
+So this ledge is a bit more subtle than you might think.
+
+865
+01:08:01.780 --> 01:08:04.960
+Prepping this ledge is not so super easy.
+
+866
+01:08:05.420 --> 01:08:12.260
+Because remember, if I draw a picture, this was my buffer manager.
+
+867
+01:08:13.700 --> 01:08:21.540
+with a ledge. This points to a buffer frame and this points then to another
+
+868
+01:08:21.540 --> 01:08:29.940
+buffer frame. So let's call this here as page 1 and this here as page 2. Now assume
+
+869
+01:08:29.940 --> 01:08:43.000
+thread 1 tries to grab thread 1, wants to read P1, and thread 2
+
+870
+01:08:47.340 --> 01:08:49.920
+wants to read p2.
+
+871
+01:08:51.200 --> 01:08:55.380
+Now what's happening is, thread1 grabs,
+
+872
+01:08:55.660 --> 01:08:59.720
+we save it, we grab this, we lock this.
+
+873
+01:09:00.540 --> 01:09:02.840
+Or let's say we just do,
+
+874
+01:09:04.080 --> 01:09:07.180
+yeah, so let's say we, let's make,
+
+875
+01:09:09.140 --> 01:09:11.980
+yeah, so we just say, look, I don't know, there's different ways to implement it,
+
+876
+01:09:13.440 --> 01:09:27.180
+we lock this one and then we want to say p1.log share.exclusive.
+
+877
+01:09:28.300 --> 01:09:32.140
+Now assume for some reason we don't get this log because somebody else is
+
+878
+01:09:32.140 --> 01:09:38.860
+currently manipulating p1 so we don't get this so we wait. Now comes the
+
+879
+01:09:38.860 --> 01:09:41.960
+thread 2 as it wants to reach p2 and this is in principle it's no problem
+
+880
+01:09:43.440 --> 01:09:48.220
+is supposed to be 2 because p2 is different from p1 so we can do this yeah
+
+881
+01:09:48.220 --> 01:09:56.580
+but again we start with doing l.log and we don't get this because thread 1
+
+882
+01:09:56.580 --> 01:10:02.460
+currently holds this log. So this is problematic so we must have a way to
+
+883
+01:10:03.880 --> 01:10:09.800
+allow us to bypass this p1 so we can access p2 without blocking out the
+
+884
+01:10:09.800 --> 01:10:14.800
+latch. So tricky to implement and I think I'm pretty sure you will do an
+
+885
+01:10:14.800 --> 01:10:19.320
+exercise for this because it is not so... first you understand it better if you
+
+886
+01:10:19.320 --> 01:10:23.500
+have done this yourself also it's not so super easy and so we talk about this in
+
+887
+01:10:23.500 --> 01:10:28.980
+the exercises how to do this. Okay so just saying that locking and latching is more
+
+888
+01:10:28.980 --> 01:10:33.680
+complicated than you might think. Now there's another component the LSN so
+
+889
+01:10:33.680 --> 01:10:39.720
+called lock sequence number. This is the last change that was performed on this
+
+890
+01:10:40.320 --> 01:10:44.440
+page and we need this for recovery. So we come back to the lock sequence number
+
+891
+01:10:44.440 --> 01:10:52.620
+later in the lecture when we talk about recovery. And basically we just remember
+
+892
+01:10:52.620 --> 01:10:58.260
+the last change and then we write back this change to disk, we must
+
+893
+01:10:58.260 --> 01:11:02.680
+make sure that the lock has been written before. But again we do this later in the
+
+894
+01:11:03.680 --> 01:11:06.520
+Then we remember the state of the page.
+
+895
+01:11:07.040 --> 01:11:11.240
+So the state is for example clean, dirty, or newly created.
+
+896
+01:11:11.420 --> 01:11:12.220
+Now what does this mean?
+
+897
+01:11:12.620 --> 01:11:19.720
+Clean means I can just discard the page if I want and I don't have to write it back.
+
+898
+01:11:19.820 --> 01:11:24.680
+Dirty means somebody has modified it and if I want to discard it, I must write it back.
+
+899
+01:11:25.160 --> 01:11:30.960
+Newly created means this new page was freshly created.
+
+900
+01:11:30.960 --> 01:11:33.720
+So if somebody tries to access it, we can just zero it.
+
+901
+01:11:33.780 --> 01:11:36.680
+We don't have to load it from this because we know that there's only zeros in there.
+
+902
+01:11:36.940 --> 01:11:41.360
+So we can just zero it if somebody access it and then we don't have to do this.
+
+903
+01:11:41.460 --> 01:11:45.760
+There can be other states depending on the implementation, but these are the basic states that you need.
+
+904
+01:11:46.840 --> 01:11:51.140
+And then of course the data, so this is now the pointer to the real data.
+
+905
+01:11:51.360 --> 01:11:54.380
+So whether it's contained in the page, that is usually stored somewhere else.
+
+906
+01:11:55.260 --> 01:12:00.120
+And probably you will also need some other information for buffer replacement because we want to keep
+
+907
+01:12:01.060 --> 01:12:05.440
+used pages in buffer and the infrequently used pages we want to remove from the buffer,
+
+908
+01:12:05.740 --> 01:12:10.420
+there are different ways to implement this and for these different ways we probably need some extra information.
+
+909
+01:12:11.500 --> 01:12:13.440
+But this of course depends on the implementation.
+
+910
+01:12:13.960 --> 01:12:18.740
+The buffer frames themselves are usually organized in a big hash table.
+
+911
+01:12:20.260 --> 01:12:22.720
+Now I've already mentioned buffer replacement.
+
+912
+01:12:23.320 --> 01:12:27.540
+So when my buffer is full, at some point I don't have any more space,
+
+913
+01:12:27.540 --> 01:12:29.540
+I must evict something and
+
+914
+01:12:31.240 --> 01:12:37.140
+mean a clean page I can just discard a dirty page I must write back to disk before I discard but nevertheless
+
+915
+01:12:37.140 --> 01:12:42.240
+I discard pages at some point I must somehow decide how should I do this and
+
+916
+01:12:42.820 --> 01:12:47.200
+Here's this this picture here as you know, this is an illustration or to really measurement
+
+917
+01:12:47.200 --> 01:12:51.160
+But nevertheless, this is how it really looks like this picture here shows you
+
+918
+01:12:51.720 --> 01:12:55.180
+Which kind of page faults do you get so page what means?
+
+919
+01:12:55.180 --> 01:12:57.460
+how often do I have to access disk?
+
+920
+01:12:57.720 --> 01:13:00.640
+Page voids means we access a page that is not in the buffer.
+
+921
+01:13:00.820 --> 01:13:06.100
+So how many page voids do I get, depending on the buffer size?
+
+922
+01:13:06.420 --> 01:13:10.420
+Of course, if my buffer is very large, as is this end of the spectrum,
+
+923
+01:13:11.080 --> 01:13:15.840
+then I will have very few page voids, because once I have read everything,
+
+924
+01:13:16.080 --> 01:13:19.220
+I can keep everything in memory, and there's no reason to go to disk anymore.
+
+925
+01:13:19.580 --> 01:13:24.820
+So clearly, if everything fits in memory, I just access every page once, and that's it.
+
+926
+01:13:25.180 --> 01:13:30.560
+Okay, this is a, but this is very large memory. On the other hand, if I have very small memory, so here,
+
+927
+01:13:32.220 --> 01:13:37.060
+then I can barely keep anything in memory. So the more accesses I do, the more I have to read.
+
+928
+01:13:37.200 --> 01:13:41.560
+That's clear. Okay, there's no choice. The more interesting case, of course, is somewhere in the
+
+929
+01:13:41.560 --> 01:13:46.220
+middle here. So I don't have enough memory for everything, but for example, I might be able to
+
+930
+01:13:46.220 --> 01:13:51.640
+keep 10% of my data in memory, which I'll just make up some number. So what I should do then.
+
+931
+01:13:53.700 --> 01:13:56.820
+And now here you see two extreme curves.
+
+932
+01:13:57.720 --> 01:14:01.120
+One is, here's a so-called random curve.
+
+933
+01:14:01.900 --> 01:14:04.340
+Random means when I run out of memory,
+
+934
+01:14:04.580 --> 01:14:06.720
+I just pick a random page that I couldn't have memory
+
+935
+01:14:06.720 --> 01:14:07.660
+and discard it.
+
+936
+01:14:08.580 --> 01:14:09.000
+Okay?
+
+937
+01:14:09.740 --> 01:14:12.700
+Of course, you might say random is a bit extreme
+
+938
+01:14:13.220 --> 01:14:15.280
+because it could be that it's a very important page.
+
+939
+01:14:15.540 --> 01:14:19.200
+So picking a random page is really a dangerous thing
+
+940
+01:14:19.200 --> 01:14:21.740
+because it might be that I needed it immediately.
+
+941
+01:14:22.120 --> 01:14:24.760
+The other extreme here is so-called opt.
+
+942
+01:14:25.020 --> 01:14:26.560
+So this is the optimum replacement.
+
+943
+01:14:28.180 --> 01:14:30.200
+So this is the best page to replace.
+
+944
+01:14:30.840 --> 01:14:33.840
+So unfortunately, how should I know what the best page is?
+
+945
+01:14:34.080 --> 01:14:36.360
+Because I only know this in retrospective.
+
+946
+01:14:36.460 --> 01:14:39.380
+So I would have to be able to look into the future.
+
+947
+01:14:39.560 --> 01:14:42.340
+So I would have to know what will the user do in the future
+
+948
+01:14:42.340 --> 01:14:44.780
+to decide what the best page to replace is.
+
+949
+01:14:44.980 --> 01:14:48.060
+Because of course I want to keep the pages that I needed in the future,
+
+950
+01:14:49.200 --> 01:14:49.900
+these pages are.
+
+951
+01:14:50.240 --> 01:14:51.960
+So it's difficult to know.
+
+952
+01:14:52.860 --> 01:14:55.640
+And therefore in reality we cannot implement OPT.
+
+953
+01:14:55.920 --> 01:14:59.120
+OPT is unimplementable because we simply cannot know the future.
+
+954
+01:14:59.440 --> 01:15:04.220
+So what we will do in practice is we will do some compromise between random and optimum.
+
+955
+01:15:05.520 --> 01:15:10.940
+And so this is this area here that is highlighted.
+
+956
+01:15:11.240 --> 01:15:13.820
+So somewhere in this ballpark we will have strategies.
+
+957
+01:15:16.160 --> 01:15:19.800
+And the good news is we can't be better than random.
+
+958
+01:15:19.940 --> 01:15:22.860
+Bad news is we usually are not much better than random.
+
+959
+01:15:23.200 --> 01:15:29.440
+For example, the LRU strategy that we will look at in a moment, very popular strategy
+
+960
+01:15:30.000 --> 01:15:31.820
+is roughly 10% better than random.
+
+961
+01:15:32.020 --> 01:15:36.640
+I mean it is better than random, but not super much better than random.
+
+962
+01:15:36.760 --> 01:15:38.180
+It's a bit better than random.
+
+963
+01:15:38.740 --> 01:15:43.020
+But of course we want to do this because if we can be better than random, we should be
+
+964
+01:15:44.080 --> 01:15:51.000
+at least a bit. Now you might know the strategies at least first ones from a
+
+965
+01:15:51.000 --> 01:15:55.040
+lecture in operating systems because operating systems of course have exactly
+
+966
+01:15:55.040 --> 01:16:01.180
+the same problem and at the end we look at database specific strategies but we
+
+967
+01:16:01.180 --> 01:16:06.520
+start with the classical ones. First one FIFO first in first out so when we run
+
+968
+01:16:06.520 --> 01:16:11.880
+out of memory we evict the page that we have loaded first. Good thing is can be
+
+969
+01:16:13.820 --> 01:16:18.420
+simple strategy, you just keep all my buffer frames in a linked list and I
+
+970
+01:16:18.420 --> 01:16:22.960
+insert a new page at the end and remove page for eviction from the head.
+
+971
+01:16:23.900 --> 01:16:31.100
+So old pages are removed first. So this is good. Not so great is, so this
+
+972
+01:16:31.100 --> 01:16:35.980
+strategy does not take locality into account. So if some of your pages are
+
+973
+01:16:35.980 --> 01:16:39.820
+accessed over and over again, the FIFO strategy doesn't recognize this. We just
+
+974
+01:16:40.380 --> 01:16:44.940
+evict the oldest page first and that's it. Another unpleasant thing is people have
+
+975
+01:16:44.940 --> 01:16:49.120
+found out that there are cases where FIFO becomes worse when you increase
+
+976
+01:16:49.120 --> 01:16:52.760
+memory sizes. This is also a bit unpleasant. You usually expect that if
+
+977
+01:16:52.760 --> 01:16:57.000
+memory increases your buffering gets better. That is not guaranteed with FIFO.
+
+978
+01:16:57.080 --> 01:17:00.220
+FIFO sometimes you get worse with more memory. It's also not so pleasant.
+
+979
+01:17:00.720 --> 01:17:04.580
+Therefore, FIFO is easy but people usually don't do this.
+
+980
+01:17:06.500 --> 01:17:10.040
+A very popular strategy is this one here, LIU.
+
+981
+01:17:10.660 --> 01:17:12.900
+LIU means least recently used.
+
+982
+01:17:14.200 --> 01:17:19.020
+Basically, we want to remove the pages that have not been used for a long time.
+
+983
+01:17:20.240 --> 01:17:24.600
+Like in FIFO, we keep frames in a list, in this case in a double linked list.
+
+984
+01:17:24.760 --> 01:17:26.540
+You will quickly realize why.
+
+985
+01:17:28.960 --> 01:17:31.860
+This list says which pages you can remove.
+
+986
+01:17:31.860 --> 01:17:35.880
+and if you want to evict a page, we take the head of the list and just evict it.
+
+987
+01:17:36.000 --> 01:17:36.720
+Okay, that's easy.
+
+988
+01:17:38.280 --> 01:17:40.000
+But how do we maintain this list?
+
+989
+01:17:40.240 --> 01:17:42.300
+So when we unfix a page,
+
+990
+01:17:42.600 --> 01:17:44.740
+so when we are done with the frame,
+
+991
+01:17:44.900 --> 01:17:46.120
+we say we don't need this anymore,
+
+992
+01:17:46.420 --> 01:17:50.180
+then we remove it from the list and put it at the end.
+
+993
+01:17:50.300 --> 01:17:51.920
+So basically this is the list of my pages.
+
+994
+01:17:52.900 --> 01:17:53.980
+List of my pages.
+
+995
+01:17:54.480 --> 01:17:58.840
+Then I first read page one, then I read page two, then I read page three,
+
+996
+01:17:59.840 --> 01:18:05.140
+and then I read for example page 2 again and then what happens is I remove page 2
+
+997
+01:18:05.140 --> 01:18:11.500
+from this list position and instead add it at the end of my list. Now at this
+
+998
+01:18:11.500 --> 01:18:15.700
+point I hope you realize why we use the double linked list now because in a
+
+999
+01:18:15.700 --> 01:18:19.800
+double linked list you can remove an element in constant time. So if you remove
+
+1000
+01:18:19.800 --> 01:18:22.800
+it from a constant time from its current position and put it at the end.
+
+1001
+01:18:23.680 --> 01:18:28.300
+And the effect of this is that the frequently used pages, so called hot
+
+1002
+01:18:28.840 --> 01:18:30.060
+So pages are used all the time.
+
+1003
+01:18:30.280 --> 01:18:32.340
+These are at the end of the list,
+
+1004
+01:18:32.520 --> 01:18:34.320
+and the infrequently used pages
+
+1005
+01:18:34.320 --> 01:18:35.560
+are at the beginning of the list.
+
+1006
+01:18:35.800 --> 01:18:38.420
+And therefore we evict pages
+
+1007
+01:18:38.420 --> 01:18:39.760
+that have not been used for a while,
+
+1008
+01:18:39.940 --> 01:18:43.340
+and this is usually a good idea.
+
+1009
+01:18:43.520 --> 01:18:44.880
+Now this is a very, very good,
+
+1010
+01:18:45.680 --> 01:18:46.980
+and sorry, not very good,
+
+1011
+01:18:47.060 --> 01:18:48.200
+a very, very popular strategy.
+
+1012
+01:18:48.660 --> 01:18:49.880
+Many systems use LIU.
+
+1013
+01:18:50.760 --> 01:18:51.500
+Very popular.
+
+1014
+01:18:53.700 --> 01:18:56.440
+The main unpleasant about LIU is,
+
+1015
+01:18:57.080 --> 01:18:59.440
+how do you maintain this LAU list?
+
+1016
+01:18:59.960 --> 01:19:04.020
+Because remember, multiple people are trying to use the buffer manager at the same time.
+
+1017
+01:19:04.460 --> 01:19:10.060
+Potentially, you have 60, 100 threats fighting for this list,
+
+1018
+01:19:10.140 --> 01:19:13.180
+updating this list all the time because they're accessing pages all the time.
+
+1019
+01:19:13.680 --> 01:19:16.320
+Therefore, the list itself, so this list here,
+
+1020
+01:19:18.580 --> 01:19:19.980
+requires some synchronization.
+
+1021
+01:19:20.120 --> 01:19:23.180
+Here we say, let's see if we have some care, so we must synchronize this.
+
+1022
+01:19:23.180 --> 01:19:27.660
+And if he synchronizes then this list itself can become the performance hotspot.
+
+1023
+01:19:27.840 --> 01:19:31.920
+So this list itself makes you slow because obtaining the list makes you slow.
+
+1024
+01:19:32.720 --> 01:19:33.320
+Now this is bad.
+
+1025
+01:19:34.760 --> 01:19:36.540
+Now what other strategies are there?
+
+1026
+01:19:36.700 --> 01:19:40.020
+There is one LFU, least frequently used.
+
+1027
+01:19:40.760 --> 01:19:45.720
+So instead of adjusting the crude list, so this here is just a simple list and you move
+
+1028
+01:19:45.720 --> 01:19:46.780
+everybody to the end.
+
+1029
+01:19:47.580 --> 01:19:52.880
+And LFU, instead you count the frequency of excess and then you maintain a priority queue.
+
+1030
+01:19:53.520 --> 01:19:58.880
+Instead of having a simple list, you have a proteq, the infrequent elements, or the frequent elements,
+
+1031
+01:19:58.960 --> 01:20:02.360
+it depends on what you call this head and tail,
+
+1032
+01:20:02.800 --> 01:20:07.840
+and say the infrequent elements at the beginning, so you can evict them, and the frequent ones are at the end.
+
+1033
+01:20:08.160 --> 01:20:10.140
+So you organize them by frequency.
+
+1034
+01:20:12.020 --> 01:20:18.380
+Now, in theory, this is a beautiful strategy, it has many nice properties, but in reality it is too expensive.
+
+1035
+01:20:18.380 --> 01:20:22.660
+This PROTEQ is even worse to maintain than a double linked list.
+
+1036
+01:20:22.980 --> 01:20:29.060
+Super expensive, therefore I don't think anybody uses this for productive systems.
+
+1037
+01:20:29.160 --> 01:20:32.940
+There are some research papers on this, but I think nobody uses this in production.
+
+1038
+01:20:34.000 --> 01:20:36.840
+It looks nice, but it's too expensive in reality.
+
+1039
+01:20:38.360 --> 01:20:40.220
+Okay, now what else can we do?
+
+1040
+01:20:41.360 --> 01:20:47.660
+Now, we could say LU is nice conceptually, but the LU list itself is a hotspot.
+
+1041
+01:20:48.380 --> 01:20:54.960
+this list all the time. Therefore we want something that behaves like LRU but is
+
+1042
+01:20:54.960 --> 01:20:59.060
+cheaper. One mechanism to do this is the so-called second chance algorithm.
+
+1043
+01:20:59.480 --> 01:21:04.240
+Another name for this algorithm is clock. Some people call this clock.
+
+1044
+01:21:05.000 --> 01:21:12.100
+How does clock work? Basically we approximate this list using just one bit
+
+1045
+01:21:12.100 --> 01:21:18.340
+in the page. So if these are all my pages, these are all my pages that I have in my
+
+1046
+01:21:18.340 --> 01:21:23.940
+buffer, and then I use one bit to say was this page used yes or no. So it says I
+
+1047
+01:21:23.940 --> 01:21:28.340
+use this page, I use that page, I use that page. And whenever I access a page, I
+
+1048
+01:21:28.340 --> 01:21:34.180
+set this bit to say, more precisely when I unfix the page, I set this bit to say
+
+1049
+01:21:34.180 --> 01:21:38.360
+okay I have used this page. Now when I want to evict a page,
+
+1050
+01:21:39.620 --> 01:21:41.800
+I'm sorry, I should put the one on top.
+
+1051
+01:21:43.860 --> 01:21:51.520
+When I want to evict the page, I have a counter here that checks for an unused page.
+
+1052
+01:21:51.680 --> 01:21:53.740
+So we say, is this page unused?
+
+1053
+01:21:54.080 --> 01:21:54.320
+No.
+
+1054
+01:21:54.840 --> 01:21:59.060
+Somebody has used it, so I cannot evict it, but I clear this bit.
+
+1055
+01:21:59.220 --> 01:22:05.880
+So then I move my check head here to the next position, to this one here.
+
+1056
+01:22:07.180 --> 01:22:13.420
+Can I evict this page? No. Clear this bit. Can I evict this next page here?
+
+1057
+01:22:14.060 --> 01:22:17.960
+Can I evict this point here? No. Clear the bit. Now in the meantime
+
+1058
+01:22:17.960 --> 01:22:22.700
+somebody has again used the previous slides, previous page again this bit is
+
+1059
+01:22:23.600 --> 01:22:29.660
+reoccurring but that's okay. So my checker here goes around and then says
+
+1060
+01:22:29.660 --> 01:22:39.380
+okay can I can I use this no clear this and then we clear this bit here and then
+
+1061
+01:22:39.380 --> 01:22:45.060
+at some point we come here and then says oh this does not have to be a bit set now
+
+1062
+01:22:45.060 --> 01:22:49.440
+this page I can evict and we now use this page therefore it is named second chance
+
+1063
+01:22:49.440 --> 01:22:54.480
+and so the first time you see a used page you give it a second chance you just
+
+1064
+01:22:54.480 --> 01:22:59.560
+clear the bit but the second time you if you see a page a second time nobody has
+
+1065
+01:22:59.660 --> 01:23:03.620
+it in the meantime, then you evict it. Second chance.
+
+1066
+01:23:04.740 --> 01:23:10.080
+And also named clock. Clock because this counter here moves around like a clock
+
+1067
+01:23:10.080 --> 01:23:14.900
+moves around and checks for the next ones available. Okay, good thing about
+
+1068
+01:23:14.900 --> 01:23:19.360
+second chance is it's pretty easy to implement or pretty cheap, but of course
+
+1069
+01:23:19.360 --> 01:23:23.900
+it's a bit crude. We could just give it one bit of information for each page,
+
+1070
+01:23:24.040 --> 01:23:27.540
+a bit crude, but nevertheless performance wise it's probably better than
+
+1071
+01:23:27.540 --> 01:23:31.340
+because if you have a large amount of threads then
+
+1072
+01:23:31.340 --> 01:23:37.160
+LIU is very difficult to implement efficiently. So second chance is crude but
+
+1073
+01:23:37.160 --> 01:23:41.580
+can be implemented cheaply. Now previously the previous approaches were
+
+1074
+01:23:41.580 --> 01:23:50.600
+also all known from operating system but this one here now 2Q so this
+
+1075
+01:23:50.600 --> 01:23:54.720
+is one specific to database systems or was invented for database systems.
+
+1076
+01:23:54.720 --> 01:24:00.240
+and now the observation is there are different kinds of those not all pages
+
+1077
+01:24:00.240 --> 01:24:04.780
+are the same basically now for example if you have a large relation so this is
+
+1078
+01:24:04.780 --> 01:24:13.680
+my relation it's very large relation are and I read the sequentially then yes a
+
+1079
+01:24:14.340 --> 01:24:19.860
+little point in buffering pages it is if our slash if I was small then it's
+
+1080
+01:24:20.120 --> 01:24:26.420
+be a bit of a sludge. Then I read a page, so I read this here, then I go to the next
+
+1081
+01:24:26.420 --> 01:24:30.300
+page and I will never go back to the previous page, at least not in this query. Another
+
+1082
+01:24:30.300 --> 01:24:34.120
+query of course can, but this query will not go back to this page because we just pass
+
+1083
+01:24:34.120 --> 01:24:40.080
+over. Okay, so, and therefore, this page should only be buffered if you have a lot of memory.
+
+1084
+01:24:40.260 --> 01:24:43.700
+So if you have enough memory, then of course we want to buffer everything. But if you want
+
+1085
+01:24:43.700 --> 01:24:48.280
+to run out of memory, then we can evict this page pretty safely because nobody else will
+
+1086
+01:24:50.120 --> 01:24:53.960
+not in the near future. Now there are other pages like for example if you have a
+
+1087
+01:24:53.960 --> 01:25:00.000
+B-tree, then the root of this B-tree should be buffered all the time because
+
+1088
+01:25:00.000 --> 01:25:03.660
+everybody goes through the root. Even this page is here I access frequently.
+
+1089
+01:25:04.620 --> 01:25:09.740
+If you access a page frequently then we want to buffer it. If you access the page
+
+1090
+01:25:09.740 --> 01:25:14.980
+only once then we don't want to buffer this, at least if we run out of memory.
+
+1091
+01:25:17.020 --> 01:25:20.220
+How do we know if this is a frequently used page or not?
+
+1092
+01:25:21.640 --> 01:25:27.680
+The 2Q strategy says, we just try to figure it out by observation.
+
+1093
+01:25:27.920 --> 01:25:31.620
+Basically, first time we see a page, we put in a FIFO queue.
+
+1094
+01:25:32.120 --> 01:25:34.880
+Like a very simple FIFO strategy, we put in a FIFO queue.
+
+1095
+01:25:35.700 --> 01:25:41.560
+We just say, first you read 1, then you read 2, then you read 2, then you read 3, and so on.
+
+1096
+01:25:41.560 --> 01:25:43.680
+We just remember this.
+
+1097
+01:25:43.860 --> 01:25:47.480
+And when we run out of memory, we evict the first page from the FIFA queue.
+
+1098
+01:25:48.640 --> 01:25:50.760
+Okay? So, simply to interpret it is cheap.
+
+1099
+01:25:51.660 --> 01:25:54.000
+Now, some of these pages might not be...
+
+1100
+01:25:54.000 --> 01:25:56.500
+And for a scan, by the way, this is a good strategy,
+
+1101
+01:25:56.680 --> 01:26:00.820
+because if we run out of memory during a scan, there's no point in buffering them.
+
+1102
+01:26:00.920 --> 01:26:01.940
+We can safely move them.
+
+1103
+01:26:03.400 --> 01:26:07.520
+Now, if some of these pages should be frequently used pages, like B3 pages also,
+
+1104
+01:26:07.520 --> 01:26:09.940
+then the CEO
+
+1105
+01:26:09.940 --> 01:26:12.700
+exists a page that is already in my FIVO queue.
+
+1106
+01:26:13.180 --> 01:26:15.240
+For this, I use a second page,
+
+1107
+01:26:15.540 --> 01:26:16.740
+a second queue, and a UQ.
+
+1108
+01:26:20.180 --> 01:26:21.940
+And there, I remember,
+
+1109
+01:26:22.080 --> 01:26:24.240
+okay, how often do I access P2,
+
+1110
+01:26:24.260 --> 01:26:24.640
+and so on.
+
+1111
+01:26:24.740 --> 01:26:27.980
+So these are organized by frequency.
+
+1112
+01:26:28.500 --> 01:26:30.480
+Okay, therefore, frequently accessed pages
+
+1113
+01:26:30.480 --> 01:26:32.640
+are in a UQ.
+
+1114
+01:26:33.200 --> 01:26:34.680
+Infrequent pages are
+
+1115
+01:26:34.680 --> 01:26:37.320
+in a FIVO queue.
+
+1116
+01:26:38.860 --> 01:26:43.100
+We prefer evict from the FIFO queue, but of course we must also evict from the LAU queue
+
+1117
+01:26:43.100 --> 01:26:47.700
+from time to time, because otherwise everything ends up in the LAU queue, and I don't bother
+
+1118
+01:26:47.700 --> 01:26:48.100
+anything.
+
+1119
+01:26:49.120 --> 01:26:53.520
+So, we evict from both, but we prefer evict from the FIFO queue.
+
+1120
+01:26:54.400 --> 01:27:00.120
+And the effect here is that the hot pages are in LAU, the read once pages are in FIFO
+
+1121
+01:27:00.120 --> 01:27:00.280
+queue.
+
+1122
+01:27:00.600 --> 01:27:05.060
+And for many, many database applications, this is a very good strategy.
+
+1123
+01:27:06.520 --> 01:27:11.420
+because again scans there's little point to buffering if you run out of memory anyway.
+
+1124
+01:27:11.760 --> 01:27:18.140
+Put them in a FIFA queue, get rid of them quickly, for any instructors try to keep them in a LEU queue.
+
+1125
+01:27:19.860 --> 01:27:27.660
+Okay, last here, the last thing is the 2Q basically exploits knowledge about database
+
+1126
+01:27:28.440 --> 01:27:34.500
+application because it realizes that not all page accesses are the same. So 2Q tries to recognize
+
+1127
+01:27:35.060 --> 01:27:40.860
+pages and helps it differently. On the other hand, this is a good idea of course. On the other hand,
+
+1128
+01:27:41.160 --> 01:27:46.480
+we might know this technically because we understand the query. So if you see if this is
+
+1129
+01:27:46.480 --> 01:27:51.040
+a query and the user's index access, then I understand that I'm in an index and I will probably
+
+1130
+01:27:51.040 --> 01:27:57.220
+access this index repeatedly. While if I perform a large scan, then I know that I will most likely
+
+1131
+01:27:57.220 --> 01:28:03.220
+not access this repeatedly. And we can pass along this information to the buffer manager by giving
+
+1132
+01:28:05.060 --> 01:28:09.220
+you when you unfix a page you can give it a hint for example the most simple
+
+1133
+01:28:09.220 --> 01:28:15.320
+hints are you could say will need or will not need as well like in a in a
+
+1134
+01:28:15.320 --> 01:28:18.760
+node of an index you will say will need because most likely you will do will
+
+1135
+01:28:18.760 --> 01:28:24.520
+need this is this and therefore you will place it for example at the end of the
+
+1136
+01:28:24.520 --> 01:28:30.000
+queue or we say will not need it as just a scanner will probably not do this
+
+1137
+01:28:30.000 --> 01:28:34.220
+therefore we place it more in the middle or closer to the front of the queue as if
+
+1138
+01:28:35.060 --> 01:28:40.380
+of the queue depending on the hints that we get from an unfixing page. And this is usually what
+
+1139
+01:28:41.140 --> 01:28:45.240
+what of course this is the most difficult to implement because you now must pass data,
+
+1140
+01:28:45.520 --> 01:28:52.420
+pass knowledge around from queue processing to buffer management. But this is what if you
+
+1141
+01:28:52.420 --> 01:28:55.720
+implement it correctly works best because then you exploit the knowledge that you have
+
+1142
+01:28:55.720 --> 01:29:03.440
+and then you can unfix pages as this makes sense. Okay I didn't manage to finish the storage
+
+1143
+01:29:05.060 --> 01:29:11.220
+here, but I will stop here now and I will continue with storage for the next lecture.
+
+1144
+01:29:11.520 --> 01:29:12.460
+Okay, thank you.

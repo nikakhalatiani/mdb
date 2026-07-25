@@ -1,0 +1,1335 @@
+[00:00:01.340 --> 00:00:03.980] Welcome to the lecture on database implementation.
+[00:00:04.420 --> 00:00:08.620] So in the last week we have looked at B-trees.
+[00:00:08.720 --> 00:00:12.020] We saw all kinds of problems that we had, for example, if we have variable length keys.
+[00:00:12.400 --> 00:00:14.580] So if we do this naively, bad things can happen.
+[00:00:14.840 --> 00:00:16.600] So then we talked about, okay, what can we do?
+[00:00:18.040 --> 00:00:19.940] How should we choose separators?
+[00:00:20.120 --> 00:00:25.960] And so to improve the fan out so that we get a high fan out, because high fan out means low depth.
+[00:00:26.280 --> 00:00:27.940] So this is highly desirable.
+[00:00:28.580 --> 00:00:34.600] So now to finally conclude this B-tree chapter, we look at one more trick or two small tricks that
+[00:00:34.600 --> 00:00:42.240] we can do to improve B-trees, again to improve the fanout. And these are so-called prefix B-plus
+[00:00:42.240 --> 00:00:47.660] trees. Note that there are two different techniques that people historically call prefix B-plus trees.
+[00:00:47.880 --> 00:00:53.080] So it's not exactly the same. Now they're similar ideas, but the technology are different.
+[00:00:53.800 --> 00:00:59.740] So the first thing, this is a pretty easy trick basically, is what you see on this page here.
+[00:01:00.060 --> 00:01:06.360] You can say, you know, in a prefix B plus 3, it's not necessary that the separator does occur in the
+[00:01:06.360 --> 00:01:11.940] data. It can occur in the data, but it doesn't have to. So we can choose anything as separator,
+[00:01:12.200 --> 00:01:19.100] as long as it separates my left and my right side. So here we see, if one node here contains
+[00:01:19.100 --> 00:01:22.640] And A, A, A, B, B, B, so two pretty long strings.
+[00:01:24.200 --> 00:01:25.560] Then another bucket here.
+[00:01:25.800 --> 00:01:27.380] So now what should I choose as separator?
+[00:01:27.580 --> 00:01:32.880] All strings are long, but we can see if you look at them, now between B and E, there are
+[00:01:32.880 --> 00:01:36.340] other letters, so I could for example choose C here as separate.
+[00:01:36.560 --> 00:01:40.540] Or of course, just as well, I could have chosen D, it doesn't matter.
+[00:01:41.040 --> 00:01:44.020] It matters a bit considering future inserts.
+[00:01:44.020 --> 00:01:50.380] But concerning the pure lookup, both C and D would have been fine.
+[00:01:51.680 --> 00:01:52.860] So we could have chosen anything.
+[00:01:54.940 --> 00:02:00.680] And because we can choose anything as long as we can separate left and right, what we
+[00:02:00.680 --> 00:02:05.660] will do is we will choose the smallest possible separator such that left and right is separated.
+[00:02:06.600 --> 00:02:09.080] Okay, this is a pretty small idea.
+[00:02:10.780 --> 00:02:15.140] A beautiful property of this approach is that we don't have to change anything.
+[00:02:15.600 --> 00:02:19.580] Now, of course, the moment it shoots the separator, I have to run a bit of logic,
+[00:02:19.720 --> 00:02:24.440] but otherwise lookup works the same, so no change at all is necessary.
+[00:02:24.980 --> 00:02:28.320] Only the lookup, the choice of separators to be modified.
+[00:02:31.120 --> 00:02:32.300] Now, looks good.
+[00:02:32.920 --> 00:02:37.500] Now in practice, there are two problems, or perhaps one problem,
+[00:02:39.080 --> 00:02:43.980] do this? So I said, we look at B and we look here, we look at this string, if we look at that string,
+[00:02:44.080 --> 00:02:49.640] then we say, okay, C is between this. Yeah, but how do I do this for arbitrary data types?
+[00:02:50.840 --> 00:02:58.500] So what, I mean, basically I said in the last lecture that we usually assume that B2 stores
+[00:02:58.500 --> 00:03:03.280] blobs, so we don't understand the content and therefore it's pretty hard to choose this. If
+[00:03:03.280 --> 00:03:08.160] we don't understand the data type, I cannot choose this between. If I know that these two are strings,
+[00:03:09.360 --> 00:03:10.640] number between them.
+[00:03:12.720 --> 00:03:17.880] And strictly speaking, even if I know that this is strings, choosing a separator is not
+[00:03:17.880 --> 00:03:18.700] that easy.
+[00:03:19.280 --> 00:03:26.340] Now, we could say here BBBEE, clear how to do this, just use a short string between them.
+[00:03:27.340 --> 00:03:34.580] But what happens if we start having, for example, locale information, like this German umlauts,
+[00:03:34.580 --> 00:03:43.680] For example, if you have something like this, so this here is an umlaut, how do I choose
+[00:03:43.680 --> 00:03:44.720] a separator for this?
+[00:03:45.200 --> 00:03:52.300] So this is potentially sorted like this.
+[00:03:52.860 --> 00:03:56.600] And how do I choose a separator that separates this?
+[00:03:57.000 --> 00:03:59.920] Suddenly this becomes complicated.
+[00:03:59.920 --> 00:04:07.240] So I wouldn't need rules per language perhaps, or in general cases, it's not even possible.
+[00:04:07.480 --> 00:04:10.100] Because if you think about the implementation, I mean it should be,
+[00:04:10.260 --> 00:04:13.840] or I don't mean this is implementation lecture, I can talk about this a bit.
+[00:04:14.000 --> 00:04:19.760] So if you want to store locale independent, sorry, not locale independent, locale dependent
+[00:04:19.760 --> 00:04:27.100] ordering, like if you want to sort strings language dependent, yes, because you will
+[00:04:28.100 --> 00:04:32.360] German you might sort them differently, or I mean English and German are not too different, they're
+[00:04:32.980 --> 00:04:37.640] pretty similar, but the other languages that sort really funny, like if you remember correctly,
+[00:04:37.920 --> 00:04:45.620] if in Danish, if you have a string within double A, this is suddenly treated especially, this is
+[00:04:45.620 --> 00:04:51.260] sorted differently from everything else. So these are these kinds of rules, if you want to do this
+[00:04:51.260 --> 00:04:53.480] properly for each language.
+[00:04:54.340 --> 00:05:00.380] Now there is a mechanism here that is a so-called Unicode Collate algorithm, that basically
+[00:05:00.380 --> 00:05:06.200] takes your string here and then maps your string into a sequence of weights, so your
+[00:05:07.020 --> 00:05:07.420] Unicode weights.
+[00:05:10.160 --> 00:05:13.640] And we can then compare this weight, so this works.
+[00:05:13.880 --> 00:05:20.940] Problem is, this mapping is not bijective, so therefore we cannot reverse it.
+[00:05:22.320 --> 00:05:26.260] It's pretty difficult to find a string that is between these two arbitrary strings.
+[00:05:26.380 --> 00:05:29.820] So if I give you two arbitrary strings and say give me a string that is in between them,
+[00:05:30.080 --> 00:05:34.280] if it's just an SQ string that is reasonably easy, but if this is a unicode string, it's
+[00:05:34.280 --> 00:05:34.960] not easy at all.
+[00:05:35.600 --> 00:05:39.380] And it depends on the language that you have, but even independent of this problem is pretty
+[00:05:39.380 --> 00:05:39.680] difficult.
+[00:05:40.340 --> 00:05:45.060] Okay, so these kind of perfect split class trees are nice, but not as universal as you
+[00:05:45.060 --> 00:05:45.440] might think.
+[00:05:45.440 --> 00:05:50.220] And now there's a second kind of approach of PRVs plus trees.
+[00:05:50.860 --> 00:05:53.680] And this now really assumes nearly nothing about this.
+[00:05:53.800 --> 00:05:57.600] This works also for blobs, so we don't pretend to understore the content.
+[00:05:59.160 --> 00:06:03.640] And here's observation is, if you have, I mean, whatever Btree does it,
+[00:06:03.800 --> 00:06:08.920] it sorts its input lexicographically by definition, because all my input is
+[00:06:08.920 --> 00:06:11.580] in increasing order, so all my input is sorted.
+[00:06:12.100 --> 00:06:15.360] Now, if you think about a telephone book, for example, which is like a Btree in
+[00:06:15.440 --> 00:06:15.760] flat.
+[00:06:16.140 --> 00:06:20.740] So if you think this, you notice that neighboring entries tend to be very similar.
+[00:06:21.120 --> 00:06:25.320] Because in a telephone book everything is sorted by last name and first name.
+[00:06:25.460 --> 00:06:30.460] Therefore neighboring entries tend to have the same last name or if it's not the same
+[00:06:30.460 --> 00:06:31.460] then at least very similar.
+[00:06:32.460 --> 00:06:35.200] And this is also a trick that we can use.
+[00:06:35.340 --> 00:06:40.940] So here we have an example where we assume we store two URLs on my page.
+[00:06:40.940 --> 00:06:44.260] So I might have an URL for Google and for Sigmod, for example.
+[00:06:45.500 --> 00:06:51.620] And we realized this, the full URL, we would have two URLs, both of them start with HTTP.
+[00:06:52.160 --> 00:06:52.760] .
+[00:06:54.480 --> 00:07:05.540] And then google.com and then the same here, same Sigmod.org.
+[00:07:05.800 --> 00:07:06.260] Okay.
+[00:07:06.880 --> 00:07:07.320] No, sorry.
+[00:07:07.680 --> 00:07:07.920] Org.
+[00:07:08.760 --> 00:07:12.480] So this we store two times, in fact not only two times, but a hundred times.
+[00:07:12.700 --> 00:07:17.660] But so neighboring entries here, all of them on a page, on a single page, all of them might
+[00:07:17.660 --> 00:07:18.760] begin with this sequence.
+[00:07:19.140 --> 00:07:24.560] And therefore instead of storing this sequence every time, what we can do is we factor out
+[00:07:24.560 --> 00:07:28.180] the prefix that is the same for all keys on my current page.
+[00:07:28.180 --> 00:07:31.820] So this here is the prefix for the page.
+[00:07:37.820 --> 00:07:44.640] And we store the prefix only once and we implicitly know that all other entries on the page must
+[00:07:44.640 --> 00:07:46.840] be prepended with this prefix.
+[00:07:48.640 --> 00:07:52.680] And this saves a lot of space of course if the neighboring entries are similar.
+[00:07:52.680 --> 00:07:59.420] Here, so in my example here, we save, I don't know, five, six, seven, eight, nine, ten, eleven,
+[00:07:59.460 --> 00:08:05.720] 11 bytes per entry. So we have many of them, then we can save quite a bit and have a much higher fanout.
+[00:08:07.720 --> 00:08:14.360] Good thing is, so the change into the lookup logic is minor. So if I go to a page, the only
+[00:08:14.360 --> 00:08:19.140] thing I have to do, I have to compare my search key with the prefix, because I know that all
+[00:08:19.140 --> 00:08:21.480] entries on my page will have the same prefix.
+[00:08:21.700 --> 00:08:25.240] Now so if I'm larger than this, I can immediately go to the next entry.
+[00:08:26.580 --> 00:08:30.420] If I have the same prefix as the prefix on the page, then I strip this from my search
+[00:08:30.420 --> 00:08:32.060] key and then just search for the rest.
+[00:08:32.560 --> 00:08:35.160] Now so if you know, if somebody would have to technically search for
+[00:08:37.380 --> 00:08:44.000] slash slash dub dub dub dot vldb dot org or something like this.
+[00:08:44.380 --> 00:08:47.600] So while searching, I would realize, oh this is my common prefix.
+[00:08:50.080 --> 00:08:55.140] And then I would just search for vldb.org on the page, because I know that all entries
+[00:08:55.140 --> 00:08:56.340] on the page have the same prefix.
+[00:08:56.700 --> 00:08:58.080] Okay, so it's a pretty small change.
+[00:08:58.420 --> 00:08:58.940] That's good.
+[00:09:02.140 --> 00:09:03.780] Now for lookup it's fine.
+[00:09:04.060 --> 00:09:09.140] If you want to scan, so if you want to produce outputs to the user, this is a bit more complicated
+[00:09:09.140 --> 00:09:12.840] because if you want to report it to the user, then we must reconstruct this.
+[00:09:13.180 --> 00:09:16.800] So then we must concatenate this here and this here, and we must concatenate this and
+[00:09:16.800 --> 00:09:18.140] this, because this is a foot string.
+[00:09:19.140 --> 00:09:21.860] between sequences of two parts, I must reconstruct this.
+[00:09:22.620 --> 00:09:26.480] And therefore, if I want to avoid this cost of reconstruction,
+[00:09:27.160 --> 00:09:29.980] I might only do this prefix compression
+[00:09:29.980 --> 00:09:31.800] in the inner nodes, because in the nodes
+[00:09:31.800 --> 00:09:32.660] there's no disadvantage.
+[00:09:33.520 --> 00:09:35.560] And as inner nodes, I always just go down,
+[00:09:35.700 --> 00:09:38.340] I do a search, so inner nodes, I can always do this.
+[00:09:39.500 --> 00:09:41.980] On the leaf pages where I can at least potentially
+[00:09:41.980 --> 00:09:44.160] do a range query, so I want to output everything
+[00:09:44.160 --> 00:09:46.920] in a certain range, there I might care
+[00:09:47.720 --> 00:09:51.480] about this reconstruction cost and then it don't stall this. On the other hand,
+[00:09:51.820 --> 00:09:56.200] I mean it's true that some people do index only queries, which means queries that just reads
+[00:09:56.200 --> 00:10:02.560] index and then this prefix factoring hurts you, but I think in most cases even on the leaf pages
+[00:10:02.560 --> 00:10:07.620] this is a win. So prefix b plus 3 is a pretty good idea. So usually you will want to do this.
+[00:10:08.420 --> 00:10:11.960] Again you save a lot of space and by saving a lot of space you get a higher fan out.
+[00:10:11.960 --> 00:10:19.120] So this is quite good, in particular if you have long strings in your index.
+[00:10:20.500 --> 00:10:26.220] Okay and so as I think I already said this already, so the electrographic short order
+[00:10:26.220 --> 00:10:30.160] makes perfect comparison attractive, and we have to say that they tend to have the same
+[00:10:30.160 --> 00:10:31.940] key for neighboring entries.
+[00:10:34.320 --> 00:10:40.800] And of course, two things, so this not only works for strings, this is an example, but
+[00:10:41.960 --> 00:10:46.280] So if we indexed lines something like A and B, neighboring entries tend to have the same values
+[00:10:46.280 --> 00:10:51.460] for A. So factoring out this A is important, it's quite useful. In particular, I think if you think
+[00:10:51.460 --> 00:10:56.440] about partition B trees, where we talked about that we prepend an artificial value to everywhere,
+[00:10:57.120 --> 00:11:01.280] and a partition B tree basically requires you to implement a prefix B plus tree.
+[00:11:01.700 --> 00:11:06.420] Because if you do this prefix compression here on a partition B tree, the partition costs you
+[00:11:06.420 --> 00:11:09.280] nothing because you don't really store the partition.
+[00:11:09.500 --> 00:11:13.480] The partition is stored only once per page and you have a thousand entries on the page.
+[00:11:13.960 --> 00:11:16.560] So this space consumption doesn't really matter.
+[00:11:17.520 --> 00:11:20.580] And we stored only once and then we can factor it out.
+[00:11:20.840 --> 00:11:27.180] So this is, this partition B-trays are very natural combination with previous B-plus trees.
+[00:11:28.420 --> 00:11:31.660] Now for strings everything works as it is.
+[00:11:31.660 --> 00:11:38.520] For numerical values, you might wish to store your values in big engine order, not in little
+[00:11:38.520 --> 00:11:39.140] engine order.
+[00:11:39.540 --> 00:11:48.740] So I hope it's clear why, because if you think, let's say I want to store the value, I must
+[00:11:48.740 --> 00:11:50.820] use small numbers so everything works out.
+[00:11:50.820 --> 00:12:03.340] So let's say I want to store the value 258, so this is my value 258.
+[00:12:03.560 --> 00:12:11.820] Now if I store this in big engine order, which means most significant byte first, so then
+[00:12:11.820 --> 00:12:16.260] this binary representation here is 1, 2.
+[00:12:16.260 --> 00:12:32.060] Big Endian because this is of course 1 times 256 plus 2.
+[00:12:32.500 --> 00:12:43.320] So therefore Big Endian encoding is 1, 2 and if I would have the value 259, then as next
+[00:12:43.320 --> 00:12:47.280] value then of course the binary represents the pick engine encoding would be 1,3.
+[00:12:48.800 --> 00:12:53.620] And we see what happens, first byte is the same, second byte is increasing, therefore
+[00:12:53.620 --> 00:12:58.220] we can factor out the common prefix. If I instead would store this as little engine, which means
+[00:12:58.220 --> 00:13:06.320] I store a least significant byte first, then this here would be encoded as 2,1 and
+[00:13:08.260 --> 00:13:12.260] 3,1. This is of course not good for prefix compression because now neighboring entries
+[00:13:13.720 --> 00:13:18.400] So if you want to store numerical values, you want to store them in big engine order,
+[00:13:18.800 --> 00:13:20.200] not in little engine order.
+[00:13:20.740 --> 00:13:25.580] Note that your machine that you're using most likely is little engine machine, because little
+[00:13:25.580 --> 00:13:26.300] engine has one.
+[00:13:27.700 --> 00:13:34.200] So historically there have been big engine and little engine machines, but Intel machines
+[00:13:34.200 --> 00:13:38.360] are little engine and most of you are probably using Intel machines or AMD machines, but
+[00:13:38.360 --> 00:13:42.520] they are the same, so it doesn't have to be Intel, but you know, x86 machines.
+[00:13:43.940 --> 00:13:49.140] And these are little engine and the little engines have won the fight.
+[00:13:50.540 --> 00:13:55.900] Both encodings have pros and cons, so it doesn't really matter what you do.
+[00:13:56.340 --> 00:14:04.520] So I mean the advantage of little engine by the way is you can store the values of this
+[00:14:04.520 --> 00:14:08.480] different bit width on the same address without changing the pointer.
+[00:14:09.220 --> 00:14:17.940] So like if I want to load 16 byte values and then store it a 32 byte value, I can just
+[00:14:17.940 --> 00:14:18.860] do it in the same address.
+[00:14:18.980 --> 00:14:22.720] And with big engine I have to update my pointer.
+[00:14:22.980 --> 00:14:26.780] But this is really not a big deal, it's not so frequent yet you do this.
+[00:14:27.200 --> 00:14:31.340] And in principle it wouldn't matter what you would do, but nevertheless the little engine
+[00:14:31.340 --> 00:14:32.040] machines have one.
+[00:14:32.040 --> 00:14:34.100] So most people use nowadays little Indian machines.
+[00:14:36.340 --> 00:14:41.660] And for this particular use case here, you want to store your values big Indian,
+[00:14:41.860 --> 00:14:44.480] even if that is not your native encoding.
+[00:14:44.700 --> 00:14:49.900] By the way, if you want to do this in code swapping, swapping between these two big Indian and little Indian,
+[00:14:50.120 --> 00:14:51.620] just cost you one assembly instruction.
+[00:14:51.820 --> 00:14:52.540] It's very cheap.
+[00:14:52.680 --> 00:15:00.200] Here's this bswap instruction so that you can use, and then this converts little to a big Indian and the other way around.
+[00:15:02.040 --> 00:15:06.840] to care about PDP encoding, then everything's fine. So big Indian and little Indian, these are all
+[00:15:06.840 --> 00:15:14.360] same encodings. Okay, so much for B-trees. We talked about already more than one lecture,
+[00:15:14.480 --> 00:15:18.180] one and a half lecture, so about B-trees. And of course, B-trees are the most important data
+[00:15:18.180 --> 00:15:23.160] structure for external memory. So B-trees are the universal data structure for external memory.
+[00:15:23.320 --> 00:15:28.580] They work well for all kinds of use cases. They are pretty useful. But nevertheless,
+[00:15:28.580 --> 00:15:31.240] Yes, even though they are the most important ones, they are not the only ones.
+[00:15:31.380 --> 00:15:34.000] There are also other alternatives that we can use.
+[00:15:35.480 --> 00:15:40.200] And one important family of approaches are hash-based approaches.
+[00:15:43.240 --> 00:15:45.920] I hope you all know this from regular programming.
+[00:15:46.060 --> 00:15:50.340] If you have installed and want to store something in memory, and you just want to retrieve an
+[00:15:50.340 --> 00:15:54.600] element and store an element and retrieve it, then you can use the hash table.
+[00:15:55.200 --> 00:16:00.160] And the big advantage of a hash table, of course, is that we can
+[00:16:01.600 --> 00:16:06.380] access an element in constant time, while with the search tree we have logarithmic time.
+[00:16:10.000 --> 00:16:13.320] Of course, this is more or less a promise, I will come back to this in a moment.
+[00:16:14.400 --> 00:16:18.680] Just to repeat this, so if I want to store 1 million entries,
+[00:16:22.900 --> 00:16:32.700] So then if I do this in a repository, then until I find my one, so if I do search something
+[00:16:32.700 --> 00:16:34.800] here, look up, look up.
+[00:16:35.060 --> 00:16:42.000] If I would do this in a repository, then I know I have to look at between 20 to 40 elements
+[00:16:43.980 --> 00:16:45.120] that I must consider.
+[00:16:45.780 --> 00:16:53.500] and because of course there's my root fork down here somewhere to my elements and i usually have
+[00:16:53.500 --> 00:17:02.300] to i have to go and i did my depth here in oh of dangerous
+[00:17:05.740 --> 00:17:12.400] it's difficult to use in a very really precise way okay we know that's it so i shouldn't say
+[00:17:12.400 --> 00:17:19.460] elements, I say depth. So the depth of my write black tree is between 20 and 40 elements.
+[00:17:22.120 --> 00:17:26.260] So how deep it is depends on your insert order, your values and so on, it's not so easy to say.
+[00:17:26.440 --> 00:17:30.520] But this depth of my write black tree is between 20 and 40. Therefore if I have to go to something,
+[00:17:31.120 --> 00:17:38.760] on average I have to go to something like 30 elements or so. So in this ballpark, 30 elements.
+[00:17:38.760 --> 00:17:40.960] I say on average because it could be that of course,
+[00:17:41.000 --> 00:17:42.720] that I search for some elements that's currently the root.
+[00:17:42.940 --> 00:17:44.660] It could be that one element I'm done.
+[00:17:45.280 --> 00:17:47.780] But the vast majority of the elements, of course,
+[00:17:47.840 --> 00:17:48.800] is further down the tree.
+[00:17:49.680 --> 00:17:52.940] And therefore on average, I'd access something like 30,
+[00:17:53.720 --> 00:17:58.540] let's just say, approximately 30 elements accessed,
+[00:17:59.820 --> 00:18:02.880] elements accessed per lookup.
+[00:18:05.360 --> 00:18:08.160] So, and this of course, not very cheap.
+[00:18:08.760 --> 00:18:12.560] If I do this in a red black tree, we already learned red black tree is bad.
+[00:18:12.840 --> 00:18:18.240] Now, so if I do this instead in a B tree, that's probably better.
+[00:18:18.500 --> 00:18:23.620] So let's say I have a fan out of, I can fit the 1000 elements on a tree.
+[00:18:23.780 --> 00:18:26.440] So then my depth here will be between two and three.
+[00:18:26.620 --> 00:18:29.080] Again, depends a bit on how my insert works.
+[00:18:29.280 --> 00:18:30.900] So between, so this is the depth.
+[00:18:32.140 --> 00:18:34.820] And now how many elements will I access?
+[00:18:36.140 --> 00:18:36.560] Yeah.
+[00:18:37.780 --> 00:18:48.300] So this is a good question, interestingly similar, but with better locality.
+[00:18:50.420 --> 00:18:57.820] So, of the roughing side, 30 elements per lookup.
+[00:19:00.260 --> 00:19:02.760] Now you could go around, why 30?
+[00:19:02.960 --> 00:19:04.040] Didn't I say 2 to 3?
+[00:19:04.360 --> 00:19:05.900] Yeah, this is true.
+[00:19:06.740 --> 00:19:13.340] And and by the way, I mean I didn't talk about the constants here. So this 30 will be much cheaper than this 30
+[00:19:13.340 --> 00:19:17.740] No, just just saying but nevertheless and the absolute number of elements that you consider
+[00:19:17.740 --> 00:19:20.340] B trees and the right leg trees do more or less the same
+[00:19:21.840 --> 00:19:28.900] So now perhaps it's a bit better. Perhaps it's not 30. Perhaps it's probably it's more like 20-ish
+[00:19:29.720 --> 00:19:30.300] Oh, yeah
+[00:19:33.000 --> 00:19:34.580] It cannot be 30, 30 is too high.
+[00:19:35.040 --> 00:19:35.800] Let's say 21.
+[00:19:36.300 --> 00:19:40.080] 21 is probably a reasonable number.
+[00:19:40.920 --> 00:19:42.720] Okay, now how do I come up with 21?
+[00:19:43.560 --> 00:19:45.920] Nevertheless, 21 would have been even 30.
+[00:19:46.180 --> 00:19:49.300] So 30 would have been much cheaper in the B-tree than in the red black tree.
+[00:19:50.800 --> 00:19:52.820] Now how can I come up with this number?
+[00:19:53.060 --> 00:19:54.620] Remember a B-tree looks like this.
+[00:19:55.320 --> 00:19:56.560] So this is my root.
+[00:19:56.860 --> 00:20:00.280] And now assuming I have depth 2, and then this means of course that my root is 0.
+[00:20:00.300 --> 00:20:02.020] and my leaf page are all full.
+[00:20:02.340 --> 00:20:05.820] So then I have 1000 elements here and 1000 elements here.
+[00:20:06.300 --> 00:20:08.380] So now when I traverse down,
+[00:20:08.540 --> 00:20:10.000] I do a binary search on each level,
+[00:20:10.040 --> 00:20:12.240] which means I do a binary search on 1000 elements.
+[00:20:12.400 --> 00:20:15.700] And this cost me 10, look at 10 elements
+[00:20:15.700 --> 00:20:17.500] because we know that, yeah.
+[00:20:17.980 --> 00:20:23.340] So log two to 1k is 10.
+[00:20:26.080 --> 00:20:28.400] And I should say, of course, approximately
+[00:20:30.300 --> 00:20:37.480] okay if it's 20,024. So this is 10 and therefore I look at 10 elements on the root, I look at 10 elements
+[00:20:37.480 --> 00:20:43.400] at the leaf and then therefore I come to 20. Now why it's at 21, because if you're unlucky with
+[00:20:43.400 --> 00:20:47.700] insertion order you need one level more but your b tree is your root will in this case only contain
+[00:20:47.700 --> 00:20:54.080] two pointers. So therefore something like 21. So you look outside quite a few elements
+[00:20:55.320 --> 00:21:00.120] But of course you have better locality than in a red-black tree, so you will be faster
+[00:21:00.120 --> 00:21:00.600] in practice.
+[00:21:01.220 --> 00:21:07.640] But nevertheless, you will look at a quite similar number of elements, even though your
+[00:21:07.640 --> 00:21:08.560] depth is much better.
+[00:21:08.960 --> 00:21:09.460] Much, much better.
+[00:21:10.120 --> 00:21:12.700] Okay, so now the promise of a hash table is as follows.
+[00:21:13.740 --> 00:21:15.780] Hash table, I hope you all work how hash table works.
+[00:21:17.960 --> 00:21:23.620] Hash table says, I look at one element, well let's say two elements, one to two elements.
+[00:21:26.340 --> 00:21:27.180] And then I'm done.
+[00:21:28.360 --> 00:21:32.180] Okay, this of course, yeah, this is much, much, much, much less than the others.
+[00:21:32.780 --> 00:21:38.760] And therefore hash tables are, hash table, therefore hash tables are much faster than
+[00:21:38.760 --> 00:21:40.740] either B-trees or reflect trees.
+[00:21:40.920 --> 00:21:42.540] Hash tables are in a way the best.
+[00:21:43.020 --> 00:21:46.480] I say in a way, because I mean, there's a lot of fine print here.
+[00:21:48.160 --> 00:21:49.960] First, of course, obvious problems.
+[00:21:50.220 --> 00:21:52.060] In a B-tree you can do a range query.
+[00:21:52.060 --> 00:21:55.220] give me everything between 20 and 30 you cannot do this in the hash table.
+[00:21:55.360 --> 00:21:57.680] You can only search for one precise value and that's it.
+[00:21:58.260 --> 00:21:59.800] And that's why this of course is a great limitation.
+[00:22:01.360 --> 00:22:06.180] Second limitation is here, I mean I gave you absolute numbers and what we expect and so,
+[00:22:07.400 --> 00:22:12.980] but we know in absolute terms, we know that in the lookup cost for a Btree is
+[00:22:13.500 --> 00:22:16.960] O of log n where I have n entries.
+[00:22:17.760 --> 00:22:19.060] And I know this.
+[00:22:19.920 --> 00:22:23.980] Okay, with a hash table, now what is the lookup cost here?
+[00:22:24.640 --> 00:22:34.880] So we say expected is constant excess.
+[00:22:35.260 --> 00:22:37.200] Now we have one or two elements and that's it.
+[00:22:38.400 --> 00:22:45.300] Unfortunately, worst case, or when.
+[00:22:47.020 --> 00:22:51.140] In the worst case, the hash table is much worse than ease of the trees.
+[00:22:51.720 --> 00:22:54.440] Hash tables can have, in theory, terrible performance.
+[00:22:55.880 --> 00:22:58.560] Now in practice it doesn't really happen usually.
+[00:22:59.720 --> 00:23:01.740] But this is of course a dark art.
+[00:23:01.940 --> 00:23:05.680] It means strictly speaking it is not on the slide, but nevertheless I want to spend a
+[00:23:05.680 --> 00:23:09.540] few minutes on this, because this is a pretty important thing in my opinion.
+[00:23:10.360 --> 00:23:13.980] Hash tables are super useful, have great performance and so on.
+[00:23:14.420 --> 00:23:17.620] And they are surprisingly nasty to do right.
+[00:23:17.720 --> 00:23:20.940] So that it really works reliably in all cases.
+[00:23:22.880 --> 00:23:27.080] Or if I can, therefore this is the reason why I brought this here.
+[00:23:27.260 --> 00:23:29.700] We promise constant time access.
+[00:23:31.080 --> 00:23:33.720] But here you also see if everything works out fine.
+[00:23:34.220 --> 00:23:37.200] So if everything does not work out fine, then bad things happen.
+[00:23:37.200 --> 00:23:42.460] So, hash tables are good usually, but usually it's not always.
+[00:23:42.940 --> 00:23:49.120] Or to quote Donald Knuth, he said, hash tables are great for people who have a lot of faith
+[00:23:49.120 --> 00:23:49.880] in statistics.
+[00:23:50.900 --> 00:23:52.520] And this is absolutely true.
+[00:23:53.060 --> 00:23:59.640] So if you look at the statistics, it says on the expectance value, hash tables have
+[00:23:59.640 --> 00:24:01.780] far superior performance than everything else.
+[00:24:02.520 --> 00:24:04.940] Worst case, not so good.
+[00:24:04.940 --> 00:24:10.220] The worst case is really, really bad in a hash table, but of course it's extremely unlikely
+[00:24:10.220 --> 00:24:11.800] that this worst case ever happens.
+[00:24:13.340 --> 00:24:17.480] And now we'll see how to make this worst case unlikely.
+[00:24:18.060 --> 00:24:21.520] So first let's briefly repeat how to implement a hash table.
+[00:24:22.760 --> 00:24:30.720] Now of course there are two schools of implementing a hash table, 200 probably, but let's say
+[00:24:30.720 --> 00:24:32.920] two important schools of implementing a hash table.
+[00:24:34.220 --> 00:24:36.520] One is chaining and one is open addressing.
+[00:24:37.080 --> 00:24:43.940] So let's start perhaps with a simple chaining hash table, just to make this example here
+[00:24:43.940 --> 00:24:44.780] clear.
+[00:24:44.980 --> 00:24:45.920] So this is hash table.
+[00:24:46.180 --> 00:24:52.080] By the way, I hope that everybody of you could implement this hash table himself at home,
+[00:24:52.620 --> 00:24:53.620] without my help.
+[00:24:53.760 --> 00:24:57.960] Because I'm pretty sure that you did this in your introduction to algorithmic data structures.
+[00:24:59.260 --> 00:25:01.040] So therefore I hope you all know this.
+[00:25:02.920 --> 00:25:05.880] I'm pretty sure, I hope this, I'm pretty sure that's not true.
+[00:25:06.460 --> 00:25:12.080] So at least some of you might have got the idea of how a hash table works, but from experience
+[00:25:12.080 --> 00:25:16.780] I know that's a great difference between understanding the idea and really grasping the details.
+[00:25:17.360 --> 00:25:20.020] And therefore I strongly recommend you to implement a hash table.
+[00:25:20.340 --> 00:25:22.380] Actually I think you will do this exercise.
+[00:25:23.460 --> 00:25:27.820] And so implement a hash table because after you have implemented it, you realize much
+[00:25:27.820 --> 00:25:29.060] better how everything works.
+[00:25:29.060 --> 00:25:34.200] Because if you, I mean, I can draw a picture here, and this looks super convincing to you,
+[00:25:34.760 --> 00:25:40.300] but the picture is not code, because the picture is very generous in how everything works.
+[00:25:40.300 --> 00:25:43.880] So I strongly recommend you to implement a hash table and implement a good hash table.
+[00:25:44.260 --> 00:25:48.940] So then you get a much, much nicer intuition of how everything works.
+[00:25:49.100 --> 00:25:50.180] Okay, but let's now start.
+[00:25:51.260 --> 00:25:52.480] Let's say this is my hash table.
+[00:25:52.480 --> 00:26:00.340] So let me say my hash table has the size, here is position zero and up to, yeah, how
+[00:26:00.340 --> 00:26:01.040] large do we make it?
+[00:26:01.160 --> 00:26:01.820] A good question.
+[00:26:02.040 --> 00:26:05.900] Let's say we give it a size here, this is n minus one, so we size n.
+[00:26:06.640 --> 00:26:07.080] Okay.
+[00:26:08.600 --> 00:26:10.060] So I have a lot of entries here.
+[00:26:11.620 --> 00:26:16.280] Now if I want to insert an element here, so let us say, yes, insert.
+[00:26:17.100 --> 00:26:21.440] So this is a hash table here, and my hash table is perhaps make it even more concrete.
+[00:26:22.120 --> 00:26:25.020] I say I have an entry struct entry.
+[00:26:29.980 --> 00:26:34.040] And my entry here contains a key for simplicity, I will just use an integer because it could
+[00:26:34.040 --> 00:26:35.140] be anything here.
+[00:26:35.760 --> 00:26:41.380] Let's use an integer and then entry star next.
+[00:26:42.060 --> 00:26:44.560] So as I said, we implemented chaining hash table.
+[00:26:46.280 --> 00:27:01.360] my entry here and my hash table now is entry star hash table of size n okay so my hash
+[00:27:01.360 --> 00:27:06.960] table basically is a big array of pointers initially all everything is zero here and
+[00:27:06.960 --> 00:27:18.800] And now let's look up here, so when we say lookup key, so how do we do this?
+[00:27:18.800 --> 00:27:30.360] we say the slot where my key belongs, slot is equal to hash of keys, so my hash function
+[00:27:30.360 --> 00:27:37.900] here maps my key to the integer domain basically.
+[00:27:37.900 --> 00:27:42.100] So I will talk more about the hash function in a moment, but basically my hash function
+[00:27:42.100 --> 00:27:45.640] does, it takes a key, in this case integer of course, but could be a string, could be
+[00:27:45.640 --> 00:27:45.940] anything.
+[00:27:45.940 --> 00:27:50.320] So I take my search value and transform it into an integer.
+[00:27:50.520 --> 00:27:56.280] Here, so basically a hash function here, let's put it here, this maps my key to an int.
+[00:27:57.500 --> 00:27:59.100] And so this is what a hash function does.
+[00:27:59.640 --> 00:28:06.600] And so, and then we say, for example, the classical implementation says, hash mod n.
+[00:28:08.600 --> 00:28:10.960] So we just take my hash value and then modulo n.
+[00:28:10.960 --> 00:28:32.000] And then we say, okay, for i equals hash table slot, so as long as my i is not null, then
+[00:28:32.000 --> 00:28:46.200] I said if i k key equals key, I'll write backwards, sorry, it's equals key, then we say return found.
+[00:28:47.700 --> 00:28:54.120] So this is a very simple thing here, then return not found, return.
+[00:28:57.080 --> 00:28:59.740] I'm sorry, so we say return
+[00:29:04.400 --> 00:29:05.100] Not found.
+[00:29:05.640 --> 00:29:09.040] So this is the most primitive implementation you can think of.
+[00:29:09.620 --> 00:29:13.360] And then of course here we say v i equals i.next.
+[00:29:15.740 --> 00:29:20.240] Now in reality you might wish to store not only a key but also a payload, like something
+[00:29:20.240 --> 00:29:21.460] like a dictionary.
+[00:29:21.740 --> 00:29:24.620] So once you associate something with the key, then you put in here a payload.
+[00:29:25.260 --> 00:29:27.900] And then of course we say in this case payload if you want.
+[00:29:28.520 --> 00:29:33.240] and then of course here we would say return payload instead of return phone yeah so this is
+[00:29:33.240 --> 00:29:38.440] what we would do if we have so if we have a more complex htab. Nevertheless this is a very very
+[00:29:38.440 --> 00:29:45.520] simple htchaining htab. And a good thing is this is only a little code. A bad thing is this is even
+[00:29:45.520 --> 00:29:52.080] though it looks so so simple it's surprisingly difficult to implement at least difficult in a
+[00:29:52.080 --> 00:29:53.340] way that it works well.
+[00:29:55.940 --> 00:30:00.100] Even though this is a very simple conceptually simple thing.
+[00:30:00.560 --> 00:30:03.380] By the way, as I said, please implement it at some point.
+[00:30:03.540 --> 00:30:08.460] Because if I draw you a picture here and say, okay, this is my entry that contains a 4, then
+[00:30:08.460 --> 00:30:12.560] because I have a hash collision, perhaps I also get a 4 here in the 20.
+[00:30:13.000 --> 00:30:14.540] And then here I store the 5.
+[00:30:16.180 --> 00:30:18.180] So this is how a hash tab looks in practice.
+[00:30:18.380 --> 00:30:21.540] So we have elements and then we take the key element.
+[00:30:22.260 --> 00:30:24.620] find a slot and then we have a chain of entries,
+[00:30:24.660 --> 00:30:27.960] therefore the name chaining, that then contains the element.
+[00:30:28.120 --> 00:30:29.580] And if I show you this picture,
+[00:30:29.680 --> 00:30:32.480] everybody says, oh, I know if you search for 20,
+[00:30:32.640 --> 00:30:33.480] I just go there.
+[00:30:33.740 --> 00:30:35.240] Because you as a human, of course,
+[00:30:35.340 --> 00:30:36.560] sees the whole hash table.
+[00:30:37.040 --> 00:30:39.080] But the computer doesn't see the whole hash table,
+[00:30:39.240 --> 00:30:40.960] it has to look at one element after the other.
+[00:30:41.260 --> 00:30:44.400] Yeah, so this is therefore more subtle than you might think.
+[00:30:45.120 --> 00:30:48.640] Okay, now what is problematic about this current code?
+[00:30:49.860 --> 00:30:51.880] There are three things that are bad.
+[00:30:52.640 --> 00:30:53.940] Now where should I start?
+[00:30:55.880 --> 00:31:00.640] Perhaps I start with this.
+[00:31:03.080 --> 00:31:05.000] So let's look at this point.
+[00:31:05.100 --> 00:31:06.560] Here we say, in this point we say,
+[00:31:06.800 --> 00:31:09.020] I take my hash value, which is an arbitrary integer,
+[00:31:09.680 --> 00:31:12.320] and then I take modulo, my hash table size,
+[00:31:12.420 --> 00:31:14.020] and this gives me the slot where I have to go to.
+[00:31:15.880 --> 00:31:17.780] Now we don't like modulo.
+[00:31:18.640 --> 00:31:20.800] So perhaps even stepping one step back
+[00:31:20.800 --> 00:31:22.160] before we come to the model of problem.
+[00:31:22.580 --> 00:31:24.860] The next question of course is how large should N be?
+[00:31:25.460 --> 00:31:27.000] So how large should I make my hash table?
+[00:31:28.320 --> 00:31:30.680] And in practice what you want is
+[00:31:30.680 --> 00:31:32.340] that your hash table is as large
+[00:31:32.340 --> 00:31:33.640] as your number of elements that you have,
+[00:31:33.800 --> 00:31:34.900] plus a bit more.
+[00:31:35.080 --> 00:31:36.420] And now how much is a bit more,
+[00:31:36.500 --> 00:31:38.340] is not so easy to say,
+[00:31:38.520 --> 00:31:40.460] but let's just say you want,
+[00:31:41.000 --> 00:31:43.560] I mean, if you don't want to make it much larger
+[00:31:43.560 --> 00:31:44.980] than the number of elements that you have,
+[00:31:45.120 --> 00:31:46.900] because otherwise you raise a lot of space.
+[00:31:48.640 --> 00:31:49.880] nothing in there, so you don't want this.
+[00:31:50.760 --> 00:31:54.240] So you want your f-tables to be similar in size to the number of elements.
+[00:31:54.500 --> 00:31:59.860] In reality, you want to make it a bit larger because the fuller your hash table is, the
+[00:31:59.860 --> 00:32:03.220] more likely it is that two elements end up in the same bucket here.
+[00:32:03.820 --> 00:32:08.180] And therefore you have a longer chain and then your performance degrades.
+[00:32:08.540 --> 00:32:14.260] I said, initially we say we expect constant time, which means we expect to look at only
+[00:32:14.260 --> 00:32:17.780] one element here or on average perhaps at 1.6 elements or so.
+[00:32:18.640 --> 00:32:22.660] the average length of a chain in a chain in a hash table,
+[00:32:23.160 --> 00:32:25.180] the one dot something elements, one or two,
+[00:32:26.360 --> 00:32:27.600] this is what we expect.
+[00:32:28.020 --> 00:32:30.340] But if you make my hash table very full,
+[00:32:30.600 --> 00:32:32.560] so it's not large enough for some of the elements,
+[00:32:32.640 --> 00:32:33.840] then my chains will get longer,
+[00:32:34.020 --> 00:32:35.540] then the performance will be worse.
+[00:32:35.660 --> 00:32:38.380] Because this fall loop here will get slower,
+[00:32:38.600 --> 00:32:41.440] the longer my, so the longer my chain is,
+[00:32:41.540 --> 00:32:42.620] the slower my fall loop is.
+[00:32:42.760 --> 00:32:46.300] Therefore you want to have to a hash table reasonably large.
+[00:32:46.300 --> 00:32:56.060] So, and for example, rule of thumb is you want a hash table is at most, at most, let's say
+[00:32:56.700 --> 00:32:57.900] 70% full.
+[00:33:00.240 --> 00:33:07.280] For example, and if it's more than, so you choose it, so that's almost 20% or perhaps
+[00:33:07.280 --> 00:33:10.200] you go a bit higher to 75% or so, but something like this.
+[00:33:10.740 --> 00:33:15.220] And as a hash table size that you choose, N here probably should be a prime number.
+[00:33:16.300 --> 00:33:23.500] teach in introductory courses should be prime.
+[00:33:25.180 --> 00:33:26.580] So this is what we teach.
+[00:33:27.940 --> 00:33:31.820] Now the interesting question is, why should n be a prime number?
+[00:33:32.660 --> 00:33:34.240] And by the way, it's true.
+[00:33:34.380 --> 00:33:37.200] In first approximation, choosing n as a prime number is a good idea.
+[00:33:38.020 --> 00:33:40.740] So I don't want to say this is wrong.
+[00:33:41.020 --> 00:33:44.500] So choosing n as a prime is a good idea, but interesting question is why?
+[00:33:46.300 --> 00:33:49.160] Because, I mean, if you think just about what Modulo does,
+[00:33:49.300 --> 00:33:50.920] Modulo does basically a wraparound.
+[00:33:51.340 --> 00:33:54.700] And so if, let's say, if we know five is a prime number.
+[00:33:55.160 --> 00:33:56.480] So if I take my values,
+[00:33:57.260 --> 00:34:02.260] one, two, three, two, three, four, five, six, seven,
+[00:34:02.600 --> 00:34:04.480] and I do this Modulo five,
+[00:34:04.960 --> 00:34:07.140] then of course I get nicely spread around.
+[00:34:07.400 --> 00:34:12.200] So a code here, this maps to zero, one, two, three,
+[00:34:12.420 --> 00:34:14.380] four, zero, one, two,
+[00:34:16.300 --> 00:34:19.880] would continue 3, 4, so 8, 9.
+[00:34:20.160 --> 00:34:26.120] So if you take my prime number, then everything is spread out evenly and we want this of course
+[00:34:26.120 --> 00:34:28.700] because we want that all buckets are filled uniformly.
+[00:34:30.060 --> 00:34:32.020] And therefore prime number works.
+[00:34:32.400 --> 00:34:37.140] But if I would choose non-prime number, like for example 4, which is definitely not a prime
+[00:34:37.140 --> 00:34:41.320] number, so this is not prime, but if I take my input here, then what would happen is I
+[00:34:41.320 --> 00:34:49.560] Let's take 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, and so on.
+[00:34:49.620 --> 00:34:50.880] It wraps around just as nice.
+[00:34:52.740 --> 00:34:55.340] So therefore, why should I use a prime number?
+[00:34:56.420 --> 00:35:01.000] Because if you just look at the wrapping behavior, prime number, no prime number, it doesn't matter at all.
+[00:35:03.020 --> 00:35:07.200] The reason why you in reality want to use a prime number is as follows.
+[00:35:09.880 --> 00:35:13.260] here your hash function, we didn't say anything about the hash function yet.
+[00:35:13.940 --> 00:35:17.260] Yeah, my hash function must map my key to an integer domain,
+[00:35:17.480 --> 00:35:20.120] but we did not explain yet how to do this.
+[00:35:20.920 --> 00:35:26.080] And in reality, this is a black art. I will come back to this in a moment, but this is a black art.
+[00:35:26.400 --> 00:35:30.700] So this is pretty difficult to do in a reasonable way.
+[00:35:32.640 --> 00:35:35.980] And assume that your hash function is not perfect, which means
+[00:35:37.200 --> 00:35:40.980] for example, your hash function tends to have a linear factor in it.
+[00:35:42.680 --> 00:35:46.480] Like you could say, the hash values that you construct
+[00:35:47.140 --> 00:35:51.500] are more likely to be multiple of two, for example.
+[00:35:51.660 --> 00:35:54.360] So if there's some linear factor in your hash function,
+[00:35:54.900 --> 00:35:57.740] and trust me, most simple hash functions
+[00:35:57.740 --> 00:35:59.040] tend to have a linear factor.
+[00:35:59.580 --> 00:36:01.080] And so linear factors are frequent,
+[00:36:01.340 --> 00:36:03.360] it's not an exception, it's frequent.
+[00:36:03.700 --> 00:36:05.540] So if your hash function has a linear factor
+[00:36:07.760 --> 00:36:11.480] the size of hash table to the thing that you do a model of
+[00:36:13.220 --> 00:36:19.040] Has this linear factor as they can be divided by this in a factor then terrible things happen
+[00:36:19.040 --> 00:36:25.080] Yeah, assume for example that your hash function here tends to be produce values that are
+[00:36:25.080 --> 00:36:28.280] even yes, they said a multiple of two and
+[00:36:29.540 --> 00:36:34.920] Then if you end then choose four as hash table, then you can only construct the elements
+[00:36:34.920 --> 00:36:36.380] zero and two
+[00:36:37.200 --> 00:36:44.840] This element 1 and 3 can never happen because if my hash function is even, then I can never
+[00:36:44.840 --> 00:36:48.800] trigger the hit points 1 and 3.
+[00:36:49.640 --> 00:36:50.980] And this is clearly bad.
+[00:36:51.220 --> 00:36:55.180] That is because then this leads to a very uneven distribution in your hash table and
+[00:36:55.180 --> 00:36:56.400] then performance is terrible.
+[00:36:57.360 --> 00:37:02.820] Now if your hash table is a prime number, then this only happens if the linear factor
+[00:37:02.820 --> 00:37:04.360] happens to be your prime number.
+[00:37:04.360 --> 00:37:07.160] So if your linear factor is not the prime number,
+[00:37:07.280 --> 00:37:08.980] then this does not happen because by definition,
+[00:37:09.180 --> 00:37:11.460] a prime number can only be divided by itself.
+[00:37:11.980 --> 00:37:15.140] So therefore prime numbers are safer to choose
+[00:37:15.140 --> 00:37:16.580] than non-prime numbers.
+[00:37:17.020 --> 00:37:18.980] Okay, so this is the reason why we teach our,
+[00:37:19.720 --> 00:37:21.780] in our introductory class,
+[00:37:21.960 --> 00:37:23.460] we teach that you choose a prime number.
+[00:37:24.720 --> 00:37:27.560] Nevertheless, even if you did choose a prime number,
+[00:37:27.660 --> 00:37:29.660] we had to clear this because I need space,
+[00:37:29.760 --> 00:37:31.920] but we had to hit this code here.
+[00:37:31.920 --> 00:37:37.540] They will set slot is hash of X mod N.
+[00:37:38.740 --> 00:37:41.120] And so assume N is prime,
+[00:37:41.300 --> 00:37:43.240] so then some problems are solved.
+[00:37:43.460 --> 00:37:46.120] But what is still super, super unpleasant here
+[00:37:46.120 --> 00:37:50.300] is modulo is an extremely expensive operation.
+[00:37:50.940 --> 00:37:53.800] Now this cost you, performing a modulo cost you
+[00:37:53.800 --> 00:37:56.820] something like approximately 100 cycles.
+[00:37:58.260 --> 00:37:59.800] Depends on your processor and so on,
+[00:37:59.800 --> 00:38:03.260] not easy to say, but in the power pack of a hundred cycles,
+[00:38:03.620 --> 00:38:07.160] and a hundred cycle is an insane high amount of time.
+[00:38:07.600 --> 00:38:11.600] So doing something in model law is super, super expensive.
+[00:38:12.160 --> 00:38:14.720] So you basically, you don't want to do this.
+[00:38:19.040 --> 00:38:20.740] Don't, if you can avoid this,
+[00:38:20.840 --> 00:38:23.640] don't implement a model of parameter by stable.
+[00:38:23.900 --> 00:38:24.720] This is too expensive.
+[00:38:25.720 --> 00:38:27.040] I mean, at least,
+[00:38:27.140 --> 00:38:28.900] I mean, if you are on disk doesn't matter that much,
+[00:38:29.800 --> 00:38:31.940] but in memory, these 100 cycles here
+[00:38:31.940 --> 00:38:33.600] will really hurt your performance.
+[00:38:40.100 --> 00:38:42.900] Okay, but what should you do instead?
+[00:38:47.420 --> 00:38:49.660] Basically, there are three options,
+[00:38:49.940 --> 00:38:52.280] all of them involved to different degrees.
+[00:38:52.960 --> 00:38:56.780] Okay, now, first trick, option A.
+[00:39:02.960 --> 00:39:04.280] Make a model N cheap.
+[00:39:10.160 --> 00:39:11.560] And how do we do this?
+[00:39:12.580 --> 00:39:15.940] Yeah, you know, what you mean, if you ever looked,
+[00:39:16.160 --> 00:39:18.520] and unfortunately this is a recording now,
+[00:39:18.600 --> 00:39:20.140] and I cannot do this, shows this to you live.
+[00:39:21.000 --> 00:39:23.100] So what I would now show you live,
+[00:39:23.160 --> 00:39:27.600] if you ever go to this great website here,
+[00:39:29.520 --> 00:39:38.460] what's your url if you go to this greatest website oops sorry i messed up my presentation here
+[00:39:39.760 --> 00:39:40.720] godbolch.org
+[00:39:45.060 --> 00:39:49.380] and there what you can do there is you enter some code and then it shows you the generated
+[00:39:49.380 --> 00:39:56.640] assembler code then if you do something like this you say um in on let's say for for didactic
+[00:39:57.600 --> 00:40:06.400] use an int because the code is simpler if you don't say it's unsigned integer unsigned
+[00:40:17.500 --> 00:40:28.400] x then we say return x mod 7.
+[00:40:29.580 --> 00:40:35.560] So if you do this, then what will happen is, at least I hope I will check this myself in a moment,
+[00:40:35.660 --> 00:40:40.080] but I'm pretty sure this happens. I just didn't check the similar code before,
+[00:40:40.080 --> 00:40:41.820] but I'm pretty sure that's fine.
+[00:40:42.520 --> 00:40:44.320] So I have to charge this one second.
+[00:40:49.560 --> 00:40:52.300] So then what happens is if you look at the generated
+[00:40:52.300 --> 00:40:53.080] assembler code,
+[00:40:54.860 --> 00:40:57.940] or it's still not as easy as I would have hoped it to be.
+[00:40:58.340 --> 00:41:00.200] Is the integer case in this case easier?
+[00:41:00.580 --> 00:41:01.420] Let me check.
+[00:41:07.460 --> 00:41:08.900] No, not easier, easier.
+[00:41:10.200 --> 00:41:11.040] It's plain division.
+[00:41:13.240 --> 00:41:23.780] Let's, let's, slightly, but it's okay.
+[00:41:23.860 --> 00:41:25.680] It just, you can use the code that I showed here.
+[00:41:25.840 --> 00:41:31.020] So but nevertheless, if you, if you run this, if you do this in, in Godbolt and you look
+[00:41:31.020 --> 00:41:34.920] at the general code, you would see that your general code does not contain a division.
+[00:41:35.880 --> 00:41:36.240] Yeah.
+[00:41:36.240 --> 00:41:40.920] because the compiler knows that the division is terribly expensive and modulo is basically
+[00:41:40.920 --> 00:41:45.860] is a division. So it doesn't have a division because it's super, super expensive. Instead,
+[00:41:45.980 --> 00:41:50.880] what it will do, it will pre-compute some magic numbers. And then these, by the way,
+[00:41:50.960 --> 00:41:55.920] I really call this, you can google for this. We say search for magic numbers division.
+[00:42:02.040 --> 00:42:06.780] And then instead of doing a division, you do a sequence of multiplication and shift.
+[00:42:07.280 --> 00:42:11.640] So you do multiply and shift and then you get the result of the division without doing the
+[00:42:11.640 --> 00:42:14.620] division by pre-computing these magic numbers here.
+[00:42:14.900 --> 00:42:18.400] Of course, pre-computing the magic numbers cost you something, it's not totally for free.
+[00:42:18.820 --> 00:42:22.580] On the other hand, you can, as this is what I did at some point, you can have, for example,
+[00:42:22.580 --> 00:42:26.000] a pre-computed list of all prime numbers between,
+[00:42:27.140 --> 00:42:29.360] so between zero and two to the power of 64.
+[00:42:29.740 --> 00:42:31.840] So if you pre-compute all prime numbers
+[00:42:31.840 --> 00:42:34.040] between in this range and do this such
+[00:42:34.040 --> 00:42:35.380] that they are 10% apart,
+[00:42:35.480 --> 00:42:36.720] so not really all prime numbers,
+[00:42:36.800 --> 00:42:37.800] because there's of course there are many,
+[00:42:38.100 --> 00:42:40.640] but all prime numbers that are at least 10% apart
+[00:42:40.640 --> 00:42:42.660] in this range, and then you can pre-compute
+[00:42:42.660 --> 00:42:44.460] this magic numbers and then you can make this,
+[00:42:45.200 --> 00:42:46.740] you can make this model look cheap.
+[00:42:47.220 --> 00:42:49.440] Nevertheless, this is a pretty involved step here.
+[00:42:49.560 --> 00:42:51.880] So this here is computing magic number is,
+[00:42:52.580 --> 00:42:58.720] hard to do this but nevertheless it's difficult so you probably don't want
+[00:42:58.720 --> 00:43:04.280] either you want to take the pre-computer list from somewhere or perhaps look up
+[00:43:04.280 --> 00:43:07.760] the code for them probably you don't want to look at the code let's say this
+[00:43:07.760 --> 00:43:14.800] is impossible but involved yeah so making model cheap not easy okay option
+[00:43:14.800 --> 00:43:24.660] b. Don't use, or let's say, perhaps do use, make sure that, but don't use a prime number,
+[00:43:24.780 --> 00:43:44.060] but make sure that n is a power of 2. Because if you do this, yes, so if n is a power of
+[00:43:44.800 --> 00:43:46.620] Then, modulo computations are super cheap.
+[00:43:47.300 --> 00:43:58.500] Because modulo, because if it is the power of 2, then we know that x mod n is the same
+[00:43:58.500 --> 00:44:03.280] as x binary and n minus 1.
+[00:44:04.040 --> 00:44:08.860] So, in this computation, of course, takes you two cycles or so, super cheap, while the
+[00:44:08.860 --> 00:44:09.920] other one takes you 100 cycles.
+[00:44:11.600 --> 00:44:16.380] So, modulo of a power of two is super, super cheap.
+[00:44:16.900 --> 00:44:18.340] So great performance.
+[00:44:19.640 --> 00:44:20.860] So plusing performance.
+[00:44:28.020 --> 00:44:30.400] Negative, I mean I'm no longer very flexible
+[00:44:30.400 --> 00:44:31.840] how my hash table looks like,
+[00:44:31.900 --> 00:44:33.060] because the only thing I can do is
+[00:44:33.060 --> 00:44:35.220] I can increase my hash table by a factor two.
+[00:44:35.340 --> 00:44:37.100] Because if I always have to choose a power of two,
+[00:44:37.260 --> 00:44:39.540] I don't have many choices with hash table sizes.
+[00:44:39.920 --> 00:44:41.300] hash table size limited.
+[00:44:41.800 --> 00:44:42.340] Hash table,
+[00:44:43.400 --> 00:44:43.920] table,
+[00:44:45.320 --> 00:44:47.340] table size is limited.
+[00:44:50.840 --> 00:44:52.920] Okay, I must always choose the power of two.
+[00:44:53.140 --> 00:44:55.840] So this means I probably waste quite a bit of space
+[00:44:56.440 --> 00:44:58.560] because I cannot make a hash table size
+[00:44:58.560 --> 00:45:00.740] is just slightly larger than my number of elements.
+[00:45:00.820 --> 00:45:02.120] I make it quite a bit larger.
+[00:45:02.760 --> 00:45:07.240] Yeah, and a second disadvantage here is,
+[00:45:08.080 --> 00:45:10.080] This requires a good hash function.
+[00:45:12.400 --> 00:45:13.600] That's a good hash function.
+[00:45:13.760 --> 00:45:17.840] But this is probably true for others, or these others don't know this.
+[00:45:18.060 --> 00:45:20.760] So option A is more forgiving.
+[00:45:21.060 --> 00:45:25.480] So if you have a terrible hash function, A will be slightly better.
+[00:45:27.020 --> 00:45:29.480] B will be, requires a good hash function.
+[00:45:29.940 --> 00:45:33.120] So B will be terrible if your hash function is poor, a good hash function.
+[00:45:34.980 --> 00:45:37.160] And then we come back to this in a moment, what this means.
+[00:45:37.820 --> 00:45:37.920] Okay.
+[00:45:38.060 --> 00:45:44.120] But we said, for example, if your input is, has a linear factor and your linear factor
+[00:45:44.120 --> 00:45:46.620] happens to be two or contain two, yeah.
+[00:45:47.240 --> 00:45:51.560] Then of course, choosing a power of two hash tables is not good because then a very bad
+[00:45:51.560 --> 00:45:52.120] thing happens.
+[00:45:52.460 --> 00:45:52.780] Yeah.
+[00:45:52.780 --> 00:45:57.080] So you will only fill a very small part of hash table.
+[00:45:57.600 --> 00:46:02.740] So therefore this, having good hash table, hash function is crucial for the option B.
+[00:46:03.120 --> 00:46:10.660] Option C by the way, this is another neat trick that we can do.
+[00:46:10.800 --> 00:46:16.420] We say the following, we do my say slot is equals to
+[00:46:22.960 --> 00:46:34.320] So hash x times n, right shift, if we use 32 bit numbers, 32.
+[00:46:34.620 --> 00:46:42.680] And this, but this multiplication here must be a 64 bit multiplication, 64 bit multiplication.
+[00:46:45.000 --> 00:46:48.580] So, at first glance, you might be surprised that this works at all.
+[00:46:48.860 --> 00:46:54.360] So basically what we do is we take my hash value and then I take my hash table size,
+[00:46:54.520 --> 00:46:58.340] I multiply this, I shift this to the right by stage 2 and that's it.
+[00:47:00.400 --> 00:47:03.000] And perhaps some of the surprising reasons indeed works.
+[00:47:03.460 --> 00:47:05.060] So now why does this work?
+[00:47:05.060 --> 00:47:14.660] here because I mean your hash function here is, so this value here is in between in the
+[00:47:14.660 --> 00:47:24.320] range 0 to 2 to the power of 32 minus 1, yeah, or could I decide this is the range, then
+[00:47:24.320 --> 00:47:26.000] I multiply this with hash double size.
+[00:47:26.120 --> 00:47:31.400] So this means my result here is that also after this result I get a value between 0
+[00:47:31.400 --> 00:47:38.920] 0 and 2 to the power of 32, perhaps I should do this not with minus 1, but I should just
+[00:47:38.920 --> 00:47:42.220] say without minus 1, but say an exclusive bound.
+[00:47:45.040 --> 00:47:51.300] So and then the result here is in between 0 and 2 to the power of 32 times n exclusive.
+[00:47:52.220 --> 00:47:59.180] And therefore if after the shift here, then the result of course is in the range 0 and
+[00:47:59.180 --> 00:47:59.960] n exclusive.
+[00:48:02.060 --> 00:48:03.080] now so this
+[00:48:05.180 --> 00:48:07.760] Beautiful thing is we just need one multiplication and
+[00:48:08.640 --> 00:48:09.180] and
+[00:48:09.180 --> 00:48:14.700] Shift we do not we are not limited in hash table size. We cannot choose out the arbitrary has table sizes
+[00:48:14.700 --> 00:48:21.080] Yes, if you do you want like auto prime number for anything we want and
+[00:48:22.600 --> 00:48:25.740] So good thing here is cheap
+[00:48:29.340 --> 00:48:32.040] Also good, arbitrary sizes.
+[00:48:34.620 --> 00:48:35.080] Arbitrary sizes.
+[00:48:40.140 --> 00:48:41.140] Bad thing.
+[00:48:42.200 --> 00:48:47.200] This only works, well I mean this always works, but this only works reasonably well if your
+[00:48:47.200 --> 00:48:48.200] hash function is very good.
+[00:48:48.200 --> 00:48:52.200] and it requires a very good hash function.
+[00:48:52.760 --> 00:48:54.420] Very good hash function.
+[00:48:57.340 --> 00:48:59.460] Here again, I will come back to this in a moment
+[00:48:59.460 --> 00:49:00.380] when we talk about hash functions.
+[00:49:00.500 --> 00:49:03.100] But basically, this reasoning here assumes
+[00:49:03.720 --> 00:49:07.400] that your hash function is distributed uniformly
+[00:49:07.400 --> 00:49:08.780] across the whole domain.
+[00:49:09.000 --> 00:49:10.360] Here's the whole integer domain
+[00:49:10.360 --> 00:49:12.900] and must be spread out
+[00:49:12.900 --> 00:49:15.300] and there must be no correlation
+[00:49:15.300 --> 00:49:16.980] between input and hash function at all.
+[00:49:18.200 --> 00:49:19.320] with a very strong requirement,
+[00:49:19.480 --> 00:49:23.400] but basically you, this must be very neatly distributed.
+[00:49:23.660 --> 00:49:27.200] Because I mean, I will talk about hash functions
+[00:49:27.200 --> 00:49:29.180] in the moment, if you choose a bad hash function here,
+[00:49:29.340 --> 00:49:31.980] what will happen is that you will always end up
+[00:49:31.980 --> 00:49:32.640] in the same slot.
+[00:49:32.980 --> 00:49:34.480] Now, so performance will be terrible
+[00:49:34.480 --> 00:49:35.700] if you choose a bad hash function.
+[00:49:35.880 --> 00:49:38.580] So this option C is the most flexible
+[00:49:38.580 --> 00:49:39.560] and also pretty cheap,
+[00:49:39.820 --> 00:49:42.740] but this requires a very, very, very good hash function.
+[00:49:43.860 --> 00:49:46.800] Okay, so this is, and this brings me to the last problem
+[00:49:48.200 --> 00:49:51.160] the last of it, actually there's one more, but okay.
+[00:49:51.300 --> 00:49:53.460] But let's say perhaps the most critical hash
+[00:49:53.460 --> 00:49:55.480] problem of hash tables,
+[00:49:55.800 --> 00:49:57.900] how do we implement this hash function here?
+[00:49:57.940 --> 00:50:00.720] We said, I need a hash function X
+[00:50:01.520 --> 00:50:04.540] that maps my X here to the integer domain.
+[00:50:05.360 --> 00:50:06.720] So this is what I need.
+[00:50:07.300 --> 00:50:09.140] And now what are the requirements?
+[00:50:10.520 --> 00:50:14.580] First, so this here should of course be subjective
+[00:50:14.580 --> 00:50:17.700] so that every possible integer value can be achieved.
+[00:50:18.200 --> 00:50:19.640] But this is not good enough.
+[00:50:19.980 --> 00:50:25.480] Second requirement is we want that every element has the same probability.
+[00:50:27.280 --> 00:50:34.560] And even more, we want, this is hard to quantify in a mathematically sound term, but basically
+[00:50:34.560 --> 00:50:39.680] what we want is that there's no correlation between input and output.
+[00:50:39.980 --> 00:50:46.080] For example, if I increase my input by a linear factor, like if I take text 2 times x, 3 times
+[00:50:46.080 --> 00:50:46.760] x, 4 times x.
+[00:50:48.200 --> 00:50:51.240] input, then there should not be a linear factor in my output.
+[00:50:51.980 --> 00:50:56.460] So then these two should be independent.
+[00:50:56.640 --> 00:50:59.020] So this should be uniform and independent in the result.
+[00:50:59.960 --> 00:51:05.600] And now the really, really bad thing is in the general sense, this is impossible.
+[00:51:06.260 --> 00:51:06.620] Okay.
+[00:51:07.640 --> 00:51:12.020] This is just if you look at the theoretical problems, but in the general case, this is
+[00:51:12.020 --> 00:51:12.980] not feasible to do this.
+[00:51:13.600 --> 00:51:15.180] Why is it not feasible to do this?
+[00:51:15.640 --> 00:51:18.140] because of the pigeonhole principle.
+[00:51:18.700 --> 00:51:21.480] So if my x here has a domain that is larger
+[00:51:21.480 --> 00:51:22.560] than the integer domain,
+[00:51:23.200 --> 00:51:25.600] then I can always construct an input sequence.
+[00:51:25.900 --> 00:51:27.600] Doesn't matter which hash function you choose,
+[00:51:27.800 --> 00:51:30.080] I can always construct an input sequence
+[00:51:30.080 --> 00:51:33.300] such that all my inputs will end up having
+[00:51:33.300 --> 00:51:34.120] the same hash value.
+[00:51:35.060 --> 00:51:36.780] It must be possible to do this
+[00:51:37.420 --> 00:51:39.860] because if one domain is larger than the other,
+[00:51:39.980 --> 00:51:42.660] then of course I can always construct it like this.
+[00:51:42.660 --> 00:51:45.340] So we should make this as unlikely
+[00:51:45.340 --> 00:51:46.740] that this happens as possible.
+[00:51:47.200 --> 00:51:50.340] So this is therefore the quote of Knuth,
+[00:51:50.600 --> 00:51:53.120] hashing is great for people with a lot of faith in statistics.
+[00:51:53.340 --> 00:51:56.220] So we should make it show that it doesn't happen.
+[00:51:56.960 --> 00:51:59.760] Okay, now, but what do we,
+[00:51:59.860 --> 00:52:02.320] now what do we choose as hash function?
+[00:52:02.480 --> 00:52:03.660] So what is a good hash function?
+[00:52:05.100 --> 00:52:07.200] And so first let's talk about perhaps
+[00:52:07.200 --> 00:52:09.540] what we say in introductory lectures.
+[00:52:09.780 --> 00:52:11.360] And by the way, these are bad hash functions.
+[00:52:12.660 --> 00:52:16.640] So don't, so I said to bet, let's write it here,
+[00:52:16.760 --> 00:52:17.920] say bet examples.
+[00:52:21.040 --> 00:52:22.380] Don't use them.
+[00:52:23.740 --> 00:52:26.500] Examples, identity for example.
+[00:52:26.700 --> 00:52:28.760] So we say, hey, if my key is an integer,
+[00:52:29.260 --> 00:52:32.640] so why not just say, okay,
+[00:52:33.900 --> 00:52:36.720] hash of x, if x is an int,
+[00:52:38.900 --> 00:52:41.200] is equal to x.
+[00:52:42.800 --> 00:52:45.720] because this maps my inputs to the integer domain,
+[00:52:45.960 --> 00:52:47.680] every possible interval can be achieved.
+[00:52:47.940 --> 00:52:48.840] So why not?
+[00:52:49.920 --> 00:52:50.800] Don't do this.
+[00:52:50.980 --> 00:52:52.880] Terrible, really terrible, terrible things happen
+[00:52:52.880 --> 00:52:53.440] if you do this.
+[00:52:53.660 --> 00:52:54.460] Don't do this.
+[00:52:54.660 --> 00:52:56.660] I mean, just think about this example
+[00:52:56.660 --> 00:52:59.940] that we had before when we said my function here was
+[00:53:01.360 --> 00:53:07.480] slots is equal to hash of x times n,
+[00:53:08.140 --> 00:53:09.840] shift right, 32.
+[00:53:10.420 --> 00:53:12.460] if you use this here as function
+[00:53:12.460 --> 00:53:15.200] and you use their identity as such function
+[00:53:15.200 --> 00:53:16.580] and the input is for example,
+[00:53:16.620 --> 00:53:18.280] which is not very unlikely.
+[00:53:18.440 --> 00:53:19.860] That somebody inserts as values here,
+[00:53:20.300 --> 00:53:21.260] one, two, three, four.
+[00:53:21.820 --> 00:53:23.980] If you use this, then all of them
+[00:53:23.980 --> 00:53:25.580] will end up in slot zero, of course.
+[00:53:27.040 --> 00:53:29.680] So this is really a bad, bad, bad hash function
+[00:53:31.100 --> 00:53:35.520] because we see my input values that are close by.
+[00:53:35.760 --> 00:53:37.380] So one, two, three, four, they're close by.
+[00:53:37.380 --> 00:53:39.480] The hash values are also close by.
+[00:53:39.880 --> 00:53:42.140] And this is a highly undesirable property.
+[00:53:42.380 --> 00:53:43.540] So we don't want this.
+[00:53:43.780 --> 00:53:45.920] So we want that the hash values that we get
+[00:53:45.920 --> 00:53:48.840] are spread out all over the space
+[00:53:48.840 --> 00:53:54.360] and are distributed far, far away.
+[00:53:55.960 --> 00:53:57.920] So now what should we do instead?
+[00:53:59.380 --> 00:54:00.720] So this is really bad.
+[00:54:01.500 --> 00:54:02.700] Identity, don't do this.
+[00:54:04.620 --> 00:54:05.960] Better, but still bad.
+[00:54:16.540 --> 00:54:30.400] We say, for example, my use so-called Fibonacci hashing, I say my hash value of x is equal
+[00:54:33.600 --> 00:54:37.740] So this is a number that I do not know by heart, unfortunately.
+[00:54:39.060 --> 00:55:00.280] But basically, yeah, and, and, yeah, so this is a number
+[00:55:00.400 --> 00:55:10.140] that is, this is a pretty long number.
+[00:55:12.240 --> 00:55:22.640] So this is a number that is roughly, let's say, we take a constant here, c times x, and
+[00:55:22.640 --> 00:55:36.900] And this C here is roughly 2 to the power of 63 times, oh sorry, we did 64 bit hash radius.
+[00:55:37.060 --> 00:55:41.780] If you do 32 bit hash radius, and of course you take 2 to the power of 31 times here,
+[00:55:41.940 --> 00:55:43.940] then there is a factor here, 1.1 something.
+[00:55:44.140 --> 00:55:45.800] So there is a long constant that you choose.
+[00:55:46.660 --> 00:55:48.480] Okay, so you can look up this number by the way.
+[00:55:48.560 --> 00:55:51.140] If you search for Fibonacci hashing here and you find this constant you choose.
+[00:55:52.640 --> 00:55:54.320] You choose a pretty large constant here.
+[00:55:55.160 --> 00:55:56.420] Then you get a hash value.
+[00:55:59.340 --> 00:56:02.260] And this hash value is not totally terrible.
+[00:56:02.460 --> 00:56:06.260] The problem is, if you look at the distribution, I mean it's better than identity, but the
+[00:56:06.260 --> 00:56:11.720] problem of this Fibonacci hashing here is that the high bits of the hash values are
+[00:56:11.720 --> 00:56:15.100] reasonably distributed, but the low bits are not.
+[00:56:16.460 --> 00:56:21.340] So there's a lot of entropy in your high bits.
+[00:56:21.680 --> 00:56:23.360] So high bits good, low bits bad.
+[00:56:23.600 --> 00:56:24.360] Yeah, high bits good.
+[00:56:26.740 --> 00:56:27.960] Bits, okay.
+[00:56:28.380 --> 00:56:31.080] So basically, therefore, what you have to do afterwards, you have to shift this sum
+[00:56:31.080 --> 00:56:32.700] also that you can only use this high bit.
+[00:56:32.820 --> 00:56:36.440] But how many you shift depends, of course, here on hash table size, so I cannot write
+[00:56:36.440 --> 00:56:38.020] this in a closed formula easily.
+[00:56:38.720 --> 00:56:42.520] So Fibonacci hashing here, you might apply and then you shift and then you use the high
+[00:56:42.520 --> 00:56:42.780] bits.
+[00:56:43.500 --> 00:56:53.340] And so this is better than identity, but still not very good, because even with Fibonacci hashing,
+[00:56:53.520 --> 00:56:56.800] you can construct input sequences that give you pretty bad input.
+[00:56:57.540 --> 00:57:04.600] Now, so what are reasonably good? Now first let's say reasonable.
+[00:57:07.060 --> 00:57:11.140] And before we come to reasonable, then of course there are the hash functions that are really good,
+[00:57:14.540 --> 00:57:16.960] good but it's too expensive
+[00:57:21.400 --> 00:57:25.980] you can of your cost use as a hash function here this one yeah like you say hash of x
+[00:57:26.820 --> 00:57:32.860] is uh for example just use a cryptographic hash yeah so it doesn't exist
+[00:57:34.280 --> 00:57:38.080] now don't don't do this i mean this gives you very good hash values
+[00:57:38.740 --> 00:57:41.480] but this computing is this secure hash here,
+[00:57:41.600 --> 00:57:44.340] so expensive, this dominates everything.
+[00:57:44.500 --> 00:57:45.780] And also don't do this.
+[00:57:46.320 --> 00:57:47.340] Okay, this is too expensive.
+[00:57:47.520 --> 00:57:48.840] So basically we have seen there are some things
+[00:57:48.840 --> 00:57:51.600] that are cheap, like identity is as cheap as you can do.
+[00:57:51.900 --> 00:57:53.360] If you're watching, it's a bit more expensive,
+[00:57:53.660 --> 00:57:54.880] but it's also not very good.
+[00:57:55.660 --> 00:57:57.640] So cryptographic hashes, these are really good,
+[00:57:57.780 --> 00:57:59.320] but these are too far too expensive.
+[00:57:59.620 --> 00:58:01.160] So we have to find something in the middle.
+[00:58:01.460 --> 00:58:04.660] Yeah, and reasonable compromises between those two are,
+[00:58:04.760 --> 00:58:07.200] for example, CSE is 32.
+[00:58:08.140 --> 00:58:17.940] Now, strictly speaking, here's what we say basically, hash if x is csc32x, c, so of course
+[00:58:17.940 --> 00:58:18.760] you need some c value.
+[00:58:21.900 --> 00:58:26.780] And strictly speaking, of course, this was meant as a checksum for error detection, it
+[00:58:26.780 --> 00:58:28.060] was not meant as a hash function.
+[00:58:29.720 --> 00:58:35.180] But this can be implemented, it can be run in hardware, so your CPU most likely, so this
+[00:58:35.180 --> 00:58:36.700] here is supported by hardware.
+[00:58:37.560 --> 00:58:39.580] So therefore this computation is super cheap.
+[00:58:39.820 --> 00:58:41.700] So running a CSE 32 instructions,
+[00:58:41.780 --> 00:58:43.360] of course, you have something like four cycles.
+[00:58:43.660 --> 00:58:48.260] So this is super cheap and the values you get out of this are pretty good.
+[00:58:48.500 --> 00:58:51.460] Unless you get good hash values out of this, it's cheap.
+[00:58:51.780 --> 00:58:52.980] And therefore people do this.
+[00:58:53.420 --> 00:58:55.700] Even though it was never met as a hash function,
+[00:58:56.140 --> 00:58:58.240] but this works very well.
+[00:58:58.680 --> 00:59:00.040] The alternative is
+[00:59:02.440 --> 00:59:13.980] aqua hash for example aqua hash but what they do is they take x value and then they run as
+[00:59:14.880 --> 00:59:24.780] on x as also also is a crypto primitive but they don't do the full as as you do the command
+[00:59:24.780 --> 00:59:27.860] but limited to, I think they do three rounds or something like this.
+[00:59:28.880 --> 00:59:31.040] Limited to three rounds.
+[00:59:32.340 --> 00:59:38.860] So you run a cryptographic encryption scheme a few times on your X value.
+[00:59:39.080 --> 00:59:42.060] And you do this because, again, this is also supported by hardware.
+[00:59:42.380 --> 00:59:47.280] So if you have a reasonably new CPU, your CPU most likely can do AES and hardware.
+[00:59:47.640 --> 00:59:50.940] And if you do a few rounds of AES, this is not very expensive.
+[00:59:51.300 --> 00:59:52.440] And therefore we can do this.
+[00:59:52.440 --> 00:59:55.520] and then we get also pretty good hash values out of this.
+[00:59:56.320 --> 00:59:59.640] Yeah, and perhaps I can do one more here just for completeness.
+[00:59:59.960 --> 01:00:02.100] I cannot write the definition because it's too much code.
+[01:00:02.180 --> 01:00:04.340] So now we come to a longer code.
+[01:00:04.600 --> 01:00:07.160] One good code also is for example,
+[01:00:07.480 --> 01:00:12.960] more hash two for example.
+[01:00:13.360 --> 01:00:15.820] This is a software solution.
+[01:00:16.260 --> 01:00:18.240] This also gives you a reasonable,
+[01:00:19.300 --> 01:00:21.780] Let's say this is already put it into,
+[01:00:23.680 --> 01:00:25.820] also a bit expensive.
+[01:00:31.180 --> 01:00:33.020] So also does here hash,
+[01:00:34.060 --> 01:00:35.560] here is a lot of code.
+[01:00:39.440 --> 01:00:41.540] So there's no easy answer for this.
+[01:00:42.120 --> 01:00:44.420] So this is the longer sequence of code that's run.
+[01:00:45.440 --> 01:00:46.720] Gives you good hash functions,
+[01:00:48.240 --> 01:00:54.740] this momo hash does quite a bit of computation so this takes some code and um so therefore this will
+[01:00:54.740 --> 01:01:00.140] be much slower than uh csc or the aes solution because they usually require just two three
+[01:01:00.140 --> 01:01:05.200] hardware instructions so these are very cheap momo hash requires you requires more of this so this is
+[01:01:05.200 --> 01:01:10.080] a bit more expensive on the other hand advantage of momo hash is this is a pure software solution
+[01:01:10.080 --> 01:01:16.220] this works on every processor yeah while not every processor has csc uh support or aes support
+[01:01:16.220 --> 01:01:19.000] So this is portable, but slower than the other one.
+[01:01:19.800 --> 01:01:22.320] But nevertheless, you should choose one of these here.
+[01:01:23.320 --> 01:01:25.400] So this is a reasonable range that you can use.
+[01:01:26.540 --> 01:01:28.360] Never use identity, it's super terrible.
+[01:01:28.980 --> 01:01:31.280] Fibonacci hashing you can choose, also you only use with care.
+[01:01:31.460 --> 01:01:32.240] Better don't use it.
+[01:01:32.500 --> 01:01:36.080] I mean, you can, we can fix it and so, but not so easy to.
+[01:01:36.340 --> 01:01:39.720] You can improve this here, Fibonacci hashing, by using some more tricks,
+[01:01:39.880 --> 01:01:42.540] but probably don't want to use this.
+[01:01:42.680 --> 01:01:44.280] Use one of these reasonable hashes here.
+[01:01:48.100 --> 01:01:50.040] good results and reasonable performance.
+[01:01:51.360 --> 01:01:54.620] And by the way, I said from a theoretical perspective,
+[01:01:54.640 --> 01:01:57.400] it's impossible to defend about hash collisions
+[01:01:57.400 --> 01:01:59.720] because I mean, if my key domain is larger
+[01:01:59.720 --> 01:02:01.720] than my integer domain,
+[01:02:01.960 --> 01:02:03.840] then it's fundamentally impossible
+[01:02:04.460 --> 01:02:06.520] to always be collision free.
+[01:02:06.720 --> 01:02:08.760] Also there must be values that have the same hash value.
+[01:02:08.960 --> 01:02:11.500] And therefore if some malicious user comes to you
+[01:02:11.500 --> 01:02:14.260] and gives you all values that have the same hash value,
+[01:02:16.460 --> 01:02:21.940] collide brutally in your hash table and therefore your performance will degrade and there's not a
+[01:02:21.940 --> 01:02:22.820] lot we can do.
+[01:02:24.880 --> 01:02:25.940] Bad things happen.
+[01:02:26.340 --> 01:02:29.000] On the other hand, there are a few things we can do.
+[01:02:29.180 --> 01:02:30.920] It's not like if we are totally helpless.
+[01:02:31.500 --> 01:02:32.880] So there are a few things we can do.
+[01:02:33.160 --> 01:02:39.260] And one thing to battle this problem is, I said both a C and AS need a seed.
+[01:02:39.420 --> 01:02:40.560] It doesn't really matter what you choose.
+[01:02:40.700 --> 01:02:42.000] You can use any value here.
+[01:02:42.300 --> 01:02:44.880] And when you choose a different seed, you will get a different hash value.
+[01:02:46.220 --> 01:02:46.640] you wish.
+[01:02:46.820 --> 01:02:53.360] And of course one attractive approach here is to say, I choose my cheese at random.
+[01:02:54.400 --> 01:02:59.840] So when my program starts, I run the dice, I look at the dev random or something, so
+[01:02:59.840 --> 01:03:01.080] I choose a random seed.
+[01:03:01.240 --> 01:03:05.380] And of course I have to keep it the same over my random program, because otherwise I don't
+[01:03:05.380 --> 01:03:06.300] find anything in my HTML.
+[01:03:06.620 --> 01:03:12.440] So I always must use the same seed, but the seed itself is chosen at random and therefore
+[01:03:12.440 --> 01:03:14.400] an attacker cannot know the seed.
+[01:03:16.320 --> 01:03:21.460] advantage that it is now very, very difficult to an attacker to choose an input that collides.
+[01:03:22.000 --> 01:03:27.380] Because if the seed is known and the attacker knows how your hash function works, it can construct
+[01:03:27.380 --> 01:03:32.180] inputs so that it collides. If your seed is a random value, then we cannot do this. So this
+[01:03:32.180 --> 01:03:40.580] we could do. Okay, this was already quite a bit of talking about hash table. And this
+[01:03:40.580 --> 01:03:44.320] we are only talking about the first half of this slide, because we are only talking about the
+[01:03:46.220 --> 01:03:50.880] But nevertheless, I think it's important to talk about this because probably quite a few
+[01:03:50.880 --> 01:03:55.220] of the students who attend this lecture have never implemented a hash table themselves,
+[01:03:55.520 --> 01:03:57.460] at least not a real production one.
+[01:03:58.040 --> 01:04:00.940] Therefore, we must talk how to do this well.
+[01:04:01.480 --> 01:04:04.480] Oh, strictly speaking, I forgot even half of the tricks you can do.
+[01:04:05.080 --> 01:04:09.500] Sorry, because just two minutes more, I don't want to spend too much time on it because
+[01:04:09.500 --> 01:04:12.040] I want to go to external memory, but just two things.
+[01:04:13.400 --> 01:04:18.480] I mean, there's another problem here that our changing hash table has, even if you do
+[01:04:18.480 --> 01:04:19.020] all this.
+[01:04:19.580 --> 01:04:22.540] Yeah, so then my hash table here, of course, has a chain.
+[01:04:23.660 --> 01:04:27.960] And of course, if you choose a good hash function, then this chain will be short, so most likely
+[01:04:27.960 --> 01:04:29.500] just one element or perhaps two elements.
+[01:04:29.820 --> 01:04:30.880] So it will be short.
+[01:04:31.180 --> 01:04:36.500] But nevertheless, if I access an element and the element is there, what I do is I jump
+[01:04:36.500 --> 01:04:39.800] to this table element here, I look it up, I find the pointer and then I jump to this.
+[01:04:39.800 --> 01:04:42.200] And this means I access two memory locations.
+[01:04:42.460 --> 01:04:44.400] So first this and then that.
+[01:04:44.840 --> 01:04:45.560] Two memory locations.
+[01:04:45.700 --> 01:04:47.380] I'm really unlucky, even three.
+[01:04:47.580 --> 01:04:49.980] So afterwards this year, if I'm really unlucky.
+[01:04:50.260 --> 01:04:51.560] But if I'm lucky, only two.
+[01:04:51.940 --> 01:04:54.060] But nevertheless, I do two memory accesses.
+[01:04:54.300 --> 01:04:58.300] And if my hash table is really large, so it's larger than my CPU cache, this means I have
+[01:04:58.300 --> 01:04:58.840] two cache misses.
+[01:04:59.620 --> 01:05:01.220] One cache miss here, one cache miss here.
+[01:05:02.120 --> 01:05:03.600] And cache misses are expensive.
+[01:05:03.600 --> 01:05:10.400] So therefore, chaining hash tables, some people claim that they are expensive and you should
+[01:05:10.400 --> 01:05:11.060] not use them.
+[01:05:13.560 --> 01:05:19.620] I would say a well implemented chaining hash table is most likely faster than what you can
+[01:05:19.620 --> 01:05:20.320] do as alternative.
+[01:05:20.760 --> 01:05:26.340] I mean, there are alternatives that are pretty high performance, but they are not that easy
+[01:05:26.340 --> 01:05:28.460] to implement in a reasonable manner.
+[01:05:28.460 --> 01:05:33.720] So chaining hash tables pick a pretty sweet spot between ease of implementation and good
+[01:05:33.720 --> 01:05:34.180] performance.
+[01:05:34.420 --> 01:05:37.560] You can build good performing chaining hash tables reasonably easy.
+[01:05:38.040 --> 01:05:41.280] The non-chaining hash tables, if you want to make some good performance is possible,
+[01:05:41.400 --> 01:05:42.240] but this is not so easy.
+[01:05:42.680 --> 01:05:43.080] Okay.
+[01:05:43.400 --> 01:05:45.720] So, but nevertheless, what can we do to improve the performance?
+[01:05:45.720 --> 01:05:50.860] Just two, two, two small tips, uh, uh, tweaks you can do.
+[01:05:51.500 --> 01:05:56.920] One is, and this is of course, now we come to the nasty world of real implementation.
+[01:05:58.560 --> 01:06:02.600] Now if you look at the hashtag, what is written in the hashtag here, we see that here, this
+[01:06:02.600 --> 01:06:03.680] here of course is a pointer.
+[01:06:05.140 --> 01:06:06.480] So now what is a pointer?
+[01:06:06.600 --> 01:06:14.620] A pointer is a 64-bit element here, 64 bits, and this of course some value pointing somewhere
+[01:06:14.620 --> 01:06:15.060] in the memory.
+[01:06:16.320 --> 01:06:21.220] Now if you look at the real hardware that we are using, we realize quickly that this
+[01:06:21.220 --> 01:06:25.960] pointer only uses 48 bits and the upper bits are all zero.
+[01:06:26.500 --> 01:06:32.520] And this is by design, because your hardware cannot address more than 48 bits, so it operates
+[01:06:32.520 --> 01:06:33.020] all zero.
+[01:06:33.700 --> 01:06:37.900] Therefore, what you want to improve your performance of hash table, what you can do is, you can
+[01:06:37.900 --> 01:06:43.420] make use of this remaining 16 bits and store something useful in there.
+[01:06:43.540 --> 01:06:49.520] For example, what you can do is, you can, you have a few values stored here.
+[01:06:49.520 --> 01:06:53.440] Yeah, so, and then we can take the elements that we have in my chain
+[01:06:55.960 --> 01:06:58.660] and look at the hash values that we did not use.
+[01:06:58.800 --> 01:07:03.680] Like if you use a power of two hash tables, this means, so this is my total hash value,
+[01:07:03.800 --> 01:07:07.840] my Cosmash function always gives me, for example, 34 bit, 32 bit or 64 bit.
+[01:07:07.920 --> 01:07:09.280] So this is my whole total hash value.
+[01:07:12.900 --> 01:07:15.820] And so this is now the part that I used for my table.
+[01:07:16.820 --> 01:07:19.260] So this is used, how much ever this is used.
+[01:07:19.520 --> 01:07:24.460] And then I most likely have remaining bits that I computed anyway because my hash function
+[01:07:24.460 --> 01:07:27.400] did compute it, but they didn't make use of this because my hash table is not large enough.
+[01:07:27.600 --> 01:07:29.020] And so I have unused bits.
+[01:07:29.320 --> 01:07:36.120] So what you can now do is, you take 4 bits from your unused bits set here, 4 bits, unused.
+[01:07:37.660 --> 01:07:43.580] And then you store these bits in the, these 4 bits in these remaining 16 bits here.
+[01:07:43.800 --> 01:07:47.700] Because you know, these 4 bits have 16 possible values.
+[01:07:49.700 --> 01:07:52.740] And then I change this zero here to a one.
+[01:07:53.480 --> 01:07:56.520] That's why I use basically as a very small bitmap.
+[01:07:56.760 --> 01:08:01.040] And I set a one into my bitmap for my unused hash bits.
+[01:08:01.620 --> 01:08:02.320] And a zero.
+[01:08:02.420 --> 01:08:04.980] Now, if you do a lookup, you read the pointer.
+[01:08:05.940 --> 01:08:10.480] And then before following the pointer, you check this upper 16 bits.
+[01:08:10.540 --> 01:08:15.700] If the bit that is relevant for your hash value data searching, is this bit a set?
+[01:08:15.960 --> 01:08:17.560] If not, you stop immediately.
+[01:08:19.700 --> 01:08:20.980] But if not, you stop immediately.
+[01:08:21.240 --> 01:08:23.000] And this means that if you have a miss,
+[01:08:23.240 --> 01:08:26.680] so if your element is not in the chain,
+[01:08:27.580 --> 01:08:29.380] with, I mean, not always of course,
+[01:08:29.460 --> 01:08:31.260] because you could have a collision in this four bits,
+[01:08:31.360 --> 01:08:32.500] of course, but if you don't have a collision
+[01:08:32.500 --> 01:08:35.020] in your four bits, then if you have a miss,
+[01:08:35.180 --> 01:08:37.240] you only access one memory location instead of two.
+[01:08:37.700 --> 01:08:40.260] Yeah, so you get only one cache miss instead of two cache misses.
+[01:08:40.620 --> 01:08:42.680] Now this improved performance quite a bit,
+[01:08:43.060 --> 01:08:43.940] if you have a miss.
+[01:08:44.020 --> 01:08:44.720] If you have a hit, of course,
+[01:08:44.780 --> 01:08:46.220] you have to go to two of both locations.
+[01:08:46.440 --> 01:08:48.720] But yeah, so this is a neat trick you can implement.
+[01:08:50.320 --> 01:08:53.820] The second thing you can do, you can say, okay, don't implement a chaining hash table,
+[01:08:53.980 --> 01:08:56.820] instead implement an open addressing hash table.
+[01:08:58.680 --> 01:09:05.000] Then you say in my hash table, I don't store the pointer to the element, but I store the
+[01:09:05.000 --> 01:09:05.780] element itself.
+[01:09:06.480 --> 01:09:14.140] So then here we say, let's say hash number one, then the key number one.
+[01:09:14.320 --> 01:09:18.080] So then here somewhere we have hash number two, key two.
+[01:09:19.520 --> 01:09:23.320] Now my table now consists of the elements instead of pointers to the elements.
+[01:09:23.760 --> 01:09:28.020] Has advantage that if I want to find something, I immediately go there and then I have it,
+[01:09:28.220 --> 01:09:30.320] just memory, one memory cast and that's it.
+[01:09:30.900 --> 01:09:33.420] Now this advantage is, okay, what do we do with collisions?
+[01:09:33.700 --> 01:09:36.460] So if I want to enter something, but there is already somebody in there.
+[01:09:37.260 --> 01:09:40.640] Okay, now there are a number of approaches to fixes.
+[01:09:41.240 --> 01:09:46.840] One, the best, let's say a reasonable approach, for example, is this so called Robin Hood
+[01:09:46.860 --> 01:09:49.340] hashing, Robin Hood hashing.
+[01:09:51.340 --> 01:09:57.720] So this means basically, so if this is taken, I go to the next location.
+[01:09:57.720 --> 01:09:58.960] So I go to the next element.
+[01:09:59.620 --> 01:10:01.720] If this is free, I just put myself in there.
+[01:10:01.940 --> 01:10:04.360] If this is taken, I perhaps go to the next element and so on.
+[01:10:04.480 --> 01:10:07.180] So I fetch the first free element.
+[01:10:08.360 --> 01:10:10.620] Now at least you do this in the first approximation.
+[01:10:10.780 --> 01:10:14.380] In the second approximation, you quickly realize that if you do this, your original element
+[01:10:14.380 --> 01:10:16.520] can be quite far away from your start position.
+[01:10:16.720 --> 01:10:20.980] And this means if you do a lookup, then you must also look at quite a few elements and
+[01:10:20.980 --> 01:10:21.700] to find it.
+[01:10:23.580 --> 01:10:31.140] So therefore to make this traversal shorter, when you go to a new position, you check if
+[01:10:31.840 --> 01:10:35.100] your distance from your optimal, so this would be an optimal, I want to be here.
+[01:10:35.760 --> 01:10:37.040] So this is my optimal position.
+[01:10:37.400 --> 01:10:40.760] And then if I go here, my distance is one, if I go to the next element, the distance
+[01:10:40.760 --> 01:10:42.100] is two, then three and so on.
+[01:10:42.100 --> 01:10:47.060] So you go further away and now you check if your distance from optimum is
+[01:10:47.940 --> 01:10:52.620] Higher than the distance of the element that is currently in there from its optimum
+[01:10:52.620 --> 01:10:59.160] And if yes, you replace the current element and move the other element away and by doing this trick you limit
+[01:10:59.160 --> 01:10:59.740] the
+[01:11:00.280 --> 01:11:06.320] maximum distance from the from the source and so you now no longer have to traverse an unbounded number of limits
+[01:11:06.320 --> 01:11:10.400] But just a bounded number of elements and this therefore you look up is much cheaper
+[01:11:12.220 --> 01:11:15.640] Open addressing with Robinhood is reasonably okay.
+[01:11:17.340 --> 01:11:21.620] Downside is, first, quite a bit more difficult to implement than chaining, it's quite a bit
+[01:11:21.620 --> 01:11:22.060] of code.
+[01:11:22.620 --> 01:11:27.520] And second, I mean, we didn't talk about parallelism at all, but a chaining hash table you can
+[01:11:27.520 --> 01:11:30.040] build in parallel reasonably easy, simply with many threads.
+[01:11:30.360 --> 01:11:34.900] A Robinhood hash table is not easy at all to build in parallel with multiple threads.
+[01:11:35.520 --> 01:11:42.000] So therefore, in even doubt, a well implemented chaining hash table is a good first approximation.
+[01:11:43.240 --> 01:11:48.660] Okay, so as you know, I spent already nearly an hour talking about in-memory hash tables.
+[01:11:49.160 --> 01:11:54.400] I wanted to talk about out-of-memory hash tables, but yeah, so this is what we want to
+[01:11:54.400 --> 01:11:55.060] look at next.
+[01:11:55.700 --> 01:11:59.320] But first, of course, before we can look at the out-of-memory case, we have to understand
+[01:11:59.320 --> 01:12:00.060] the in-memory case.
+[01:12:00.720 --> 01:12:05.060] Now in principle, we would want to do this on external memory too, so on disk.
+[01:12:06.360 --> 01:12:10.120] But so the basic approach that we used,
+[01:12:10.900 --> 01:12:13.000] we cannot really use for disk.
+[01:12:13.120 --> 01:12:14.300] Here it is just too expensive.
+[01:12:14.820 --> 01:12:17.080] Because random IO on disk is super, super expensive.
+[01:12:17.380 --> 01:12:18.720] At least if you have a rotating disk.
+[01:12:18.840 --> 01:12:21.020] But even if you don't have a rotating disk in SSD,
+[01:12:21.520 --> 01:12:23.040] reading an arbitrary block from the SSD
+[01:12:23.040 --> 01:12:26.400] is quite a bit more expensive than accessing a memory location.
+[01:12:27.060 --> 01:12:29.140] And so random IO is very, very problematic.
+[01:12:29.720 --> 01:12:31.860] So if you would, for example, do a chaining hash table,
+[01:12:32.140 --> 01:12:33.260] this would not be good.
+[01:12:35.160 --> 01:12:40.340] One one access to disk at least if you're unlucky. So then you follow the chain another access to disk
+[01:12:40.340 --> 01:12:44.480] Then we follow the chain further another access to disk. So this is very very expensive
+[01:12:44.480 --> 01:12:46.360] This is not not good
+[01:12:46.840 --> 01:12:49.680] Even worse is this one. Yes, so we could with collisions
+[01:12:49.680 --> 01:12:53.060] You could say a verse case at excess to memory locations. I can do this
+[01:12:54.040 --> 01:12:58.880] Worst case this one here because this happens if your hash table grows
+[01:12:58.880 --> 01:13:04.120] I mean, I said choose your hash table such that is a bit larger than the number of elements
+[01:13:05.060 --> 01:13:07.860] How should you do this if you don't know how many elements you will get?
+[01:13:08.380 --> 01:13:12.080] Because initially if somebody does a create table, then your hash table is empty.
+[01:13:12.560 --> 01:13:14.560] So you don't know how many elements you will get.
+[01:13:14.720 --> 01:13:16.240] So how do you size your hash table?
+[01:13:16.440 --> 01:13:19.560] So you only observe over time how many elements you have.
+[01:13:19.920 --> 01:13:21.400] Therefore, this is very, very difficult.
+[01:13:21.640 --> 01:13:26.980] And the usual solution of course is rehashing, which means I fill my hash table until it's
+[01:13:27.380 --> 01:13:29.460] reasonably full and then decide, oh, it's too small.
+[01:13:29.640 --> 01:13:33.280] Then I build a larger hash table and copy everything from my current hash table to my
+[01:13:33.280 --> 01:13:33.840] new hash table.
+[01:13:35.840 --> 01:13:39.920] This is already expensive in memory, but on external memory this is prohibitive.
+[01:13:40.040 --> 01:13:40.880] So it's super super expensive.
+[01:13:41.120 --> 01:13:45.860] In particular if you use something like a prime number hash table, because then the
+[01:13:45.860 --> 01:13:47.200] new hash table has nothing to do.
+[01:13:47.340 --> 01:13:51.280] So like say you have a hash table of size 11, then say oh it was too small.
+[01:13:51.540 --> 01:13:54.440] So you make it larger and change it to a hash table of size 19.
+[01:13:55.360 --> 01:13:57.580] So this hashed for both prime numbers.
+[01:13:57.980 --> 01:14:02.400] The location of the inputs here will have nothing to do with the location of the inputs
+[01:14:02.400 --> 01:14:02.640] here.
+[01:14:02.640 --> 01:14:10.060] So, totally spread out, therefore this is super, super expensive.
+[01:14:11.140 --> 01:14:13.840] So therefore for external storage we need something else.
+[01:14:13.900 --> 01:14:19.180] We need something that avoids this terrible rehashing performance and hopefully also does
+[01:14:19.180 --> 01:14:21.880] something a bit about this chaining problem if we can.
+[01:14:22.640 --> 01:14:24.740] And this is what we want to look at now.
+[01:14:26.380 --> 01:14:35.480] Now, and before we look at implementations, just two notes, hash tables are not as useful
+[01:14:35.480 --> 01:14:36.900] in general as with tree indexes.
+[01:14:36.940 --> 01:14:39.040] Because in tree indexes we can do range queries and point queries.
+[01:14:39.280 --> 01:14:42.060] With hash indexes we can usually only do point queries.
+[01:14:42.660 --> 01:14:48.360] So there are hashing schemes that claim to do also support range queries like order preserving
+[01:14:48.360 --> 01:14:49.400] hashing for example.
+[01:14:49.540 --> 01:14:51.580] But trust me, this doesn't really work.
+[01:14:51.780 --> 01:14:53.360] Okay, here the slide is more polite.
+[01:14:55.960 --> 01:15:02.740] In the general case, if you don't know anything about the distribution of my input, order-preserving
+[01:15:02.740 --> 01:15:03.540] hashing doesn't work.
+[01:15:03.660 --> 01:15:04.860] And you can even prove this.
+[01:15:05.020 --> 01:15:08.500] And also because you can prove that you can construct inputs where your order-preserving
+[01:15:08.500 --> 01:15:09.460] hashing must break.
+[01:15:10.780 --> 01:15:14.160] So therefore, in reality, we cannot really do a range queries.
+[01:15:15.500 --> 01:15:16.680] We cannot do a point queries.
+[01:15:17.240 --> 01:15:24.560] But these are some consequences, of course, namely, in practices means we can only use
+[01:15:24.740 --> 01:15:26.300] hash tables for primary keys.
+[01:15:26.500 --> 01:15:30.820] I mean primary keys work because every primary key is unique.
+[01:15:31.020 --> 01:15:34.940] Therefore, we have a quite reasonable chance
+[01:15:37.660 --> 01:15:40.780] to get collision free inputs or have few collisions,
+[01:15:40.800 --> 01:15:42.640] a few collisions we might have, but not too many.
+[01:15:43.300 --> 01:15:43.760] Excuse me.
+[01:15:51.460 --> 01:15:52.880] If there's a primary key, that's okay.
+[01:15:54.800 --> 01:15:58.060] Then I most likely have no collisions or few collisions and I can live with this
+[01:15:59.060 --> 01:16:02.880] But what about a non-primary case like in index and arbitrary would a be
+[01:16:02.880 --> 01:16:07.980] So then could be here's what we already talked about when we talked about indexes in general
+[01:16:07.980 --> 01:16:12.380] How do I delete a tuple where one million other tuples have the same value?
+[01:16:12.740 --> 01:16:14.620] Yes, so the speed trees we do the trick of
+[01:16:15.980 --> 01:16:21.820] Appending the tuple ID. So my trick here was I use key comma tuple ID to make it unique because this combination is unique
+[01:16:21.820 --> 01:16:24.100] So then I can find everything.
+[01:16:24.380 --> 01:16:26.880] Yeah, but I cannot do this.
+[01:16:27.620 --> 01:16:31.260] Yeah, because if I just want to find a key,
+[01:16:31.400 --> 01:16:33.900] then this would require a range query,
+[01:16:34.160 --> 01:16:36.380] and a hashed index doesn't support a range query.
+[01:16:36.540 --> 01:16:37.740] So therefore I cannot do this.
+[01:16:38.360 --> 01:16:40.920] Now, so therefore in reality,
+[01:16:41.360 --> 01:16:43.060] hash tables can only be used for primary keys.
+[01:16:43.220 --> 01:16:44.720] So for elements that are unique.
+[01:16:45.460 --> 01:16:46.920] Now the last element here says,
+[01:16:46.920 --> 01:16:53.540] we could fix this by having a separate index for duplicate values.
+[01:16:53.760 --> 01:16:57.040] So what you could do is, you have hash table,
+[01:16:58.520 --> 01:17:00.920] so then you have here elements here,
+[01:17:01.620 --> 01:17:03.260] so key, key, and so on.
+[01:17:04.540 --> 01:17:05.920] And initially you implement, for example,
+[01:17:06.020 --> 01:17:07.360] a classical chaining or whatever.
+[01:17:07.640 --> 01:17:10.360] And then if at some point you realize
+[01:17:10.360 --> 01:17:12.260] that your chain becomes very long
+[01:17:12.260 --> 01:17:14.440] because you have a lot of collisions,
+[01:17:14.440 --> 01:17:19.300] So because every value tends to have the same value, so every entry has the same value here,
+[01:17:19.620 --> 01:17:21.940] what you then do is you switch your whole chain.
+[01:17:23.320 --> 01:17:29.960] So we keep the first input, but then I switch my whole chain to a tree.
+[01:17:30.400 --> 01:17:35.660] So we can build, at least in principle, a hybrid of a hash table and a tree.
+[01:17:35.860 --> 01:17:41.520] So we start with a hash table and if too many identical values, then I switch to a tree structure.
+[01:17:41.520 --> 01:17:47.140] And then we can guarantee, of course, that we can get logarithmic excess cost even in this combination.
+[01:17:47.500 --> 01:17:49.540] Yeah, but this is super complicated to implement.
+[01:17:49.760 --> 01:17:53.740] I know a few implementations of this, but this is super, super difficult.
+[01:17:54.740 --> 01:17:56.280] Most likely you don't want to do this.
+[01:17:56.660 --> 01:18:01.160] So easy, I want to use a hash table when you know everything is unique or use a B-tree.
+[01:18:01.520 --> 01:18:06.480] If not, but this hybrid of both can be built, but it's very, very difficult.
+[01:18:08.180 --> 01:18:12.160] Okay, and I've seen already that I have only 12 minutes left.
+[01:18:12.920 --> 01:18:14.140] All right, in 12 minutes we can do this.
+[01:18:14.820 --> 01:18:24.220] So therefore now we now want to look at a hash table that works on disk and avoids these
+[01:18:24.220 --> 01:18:25.060] terrible problems.
+[01:18:26.040 --> 01:18:30.380] So to make it work easily, we would have to know hash table size, we cannot know it.
+[01:18:30.560 --> 01:18:32.460] If you make it too small, we have too many collisions.
+[01:18:32.540 --> 01:18:36.160] If you make it too large, we waste a lot of space and also performance is poor because
+[01:18:36.480 --> 01:18:37.100] hashing doesn't work.
+[01:18:37.600 --> 01:18:40.420] Now also chaining doesn't really work on disk
+[01:18:40.420 --> 01:18:43.040] because jumping from one bucket to the other is not good.
+[01:18:43.260 --> 01:18:43.740] Okay.
+[01:18:45.200 --> 01:18:46.540] Now we set the traditional solution
+[01:18:46.540 --> 01:18:48.840] to unknown table sizes rehashing.
+[01:18:49.040 --> 01:18:52.140] So we built a new table and update everything,
+[01:18:52.320 --> 01:18:54.380] but we touch everything there
+[01:18:54.380 --> 01:18:55.400] and it's super, super expensive.
+[01:18:56.020 --> 01:18:59.100] So therefore the idea of extendable hashing now is
+[01:18:59.860 --> 01:19:03.260] we built a hash table that can be grown without rehashing.
+[01:19:03.260 --> 01:19:06.340] And we do this by sharing hash table entries.
+[01:19:06.500 --> 01:19:08.580] So we're just reusing what we already have.
+[01:19:08.860 --> 01:19:10.240] So now how does this work?
+[01:19:11.940 --> 01:19:15.120] So first my hash table size is always a power of two.
+[01:19:15.460 --> 01:19:18.780] So I have size two, four, eight, 16, and so on.
+[01:19:18.820 --> 01:19:19.680] So always a power of two.
+[01:19:20.260 --> 01:19:24.100] And the hash table now points to a bucket and each bucket of course is a page.
+[01:19:25.140 --> 01:19:33.060] And now multiple entries can point to the same bucket, but the pointing of entries to
+[01:19:33.260 --> 01:19:37.760] bucket is always symmetrical, which means we have a body scheme.
+[01:19:37.940 --> 01:19:42.360] I'm not sure if you are familiar with the term body scheme, the body systems, you might have
+[01:19:42.360 --> 01:19:49.840] learned about this in operating systems because there's a popular strategy. Basically, a set of
+[01:19:52.360 --> 01:19:59.540] values are bodies, if, so when is the number of values, bodies?
+[01:19:59.540 --> 01:20:04.900] So, a BUDDYS, Z is a BUDDYS system,
+[01:20:09.040 --> 01:20:12.320] sorry, I cannot write on my pen here,
+[01:20:12.920 --> 01:20:16.960] is a BUDDYS system,
+[01:20:19.740 --> 01:20:35.300] system if first size of s is above 2 so can be 2, 4 and so on and entries second elements
+[01:20:39.600 --> 01:20:50.200] means in s are neighboring so this is a dense span basically neighboring like for example the
+[01:20:50.200 --> 01:20:53.900] values can be two three four five and so but by the way this is not a body system because
+[01:20:53.900 --> 01:20:58.540] two three four five oh no it was it was it nevertheless is not a body system but at least
+[01:20:58.540 --> 01:21:02.080] it might currently there's no contradiction yet because it is the power of two and they are
+[01:21:02.080 --> 01:21:02.420] neighboring.
+[01:21:02.720 --> 01:21:16.400] But the third conditional says, last log 2 size of s, it must be identical.
+[01:21:23.260 --> 01:21:30.960] Okay, so basically, so if you look at the values here, for example, 0, 1, 2, 3, so
+[01:21:31.540 --> 01:21:37.500] these two are bodies, these two are bodies, these four are bodies, but 1 and 2 for example,
+[01:21:37.560 --> 01:21:38.340] these are not bodies.
+[01:21:39.860 --> 01:21:43.580] Because a set must be a power of 2 and the last bit must be the same and they must be
+[01:21:43.580 --> 01:21:43.840] neighboring.
+[01:21:43.840 --> 01:21:51.380] And so we basically takes a whole range and always break it down into halves.
+[01:21:51.560 --> 01:21:53.240] And then we end up with a body set we have.
+[01:21:57.100 --> 01:21:59.520] But this is the structure that we want to have.
+[01:21:59.720 --> 01:22:03.100] And now the depth of buckets varies.
+[01:22:03.360 --> 01:22:04.300] I don't know what depth means.
+[01:22:04.440 --> 01:22:08.260] Depth means how many bits did I use for my hash function from the input.
+[01:22:08.500 --> 01:22:11.360] So in this case, here we have now a small hash table.
+[01:22:11.360 --> 01:22:16.780] the contextual contains only two elements and so we say basically we use one bit from my input here
+[01:22:19.720 --> 01:22:25.700] because and and if my input if my input hash bit is zero i go to that bucket and if my input a bit
+[01:22:25.700 --> 01:22:29.940] from a hash bit is one i also go to this bucket which means of course my depth here is zero
+[01:22:29.940 --> 01:22:33.580] i use no bit now it doesn't matter what you do depth is
+[01:22:36.660 --> 01:22:37.060] depth
+[01:22:39.720 --> 01:22:45.560] is zero because i know no bit is required so in my bucket here and i have two values in my bucket
+[01:22:45.560 --> 01:22:50.940] a and b now if you insert something in my bucket let's say i insert a bucket value c then of course
+[01:22:50.940 --> 01:22:55.620] it's full yeah of course i don't have space for c my page is full so i want to insert c what i do
+[01:22:55.620 --> 01:23:01.280] now is i split my bucket so i take this one bucket with a and b and transform it first first for the
+[01:23:01.280 --> 01:23:02.700] the first moment ignores this, see here.
+[01:23:02.980 --> 01:23:06.640] So I take my one bucket that contained A and B.
+[01:23:07.000 --> 01:23:11.340] So I take A, B and I transform it into two buckets,
+[01:23:11.960 --> 01:23:14.000] one containing A and one containing B.
+[01:23:14.200 --> 01:23:15.720] Now, how did I do this?
+[01:23:15.880 --> 01:23:17.900] I used now one bit more.
+[01:23:18.020 --> 01:23:20.260] Initially I used zero bits from hash value
+[01:23:20.260 --> 01:23:21.640] because it doesn't matter what you do.
+[01:23:21.800 --> 01:23:23.480] Now I decided to use one bit.
+[01:23:23.540 --> 01:23:26.800] So I took this bucket, I took all elements from a bucket,
+[01:23:26.940 --> 01:23:29.260] A and B, I look at the hash value and I saw, okay,
+[01:23:29.260 --> 01:23:34.440] If I look again one bit here, if you look at the last bit of my hash value, then I see
+[01:23:34.440 --> 01:23:37.600] if I take an a, I get a zero, if I take a b, I get a one.
+[01:23:37.840 --> 01:23:40.460] Therefore they end up in two different buckets and I have two buckets.
+[01:23:43.180 --> 01:23:48.980] And now I can, I have free space and now I can insert my c, so I have depths here.
+[01:23:49.660 --> 01:23:49.760] Okay.
+[01:23:49.920 --> 01:23:57.140] So in this case, I could just do this because I could unshare a pointer.
+[01:23:57.140 --> 01:24:02.140] So initially here's this point that was shared, both pointers were pointing to the same bucket.
+[01:24:02.320 --> 01:24:08.880] I could unshare this and therefore increase my depth in, if this is not possible.
+[01:24:09.340 --> 01:24:18.980] And so then I must increase the global depths and then must increase the total dictionary.
+[01:24:19.220 --> 01:24:19.300] Okay.
+[01:24:19.400 --> 01:24:23.460] I see this in a moment, but before we do this, let's make a slightly larger example.
+[01:24:23.460 --> 01:24:28.540] So let's assume my input here was at a bare hashtag of size with two bits.
+[01:24:30.420 --> 01:24:38.520] Initially again I used zero bits, so everything points here to A, B. So now I want to insert
+[01:24:38.520 --> 01:24:41.600] a C, then I said oh, so this is of course bad.
+[01:24:44.020 --> 01:24:49.960] So then we split this in, now we, instead of one bucket now we have two buckets.
+[01:24:51.620 --> 01:24:56.720] We had A and B.
+[01:24:57.700 --> 01:25:06.380] Now in my example here, we did say that, let's say this point here and this point here and
+[01:25:06.380 --> 01:25:07.300] now I could insert a C.
+[01:25:07.520 --> 01:25:13.780] Now if I want to insert a D again, for example, it ends up to happen in this bucket here.
+[01:25:14.100 --> 01:25:14.660] Bucket is full.
+[01:25:14.660 --> 01:25:17.360] what now happens is I split this bucket again.
+[01:25:22.500 --> 01:25:32.920] And then I can, for example, end up with C, B, and then could be that my D ends up here,
+[01:25:32.980 --> 01:25:35.100] and then everything's fine. And then nothing happens with A.
+[01:25:35.360 --> 01:25:39.160] Now, so you see if a bucket overflows, I split this single bucket.
+[01:25:39.800 --> 01:25:43.380] And of course I update the pointers to that bucket, but all other buckets that I have in
+[01:25:44.820 --> 01:25:46.660] So this is a local change.
+[01:25:46.800 --> 01:25:50.980] So this is of course good because I don't have to rewrite my, my hash table.
+[01:25:51.180 --> 01:25:54.080] I just have to have to update a few pointers in my single bucket.
+[01:25:54.200 --> 01:25:56.140] And this is ideally what I want.
+[01:25:57.620 --> 01:25:58.020] Okay.
+[01:25:58.080 --> 01:26:02.400] And now if this is not possible, so in this example here, if it has this, this table,
+[01:26:02.480 --> 01:26:06.920] forget this example, if it is stable here, my ABC and now I want to insert something
+[01:26:06.920 --> 01:26:10.700] and BC is full, I cannot, I cannot get unshare because there is no sharing.
+[01:26:10.900 --> 01:26:13.380] In that case, I double my table.
+[01:26:14.660 --> 01:26:15.560] I go to four entries.
+[01:26:16.200 --> 01:26:18.800] And now, because I used one bit more,
+[01:26:19.580 --> 01:26:21.080] I now say that, okay,
+[01:26:21.960 --> 01:26:23.000] originally I just used to,
+[01:26:23.080 --> 01:26:25.480] this was my original one,
+[01:26:25.580 --> 01:26:27.400] the first one original, this is new.
+[01:26:27.920 --> 01:26:30.980] So original bit was zero and then the new bit.
+[01:26:31.100 --> 01:26:32.860] So we say original bit zero,
+[01:26:33.160 --> 01:26:34.540] it doesn't matter if the new bit is one or zero,
+[01:26:34.700 --> 01:26:35.500] everything points to A.
+[01:26:35.960 --> 01:26:38.220] Then if the original bit is one and the new bit is zero,
+[01:26:38.360 --> 01:26:40.440] I go to B, otherwise if it's one, I go to C and D.
+[01:26:40.960 --> 01:26:41.240] Okay.
+[01:26:41.500 --> 01:26:43.020] And this means we have split one,
+[01:26:44.980 --> 01:26:47.580] But the bucket with a was unaffected.
+[01:26:47.640 --> 01:26:48.740] We didn't do anything with the bucket.
+[01:26:49.500 --> 01:26:52.460] And the new bucket is then linked in as usual.
+[01:26:54.080 --> 01:26:54.520] Okay.
+[01:26:54.960 --> 01:27:02.660] And so it's more invasive because I've had to rewrite the dictionary, but I did not have
+[01:27:02.660 --> 01:27:03.800] to rewrite the buckets.
+[01:27:03.940 --> 01:27:07.680] And of course the buckets are much larger than the dictionary, because if you just think
+[01:27:07.680 --> 01:27:10.280] about this, we have here, this is a database page.
+[01:27:10.280 --> 01:27:19.180] So this is a page and on a page with a dictionary, we can probably point to a thousand entries
+[01:27:19.180 --> 01:27:19.500] or so.
+[01:27:19.660 --> 01:27:24.920] So the table will probably be smaller than by data, by a factor of a thousand.
+[01:27:27.400 --> 01:27:28.900] Smaller than the data.
+[01:27:31.600 --> 01:27:32.060] Those are buckets.
+[01:27:40.900 --> 01:27:43.540] It depends on your size or so, but this point.
+[01:27:43.660 --> 01:27:50.140] So therefore, if you rewrite my table, this is far less bad than having to rewrite all
+[01:27:50.140 --> 01:27:50.500] the buckets.
+[01:27:50.640 --> 01:27:53.340] This is expensive, but it's not super expensive.
+[01:27:53.680 --> 01:27:54.100] Okay.
+[01:27:54.180 --> 01:27:56.580] And then I can just increase the number of bits.
+[01:27:57.720 --> 01:28:06.740] Now, the only problem is, I cannot grow the table with an unbounded size, because if all
+[01:28:06.740 --> 01:28:09.400] of this double double double, you all know about exponential functions.
+[01:28:09.540 --> 01:28:11.620] So at some point you cannot do this anymore.
+[01:28:11.840 --> 01:28:14.760] So your exponential growth must stop at some point.
+[01:28:16.060 --> 01:28:22.520] And so therefore, at some point you probably have to fall back to chaining, even in extensible
+[01:28:22.520 --> 01:28:22.900] hashing.
+[01:28:23.340 --> 01:28:24.920] So we don't want this.
+[01:28:26.580 --> 01:28:31.260] never happens because if your hash functions are good then this simply never happens it's
+[01:28:31.260 --> 01:28:36.100] you reach your maximum hash table size but you know remember hash function could be bad or you
+[01:28:36.100 --> 01:28:40.720] have some malicious user that gives you a lot of values with the same hash value and then of course
+[01:28:40.720 --> 01:28:45.160] you have a problem because if you have really real conditions collisions on your values or at
+[01:28:45.160 --> 01:28:50.720] least in the bits that you use so then increasing their stable size doesn't help you much but for
+[01:28:50.720 --> 01:28:55.720] the real collision doesn't help you at all because i mean if they're identical then after increasing
+[01:28:57.060 --> 01:29:01.460] So therefore we need some strategy to handle this.
+[01:29:02.720 --> 01:29:06.580] Yeah, but nevertheless, we hope that this never happens.
+[01:29:07.080 --> 01:29:12.600] And then we can cope with this and we can process this.
+[01:29:13.140 --> 01:29:17.640] Okay, now the advantages of extended rehashing are ideally,
+[01:29:17.920 --> 01:29:20.020] we need exactly two page accesses per lookup.
+[01:29:20.300 --> 01:29:22.480] Because we look at the dictionary once
+[01:29:22.480 --> 01:29:24.040] and then we look at the bucket and that's it.
+[01:29:25.280 --> 01:29:27.000] And this which is less than a B-tree.
+[01:29:27.080 --> 01:29:29.900] Because in a B-tree we expect to have something like two or three elements,
+[01:29:30.760 --> 01:29:33.180] excesses, perhaps even four, if the input is really large.
+[01:29:33.560 --> 01:29:36.980] So therefore, extended behashing is expected to be faster than a B-tree.
+[01:29:38.220 --> 01:29:41.980] And also a good thing here is we can grow the table independent of the existing bucket
+[01:29:41.980 --> 01:29:43.320] and we don't have to do rehashing.
+[01:29:44.260 --> 01:29:47.000] Okay, so these are all advantages.
+[01:29:48.080 --> 01:29:51.380] Now disadvantages, table growth is a very invasive operation.
+[01:29:51.380 --> 01:29:53.360] we have to copy the table and the table can be large.
+[01:29:54.580 --> 01:29:57.260] Smaller than the data, but nevertheless it's large.
+[01:29:57.540 --> 01:30:00.400] And this also leads to very large steps in space consumption.
+[01:30:00.500 --> 01:30:03.260] Because initially my table is small, of course, you have a small table.
+[01:30:03.420 --> 01:30:05.240] Then time passes and double the size.
+[01:30:05.420 --> 01:30:06.080] Okay, still okay.
+[01:30:06.380 --> 01:30:09.100] And then double the size, still okay.
+[01:30:09.400 --> 01:30:13.260] And then double the size, then still okay.
+[01:30:13.520 --> 01:30:15.180] Then, you know, out of screen.
+[01:30:15.580 --> 01:30:19.020] And so we have, we have extreme steep steps in space consumption.
+[01:30:19.020 --> 01:30:22.100] every time when the bucket, when the table doubles here.
+[01:30:22.600 --> 01:30:22.660] Okay.
+[01:30:23.220 --> 01:30:24.960] And then the next problem here is
+[01:30:26.000 --> 01:30:27.540] what do we do with hash collisions?
+[01:30:27.900 --> 01:30:29.360] Because if we have real hash collisions,
+[01:30:29.580 --> 01:30:30.920] then we have serious problems.
+[01:30:32.020 --> 01:30:34.340] And yeah, so of course we hope this doesn't happen,
+[01:30:34.500 --> 01:30:36.360] but nevertheless, we need to do something
+[01:30:36.360 --> 01:30:37.600] in the case that this happens.
+[01:30:37.840 --> 01:30:40.780] And this all makes extensible hashing quite complicated.
+[01:30:41.420 --> 01:30:43.140] Okay, but I'm out of time now.
+[01:30:43.340 --> 01:30:44.700] So therefore I will stop here.
+[01:30:44.900 --> 01:30:48.760] And we will now, we will look at other techniques
+[01:30:49.300 --> 01:30:51.800] bring hash tables to disk in the next lecture.
+[01:30:52.080 --> 01:30:52.880] Okay, thank you.

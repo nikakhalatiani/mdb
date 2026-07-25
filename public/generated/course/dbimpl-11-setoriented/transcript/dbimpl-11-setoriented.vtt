@@ -1,0 +1,5673 @@
+WEBVTT
+
+1
+00:00:00.000 --> 00:00:02.740
+Welcome to the lecture on database implementation.
+
+2
+00:00:03.340 --> 00:00:07.600
+So in the last lecture, we started looking at set-oriented query processing.
+
+3
+00:00:08.280 --> 00:00:18.900
+And we said that for efficiency reasons, we prefer processing schemes where we don't look at individual data items, but instead look at large sets of items.
+
+4
+00:00:19.240 --> 00:00:23.720
+Because we can process much more efficiently than if we just look at one item after the other.
+
+5
+00:00:24.480 --> 00:00:28.400
+For example, we can use techniques like sorging, hashing, indexing, etc.
+
+6
+00:00:28.780 --> 00:00:33.220
+So that pay off if you have large sets, but for a single table, of course, an index doesn't
+
+7
+00:00:33.220 --> 00:00:33.660
+make sense.
+
+8
+00:00:33.900 --> 00:00:39.340
+So therefore, we prefer to process large sets of data values.
+
+9
+00:00:40.660 --> 00:00:49.220
+And we said, usually we do this by expressing our query processing plan or strategy as relational
+
+10
+00:00:49.220 --> 00:00:49.520
+algebra.
+
+11
+00:00:49.520 --> 00:00:55.660
+So here we see a typical example, if you would run a SQL query that says, find me all students
+
+12
+00:00:55.660 --> 00:01:00.780
+that attend lectures and databases, this is what we get.
+
+13
+00:01:00.880 --> 00:01:05.940
+So we would look at one set here, this set or this relation more precisely, this relation
+
+14
+00:01:07.040 --> 00:01:11.720
+we join together, this gives us, at least conceptually, gives us a new relation.
+
+15
+00:01:12.460 --> 00:01:15.680
+We might not store it like this, but conceptually this gives me a new relation.
+
+16
+00:01:15.680 --> 00:01:24.100
+Then I have the lectures relation again, I construct a new relation by filtering on database
+
+17
+00:01:24.100 --> 00:01:26.780
+title and then we join them together and then we get the answer.
+
+18
+00:01:27.260 --> 00:01:35.800
+So our model here is that the operators that we have and operators are join, select, this
+
+19
+00:01:35.800 --> 00:01:40.580
+is select, join, select, and this here you don't see it because we usually write the
+
+20
+00:01:40.580 --> 00:01:44.120
+name of the relation, but this is called a table scan.
+
+21
+00:01:44.280 --> 00:01:48.080
+So an operator that reads a table from disk or from memory.
+
+22
+00:01:49.540 --> 00:01:54.500
+And so in each operator consumes zero or more relations and produces one output relation.
+
+23
+00:01:54.660 --> 00:01:55.700
+So this is our model here.
+
+24
+00:01:56.080 --> 00:02:00.300
+And this processing model is inherently set oriented because it operates on set of data.
+
+25
+00:02:00.560 --> 00:02:06.840
+Now when I say set of data, this is strictly speaking not true because SQL allows us to
+
+26
+00:02:06.840 --> 00:02:08.100
+have duplicates in our input.
+
+27
+00:02:08.100 --> 00:02:11.080
+If we don't have a primary key, then we can have duplicates.
+
+28
+00:02:11.500 --> 00:02:13.820
+Therefore, the algebra here is back-oriented.
+
+29
+00:02:14.040 --> 00:02:15.580
+So we are multi-set oriented.
+
+30
+00:02:15.800 --> 00:02:18.660
+So we can have multiple copies of the same data value,
+
+31
+00:02:18.840 --> 00:02:21.160
+which actually sometimes is a pain.
+
+32
+00:02:21.300 --> 00:02:23.400
+Some of the problems become more difficult,
+
+33
+00:02:23.620 --> 00:02:25.220
+because we can have duplicates.
+
+34
+00:02:25.300 --> 00:02:26.560
+If everything would be duplicate-free,
+
+35
+00:02:26.780 --> 00:02:28.540
+this would usually be easier.
+
+36
+00:02:29.040 --> 00:02:30.720
+But SQL is not like this.
+
+37
+00:02:30.820 --> 00:02:33.780
+So we must cope with the fact that we might have duplicates.
+
+38
+00:02:35.320 --> 00:02:39.080
+Now what interests us in this lecture, of course, is how do we implement this?
+
+39
+00:02:39.240 --> 00:02:42.960
+So how do we implement such algebraic operators?
+
+40
+00:02:43.800 --> 00:02:47.800
+And later we look at how really we implement them.
+
+41
+00:02:47.940 --> 00:02:54.260
+So before we look at individual operators, you must understand what are the general strategies
+
+42
+00:02:54.260 --> 00:02:54.880
+for doing so.
+
+43
+00:02:55.300 --> 00:03:00.340
+And now one thing you must keep in mind is that there are actually multiple points in
+
+44
+00:03:00.340 --> 00:03:01.100
+time, if you wish.
+
+45
+00:03:01.100 --> 00:03:06.920
+And so this here at time point T1, we compile our database system.
+
+46
+00:03:10.520 --> 00:03:18.240
+Of course this is usually a long time ago, so this has been very, like weeks, months,
+
+47
+00:03:18.440 --> 00:03:20.060
+years ago, that's a long time ago.
+
+48
+00:03:20.760 --> 00:03:26.240
+So then sometime later, at T2, we compile the query,
+
+49
+00:03:29.260 --> 00:03:34.060
+and so some SQL query, for example SQL.
+
+50
+00:03:35.380 --> 00:03:38.160
+And then of course, again at some point later,
+
+51
+00:03:38.200 --> 00:03:39.780
+now this is probably closer to T2,
+
+52
+00:03:39.900 --> 00:03:42.240
+but can at least conceptually also be quite late,
+
+53
+00:03:42.700 --> 00:03:43.900
+we execute the query.
+
+54
+00:03:47.620 --> 00:03:53.600
+In particular, this separation causes quite a few challenges, but first let's look at
+
+55
+00:03:53.600 --> 00:03:55.020
+the one between T1 and T2.
+
+56
+00:03:55.580 --> 00:03:59.520
+One problem of course is that when we build our database systems, when we implement it,
+
+57
+00:03:59.680 --> 00:04:04.920
+when we test this, we have no idea which queries will be executed later in our system.
+
+58
+00:04:05.700 --> 00:04:11.600
+Because we built a database system, we often ship it to a customer, so we might run it
+
+59
+00:04:11.600 --> 00:04:14.580
+on a cloud server instead, but nevertheless, we installed it somewhere.
+
+60
+00:04:15.360 --> 00:04:17.500
+And then it is more or less out of our control.
+
+61
+00:04:17.900 --> 00:04:20.940
+And at some later point in time, a user types in some SQL,
+
+62
+00:04:21.100 --> 00:04:22.460
+and of course, then expects this works.
+
+63
+00:04:24.260 --> 00:04:26.880
+So, this means that you must implement your operators in a way
+
+64
+00:04:26.880 --> 00:04:29.060
+that they can cope with arbitrary queries.
+
+65
+00:04:29.220 --> 00:04:30.480
+And because we don't know the queries,
+
+66
+00:04:30.580 --> 00:04:34.100
+so when we implement operators, we don't know which queries will be executed.
+
+67
+00:04:34.380 --> 00:04:36.120
+Therefore, we must implement them in a way,
+
+68
+00:04:36.360 --> 00:04:39.420
+so that they can land everything.
+
+69
+00:04:40.320 --> 00:04:45.180
+And to illustrate this, of course, we will see more examples later, but just to illustrate
+
+70
+00:04:45.180 --> 00:04:52.700
+this, think about, let's say we want to implement something like set intersection.
+
+71
+00:04:53.520 --> 00:04:59.640
+So we want to take two sets or two relations and now we want to find all values that occur
+
+72
+00:04:59.640 --> 00:05:01.460
+in both sides, both sets.
+
+73
+00:05:01.700 --> 00:05:03.060
+So regular set intersection.
+
+74
+00:05:05.040 --> 00:05:09.740
+And now what we want, and of course we have no idea what this set will be like.
+
+75
+00:05:09.840 --> 00:05:14.060
+Is it an integer column, is it a string column, is it two columns, we have no idea.
+
+76
+00:05:15.000 --> 00:05:18.260
+Nevertheless we must implement our intersection in a way that always works.
+
+77
+00:05:19.440 --> 00:05:28.860
+And one way to do this is to assume that we have a kind of abstract helper logic, we will
+
+78
+00:05:28.860 --> 00:05:30.740
+usually call them subscripts.
+
+79
+00:05:30.740 --> 00:05:33.560
+So we call subscripts because we attach them to the operator
+
+80
+00:05:33.560 --> 00:05:36.100
+when we write it down.
+
+81
+00:05:36.960 --> 00:05:39.740
+So we have a subscript and this contains
+
+82
+00:05:39.740 --> 00:05:40.860
+a query specific part.
+
+83
+00:05:41.000 --> 00:05:43.760
+Like so we have might have here our intersect operator
+
+84
+00:05:43.760 --> 00:05:44.460
+here on top.
+
+85
+00:05:44.920 --> 00:05:46.660
+So this here might be our intersect.
+
+86
+00:05:47.220 --> 00:05:48.420
+I then say, okay, to an input intersect
+
+87
+00:05:48.420 --> 00:05:50.160
+I need three operations.
+
+88
+00:05:50.540 --> 00:05:52.620
+First, it must be possible to read my left input.
+
+89
+00:05:52.820 --> 00:05:55.400
+So I need a function that gives me my left input.
+
+90
+00:05:56.160 --> 00:05:58.200
+I need a function that gives me my right input.
+
+91
+00:05:59.800 --> 00:06:03.820
+and I need a function that compares two elements from both inputs.
+
+92
+00:06:06.980 --> 00:06:13.200
+And now in reality we might need more than this, but this is indeed about the smallest
+
+93
+00:06:14.040 --> 00:06:18.000
+way we can interplay into intersection because if you think about this, what we can do is,
+
+94
+00:06:18.200 --> 00:06:26.180
+at least one way to implement this is to say, I read my left input and then I sort my left
+
+95
+00:06:26.180 --> 00:06:30.120
+input and I can do this because I have a comparison function. So I sort my left input,
+
+96
+00:06:30.520 --> 00:06:34.760
+then I read my right input and again I sort my right input and I can do this with the comparison
+
+97
+00:06:34.760 --> 00:06:40.560
+function. And then I scan both lists which are sorted and find all elements that occur on both
+
+98
+00:06:40.560 --> 00:06:47.720
+sides. And again I can do this because of my comparison function. Now often you will not
+
+99
+00:06:47.720 --> 00:06:51.860
+want to implement it like this. For example you might prefer hash tables instead of sorting,
+
+100
+00:06:52.060 --> 00:06:55.940
+but then we need more subscripts. For example we might have what's written down here,
+
+101
+00:06:56.180 --> 00:06:57.040
+We might need a function,
+
+102
+00:06:57.280 --> 00:06:59.600
+need a way to hash a value from left or right.
+
+103
+00:06:59.680 --> 00:07:01.480
+And so we need hash functions or some other stuff.
+
+104
+00:07:02.580 --> 00:07:05.260
+But this is of course depends on our implementation,
+
+105
+00:07:05.560 --> 00:07:06.900
+but this is about the minimum set.
+
+106
+00:07:07.100 --> 00:07:08.460
+So with these three operators,
+
+107
+00:07:09.240 --> 00:07:13.260
+these three subscripts, you can implement this.
+
+108
+00:07:13.820 --> 00:07:15.240
+And note that this,
+
+109
+00:07:16.140 --> 00:07:19.520
+how this implementation actually makes no assumption
+
+110
+00:07:19.520 --> 00:07:21.060
+about the tuples at all.
+
+111
+00:07:21.880 --> 00:07:24.720
+Now, if I say at all, it's not a hundred percent true.
+
+112
+00:07:26.180 --> 00:07:29.160
+a large value is because if I change the sort order,
+
+113
+00:07:29.300 --> 00:07:30.500
+I might, but perhaps if not,
+
+114
+00:07:30.660 --> 00:07:32.400
+because I can do everything with indirection.
+
+115
+00:07:32.580 --> 00:07:35.560
+And so it might be okay to not even know
+
+116
+00:07:35.560 --> 00:07:36.840
+how large the data items is,
+
+117
+00:07:36.980 --> 00:07:38.940
+because what I can always do is I have here,
+
+118
+00:07:39.040 --> 00:07:40.120
+these are my data items.
+
+119
+00:07:40.280 --> 00:07:43.140
+So just written, oh, sorry, this is here,
+
+120
+00:07:43.340 --> 00:07:45.960
+A, B, C or something.
+
+121
+00:07:46.540 --> 00:07:49.220
+And so we can just maintain a pointer array to all this,
+
+122
+00:07:49.460 --> 00:07:52.100
+points to the first value, points to the second value,
+
+123
+00:07:52.380 --> 00:07:53.420
+points to the third value.
+
+124
+00:07:54.040 --> 00:07:59.680
+and then I can just sort the pointers using the comparison function.
+
+125
+00:07:59.780 --> 00:08:02.500
+So because I look at the content and then I call the comparison function.
+
+126
+00:08:03.860 --> 00:08:05.880
+So I might call this pointer values instead,
+
+127
+00:08:06.040 --> 00:08:09.720
+and then I don't even have to know how large the values themselves are.
+
+128
+00:08:10.020 --> 00:08:14.160
+So I can implement an intersection knowing very, very little about the input.
+
+129
+00:08:14.400 --> 00:08:15.560
+Data types, doesn't matter.
+
+130
+00:08:16.060 --> 00:08:20.560
+Well, size of the tuple depends on how we implement it, but might not matter either.
+
+131
+00:08:21.140 --> 00:08:24.980
+We just have to know, okay, how can I get my pointers to my left side?
+
+132
+00:08:25.040 --> 00:08:26.460
+How can I get my pointers to my right side?
+
+133
+00:08:26.540 --> 00:08:28.100
+And how can I compare two elements?
+
+134
+00:08:28.280 --> 00:08:30.580
+So this is everything that I really need to know.
+
+135
+00:08:31.440 --> 00:08:34.520
+This is an interesting way to implement operators.
+
+136
+00:08:34.760 --> 00:08:38.780
+Of course, of course, it's not only interesting because for database it's basically required
+
+137
+00:08:39.480 --> 00:08:42.060
+because of the problem that we don't know what the user will do later.
+
+138
+00:08:42.220 --> 00:08:49.240
+So we must implement everything in such a way so that we assume little or nearly none about our input.
+
+139
+00:08:51.180 --> 00:08:53.480
+Okay, so, and if you think about this,
+
+140
+00:08:53.480 --> 00:08:55.560
+what this means is that the algebraic operators
+
+141
+00:08:55.560 --> 00:08:58.600
+defined an abstract logic for processing.
+
+142
+00:08:58.760 --> 00:08:59.880
+As we say, for example,
+
+143
+00:09:00.060 --> 00:09:01.300
+towards the left side towards the right side.
+
+144
+00:09:01.420 --> 00:09:03.040
+So this is very abstract operations.
+
+145
+00:09:03.920 --> 00:09:06.520
+And everything that is specific to the data item,
+
+146
+00:09:06.620 --> 00:09:07.860
+like how do we do a comparison?
+
+147
+00:09:08.040 --> 00:09:09.620
+What is the attribute that I'm interested in?
+
+148
+00:09:09.900 --> 00:09:12.680
+Also, this is always hidden in these subscripts.
+
+149
+00:09:12.820 --> 00:09:15.040
+So these small things that are attached to an operator,
+
+150
+00:09:15.480 --> 00:09:17.060
+that tell me how everything works.
+
+151
+00:09:17.060 --> 00:09:21.460
+Now in particular, usually we, the operator does not know
+
+152
+00:09:21.460 --> 00:09:24.380
+the data type or the bite size of the input tuple.
+
+153
+00:09:24.540 --> 00:09:26.540
+So we have no idea if it's a string or integer.
+
+154
+00:09:26.800 --> 00:09:28.920
+And the interesting thing is we don't really care.
+
+155
+00:09:29.700 --> 00:09:32.320
+So we don't have to know if it's a string or an integer,
+
+156
+00:09:32.600 --> 00:09:35.380
+but only thing that I need is I need a way
+
+157
+00:09:35.380 --> 00:09:38.780
+to compare two elements, but this I get via a subscript.
+
+158
+00:09:38.840 --> 00:09:44.060
+So somebody attaches the subscript to my operator.
+
+159
+00:09:44.280 --> 00:09:46.880
+And then, so I know this is what I do.
+
+160
+00:09:47.060 --> 00:09:49.040
+By the way, why is the name subscript?
+
+161
+00:09:49.220 --> 00:09:50.880
+Just think about this, if this here, for example,
+
+162
+00:09:51.000 --> 00:09:53.080
+this is a select and if I attach here,
+
+163
+00:09:53.660 --> 00:09:56.780
+this is a typical example of a subscript.
+
+164
+00:09:57.000 --> 00:09:59.020
+Also the predicate that we want to apply.
+
+165
+00:09:59.700 --> 00:10:03.000
+But in reality, many operators have a lot of subscripts,
+
+166
+00:10:03.060 --> 00:10:04.840
+more than what we usually write down
+
+167
+00:10:04.840 --> 00:10:08.000
+when we by hand draw an algebra tree.
+
+168
+00:10:09.480 --> 00:10:11.420
+But if, just if you're curious,
+
+169
+00:10:11.660 --> 00:10:15.180
+you can go to a database tool
+
+170
+00:10:17.220 --> 00:10:26.580
+For example, if you go to our own system, you can go to either this one, our new project,
+
+171
+00:10:28.780 --> 00:10:35.800
+ombradb.com, or instead you can go to our previous one, hyperdb.postwork.org.
+
+172
+00:10:36.260 --> 00:10:41.480
+And so there you can enter a secret query and then you can say explain.
+
+173
+00:10:41.480 --> 00:10:51.560
+as a plan, please show me the plan, this shows you the algebra plan, but then when you click on it with your mouse,
+
+174
+00:10:51.760 --> 00:10:58.900
+you get more information, or if you want to see it in full beauty, so in raw form, as human friendly,
+
+175
+00:10:59.440 --> 00:11:04.600
+you can affect in our these two systems, you can also in the secret query, in the box, you can just say,
+
+176
+00:11:07.840 --> 00:11:16.540
+explain verbose and then select whatever you want to do, so some query.
+
+177
+00:11:17.000 --> 00:11:21.980
+And now this is verbose setting here, it will mean that this is not only shows you the operator tree,
+
+178
+00:11:22.420 --> 00:11:24.260
+but will indeed show you all the subscripts.
+
+179
+00:11:24.500 --> 00:11:27.900
+So everything is attached to the operators now is shown to you.
+
+180
+00:11:28.040 --> 00:11:31.440
+So you can see what the system uses.
+
+181
+00:11:33.300 --> 00:11:36.340
+So we don't know the data type, usually we don't know the size.
+
+182
+00:11:36.900 --> 00:11:40.360
+We also usually do not understand the content of a tuple.
+
+183
+00:11:40.920 --> 00:11:46.040
+So am I interested in the first column, in the first attribute, in the second column
+
+184
+00:11:46.040 --> 00:11:46.980
+attribute, it doesn't really matter.
+
+185
+00:11:47.280 --> 00:11:52.980
+Because everything that is done with a tuple is hidden in a subscript, so operators themselves
+
+186
+00:11:52.980 --> 00:11:53.540
+don't care.
+
+187
+00:11:53.960 --> 00:11:56.420
+So for them the tuple is a black box we just stored.
+
+188
+00:11:56.420 --> 00:11:59.240
+But the only thing the operator really cares about
+
+189
+00:11:59.240 --> 00:12:00.940
+is data flow and control flow.
+
+190
+00:12:01.380 --> 00:12:04.360
+So what do I read and write when and which,
+
+191
+00:12:05.180 --> 00:12:07.160
+where and when, and which kind of functions
+
+192
+00:12:07.700 --> 00:12:09.340
+do I have to call in which order?
+
+193
+00:12:10.180 --> 00:12:12.560
+Okay, everything that is query dependent
+
+194
+00:12:13.340 --> 00:12:15.020
+is delegated to the subscripts.
+
+195
+00:12:15.220 --> 00:12:17.860
+So they hide everything here from you
+
+196
+00:12:17.860 --> 00:12:18.840
+that's consenting query.
+
+197
+00:12:19.060 --> 00:12:21.460
+And this means of course that our operator implementations
+
+198
+00:12:21.460 --> 00:12:22.460
+are extremely generic.
+
+199
+00:12:22.720 --> 00:12:25.880
+Yeah, you can run everything on the intersection.
+
+200
+00:12:26.420 --> 00:12:28.740
+Because we implement it, our intersection will work all the time.
+
+201
+00:12:28.940 --> 00:12:33.080
+If you intersect one column, 20,000 columns, it doesn't matter.
+
+202
+00:12:33.200 --> 00:12:36.720
+Everything will work, because we implement it in a very generic fashion.
+
+203
+00:12:38.560 --> 00:12:41.100
+There is a small note here at the end of the slide.
+
+204
+00:12:41.260 --> 00:12:46.020
+You see sometimes, in a few cases, we want to know something about our tuple, because
+
+205
+00:12:46.020 --> 00:12:48.420
+it allows us to do an easier implementation.
+
+206
+00:12:48.980 --> 00:12:53.520
+For example, if you would know that my tuple has a fixed size, for example, because there
+
+207
+00:12:53.520 --> 00:12:58.320
+no string column in there, the fixed size tuples, then we can sometimes implement this
+
+208
+00:12:58.320 --> 00:13:01.640
+more efficiently. For example, sorting can be done more efficiently if we know that my
+
+209
+00:13:01.640 --> 00:13:09.960
+elements are fixed size. So therefore we might give the system some information about tuples,
+
+210
+00:13:10.140 --> 00:13:15.700
+but this is an exception. Usually we don't do this, and also we will always have an
+
+211
+00:13:15.700 --> 00:13:20.940
+implementation that knows nothing, because you will always need a fully generic version,
+
+212
+00:13:20.940 --> 00:13:23.700
+and fully generic usually means you know nothing about your data items.
+
+213
+00:13:23.980 --> 00:13:29.880
+You might have additional implementations that use some knowledge, but your generic
+
+214
+00:13:29.880 --> 00:13:36.240
+implementation here will really assume very, very little about my data that I want to store.
+
+215
+00:13:37.700 --> 00:13:44.920
+Now here is an example how you can implement intersects. Now for simplicity, assume
+
+216
+00:13:44.920 --> 00:13:48.460
+that my input is already sorted, because then it is particularly easy.
+
+217
+00:13:48.880 --> 00:13:52.680
+So you see my example here is a coil intersect sorted
+
+218
+00:13:52.680 --> 00:13:57.340
+and I give it three subscripts, namely left, right and compare.
+
+219
+00:13:57.640 --> 00:14:00.760
+So left is kind of an object that gives me,
+
+220
+00:14:00.880 --> 00:14:03.220
+or subscripts that gives me the next tuple from the left,
+
+221
+00:14:03.360 --> 00:14:04.800
+right gives me the next tuple from the right
+
+222
+00:14:04.800 --> 00:14:06.080
+and compare two values.
+
+223
+00:14:07.740 --> 00:14:09.780
+So, and now we can implement it like we say,
+
+224
+00:14:09.940 --> 00:14:12.880
+okay, first we say T1 is the next tuple from left.
+
+225
+00:14:12.920 --> 00:14:14.600
+So we read the first tuple from the left side.
+
+226
+00:14:14.900 --> 00:14:17.600
+And then we say, okay, and then N is here next.
+
+227
+00:14:18.460 --> 00:14:20.020
+that I want to read is the right hand side.
+
+228
+00:14:20.240 --> 00:14:21.720
+So I read one table from the left
+
+229
+00:14:21.720 --> 00:14:24.680
+and to remember that the next table to be read
+
+230
+00:14:24.680 --> 00:14:25.640
+comes from the right.
+
+231
+00:14:26.740 --> 00:14:28.420
+Okay, then now we have a big loop.
+
+232
+00:14:28.620 --> 00:14:30.480
+This is as long as my input is not exhausted.
+
+233
+00:14:31.380 --> 00:14:32.840
+So as long as I'm not done.
+
+234
+00:14:33.120 --> 00:14:35.600
+So if n is left, then I want to read from the left.
+
+235
+00:14:36.260 --> 00:14:38.960
+If n is left, then I say t1 is the next table from left,
+
+236
+00:14:39.140 --> 00:14:40.860
+else t2 is next table from the right.
+
+237
+00:14:41.600 --> 00:14:44.360
+Okay, now I have two table pointers, t1, t2.
+
+238
+00:14:44.560 --> 00:14:46.000
+Then I call my compare function.
+
+239
+00:14:46.000 --> 00:14:53.520
+And remember this is a classical 3-way comparison, so we have never seen this before.
+
+240
+00:14:54.000 --> 00:15:08.960
+So here we assume that 0 corresponds to equal minus 1, no, so we say we compare A, B, so
+
+241
+00:15:08.960 --> 00:15:12.980
+So, 0 corresponds to a is equal to b,
+
+242
+00:15:13.460 --> 00:15:16.980
+minus 1 corresponds to a is less than b,
+
+243
+00:15:17.560 --> 00:15:21.320
+and 1 corresponds to a is larger than b.
+
+244
+00:15:21.600 --> 00:15:24.060
+So this is a classical three-way comparison.
+
+245
+00:15:25.880 --> 00:15:27.880
+And so we call my comparison function,
+
+246
+00:15:28.000 --> 00:15:30.920
+and now there are three cases.
+
+247
+00:15:31.400 --> 00:15:34.160
+If c is 0, then both values are the same.
+
+248
+00:15:34.380 --> 00:15:36.540
+So then we found a value just occurs in both lists.
+
+249
+00:15:36.660 --> 00:15:38.060
+Therefore, we store t1 as a result.
+
+250
+00:15:38.960 --> 00:15:44.060
+have stored T2 instead, but because T1 is equal to T2, it doesn't matter. So we can store either T1 or T2.
+
+251
+00:15:44.260 --> 00:15:51.560
+So in this case, we stay with T1. So else if C1 is zero, so my left side is smaller than my right
+
+252
+00:15:51.560 --> 00:16:00.000
+side, then I say N is left, so the next tuple should be read from the left, else N is right,
+
+253
+00:16:00.180 --> 00:16:04.760
+so I read the next tuple from the right, and I repeat. So I do this until I run out of tuples.
+
+254
+00:16:05.560 --> 00:16:10.020
+Okay, and this is of course, this is simplified because I assume my input is already sorted.
+
+255
+00:16:10.180 --> 00:16:14.180
+If I would have to sort it is more complicated, but nonetheless, so this is one way in two
+
+256
+00:16:14.180 --> 00:16:20.140
+elements and note that this implementation here assumes virtually nothing about our tuples.
+
+257
+00:16:20.340 --> 00:16:25.280
+So is my tuple small or large? Doesn't matter. How many attributes does it have? Doesn't matter.
+
+258
+00:16:25.660 --> 00:16:33.640
+So what do I do? What is my reason for comparing? Also doesn't matter. My implementation here will
+
+259
+00:16:34.760 --> 00:16:39.180
+long as left, right and compares provided to me and to what's the name implies.
+
+260
+00:16:40.680 --> 00:16:41.200
+Okay.
+
+261
+00:16:42.360 --> 00:16:48.720
+And so the model here is that each operator produces a set or more precisely a back or
+
+262
+00:16:48.720 --> 00:16:51.560
+even more precisely a data stream of resultables.
+
+263
+00:16:51.740 --> 00:16:57.440
+Now what I do mean with this distinction here, so the simple relation model is of course
+
+264
+00:16:57.440 --> 00:16:58.660
+a set, a mathematical set.
+
+265
+00:16:59.080 --> 00:17:04.340
+And this is true if I have a primary key and in general sense of course we can have it back,
+
+266
+00:17:04.760 --> 00:17:05.540
+we can have duplicates.
+
+267
+00:17:05.720 --> 00:17:07.540
+Now, why do we say stream here?
+
+268
+00:17:08.740 --> 00:17:11.260
+Usually we don't, but in a few cases,
+
+269
+00:17:11.280 --> 00:17:14.500
+we care about the order of tuples that is produced.
+
+270
+00:17:15.740 --> 00:17:17.920
+Usually if the user gives me an order by statement.
+
+271
+00:17:18.360 --> 00:17:22.760
+So if the user says, select star from relation order by x,
+
+272
+00:17:22.960 --> 00:17:23.780
+then of course I want,
+
+273
+00:17:24.820 --> 00:17:28.260
+says my result here is order by x.
+
+274
+00:17:28.600 --> 00:17:30.880
+Therefore, in this case here, I care about the order.
+
+275
+00:17:31.020 --> 00:17:32.920
+And therefore the model is not a back, but it's a stream.
+
+276
+00:17:34.760 --> 00:17:36.700
+distinguish the first and the second limit and so on.
+
+277
+00:17:37.700 --> 00:17:40.800
+Therefore the most general model here is stream of data items.
+
+278
+00:17:41.560 --> 00:17:44.240
+And each operator here consumes zero or more input sets.
+
+279
+00:17:44.440 --> 00:17:47.660
+And usually we assume nothing about input.
+
+280
+00:17:47.940 --> 00:17:51.480
+So we can combine any, so we put anything below here.
+
+281
+00:17:51.640 --> 00:17:54.260
+So if you put, so example,
+
+282
+00:17:54.320 --> 00:17:56.720
+if you have a select predicate here, X equals to seven,
+
+283
+00:17:56.940 --> 00:18:00.240
+it doesn't matter if my input here is a base table like this,
+
+284
+00:18:00.240 --> 00:18:04.340
+or if my input is another select,
+
+285
+00:18:05.240 --> 00:18:08.640
+or if my input is a group by instead,
+
+286
+00:18:09.080 --> 00:18:10.120
+or no sorry, it's a projection,
+
+287
+00:18:10.980 --> 00:18:14.100
+a group by or join or whatever.
+
+288
+00:18:14.300 --> 00:18:15.660
+So we assume nothing about my input.
+
+289
+00:18:15.760 --> 00:18:18.380
+I just want that my input gives me a set
+
+290
+00:18:18.380 --> 00:18:19.900
+or pack or stream of tablets.
+
+291
+00:18:20.220 --> 00:18:20.840
+That's it.
+
+292
+00:18:21.160 --> 00:18:22.120
+It doesn't matter what it is.
+
+293
+00:18:22.680 --> 00:18:26.780
+And this assumption is that we just read my input,
+
+294
+00:18:26.920 --> 00:18:27.920
+whatever it is,
+
+295
+00:18:27.920 --> 00:18:31.880
+allows me to build nearly alterally complex execution plans,
+
+296
+00:18:33.060 --> 00:18:35.520
+because I can combine them, everything with everything.
+
+297
+00:18:35.900 --> 00:18:37.340
+So this is of course very good.
+
+298
+00:18:37.460 --> 00:18:38.860
+This is a very flexible scheme.
+
+299
+00:18:39.660 --> 00:18:41.840
+Now downside of course is somebody has to implement this.
+
+300
+00:18:42.000 --> 00:18:45.000
+So now we must make sure that this indeed works,
+
+301
+00:18:45.120 --> 00:18:47.920
+so that you can plug each operator and each other operator,
+
+302
+00:18:48.100 --> 00:18:49.620
+so assuming nothing.
+
+303
+00:18:50.600 --> 00:18:52.820
+And now the interesting question is, how do you do this?
+
+304
+00:18:53.000 --> 00:18:55.260
+So how should the operator interface look like,
+
+305
+00:18:55.260 --> 00:18:57.860
+such that you can combine every operator
+
+306
+00:18:57.860 --> 00:18:59.360
+with every other operator.
+
+307
+00:19:00.340 --> 00:19:04.120
+And now historically, several different,
+
+308
+00:19:04.260 --> 00:19:06.580
+several ways have occurred that to do this.
+
+309
+00:19:06.700 --> 00:19:09.000
+First, now we look at perhaps the simplest,
+
+310
+00:19:09.340 --> 00:19:12.180
+the simplest of the, I think, how many alternatives?
+
+311
+00:19:12.540 --> 00:19:14.580
+Three or four alternatives that we will look at here.
+
+312
+00:19:16.200 --> 00:19:19.260
+So one way to implement the operator interface
+
+313
+00:19:19.260 --> 00:19:21.440
+is what we call here full materialization.
+
+314
+00:19:21.740 --> 00:19:23.400
+And so the assumption basically is,
+
+315
+00:19:25.320 --> 00:19:28.620
+the operator reads zero or more relations as an input
+
+316
+00:19:28.620 --> 00:19:30.320
+and produces a relations output.
+
+317
+00:19:30.500 --> 00:19:34.000
+And this interface here takes this in a literal sense.
+
+318
+00:19:34.160 --> 00:19:36.500
+So like we read base tables as input
+
+319
+00:19:36.500 --> 00:19:38.420
+and we write a new base table as output.
+
+320
+00:19:38.840 --> 00:19:41.680
+So we read, of course my data
+
+321
+00:19:41.680 --> 00:19:42.820
+must be physically stored somewhere,
+
+322
+00:19:43.000 --> 00:19:44.360
+but so this is my input,
+
+323
+00:19:44.600 --> 00:19:46.440
+in simple scales an array or something,
+
+324
+00:19:46.560 --> 00:19:47.360
+it's an input representation.
+
+325
+00:19:47.660 --> 00:19:49.060
+This is another input representation.
+
+326
+00:19:49.340 --> 00:19:50.660
+So if I send to a join,
+
+327
+00:19:51.460 --> 00:19:55.240
+Then I write out a new array, that's it.
+
+328
+00:19:56.340 --> 00:20:02.560
+And so I read my input completely, I write my output completely, and then the next operator starts.
+
+329
+00:20:02.760 --> 00:20:04.020
+So full materialization.
+
+330
+00:20:05.200 --> 00:20:09.200
+Now the advantage of this is, if you do this first, it's pretty easy to implement.
+
+331
+00:20:09.340 --> 00:20:12.340
+It's a very simple model, because everything is always a materialized table.
+
+332
+00:20:12.660 --> 00:20:13.400
+So this is good.
+
+333
+00:20:14.060 --> 00:20:19.020
+What's also good is that you are never surprised by your input.
+
+334
+00:20:20.660 --> 00:20:25.280
+After all, I read a materialized table as inputs, or multiple materialized tables as input.
+
+335
+00:20:25.460 --> 00:20:28.920
+So if I could look at them, in particular, I know how large my input is.
+
+336
+00:20:29.280 --> 00:20:32.380
+This is also good, because then I can react to this.
+
+337
+00:20:32.760 --> 00:20:39.140
+Just to illustrate this, if you think about a join, and if you say, for example,
+
+338
+00:20:39.320 --> 00:20:43.500
+we want to build a hash table out of the smaller side, which is usually a good idea.
+
+339
+00:20:44.240 --> 00:20:48.740
+And if we traditionally, we assume that my left input here is a build side, so that
+
+340
+00:20:50.660 --> 00:20:57.760
+left side, so then do this R and S. Now if I use the full materialization, note that this here can
+
+341
+00:20:57.760 --> 00:21:01.960
+of course be a tree, it doesn't have to be a table, like here, this can also be something large,
+
+342
+00:21:02.060 --> 00:21:07.780
+so it can be a tree. And then of course when I plan, when I construct this algebra expression,
+
+343
+00:21:07.880 --> 00:21:12.840
+I'm not really sure how large my left side will be. So there are estimates, like I can say,
+
+344
+00:21:12.980 --> 00:21:17.480
+I predict that my left side contains 100 tuples and my right side contains 20,000 tuples, for
+
+345
+00:21:17.480 --> 00:21:19.500
+example, then this would make sense.
+
+346
+00:21:19.660 --> 00:21:23.320
+But this is my prediction and predictions are sometimes wrong, unfortunately.
+
+347
+00:21:23.620 --> 00:21:26.340
+It's quite difficult to predict the output size for some operators.
+
+348
+00:21:27.520 --> 00:21:29.120
+Therefore, sometimes I make mistakes.
+
+349
+00:21:29.240 --> 00:21:33.360
+So I think my left side contains 10 values, but in reality it might contain 50,000.
+
+350
+00:21:33.920 --> 00:21:36.720
+Of course, it's a large error, but this can occur.
+
+351
+00:21:37.400 --> 00:21:40.700
+And in the full materialization interface, this is not a problem because my
+
+352
+00:21:40.700 --> 00:21:49.380
+So, the side will be materialized anyway, so even though it's a subtree like this, we
+
+353
+00:21:49.380 --> 00:21:52.500
+will nevertheless write this down here into a table R.
+
+354
+00:21:53.660 --> 00:21:57.660
+So, we store it in the, of course, a temporary table, not a real table, so not something a
+
+355
+00:21:57.660 --> 00:21:58.220
+user can see.
+
+356
+00:21:58.380 --> 00:22:00.880
+We construct a temporary table that contains all my values.
+
+357
+00:22:01.060 --> 00:22:03.160
+And then my join again gets two tables as input.
+
+358
+00:22:03.300 --> 00:22:07.800
+And therefore, the first thing I will do is, I look at the size of these two tables and
+
+359
+00:22:07.800 --> 00:22:08.940
+And if I see that, for example,
+
+360
+00:22:09.040 --> 00:22:11.560
+my right hand side is much smaller than my left hand side,
+
+361
+00:22:11.700 --> 00:22:13.940
+I just swap the left and right.
+
+362
+00:22:14.580 --> 00:22:17.740
+Because I can do this with the join.
+
+363
+00:22:17.920 --> 00:22:19.500
+So I can swap my two sides,
+
+364
+00:22:19.580 --> 00:22:21.400
+and therefore you are never surprised for your input.
+
+365
+00:22:21.520 --> 00:22:22.100
+So this is good.
+
+366
+00:22:22.780 --> 00:22:23.840
+Also what's also good is,
+
+367
+00:22:24.100 --> 00:22:26.160
+if my input is fully materialized,
+
+368
+00:22:26.340 --> 00:22:28.000
+some things become pretty simple.
+
+369
+00:22:28.140 --> 00:22:30.860
+Like if you want to run things in parallel, for example.
+
+370
+00:22:31.000 --> 00:22:33.160
+So let's make a very simple example here.
+
+371
+00:22:33.660 --> 00:22:36.180
+We want to say for everything is five,
+
+372
+00:22:36.400 --> 00:22:37.180
+this is my input.
+
+373
+00:22:37.800 --> 00:22:39.440
+So if my input is materialized somewhere,
+
+374
+00:22:39.960 --> 00:22:41.520
+then what I can do is I can just,
+
+375
+00:22:41.740 --> 00:22:42.980
+this is for example, modulation,
+
+376
+00:22:43.260 --> 00:22:44.920
+I can just cut it into pieces.
+
+377
+00:22:45.760 --> 00:22:46.500
+The first thread,
+
+378
+00:22:46.720 --> 00:22:47.580
+please make the first,
+
+379
+00:22:48.140 --> 00:22:49.740
+filter the first fragment,
+
+380
+00:22:49.840 --> 00:22:50.340
+second thread,
+
+381
+00:22:50.480 --> 00:22:51.580
+filter the second fragment, and so on.
+
+382
+00:22:51.720 --> 00:22:52.440
+I cut it,
+
+383
+00:22:52.560 --> 00:22:54.620
+and then it runs parallel,
+
+384
+00:22:55.780 --> 00:22:56.720
+very easy too.
+
+385
+00:22:57.740 --> 00:22:59.480
+Okay, not so easy as result construction,
+
+386
+00:22:59.740 --> 00:23:01.660
+because we have the inverse problem.
+
+387
+00:23:01.980 --> 00:23:03.260
+But nevertheless, this is pretty easy.
+
+388
+00:23:03.360 --> 00:23:05.100
+Also, what's also easy is result sharing,
+
+389
+00:23:05.100 --> 00:23:07.100
+because it could be if multiple queries
+
+390
+00:23:07.100 --> 00:23:08.960
+that produce the same intermediate result,
+
+391
+00:23:09.100 --> 00:23:09.880
+at least conceptually,
+
+392
+00:23:10.040 --> 00:23:11.780
+if you run full materialization,
+
+393
+00:23:11.860 --> 00:23:13.280
+you can just keep the intermediate result
+
+394
+00:23:13.280 --> 00:23:14.640
+because you have written it somewhere anyway,
+
+395
+00:23:14.920 --> 00:23:16.340
+so you can give it to somebody.
+
+396
+00:23:16.640 --> 00:23:17.180
+Now, so therefore,
+
+397
+00:23:17.500 --> 00:23:19.500
+this is, these are the strengths of the approach.
+
+398
+00:23:21.120 --> 00:23:22.440
+Nevertheless, in practice,
+
+399
+00:23:23.200 --> 00:23:26.940
+this is, even though it's so easy,
+
+400
+00:23:27.320 --> 00:23:30.120
+and so it also has a lot of problems.
+
+401
+00:23:31.040 --> 00:23:34.220
+Main problem, of course, is materialization is expensive.
+
+402
+00:23:35.100 --> 00:23:37.620
+If I take my output of an operator and I write it somewhere,
+
+403
+00:23:38.340 --> 00:23:39.660
+even if it is main memory,
+
+404
+00:23:40.120 --> 00:23:41.820
+this writing costs me something.
+
+405
+00:23:42.120 --> 00:23:44.540
+Now, so because I physically have to write it somewhere
+
+406
+00:23:44.540 --> 00:23:45.880
+and then read it back again later,
+
+407
+00:23:46.300 --> 00:23:48.460
+this costs me something and this can be quite expensive.
+
+408
+00:23:49.740 --> 00:23:50.840
+Even worse, of course,
+
+409
+00:23:50.960 --> 00:23:52.540
+if the data is larger than main memory,
+
+410
+00:23:52.680 --> 00:23:54.800
+so if my intermediate size is larger than main memory,
+
+411
+00:23:55.080 --> 00:23:56.440
+if I have to write all this,
+
+412
+00:23:56.620 --> 00:23:57.780
+oh my God, this is super expensive.
+
+413
+00:23:58.520 --> 00:24:01.500
+Now, so to make an example, to illustrate this,
+
+414
+00:24:01.600 --> 00:24:02.660
+assume we have something like this.
+
+415
+00:24:06.820 --> 00:24:11.340
+Of course, this is a silly example, but there is less.
+
+416
+00:24:11.980 --> 00:24:14.160
+I can give you a secret query that triggers it.
+
+417
+00:24:14.780 --> 00:24:20.540
+So we say, yeah, so we even say, yeah, true.
+
+418
+00:24:20.820 --> 00:24:22.860
+Well, okay, this is a really silly example.
+
+419
+00:24:23.240 --> 00:24:24.260
+Okay, well, it's not that silly.
+
+420
+00:24:24.420 --> 00:24:26.360
+It is a bit less silly example, but no less.
+
+421
+00:24:26.920 --> 00:24:33.540
+So we can say, let's do A equals B, and we are only a few distinct values for A and B.
+
+422
+00:24:35.100 --> 00:24:40.340
+equal values and then at the end we do something like a filter here, c equals
+
+423
+00:24:42.420 --> 00:24:48.900
+seven or so. And note that in the way I have constructed the queries, you cannot merge the
+
+424
+00:24:48.900 --> 00:24:54.420
+join and the filter because it is in full auto joint, you cannot merge them. Okay, nevertheless,
+
+425
+00:24:54.760 --> 00:24:59.340
+it could be that this final filter is pretty restrictive, so there will be only few output
+
+426
+00:24:59.340 --> 00:25:04.960
+tuples, but the full auto joint can produce a very large number of combinations because
+
+427
+00:25:05.100 --> 00:25:06.140
+There can be many, many combinations,
+
+428
+00:25:06.320 --> 00:25:08.660
+but only few of them will satisfy the filter.
+
+429
+00:25:08.740 --> 00:25:10.020
+We can construct these examples.
+
+430
+00:25:10.260 --> 00:25:12.960
+If you run a full materialization setup here,
+
+431
+00:25:13.100 --> 00:25:15.120
+we will write everything after the join here
+
+432
+00:25:15.120 --> 00:25:16.420
+to disk or it leads to memory.
+
+433
+00:25:16.680 --> 00:25:18.360
+And therefore we write a lot of stuff
+
+434
+00:25:18.360 --> 00:25:19.520
+that we discard later.
+
+435
+00:25:19.940 --> 00:25:21.940
+And this is of course not so attractive.
+
+436
+00:25:22.460 --> 00:25:26.360
+So full materialization, simple, has some advantages,
+
+437
+00:25:27.020 --> 00:25:29.500
+but overall materialization is too expensive.
+
+438
+00:25:29.700 --> 00:25:32.020
+There are only a few systems do uses,
+
+439
+00:25:32.440 --> 00:25:33.820
+most notably Monadib,
+
+440
+00:25:35.100 --> 00:25:45.640
+our friends from CWI in Amsterdam. So they use this model and but most other people don't and
+
+441
+00:25:45.640 --> 00:25:51.240
+I think for good reasons. It has some strengths but the price is in my opinion too high usually.
+
+442
+00:25:52.200 --> 00:26:00.600
+Or to quote Peter Bonshu, who is one of the main developers of Modelway and
+
+443
+00:26:00.600 --> 00:26:07.360
+And he said the Fulmetrization interface is a forced-gen pact, so pact with the devil.
+
+444
+00:26:08.420 --> 00:26:12.980
+Meaning it has some attractive properties and you don't want to lose attractive properties
+
+445
+00:26:12.980 --> 00:26:13.340
+of course.
+
+446
+00:26:13.500 --> 00:26:17.860
+And now they have built their system, they no longer want to use the strengths of them,
+
+447
+00:26:18.020 --> 00:26:23.860
+but overall the disadvantages are actually more than the advantages.
+
+448
+00:26:24.140 --> 00:26:28.380
+So you probably don't want to use Fulmetrization even though it's pretty simple.
+
+449
+00:26:29.560 --> 00:26:30.720
+Now what else can you do?
+
+450
+00:26:31.160 --> 00:26:33.740
+So this is option two, it's the iterator model.
+
+451
+00:26:33.880 --> 00:26:38.380
+So this is the most widely modeled across all systems.
+
+452
+00:26:38.660 --> 00:26:42.860
+So most database systems, at least the older ones and even some of the newer ones, use
+
+453
+00:26:42.860 --> 00:26:43.600
+that model here.
+
+454
+00:26:43.760 --> 00:26:44.900
+So the iterator model.
+
+455
+00:26:45.360 --> 00:26:49.940
+So the assumption is that each operator here produces a tuppered stream on demand.
+
+456
+00:26:50.720 --> 00:26:56.400
+So for example, we said everybody here produces a relations output and the model here is that
+
+457
+00:26:58.380 --> 00:27:02.620
+somewhere but it's just you can iterate over it. So you read it on demand.
+
+458
+00:27:03.900 --> 00:27:09.160
+And the advantage is now that data is pipelined between operators. Now what does this mean? So we
+
+459
+00:27:09.160 --> 00:27:14.160
+just pass one tuple around from one operator to the other without making a copy. So when we say
+
+460
+00:27:14.160 --> 00:27:21.040
+pipelining we mean passing data around and if you ever looked at for example networking interfaces
+
+461
+00:27:21.040 --> 00:27:26.340
+and operating systems or so you know that for performance reasons they often offer something
+
+462
+00:27:26.340 --> 00:27:28.720
+that they call zero copy interface,
+
+463
+00:27:28.860 --> 00:27:31.460
+which means you can send something over the network
+
+464
+00:27:31.460 --> 00:27:34.740
+without making a copy because copying is expensive.
+
+465
+00:27:35.040 --> 00:27:36.660
+So with pipelining we mean this,
+
+466
+00:27:36.760 --> 00:27:39.160
+pass data around from one operator to the other
+
+467
+00:27:39.160 --> 00:27:40.340
+without making a copy.
+
+468
+00:27:42.220 --> 00:27:45.420
+And a good thing is now we avoid this unnecessary
+
+469
+00:27:45.420 --> 00:27:47.380
+materialization that we had in the full materialization
+
+470
+00:27:47.380 --> 00:27:49.800
+interface because it could be that we are only
+
+471
+00:27:49.800 --> 00:27:51.680
+interested in one tuple or a few tuples.
+
+472
+00:27:51.900 --> 00:27:53.520
+So therefore we could stop early,
+
+473
+00:27:53.660 --> 00:27:55.740
+we don't have to read more complete input,
+
+474
+00:27:56.340 --> 00:27:58.700
+I just mean the most obvious example, of course,
+
+475
+00:27:58.800 --> 00:28:04.760
+is somebody in SQL says, select blah, blah, blah,
+
+476
+00:28:09.060 --> 00:28:12.780
+where x equals to five limit one.
+
+477
+00:28:15.420 --> 00:28:15.900
+Okay.
+
+478
+00:28:16.360 --> 00:28:17.580
+As a full materialization model,
+
+479
+00:28:17.820 --> 00:28:19.440
+at least if you implement it by the book,
+
+480
+00:28:19.660 --> 00:28:23.280
+you would first filter out everybody who has x equals five,
+
+481
+00:28:23.400 --> 00:28:24.960
+we would materialize it somewhere,
+
+482
+00:28:26.340 --> 00:28:26.860
+value from this.
+
+483
+00:28:27.640 --> 00:28:31.320
+While in the iterator model you would say, hey, I want a one tuple where x equals 5,
+
+484
+00:28:31.480 --> 00:28:33.420
+and then you actually can stop afterwards.
+
+485
+00:28:33.580 --> 00:28:37.060
+So that's, you are much more flexible in the control flow.
+
+486
+00:28:37.180 --> 00:28:39.800
+You can decide if you want to read something or not.
+
+487
+00:28:41.500 --> 00:28:43.780
+Another advantage is pretty easy to implement the iterator model.
+
+488
+00:28:43.940 --> 00:28:45.020
+It's a very simple model.
+
+489
+00:28:45.200 --> 00:28:47.920
+Of course, we will look later at how this is implemented.
+
+490
+00:28:48.200 --> 00:28:54.840
+Now the disadvantages, usually whenever you want a tuple from an operator, remember that
+
+491
+00:28:56.340 --> 00:29:00.640
+my input and when I build my database system I have no idea what my input will be
+
+492
+00:29:01.380 --> 00:29:06.340
+and this means that I call an unknown object and this is usually done with a virtual function call
+
+493
+00:29:07.020 --> 00:29:12.280
+so I'm not sure if you if you are familiar with how most operate object oriented programming
+
+494
+00:29:12.280 --> 00:29:20.420
+languages implement polymorphism but what they basically do is instead of saying a call function
+
+495
+00:29:20.420 --> 00:29:24.420
+So instead of saying call function next,
+
+496
+00:29:25.080 --> 00:29:26.580
+so they give me the next value.
+
+497
+00:29:27.560 --> 00:29:30.320
+So because this, so if I would know my input is,
+
+498
+00:29:30.380 --> 00:29:34.700
+for example, selection, I could say select next,
+
+499
+00:29:36.000 --> 00:29:39.300
+but because I don't know if my input is a select or not,
+
+500
+00:29:39.360 --> 00:29:39.920
+could be anything.
+
+501
+00:29:40.340 --> 00:29:42.280
+Therefore, so usually I have an object.
+
+502
+00:29:42.940 --> 00:29:45.560
+This object contains a pointer to a table,
+
+503
+00:29:45.720 --> 00:29:47.400
+and in this table here,
+
+504
+00:29:48.140 --> 00:29:51.620
+we store all virtual functions that this exposes,
+
+505
+00:29:52.240 --> 00:29:53.440
+including for example, next.
+
+506
+00:29:54.240 --> 00:29:56.060
+Therefore, if I want to call this function now,
+
+507
+00:29:56.240 --> 00:29:57.540
+I look at my object,
+
+508
+00:29:57.740 --> 00:29:59.060
+I retrieve the pointer to the table,
+
+509
+00:29:59.140 --> 00:29:59.920
+I look at the table,
+
+510
+00:30:00.080 --> 00:30:01.440
+I retrieve the pointer to the function,
+
+511
+00:30:01.540 --> 00:30:02.740
+and then I do the call.
+
+512
+00:30:03.320 --> 00:30:06.500
+Yeah, and this means I do more memory access
+
+513
+00:30:06.500 --> 00:30:07.560
+and I'll have more interactions,
+
+514
+00:30:07.680 --> 00:30:08.880
+and this is usually slower.
+
+515
+00:30:09.120 --> 00:30:11.340
+So a call to a virtual function is a bit,
+
+516
+00:30:11.420 --> 00:30:12.360
+it's not super slow,
+
+517
+00:30:12.520 --> 00:30:14.500
+but it's a bit slower than a regular function call.
+
+518
+00:30:14.660 --> 00:30:16.980
+And I will do this for every tupper
+
+519
+00:30:17.400 --> 00:30:18.800
+pass between operators,
+
+520
+00:30:19.040 --> 00:30:22.380
+and this tend to be millions of tuples.
+
+521
+00:30:22.560 --> 00:30:24.620
+Therefore, if you do something that's a bit more expensive,
+
+522
+00:30:24.800 --> 00:30:27.840
+a million times, this is not so super attractive.
+
+523
+00:30:28.260 --> 00:30:30.820
+And so performance is not ideal in the iterator model.
+
+524
+00:30:32.140 --> 00:30:33.880
+Related to this, it's an iterator model
+
+525
+00:30:33.880 --> 00:30:35.480
+has a poor locality.
+
+526
+00:30:36.160 --> 00:30:38.140
+Why do we, what do we mean with poor locality?
+
+527
+00:30:38.300 --> 00:30:41.260
+Like if, remember we read always one tuple here.
+
+528
+00:30:41.420 --> 00:30:42.960
+So if you have to do something like this,
+
+529
+00:30:43.440 --> 00:30:44.880
+so then I do a join,
+
+530
+00:30:45.660 --> 00:30:50.020
+and of course could be a larger chain, but I just assume this. So I've said here this join, it says
+
+531
+00:30:50.020 --> 00:30:54.920
+okay, I need to tuple from my left side. So you ask the select give me tuples and you ask the
+
+532
+00:30:54.920 --> 00:31:00.840
+relation give me tuples. So basically your control floor bounces down and up. So you go across a lot
+
+533
+00:31:00.840 --> 00:31:06.720
+of operators until you get your tuples. So this means you have poor localities, you are looking
+
+534
+00:31:06.720 --> 00:31:12.200
+at many parts of the code at the same time and your CPU doesn't like this. So your CPU wants
+
+535
+00:31:12.200 --> 00:31:15.460
+that you look at a small tight loop.
+
+536
+00:31:15.580 --> 00:31:17.000
+So this is when performance is best.
+
+537
+00:31:17.300 --> 00:31:20.260
+If your code execution goes all over your place
+
+538
+00:31:20.260 --> 00:31:22.600
+in the code, then this will be slower typically.
+
+539
+00:31:23.120 --> 00:31:26.360
+Because you might have get instruction case misses.
+
+540
+00:31:26.720 --> 00:31:28.940
+You probably lose register content.
+
+541
+00:31:29.100 --> 00:31:30.360
+You cannot keep everything in registers.
+
+542
+00:31:31.000 --> 00:31:33.400
+And so therefore this locality is important
+
+543
+00:31:33.400 --> 00:31:34.280
+for good performance.
+
+544
+00:31:34.380 --> 00:31:36.800
+We also look at this later, a bit later.
+
+545
+00:31:38.320 --> 00:31:40.480
+Okay, now I've already sketched a bit
+
+546
+00:31:40.480 --> 00:31:42.020
+how the iterator model works.
+
+547
+00:31:42.200 --> 00:31:45.380
+we say we retrieve one tuple at a time.
+
+548
+00:31:45.600 --> 00:31:47.380
+So now we look at this a bit more closely.
+
+549
+00:31:47.380 --> 00:31:49.240
+So the traditional interface
+
+550
+00:31:49.240 --> 00:31:51.240
+for the iterator model here is like this.
+
+551
+00:31:52.020 --> 00:31:54.480
+We offer each object that we have,
+
+552
+00:31:54.560 --> 00:31:56.940
+so each original operative operator
+
+553
+00:31:56.940 --> 00:31:59.460
+offers three methods, open, next, close.
+
+554
+00:32:00.500 --> 00:32:02.560
+And they do what the name implies.
+
+555
+00:32:02.820 --> 00:32:05.700
+So when we call open an operator that says,
+
+556
+00:32:06.400 --> 00:32:08.120
+please prepare for execution.
+
+557
+00:32:09.260 --> 00:32:12.020
+So please allocate memory, open files,
+
+558
+00:32:12.200 --> 00:32:12.960
+or whatever you have to do.
+
+559
+00:32:13.100 --> 00:32:15.660
+So please prepare so that we can start executing.
+
+560
+00:32:22.520 --> 00:32:25.600
+So then afterwards we call next.
+
+561
+00:32:25.980 --> 00:32:29.060
+So, and we do this not only once, but a lot of times.
+
+562
+00:32:30.300 --> 00:32:32.700
+So next says, please give me the next tuple.
+
+563
+00:32:33.100 --> 00:32:35.580
+And maybe we will talk about implementation next
+
+564
+00:32:35.580 --> 00:32:38.860
+in one of few slides, but more conceptually,
+
+565
+00:32:38.980 --> 00:32:40.560
+it just says here is a tuple or it says,
+
+566
+00:32:40.580 --> 00:32:41.520
+I'm out of tuples.
+
+567
+00:32:42.200 --> 00:32:43.520
+So then you know that you're done.
+
+568
+00:32:45.220 --> 00:32:49.000
+So this is the iterator call here.
+
+569
+00:32:49.200 --> 00:32:55.300
+So this here iterates over the output.
+
+570
+00:32:58.520 --> 00:33:01.040
+And so we always get the next type from our output.
+
+571
+00:33:02.380 --> 00:33:04.960
+And so when we're done, of course we can call it close.
+
+572
+00:33:05.160 --> 00:33:08.900
+And this means please release memory, close files, whatever, so that you are done processing.
+
+573
+00:33:08.900 --> 00:33:13.380
+Again, the good thing about this is this is a very simple model.
+
+574
+00:33:13.620 --> 00:33:21.860
+Now three functions, open, next, close, and we can handle really, really complicated queries
+
+575
+00:33:21.860 --> 00:33:24.400
+with such simple interfaces.
+
+576
+00:33:24.480 --> 00:33:26.620
+It is actually surprising when you see this the first time.
+
+577
+00:33:28.820 --> 00:33:35.180
+Now the price you pay for this means the interface to the outside is simple, but the implementation
+
+578
+00:33:35.180 --> 00:33:37.440
+of operators is often not that simple
+
+579
+00:33:37.440 --> 00:33:40.100
+because you have to maintain a complex state.
+
+580
+00:33:40.220 --> 00:33:41.980
+Remember that next gives me the next tuple,
+
+581
+00:33:42.120 --> 00:33:44.620
+but I can be in the middle of some very complicated stuff,
+
+582
+00:33:44.840 --> 00:33:47.680
+but I must now stop, produce one tuple,
+
+583
+00:33:47.820 --> 00:33:51.340
+and then continue when the next code comes.
+
+584
+00:33:51.740 --> 00:33:54.760
+So state maintenance is the main problem
+
+585
+00:33:54.760 --> 00:33:55.900
+of the operator interface.
+
+586
+00:33:56.100 --> 00:33:57.920
+You will see this when we implement this.
+
+587
+00:33:58.640 --> 00:34:00.640
+So the code, even though conceptually
+
+588
+00:34:00.640 --> 00:34:01.540
+the interface is very simple,
+
+589
+00:34:01.680 --> 00:34:04.260
+the code you have to write is often not that simple.
+
+590
+00:34:05.460 --> 00:34:06.780
+This is a price you have to pay.
+
+591
+00:34:06.880 --> 00:34:10.940
+This also brings poor performance,
+
+592
+00:34:11.120 --> 00:34:12.660
+because usually complex code is slow.
+
+593
+00:34:12.820 --> 00:34:17.420
+Maybe not always, but usually simpler code is better.
+
+594
+00:34:17.540 --> 00:34:19.520
+If it asymptotically behaves the same,
+
+595
+00:34:19.900 --> 00:34:21.640
+then simpler code is usually better.
+
+596
+00:34:22.940 --> 00:34:25.120
+Okay, and now, so this is what I meant.
+
+597
+00:34:25.480 --> 00:34:27.160
+So what's concerning the interface?
+
+598
+00:34:27.340 --> 00:34:28.720
+Now, how do we really pass the operators?
+
+599
+00:34:28.900 --> 00:34:31.360
+Because here we say, next, give me the next tupper.
+
+600
+00:34:31.520 --> 00:34:33.340
+So next says, okay, please give me whatever.
+
+601
+00:34:35.280 --> 00:34:39.140
+In particular, remember that we have no idea what the data is.
+
+602
+00:34:39.280 --> 00:34:44.280
+So the operator has no data types, we don't know how many attributes we have, therefore
+
+603
+00:34:44.280 --> 00:34:47.700
+we cannot just pass the tuple around itself, at least not easily.
+
+604
+00:34:48.000 --> 00:34:54.300
+Strictly speaking we could, but there is no obvious or easy way to pass the tuple around
+
+605
+00:34:54.300 --> 00:34:56.600
+because of these unknown properties of my query.
+
+606
+00:34:57.360 --> 00:35:03.560
+So therefore there are, probably more than two, but at least two common ways to do this.
+
+607
+00:35:05.180 --> 00:35:09.060
+First way is to say, okay, I cannot pass the tuple around easily, but what I can pass around
+
+608
+00:35:09.060 --> 00:35:10.460
+easily is a pointer to the tuple.
+
+609
+00:35:11.700 --> 00:35:20.780
+So if I have a table scan R and then this is my page and this here are all my records
+
+610
+00:35:20.780 --> 00:35:21.480
+here on my page.
+
+611
+00:35:22.460 --> 00:35:25.600
+And then if you call next on this table scan, the first next call will give you a pointer
+
+612
+00:35:25.600 --> 00:35:30.020
+to that element, the next next call will give you a pointer to that element and then the
+
+613
+00:35:30.020 --> 00:35:35.840
+The next call will return null, meaning we are out of tuples, so we have no further values.
+
+614
+00:35:37.340 --> 00:35:43.020
+And the data itself is not copied, but instead is left on the page or in the buffer, wherever
+
+615
+00:35:43.020 --> 00:35:44.800
+your data is stored.
+
+616
+00:35:44.980 --> 00:35:47.900
+So we just return a pointer to my data.
+
+617
+00:35:48.380 --> 00:35:52.780
+So this is of course an elegant model, so cheap.
+
+618
+00:35:53.480 --> 00:35:55.160
+Just computer pointer, pass it around.
+
+619
+00:35:57.220 --> 00:36:03.760
+So the downside of this approach is, what do you do if you have computed columns?
+
+620
+00:36:04.660 --> 00:36:10.580
+When I was a computed column, it is a user free to write for example, you can formulate
+
+621
+00:36:10.580 --> 00:36:20.100
+in SQL, select 4 times x plus y or something like this or arbitrary complicated stuff.
+
+622
+00:36:20.720 --> 00:36:24.460
+And this here is a new value that does not exist in your physical type of code because
+
+623
+00:36:25.160 --> 00:36:35.060
+it on the fly and this is what we call a computed column yes computed column now if we just output
+
+624
+00:36:35.060 --> 00:36:39.420
+this to the user this doesn't really matter because we just print it so that's okay but note
+
+625
+00:36:39.420 --> 00:36:43.980
+that this here can be a sub query somewhere deep in our query tree so there could be something higher
+
+626
+00:36:43.980 --> 00:36:49.760
+up again to select blah blah blah yeah so this sub this computer column could be in the middle
+
+627
+00:36:49.760 --> 00:36:58.300
+a query somewhere and then we need a way to pass this new column up to our outer part of the query.
+
+628
+00:36:58.460 --> 00:37:03.660
+And how should we do this? Because we cannot just point to the table because the values are not
+
+629
+00:37:03.660 --> 00:37:08.920
+stored on a page. Now of course what we could do is we could make a copy of the table and then copy
+
+630
+00:37:08.920 --> 00:37:12.920
+out everything including the new column, but then it's no longer that elegant and that cheap.
+
+631
+00:37:15.480 --> 00:37:19.680
+Computer columns are a weakness of the first approach. The first approach is pass the point
+
+632
+00:37:19.760 --> 00:37:24.400
+to the tuple. The second approach is actually better, but a bit more difficult to understand.
+
+633
+00:37:25.840 --> 00:37:29.020
+Namely, when you say how do you give me tuple, the answer is not at all.
+
+634
+00:37:29.940 --> 00:37:37.000
+So now what does this mean? So in this world here, the interface of my next function here is usually
+
+635
+00:37:39.220 --> 00:37:41.800
+tuple pointer, tuple pointer next,
+
+636
+00:37:44.620 --> 00:37:48.220
+and that gives you a pointer to the tuple. So the alternative two is to say,
+
+637
+00:37:49.920 --> 00:37:51.440
+anything, I just return a bool.
+
+638
+00:37:51.660 --> 00:37:53.480
+Do I have a new tuple or not?
+
+639
+00:37:54.360 --> 00:37:57.060
+So if I return true, then there is a new tuple.
+
+640
+00:37:57.460 --> 00:38:00.360
+If I return false, then there is no new tuple.
+
+641
+00:38:07.760 --> 00:38:09.580
+Okay, by then you can ask yourself,
+
+642
+00:38:09.900 --> 00:38:11.080
+if this is my model,
+
+643
+00:38:12.200 --> 00:38:14.040
+how do I access my content of my tuple?
+
+644
+00:38:14.140 --> 00:38:16.440
+Because the operator, my shell operator,
+
+645
+00:38:16.660 --> 00:38:18.240
+my input operator says here is a new tuple,
+
+646
+00:38:19.800 --> 00:38:21.540
+So it just says true, here's the tuple.
+
+647
+00:38:21.880 --> 00:38:23.000
+But how do I find it?
+
+648
+00:38:23.580 --> 00:38:26.260
+And the answer is, I store all the ways of my tuple
+
+649
+00:38:26.260 --> 00:38:27.980
+in a global data space.
+
+650
+00:38:28.420 --> 00:38:30.120
+Traditionally, this is called a register.
+
+651
+00:38:30.580 --> 00:38:32.100
+There's not, now, if you're honest,
+
+652
+00:38:32.140 --> 00:38:34.520
+it's not a real register, not like a CPU register,
+
+653
+00:38:34.600 --> 00:38:35.900
+because it's all done in software.
+
+654
+00:38:36.500 --> 00:38:38.800
+Now, but nevertheless, so the database
+
+655
+00:38:38.800 --> 00:38:41.960
+has a piece of memory reserved.
+
+656
+00:38:43.300 --> 00:38:44.620
+So we allocate this once.
+
+657
+00:38:45.300 --> 00:38:46.720
+And then we say, for example,
+
+658
+00:38:47.020 --> 00:38:48.980
+this part of my memory is reserved
+
+659
+00:38:49.760 --> 00:38:54.400
+root x and this part of my memory is reserved towards root y and then I might of course
+
+660
+00:38:54.400 --> 00:38:56.600
+have other attributes too, a, b.
+
+661
+00:38:57.780 --> 00:39:03.340
+So this is allocated and is static and now when I say static usually I mean it will be
+
+662
+00:39:03.340 --> 00:39:05.260
+a thread local so each thread will have it.
+
+663
+00:39:06.800 --> 00:39:11.460
+Sometimes you also want to have really global values but at least for our purposes here we
+
+664
+00:39:11.460 --> 00:39:14.460
+can say each thread has its own so usually we have such a copy.
+
+665
+00:39:14.460 --> 00:39:22.820
+And now if you call from your input, if you call, just say let's ignore the threading problem,
+
+666
+00:39:23.020 --> 00:39:27.240
+so assume for a moment we are running single thread, so not parallelism, then we have just
+
+667
+00:39:27.240 --> 00:39:33.600
+one set of registers here, so this rectangle is my set of registers, and now if for example
+
+668
+00:39:33.600 --> 00:39:41.180
+my, this is my relation r, and then here comes my predicate that says x equals to 5, and
+
+669
+00:39:41.180 --> 00:39:43.520
+then in the end I want the output for example y.
+
+670
+00:39:44.460 --> 00:39:50.180
+So then the projection here calls next, yeah next.
+
+671
+00:39:50.640 --> 00:39:52.940
+Says the select please give me tuple.
+
+672
+00:39:53.720 --> 00:39:57.540
+Then the select says next to my input here please give me tuple.
+
+673
+00:39:57.780 --> 00:40:04.160
+Then the relation looks at this content and retrieves the first tuple, for example x4,
+
+674
+00:40:05.980 --> 00:40:10.080
+y11, a and b, I just ignore them, I don't write anything here.
+
+675
+00:40:10.560 --> 00:40:15.220
+So then it says, relation R, it says true.
+
+676
+00:40:15.960 --> 00:40:16.500
+Here is the tuple.
+
+677
+00:40:16.960 --> 00:40:22.220
+Then my filter protocol checks the content of the X field, says, oh no, this is not equal to 5.
+
+678
+00:40:22.380 --> 00:40:23.900
+So please give me a new value.
+
+679
+00:40:24.080 --> 00:40:25.200
+So then again we call next.
+
+680
+00:40:26.420 --> 00:40:29.560
+Then R reloads a new value into the register file here.
+
+681
+00:40:30.300 --> 00:40:31.980
+So we now overwrite this.
+
+682
+00:40:32.320 --> 00:40:38.900
+So instead of writing here 411, say 5 and 20.
+
+683
+00:40:40.080 --> 00:40:45.340
+again the answer is true, there is a new tuple, then the select suddenly found a match, so now
+
+684
+00:40:45.340 --> 00:40:53.560
+we return true too, okay, and then the select looks into the y field, sees the 20, now we can
+
+685
+00:40:53.560 --> 00:40:59.500
+print the 20. So this is how it is. So if you look at the operator interface itself, so if it's just
+
+686
+00:40:59.500 --> 00:41:05.080
+an interface of next, then we don't really see the tuple because we just return true or false.
+
+687
+00:41:05.080 --> 00:41:10.740
+the tuple in reality is passed as a side effect of the update to the global data space,
+
+688
+00:41:10.840 --> 00:41:12.600
+so to the myRegister file.
+
+689
+00:41:14.160 --> 00:41:19.900
+And the beauty of this approach is that the subscripts all operate on the registers, like
+
+690
+00:41:19.900 --> 00:41:22.760
+this x equals 5, so this of course is the subscript here.
+
+691
+00:41:23.460 --> 00:41:27.960
+So this operates on the registers and looks into my registers, but the operator themselves
+
+692
+00:41:27.960 --> 00:41:28.800
+doesn't care.
+
+693
+00:41:29.380 --> 00:41:34.740
+The operator itself never touches this register file because we don't need it.
+
+694
+00:41:35.080 --> 00:41:37.280
+I just know if somebody returns me true,
+
+695
+00:41:37.320 --> 00:41:40.040
+I know that the correct value has been loaded into the registers
+
+696
+00:41:40.040 --> 00:41:43.300
+and then I can call my subscripts and this will look at the register file.
+
+697
+00:41:43.780 --> 00:41:44.900
+The operator itself doesn't care.
+
+698
+00:41:45.960 --> 00:41:50.740
+Okay, and this is actually the superior interface for the operator interface.
+
+699
+00:41:51.880 --> 00:41:54.880
+So if you do it like this, so then it can be very generic.
+
+700
+00:41:55.040 --> 00:41:56.440
+Now, computed columns are not a problem.
+
+701
+00:41:56.620 --> 00:41:58.240
+So if somebody computes a new value,
+
+702
+00:41:58.440 --> 00:42:02.560
+we just create a new field here, computed column,
+
+703
+00:42:02.560 --> 00:42:06.700
+Then here inside we write here 1, 2, 3 or whatever is computed so we can update this
+
+704
+00:42:06.700 --> 00:42:07.660
+over as we need it.
+
+705
+00:42:08.100 --> 00:42:09.420
+So computer columns are no problem.
+
+706
+00:42:09.580 --> 00:42:12.520
+We can just store them as they are.
+
+707
+00:42:14.860 --> 00:42:19.860
+Okay, sorry, there are just one more comments we said we have open next close.
+
+708
+00:42:20.140 --> 00:42:29.040
+Just for completeness, I know at least two systems that change the interface slightly.
+
+709
+00:42:29.040 --> 00:42:34.760
+I've just mentioned this, this is not a very mainstream solution, but some people do this.
+
+710
+00:42:35.200 --> 00:42:40.020
+So I put this here in brackets, so don't, don't, I said most people don't, but it makes
+
+711
+00:42:40.020 --> 00:42:40.740
+sense to do this.
+
+712
+00:42:40.840 --> 00:42:43.500
+You might want to add another function, namely first.
+
+713
+00:42:46.080 --> 00:42:49.500
+So and why would you care about first?
+
+714
+00:42:51.440 --> 00:42:57.200
+Because when we come to the real implementations of operators, you see that very often the
+
+715
+00:42:59.160 --> 00:43:02.860
+differently from all subsequent tuples. Why? Because a lot of work is probably
+
+716
+00:43:02.860 --> 00:43:05.980
+done until the first tuple can be produced, like we might build a hash table
+
+717
+00:43:05.980 --> 00:43:09.980
+or do some very complicated stuff, and this only affects the very first tuple.
+
+718
+00:43:11.020 --> 00:43:15.560
+And therefore it makes sense to have a separate function in the first. Of
+
+719
+00:43:15.560 --> 00:43:18.580
+course, strictly speaking, you don't need this, because we can easily
+
+720
+00:43:19.580 --> 00:43:23.760
+emulate the first with next, because one way to implement this is to say
+
+721
+00:43:27.160 --> 00:43:31.560
+bool next, then we can of course implement it like this.
+
+722
+00:43:34.820 --> 00:43:45.760
+If first call, then we say first call is false, so we say this is initially true, first call
+
+723
+00:43:45.760 --> 00:43:46.400
+is false.
+
+724
+00:43:51.100 --> 00:43:54.680
+and then we do whatever we have to do and then we continue with regular processing
+
+725
+00:43:54.680 --> 00:43:59.480
+yeah so therefore we don't really need a first interface yeah but of course the downside is
+
+726
+00:44:00.060 --> 00:44:09.080
+then now we have an if here in my hot pass because you have to realize this call to next here
+
+727
+00:44:09.080 --> 00:44:13.240
+this is super hot you call next for every type of that we process
+
+728
+00:44:13.240 --> 00:44:19.780
+This can be many many millions, which means we introduce many million additional ifs.
+
+729
+00:44:20.220 --> 00:44:24.100
+Of course now on modern machines it's not that bad as it used to be, of course modern
+
+730
+00:44:24.100 --> 00:44:29.240
+machines will produce branch prediction, and we say this if will probably nearly always
+
+731
+00:44:29.240 --> 00:44:29.680
+be false.
+
+732
+00:44:30.200 --> 00:44:33.280
+So therefore on today's machines it's not that bad.
+
+733
+00:44:33.580 --> 00:44:40.080
+But in the past this if here became noticeable in some cases, and therefore people said okay
+
+734
+00:44:40.080 --> 00:44:46.020
+let's do a dedicated first function so that we only do this expensive stuff in the first call
+
+735
+00:44:46.020 --> 00:44:50.160
+and everything else is cheap. Indeed I saw this improved performance a bit,
+
+736
+00:44:50.820 --> 00:44:52.660
+but probably today it's not that worthwhile.
+
+737
+00:44:54.380 --> 00:45:00.120
+Okay so this was the first two interfaces, first full materialization, second iteration.
+
+738
+00:45:00.580 --> 00:45:06.000
+Full materialization is very expensive, iteration is very flexible but also quite expensive because
+
+739
+00:45:06.000 --> 00:45:10.280
+they have so many calls. First one is expensive because we copy everything, the second one is
+
+740
+00:45:10.280 --> 00:45:14.560
+so expensive because we have so many calls. Now a compromise between these two is the third one,
+
+741
+00:45:14.680 --> 00:45:23.620
+here is the blockwise processing. So at first glance it is quite similar to the iterator model,
+
+742
+00:45:23.760 --> 00:45:34.220
+like we iterate over a tuppled stream as before. But the difference is we don't do this tuppled
+
+743
+00:45:36.300 --> 00:45:39.540
+But instead we do this in streams of larger chunks.
+
+744
+00:45:40.120 --> 00:45:53.280
+So basically the difference between calling next for each tuple or give me the next thousand
+
+745
+00:45:53.280 --> 00:45:53.680
+or so.
+
+746
+00:45:56.180 --> 00:46:01.160
+So just as in the iterator model we do function coil, say please give me something, but instead
+
+747
+00:46:01.160 --> 00:46:03.960
+of asking for one value we ask for many values.
+
+748
+00:46:04.480 --> 00:46:06.020
+Now, let's for example, a thousand.
+
+749
+00:46:06.220 --> 00:46:08.200
+And then of course this call overhead is hidden.
+
+750
+00:46:08.940 --> 00:46:10.740
+Because if we adjust by this change,
+
+751
+00:46:10.860 --> 00:46:12.640
+I reduce the number of calls by a factor of a thousand.
+
+752
+00:46:13.140 --> 00:46:14.860
+Therefore now this is of course,
+
+753
+00:46:14.980 --> 00:46:16.220
+then you don't see this anymore.
+
+754
+00:46:16.400 --> 00:46:18.160
+If you do a call for every tuple,
+
+755
+00:46:18.200 --> 00:46:19.640
+this actually is expensive.
+
+756
+00:46:19.860 --> 00:46:22.160
+But if you do a call for every thousand tuples,
+
+757
+00:46:22.340 --> 00:46:23.480
+ah, this is unnoticeable.
+
+758
+00:46:23.800 --> 00:46:25.500
+So this is okay.
+
+759
+00:46:25.760 --> 00:46:28.320
+So the block-wise processing is much, much cheaper.
+
+760
+00:46:29.720 --> 00:46:33.000
+Yeah, so this, we have far fewer function calls.
+
+761
+00:46:33.960 --> 00:46:35.260
+data, code and data locality.
+
+762
+00:46:35.480 --> 00:46:37.000
+Why code and data locality?
+
+763
+00:46:37.120 --> 00:46:41.600
+Because we no longer output one tuple, but we output many tuples.
+
+764
+00:46:41.780 --> 00:46:43.420
+Just think about the example that I had drawn.
+
+765
+00:46:43.940 --> 00:46:51.260
+So for this one here, so for the basic iterator model, for every single tuple we jump from
+
+766
+00:46:51.260 --> 00:46:57.420
+join to select to base table and back to select and back to join.
+
+767
+00:46:57.800 --> 00:47:01.060
+And also for each single tuple we involve three operators.
+
+768
+00:47:01.900 --> 00:47:06.280
+While in the blockwise model here we would say auto-slut with the join of course, but
+
+769
+00:47:06.280 --> 00:47:11.720
+then we would say hey give me a thousand here and then this case would do nothing because
+
+770
+00:47:11.720 --> 00:47:13.280
+thus ask my input give me a thousand.
+
+771
+00:47:13.560 --> 00:47:18.700
+Now my scan here would scan over my input and output 1000 tuples.
+
+772
+00:47:19.560 --> 00:47:24.340
+And this of course in a tight loop, so because now we would do a for loop, for and so on
+
+773
+00:47:24.340 --> 00:47:28.720
+yeah so over 1000 values so we have now a loop and cpus like loops.
+
+774
+00:47:28.720 --> 00:47:32.020
+So a tight loop of data is good.
+
+775
+00:47:32.800 --> 00:47:34.100
+Loop over 1000 values.
+
+776
+00:47:34.480 --> 00:47:37.740
+Then we output it, set my 1000 values here to the select.
+
+777
+00:47:37.960 --> 00:47:43.420
+The select now checks 1000 filter conditions, again in the loop, as we do another for loop here.
+
+778
+00:47:44.160 --> 00:47:45.620
+For the 1000 filter conditions.
+
+779
+00:47:45.940 --> 00:47:48.660
+And then we output the 1000 to the join.
+
+780
+00:47:49.560 --> 00:47:53.260
+So we have much better locality, we don't jump from one place to the other.
+
+781
+00:47:55.640 --> 00:48:00.220
+Now a disadvantage of course is we have additional materialization overhead.
+
+782
+00:48:01.080 --> 00:48:05.240
+In the simple iterator model we could often, may not always, but we could always pipeline
+
+783
+00:48:05.240 --> 00:48:08.500
+values which means we just pass them around without making any copies.
+
+784
+00:48:09.140 --> 00:48:13.740
+Here because we output 1000 values so we can no longer keep them for example in my global
+
+785
+00:48:13.740 --> 00:48:18.220
+register file because I can keep one tuple in there but I cannot keep 1000 tuples in
+
+786
+00:48:18.220 --> 00:48:18.420
+there.
+
+787
+00:48:19.200 --> 00:48:21.880
+Therefore we must now make a copy of the tuple and must store it somewhere.
+
+788
+00:48:24.020 --> 00:48:28.840
+just like the full materialization interface.
+
+789
+00:48:29.420 --> 00:48:33.700
+Now you could ask yourself, isn't this just like full materialization?
+
+790
+00:48:33.760 --> 00:48:35.380
+Because full materialization also does this.
+
+791
+00:48:35.460 --> 00:48:40.360
+We also get good locality and also materializes and also fewer calls.
+
+792
+00:48:40.860 --> 00:48:46.940
+Now the big advantage of this model here is that you will choose a block size that fits
+
+793
+00:48:46.940 --> 00:48:48.180
+into your cache.
+
+794
+00:48:48.180 --> 00:48:54.880
+Now so remember that your L1 cache, the fastest cache on your CPU, is usually something like
+
+795
+00:48:54.880 --> 00:48:55.640
+32 KB.
+
+796
+00:48:56.300 --> 00:49:01.320
+So therefore if I ask for a thousand values and if my values are not too large, there
+
+797
+00:49:01.320 --> 00:49:05.640
+is in fact a decent chance that this will fit in the L1 cache, which would of course
+
+798
+00:49:05.640 --> 00:49:06.800
+would be very very fast.
+
+799
+00:49:07.380 --> 00:49:08.280
+This is best.
+
+800
+00:49:08.760 --> 00:49:16.620
+Now if perhaps I cannot do this, this might be too small, it might be larger than 32 KB,
+
+801
+00:49:18.180 --> 00:49:25.340
+It's probably 512 kB or even more, depending on your CPU, or even more.
+
+802
+00:49:25.720 --> 00:49:32.600
+And therefore if I choose a block size such that my tupper values fit here, then I can
+
+803
+00:49:32.600 --> 00:49:36.100
+still keep it in a cache a bit slower than I want, but nevertheless we can keep it in
+
+804
+00:49:36.100 --> 00:49:37.800
+cache and I can just read it back.
+
+805
+00:49:38.380 --> 00:49:42.040
+But with full materialization my data is most likely larger than my cache.
+
+806
+00:49:42.480 --> 00:49:47.540
+So therefore with full materialization I have to go to memory, and memory is pretty slow
+
+807
+00:49:48.180 --> 00:49:51.800
+It is not too much slow, but if you compare to a CPU cache, it is slow.
+
+808
+00:49:52.520 --> 00:49:55.140
+Your memory is much slower than your CPU cache.
+
+809
+00:49:55.980 --> 00:49:59.340
+In this block-wise processing here, if you choose my block size carefully,
+
+810
+00:49:59.640 --> 00:50:06.300
+then my tupples will reside in the CPU cache, and therefore it will be cheap actually.
+
+811
+00:50:07.840 --> 00:50:12.280
+Materialization overhead is there, yes, but it will be lower than in the full materialization
+
+812
+00:50:12.280 --> 00:50:13.300
+due to caching.
+
+813
+00:50:14.360 --> 00:50:22.360
+Now, but nevertheless, a disadvantage here is even if I don't have to pay the high price,
+
+814
+00:50:23.680 --> 00:50:28.600
+this nevertheless consumes memory bandwidth, in particular due to this writing.
+
+815
+00:50:29.120 --> 00:50:34.440
+And so the problem is I write it in a vector and I know my vector is in cache because I
+
+816
+00:50:34.440 --> 00:50:35.300
+want to read it back.
+
+817
+00:50:37.160 --> 00:50:42.660
+What I cannot tell the CPU, at least not easily, is to say, okay, somebody wants to read it
+
+818
+00:50:44.040 --> 00:50:47.460
+Actually, I want to read it from a cache, but nobody else has to see it.
+
+819
+00:50:48.220 --> 00:50:52.980
+Note that most modern CPUs here are many core or multi core at least, so there is more than one.
+
+820
+00:50:53.520 --> 00:51:05.180
+Therefore, the buffer here that I use to store my tupples, this of course sits somewhere in memory.
+
+821
+00:51:05.780 --> 00:51:07.640
+So this is my total memory.
+
+822
+00:51:09.140 --> 00:51:13.740
+Somewhere in here will be my buffer where I store my type of values, for example 1000
+
+823
+00:51:13.740 --> 00:51:14.000
+here.
+
+824
+00:51:14.980 --> 00:51:19.160
+And of course I want that this buffer here is in my CPU cache.
+
+825
+00:51:19.500 --> 00:51:26.780
+Because if it is in cache, the first if I do something like this, then the scan here
+
+826
+00:51:26.780 --> 00:51:33.960
+will put it into my buffer and then the filter will take it out of the buffer again.
+
+827
+00:51:33.960 --> 00:51:37.740
+And if the buffer is in cache, then this is reasonably cheap.
+
+828
+00:51:38.040 --> 00:51:38.820
+So this is the idea.
+
+829
+00:51:40.200 --> 00:51:43.080
+Problem is, the CPU does not understand this.
+
+830
+00:51:43.200 --> 00:51:43.920
+This is our goal.
+
+831
+00:51:44.040 --> 00:51:48.280
+So our goal is just to pass data from one part of my own code to another part, and other
+
+832
+00:51:48.280 --> 00:51:54.200
+threads, so some different parts of my program, don't care about this buffer, because this
+
+833
+00:51:54.200 --> 00:51:55.520
+buffer is only from a current thread.
+
+834
+00:51:55.700 --> 00:52:00.320
+But I cannot trade this to my system, unfortunately, and therefore the system will, even though
+
+835
+00:52:00.320 --> 00:52:07.080
+it keeps it in cache, it will at some point flush this out to memory, because we must
+
+836
+00:52:07.080 --> 00:52:11.240
+make sure that if somebody else tries to read this, then it gets the data.
+
+837
+00:52:12.820 --> 00:52:17.400
+Even though in many cases we could say, I have read it already, you can discard it.
+
+838
+00:52:17.560 --> 00:52:18.920
+But this we cannot say easily.
+
+839
+00:52:19.620 --> 00:52:23.400
+Therefore, this bufferinger consumes memory bandwidth even though we aim to be in cache.
+
+840
+00:52:23.700 --> 00:52:24.080
+That is bad.
+
+841
+00:52:25.320 --> 00:52:28.420
+Now the disadvantage is we are less flexible in the control flow.
+
+842
+00:52:29.100 --> 00:52:34.780
+In the iterator model we could read one tuple from any of our inputs.
+
+843
+00:52:35.000 --> 00:52:40.480
+Here we can only read larger chunks of data which is problematic for some operators.
+
+844
+00:52:40.700 --> 00:52:42.440
+But usually this is a minor problem.
+
+845
+00:52:42.580 --> 00:52:44.300
+So control flow is usually good enough.
+
+846
+00:52:44.500 --> 00:52:48.580
+There are a few operators that have problems with this, notably merge join.
+
+847
+00:52:48.960 --> 00:52:53.240
+So for merge join this is not ideal, but for all other operators it doesn't really matter.
+
+848
+00:52:54.480 --> 00:52:58.180
+So the less flexible control flow is usually okay.
+
+849
+00:52:58.980 --> 00:53:02.340
+But additionally, the maturization overhead is a problem.
+
+850
+00:53:02.540 --> 00:53:07.740
+It is less than in the first option, but nevertheless, this is indeed somewhat of a
+
+851
+00:53:07.740 --> 00:53:07.980
+problem.
+
+852
+00:53:09.480 --> 00:53:16.080
+So now, therefore we now look at the fourth option and this does something quite different
+
+853
+00:53:16.960 --> 00:53:17.740
+from the other ones.
+
+854
+00:53:17.940 --> 00:53:22.060
+Namely, so previously everybody basically pulled its input.
+
+855
+00:53:22.060 --> 00:53:25.800
+So if you think about the iterator model, it's the most visible, so if you just say
+
+856
+00:53:27.480 --> 00:53:31.060
+join, then select, and then a relation, and then we have another relation,
+
+857
+00:53:31.420 --> 00:53:34.960
+my model was here, this here says please give me a tuple, please give me a tuple,
+
+858
+00:53:35.080 --> 00:53:38.800
+please give me a tuple, until here, and then it says here, here is a tuple, and so on.
+
+859
+00:53:39.380 --> 00:53:43.260
+And so this was if we pull a tuple up, so we say give me one tuple.
+
+860
+00:53:44.480 --> 00:53:49.780
+And in this model here we reverse the direction, we say no, no, we don't pull tuples up,
+
+861
+00:53:51.480 --> 00:53:53.020
+Instead, we push tuples.
+
+862
+00:53:54.740 --> 00:54:04.780
+So we would say the relation R starts and says, hey, here's a tuple, please take this.
+
+863
+00:54:05.220 --> 00:54:09.020
+Then the select gets it and says, okay, perhaps it's okay.
+
+864
+00:54:09.260 --> 00:54:10.920
+And then we start into my drawing.
+
+865
+00:54:11.100 --> 00:54:12.960
+And then comes the next tuple, and the next tuple, and the next tuple.
+
+866
+00:54:13.100 --> 00:54:17.520
+So instead of pulling it up, we push it from bottom to top.
+
+867
+00:54:18.240 --> 00:54:23.080
+Ok, and now if you think about what this means in code, we see code examples later in the
+
+868
+00:54:23.080 --> 00:54:28.100
+lecture, but what this means in code is that here in R we will have a loop, a small loop,
+
+869
+00:54:28.220 --> 00:54:32.560
+the loops are a bunch of data and then retrieves all tuppets.
+
+870
+00:54:33.800 --> 00:54:39.540
+And usually most of the logic in our query plan is executed in a few loops where then
+
+871
+00:54:39.540 --> 00:54:40.480
+the data is passed up.
+
+872
+00:54:41.180 --> 00:54:41.960
+And loops are good.
+
+873
+00:54:41.960 --> 00:54:48.480
+So small tied loops is something that our CPU likes, therefore performance-wise is a
+
+874
+00:54:48.480 --> 00:54:48.880
+good idea.
+
+875
+00:54:49.140 --> 00:54:54.960
+We also get good code on data locality because we run a lot of code in R and only for when
+
+876
+00:54:54.960 --> 00:54:59.340
+we have values we might sometimes call the select and even more rarely call the join.
+
+877
+00:54:59.880 --> 00:55:05.580
+So we have most of our execution here is spent within R and we don't go out of R. So we stick
+
+878
+00:55:05.580 --> 00:55:06.000
+in there.
+
+879
+00:55:06.680 --> 00:55:08.160
+That gives me good locality.
+
+880
+00:55:08.880 --> 00:55:12.700
+Basically just like in the HL model we can still pipeline so we don't have to make a
+
+881
+00:55:12.700 --> 00:55:18.360
+copy because I can, if you think about the register file here, R can load the values
+
+882
+00:55:18.360 --> 00:55:21.860
+in the register file, then this here can take the values out of the register file, this
+
+883
+00:55:21.860 --> 00:55:25.480
+is the same so we can just pipeline it without making a copy.
+
+884
+00:55:27.220 --> 00:55:32.320
+Now that I mentioned this, perhaps to illustrate this, what does this mean with pipeline, let's
+
+885
+00:55:32.320 --> 00:55:34.200
+make it a bit more silly.
+
+886
+00:55:35.820 --> 00:55:37.060
+Let's look at this.
+
+887
+00:55:37.400 --> 00:55:38.720
+Let's assume we have a scan.
+
+888
+00:55:39.820 --> 00:55:44.080
+Filter, filter, filter, filter, and so on.
+
+889
+00:55:44.280 --> 00:55:45.240
+Oops, and so on.
+
+890
+00:55:45.340 --> 00:55:45.780
+Many filters.
+
+891
+00:55:48.700 --> 00:55:53.020
+Now, if you want to understand pipelining, just look at the left side of this join.
+
+892
+00:55:53.500 --> 00:55:54.500
+Here comes a tuple.
+
+893
+00:55:54.920 --> 00:55:58.000
+Just think about how many copies of these tuples do we make.
+
+894
+00:55:59.040 --> 00:56:01.220
+In a pipelining approach we don't make any.
+
+895
+00:56:01.220 --> 00:56:05.480
+Or perhaps, of course, if you're picky, we could say we make one because we load the
+
+896
+00:56:05.480 --> 00:56:13.760
+value from our page and then we store it probably in the register file, which is of course,
+
+897
+00:56:13.920 --> 00:56:15.780
+is a kind of a copy, if you wish.
+
+898
+00:56:16.140 --> 00:56:20.980
+So we, depends on how it's implemented, but we might copy it somewhere once.
+
+899
+00:56:21.300 --> 00:56:21.380
+Okay.
+
+900
+00:56:21.780 --> 00:56:26.520
+But then it doesn't matter if you have here between six filters or if you have 20,000
+
+901
+00:56:26.520 --> 00:56:29.120
+filters, no further copy of the table is made.
+
+902
+00:56:29.120 --> 00:56:32.140
+it sits in this register file and can still set all the time.
+
+903
+00:56:32.240 --> 00:56:38.160
+We check additional conditions until we hit the join, then of course we do something with the tuple.
+
+904
+00:56:38.400 --> 00:56:43.060
+But the number of selections in between the scan and the join does not affect the number of copies.
+
+905
+00:56:43.520 --> 00:56:45.080
+This is a pipelining approach.
+
+906
+00:56:45.560 --> 00:56:49.440
+But if you are in full materialization or even in the block-wise processing,
+
+907
+00:56:49.960 --> 00:56:54.320
+we would make a copy of all the tuples,
+
+908
+00:56:55.920 --> 00:57:03.400
+then we would make a filter, we make another copy, we pass it to the next filter, makes
+
+909
+00:57:03.400 --> 00:57:04.280
+another copy and so on.
+
+910
+00:57:04.340 --> 00:57:05.560
+Here we would copy all the time.
+
+911
+00:57:07.140 --> 00:57:12.560
+And in the blockwise we do it in less severe form, but nevertheless we have a deep cascade
+
+912
+00:57:12.560 --> 00:57:15.500
+of operators where we also tend to make a lot of copies.
+
+913
+00:57:16.140 --> 00:57:19.320
+In the push model we have pushed data up, we don't have to make a copy.
+
+914
+00:57:19.320 --> 00:57:27.260
+Another interesting advantage is that if in this pushing here we can in fact support deck-structured plans.
+
+915
+00:57:27.820 --> 00:57:29.440
+Now what is a deck-structured plan?
+
+916
+00:57:29.580 --> 00:57:32.200
+Assume we have something like this, so we have a complicated expression,
+
+917
+00:57:32.460 --> 00:57:37.340
+so some subtree, then we do for example a group wire or some other processing,
+
+918
+00:57:37.480 --> 00:57:40.780
+and then we might have something like this.
+
+919
+00:57:48.380 --> 00:57:52.120
+Okay, of course, a constructed example, but nevertheless, so this is no longer a tree,
+
+920
+00:57:53.580 --> 00:57:59.080
+because this grouper here has two parent nodes, this is not a tree, but this is a deck, a
+
+921
+00:57:59.080 --> 00:58:04.620
+deck is a directed astrograph, so of course, these edges have a direction, and so a directed
+
+922
+00:58:04.620 --> 00:58:08.880
+astrograph, this graph here has no cycle, if you direct them, you can direct them, for
+
+923
+00:58:10.780 --> 00:58:14.740
+them up or down, it doesn't really matter, we just have to fixate it.
+
+924
+00:58:14.840 --> 00:58:18.100
+Let's say we point down, so then we point like this.
+
+925
+00:58:20.640 --> 00:58:25.660
+And so this is my plan, this contains no cycles, so this is a directed astroclical graph.
+
+926
+00:58:26.180 --> 00:58:30.540
+But nevertheless, we have nodes with more than one incoming edge, so it's not a tree.
+
+927
+00:58:32.540 --> 00:58:36.200
+Okay, and the advantage of this is if this computation in the middle here is expensive,
+
+928
+00:58:36.200 --> 00:58:40.340
+If you compute this once, then when we have a tuple, so it is produced here, then it is
+
+929
+00:58:40.340 --> 00:58:45.920
+pushed up, so we take the tuple, push it up, push it through the group by, and then we
+
+930
+00:58:45.920 --> 00:58:48.680
+can pass it to both this and that operator.
+
+931
+00:58:48.880 --> 00:58:53.880
+So two operators can consume a tuple, or in fact an arbitrary number of operators can
+
+932
+00:58:53.880 --> 00:58:54.640
+consume a tuple.
+
+933
+00:58:54.960 --> 00:58:57.540
+This would not work in the iterator model.
+
+934
+00:58:58.100 --> 00:59:03.080
+Because in the iterator model what would happen is, you would call next here, you would call
+
+935
+00:59:03.080 --> 00:59:08.460
+next here, then you get the tuple, then you would call next here, and the next value that
+
+936
+00:59:08.460 --> 00:59:13.120
+you get when you come from the left side is now taken away, such that the call from the right
+
+937
+00:59:13.120 --> 00:59:17.220
+side will become later, so of course later we will also call here, so when you come from the right
+
+938
+00:59:17.220 --> 00:59:23.320
+side the tuple is gone. So both operators would take away tuples from each other, maybe because
+
+939
+00:59:23.320 --> 00:59:28.040
+you always iterate over the stream, therefore if left fetches the tuple, right doesn't get it.
+
+940
+00:59:29.800 --> 00:59:30.880
+That of course is bad.
+
+941
+00:59:31.460 --> 00:59:32.360
+We don't want this.
+
+942
+00:59:32.740 --> 00:59:36.440
+Therefore in the iterator model we usually do not allow DEC structure plans.
+
+943
+00:59:36.900 --> 00:59:44.520
+We sometimes allow it if we are sure that the nodes that contain multiple patterns is full materialization.
+
+944
+00:59:44.700 --> 00:59:50.300
+If you make a copy of my output then I can read it multiple times because the tople is not gone when I read it.
+
+945
+00:59:54.180 --> 00:59:57.080
+Full materialization allows me to share even with the iterator model.
+
+946
+00:59:58.100 --> 01:00:00.060
+But here in this push model we can share
+
+947
+01:00:00.540 --> 01:00:04.260
+Tuples between subtrees without any restrictions. Yes, we can just
+
+948
+01:00:04.940 --> 01:00:11.120
+Shouldn't say without there a few restrictions, but it isn't this this scenario. There are no problems. We can easily pass it to
+
+949
+01:00:11.820 --> 01:00:16.400
+Ten parent operators knows no different than passing it to one. So this is good
+
+950
+01:00:17.800 --> 01:00:24.220
+Now I was a what are the disadvantage of this this model here? I first we are more restricted on our control flow
+
+951
+01:00:25.380 --> 01:00:27.760
+because if my data comes from from my
+
+952
+01:00:28.260 --> 01:00:31.680
+a child to me, so I can not easily say,
+
+953
+01:00:32.020 --> 01:00:33.920
+oh, I want to get one value from the left
+
+954
+01:00:33.920 --> 01:00:35.320
+and then one value from the right.
+
+955
+01:00:35.420 --> 01:00:35.980
+This doesn't work.
+
+956
+01:00:36.460 --> 01:00:37.540
+Because in the push model,
+
+957
+01:00:37.740 --> 01:00:39.440
+R gives you all its data,
+
+958
+01:00:39.660 --> 01:00:41.860
+and then S gives you all its data.
+
+959
+01:00:42.120 --> 01:00:44.320
+You cannot say, I need one value from R
+
+960
+01:00:44.320 --> 01:00:45.260
+and one value from S,
+
+961
+01:00:45.360 --> 01:00:46.800
+and then again one from R,
+
+962
+01:00:46.880 --> 01:00:47.720
+then again one from S,
+
+963
+01:00:47.820 --> 01:00:49.160
+you're alternating between left and right,
+
+964
+01:00:49.320 --> 01:00:51.720
+which you can easily do in the iterator model,
+
+965
+01:00:52.460 --> 01:00:54.720
+but you cannot do this in this push model.
+
+966
+01:00:54.800 --> 01:00:57.040
+So the control flow is more restricted.
+
+967
+01:00:58.520 --> 01:01:02.240
+On the other hand, this is nearly never a problem.
+
+968
+01:01:02.440 --> 01:01:06.080
+So the only operator that matters here is the sort merge join.
+
+969
+01:01:06.300 --> 01:01:09.100
+So we take two sorted inputs and we want to intersect them.
+
+970
+01:01:09.540 --> 01:01:12.620
+There you want to alternate between reading left and right.
+
+971
+01:01:12.860 --> 01:01:13.920
+But this is the only one.
+
+972
+01:01:14.040 --> 01:01:17.420
+And you can work around this problem by materializing one of the sides.
+
+973
+01:01:17.580 --> 01:01:21.500
+So if you make a copy of one of the two sides, the smaller one, of course, you prefer to
+
+974
+01:01:21.500 --> 01:01:25.980
+make a copy of the smaller one, then you can handle this even in the push model here.
+
+975
+01:01:27.560 --> 01:01:31.380
+The second disadvantage is code generation is more involved, but on the other hand, I
+
+976
+01:01:31.980 --> 01:01:35.500
+mean you implement this only once, so who cares if it is a bit more difficult.
+
+977
+01:01:35.780 --> 01:01:38.000
+This is not a real disadvantage.
+
+978
+01:01:38.620 --> 01:01:41.560
+But the great advantage is that it gives you much better code.
+
+979
+01:01:42.120 --> 01:01:48.220
+And also, if we look in the lecture later at implementation, I mean code generation
+
+980
+01:01:48.220 --> 01:01:53.800
+might be more involved, but in general the operators are, if you ask me, easier to implement
+
+981
+01:01:53.800 --> 01:01:57.320
+in this model than in the iterator model for example.
+
+982
+01:01:59.140 --> 01:02:06.520
+So now let's to illustrate this, let's implement three very very very simple operators in all
+
+983
+01:02:06.520 --> 01:02:11.860
+models so that you can compare them easily. So we just implement a scan, so read a whole relation,
+
+984
+01:02:12.720 --> 01:02:18.180
+we implement select, so read a relation and output all tuples that satisfy a predicate,
+
+985
+01:02:18.180 --> 01:02:22.020
+and we implement cross, so cross product between two relations.
+
+986
+01:02:23.440 --> 01:02:28.140
+Of course in reality we want to have a join, but we just want to compare approaches here,
+
+987
+01:02:28.260 --> 01:02:31.680
+we make it, keep it simple, so we just do a cross product. It's a very simple one.
+
+988
+01:02:32.180 --> 01:02:36.780
+Now in the full mutualization model, I said the advantage here that this is quite simple,
+
+989
+01:02:36.920 --> 01:02:40.300
+this is what you see here, all three operators fit on a single slide.
+
+990
+01:02:40.680 --> 01:02:44.940
+This will not be the case for the other approaches, they are more difficult,
+
+991
+01:02:44.940 --> 01:02:48.360
+But this one here we can easily implement on single-size
+
+992
+01:02:48.360 --> 01:02:49.360
+because it's so simple.
+
+993
+01:02:50.180 --> 01:02:52.240
+So let's start with this scan here.
+
+994
+01:02:52.840 --> 01:02:53.800
+The scan actually does nothing.
+
+995
+01:02:54.960 --> 01:02:57.240
+And because we are supposed to scan the relation R
+
+996
+01:02:57.740 --> 01:03:00.340
+and we just say, hey, my data is stored in R.
+
+997
+01:03:00.540 --> 01:03:01.260
+And so I do nothing.
+
+998
+01:03:01.380 --> 01:03:03.100
+I just return a reference to my relation
+
+999
+01:03:03.100 --> 01:03:05.000
+because it is already materialized.
+
+1000
+01:03:06.300 --> 01:03:08.220
+Now our next operator here, select.
+
+1001
+01:03:08.800 --> 01:03:12.640
+So I want to read, find everything from my input
+
+1002
+01:03:12.640 --> 01:03:13.740
+where a certain predicate is true.
+
+1003
+01:03:14.940 --> 01:03:15.580
+How do I do this?
+
+1004
+01:03:15.680 --> 01:03:17.100
+I create a new relation,
+
+1005
+01:03:17.320 --> 01:03:18.220
+a new temporary relation,
+
+1006
+01:03:18.340 --> 01:03:19.580
+not visible to the user,
+
+1007
+01:03:19.720 --> 01:03:20.980
+but nevertheless, we need some space
+
+1008
+01:03:20.980 --> 01:03:21.940
+where we can store stuff.
+
+1009
+01:03:22.180 --> 01:03:24.180
+So we create a new relation R' here,
+
+1010
+01:03:24.660 --> 01:03:25.820
+so we can store my data.
+
+1011
+01:03:26.300 --> 01:03:27.540
+Then in this line here,
+
+1012
+01:03:27.720 --> 01:03:29.500
+I loop over all tuples in R,
+
+1013
+01:03:29.980 --> 01:03:31.680
+I check if my predicates true,
+
+1014
+01:03:32.140 --> 01:03:35.000
+and if yes, I store the tuple in R'.
+
+1015
+01:03:35.800 --> 01:03:36.840
+Okay, so this is what we do here.
+
+1016
+01:03:37.380 --> 01:03:39.160
+And afterwards, I return R' saying,
+
+1017
+01:03:39.280 --> 01:03:40.660
+okay, my data is now in R'.
+
+1018
+01:03:41.360 --> 01:03:42.140
+Also pretty simple.
+
+1019
+01:03:42.360 --> 01:03:43.520
+This is the advantage of course,
+
+1020
+01:03:44.940 --> 01:03:52.260
+to a new relation. And then the cross product, I get two relations R1 and R2 as input. I'm supposed
+
+1021
+01:03:52.260 --> 01:03:56.580
+to output the cross product between them. How do I do this? I again allocate a new relation R'
+
+1022
+01:03:57.160 --> 01:04:03.080
+then here I loop over all values from R1, I loop over all values from R2, I combine them and store
+
+1023
+01:04:03.080 --> 01:04:10.080
+them in R'. Sorry, I messed this up here. I store them in R'. Very simple implementation
+
+1024
+01:04:11.280 --> 01:04:15.620
+And so we can, of course, we, in particular this step here is expensive,
+
+1025
+01:04:15.880 --> 01:04:18.020
+because we now create a really large output relation.
+
+1026
+01:04:18.220 --> 01:04:20.320
+So it's very expensive, but it's very easy.
+
+1027
+01:04:22.260 --> 01:04:24.440
+Okay, now let's look at the iterator model.
+
+1028
+01:04:24.720 --> 01:04:27.800
+You see the iterator model is more complicated.
+
+1029
+01:04:27.960 --> 01:04:30.480
+We can no longer fit it on a single slide.
+
+1030
+01:04:30.920 --> 01:04:33.380
+Now, so now I have to show you this piece by piece.
+
+1031
+01:04:37.720 --> 01:04:40.760
+and we start with the scan which is a very simple operator of course
+
+1032
+01:04:42.020 --> 01:04:46.300
+and we look here at the two functions open next and because at least in the
+
+1033
+01:04:46.300 --> 01:04:50.380
+pseudo code we show here the close does nothing is so close we can leave out
+
+1034
+01:04:50.380 --> 01:04:56.060
+because we so we abstract away here so many details but so conceptually what we do is when
+
+1035
+01:04:56.060 --> 01:05:02.080
+we call open so somebody calls us open and we are supposed to open the relation r what we do is we
+
+1036
+01:05:03.380 --> 01:05:09.280
+I want to read r probably in this point in time I'm loading a page in the buffer manager so but
+
+1037
+01:05:09.280 --> 01:05:15.480
+here we don't talk about it just say remember that I want to read r I say my current position
+
+1038
+01:05:15.480 --> 01:05:21.580
+here zero and I say I want to stop when I when I hit the size of r and so this is my end condition
+
+1039
+01:05:22.640 --> 01:05:27.920
+okay open still pretty easy then the next coil and remember that we want to iterate over my
+
+1040
+01:05:28.660 --> 01:05:34.220
+output here when we call next. So then the next is the following, did I already reach the end?
+
+1041
+01:05:34.360 --> 01:05:40.140
+So if my current is my current tuple id greater or equal to the limit, if yes we say for there is no further tuple.
+
+1042
+01:05:40.280 --> 01:05:47.840
+So we just say no there is nothing, otherwise we load the tuple t from in at position t id.
+
+1043
+01:05:48.120 --> 01:05:55.260
+So this of course I now must store somewhere in my global register file. So I load the tuple, store it,
+
+1044
+01:05:55.880 --> 01:06:01.300
+then i increase my tuple ID by one and then i return true so i say okay here i have one
+
+1045
+01:06:01.300 --> 01:06:07.140
+one more tuple and of course you cannot call next repeatedly until it returns false and then when
+
+1046
+01:06:07.140 --> 01:06:13.720
+you get false and you know okay i have seen all my tuples okay so this is also pretty simple
+
+1047
+01:06:14.360 --> 01:06:21.800
+select is also not too difficult so when we can be called open on a select we just remember okay
+
+1048
+01:06:21.800 --> 01:06:26.000
+what is my input and what is my predicate? Oh no, here we don't do anything, of course,
+
+1049
+01:06:26.640 --> 01:06:31.240
+depends on how you implement it, but perhaps we should at this point here call
+
+1050
+01:06:33.700 --> 01:06:40.300
+in.open because probably we want to recursively open my input. Of course, it could be,
+
+1051
+01:06:40.500 --> 01:06:44.640
+it depends on how you implement it, it could be that you trigger the open call for all operators
+
+1052
+01:06:44.640 --> 01:06:49.320
+at the same time by just looping over the list of operators, then of course you don't do this.
+
+1053
+01:06:49.320 --> 01:06:54.200
+then this implementation is okay if you want to recurse and be here we would call open on my input
+
+1054
+01:06:55.800 --> 01:07:01.800
+okay so the open prepares operator for execution then when we call next yes i please give me the
+
+1055
+01:07:01.800 --> 01:07:09.700
+next tuple then we say as long as my input here is not exhausted oh by the way it's a copy and
+
+1056
+01:07:09.700 --> 01:07:16.340
+paste error here because we don't the select effect gets no argument and so we don't need
+
+1057
+01:07:16.340 --> 01:07:21.120
+any arguments we have stored the arguments in my operator here so we call the next function
+
+1058
+01:07:21.120 --> 01:07:26.080
+give this give me the next tuple then i take my input and ask me in plus give me a tuple
+
+1059
+01:07:26.080 --> 01:07:31.660
+and if the input says yes then i call the predicate and if the predicate also says yes then i return
+
+1060
+01:07:31.660 --> 01:07:37.360
+true otherwise i continue looping here so i say give me the next tuple next tuple next tuple next
+
+1061
+01:07:37.360 --> 01:07:44.980
+tuple so i call next all the time and at some point the next of course will return false saying
+
+1062
+01:07:46.340 --> 01:07:52.440
+my input is exhausted and then I leave the loop and also myself return false and say okay
+
+1063
+01:07:53.060 --> 01:07:59.280
+no further tablets I'm done okay and note that we cannot ignore this loop
+
+1064
+01:08:00.260 --> 01:08:07.440
+so we could let's say say okay let's comment this out so we just say a or no perhaps not comment
+
+1065
+01:08:07.440 --> 01:08:14.260
+this out we could let by the way what I'm writing now is wrong so don't take notes just to illustrate
+
+1066
+01:08:14.260 --> 01:08:22.860
+this you could think that you can implement it like if not in dot next return
+
+1067
+01:08:25.540 --> 01:08:25.940
+false
+
+1068
+01:08:29.500 --> 01:08:32.620
+then we check a predicate if it's true return true as well as return false
+
+1069
+01:08:32.620 --> 01:08:36.880
+this you could think that you should implement this but of course you must not because it could
+
+1070
+01:08:36.880 --> 01:08:42.000
+be that we get one table that doesn't satisfy the bracket but the next table would yeah and but we
+
+1071
+01:08:42.000 --> 01:08:46.520
+not allowed to return false in this case because otherwise my parent will stop asking me for
+
+1072
+01:08:46.520 --> 01:08:53.380
+tupples. So they only ask me as long as I return true, therefore I must need a loop here, so from
+
+1073
+01:08:53.380 --> 01:08:57.980
+here to here. So as long as my input still gives me a tupple, I check the predicate, if it's true,
+
+1074
+01:08:58.000 --> 01:09:04.220
+I continue, otherwise I stop. Okay, this is still not very complicated, what is complicated is this
+
+1075
+01:09:04.220 --> 01:09:11.280
+one here, across products. So if you think back in the full immortalization model, this was I think
+
+1076
+01:09:12.400 --> 01:09:18.120
+Here we already start writing more and it is still simplified and squeezed on a slide here.
+
+1077
+01:09:18.860 --> 01:09:25.780
+So even a simple cross product is quite involved in the iterator model and other real joints
+
+1078
+01:09:25.780 --> 01:09:26.460
+are even worse.
+
+1079
+01:09:27.140 --> 01:09:32.060
+And so the problem here is that we have to keep state because we are only allowed to
+
+1080
+01:09:32.060 --> 01:09:39.600
+output one tuple, therefore I must remember where I am and so this requires some bookkeeping.
+
+1081
+01:09:39.600 --> 01:09:47.040
+So therefore here my state here is left, right and step.
+
+1082
+01:09:47.200 --> 01:09:50.120
+So when I have a call to open, I should open this, I store.
+
+1083
+01:09:50.400 --> 01:09:56.220
+Okay, what is my left side, what is my right side and I set step to true initially.
+
+1084
+01:09:56.620 --> 01:10:00.540
+Now we come to the core of the algorithm here, the next call.
+
+1085
+01:10:02.720 --> 01:10:05.000
+So then we again need a loop.
+
+1086
+01:10:05.320 --> 01:10:06.960
+So while true, so infinite loop.
+
+1087
+01:10:07.480 --> 01:10:10.120
+So then we ask ourselves, is step true?
+
+1088
+01:10:10.320 --> 01:10:13.520
+So like we did in the beginning, or perhaps another name for step.
+
+1089
+01:10:13.680 --> 01:10:17.240
+So step means read from left.
+
+1090
+01:10:24.620 --> 01:10:26.180
+This is perhaps an explanation.
+
+1091
+01:10:26.480 --> 01:10:29.020
+So when I said step true, it means I have to read the left side.
+
+1092
+01:10:29.320 --> 01:10:30.900
+So is step true true?
+
+1093
+01:10:31.140 --> 01:10:33.640
+So then I load the next type from my left side.
+
+1094
+01:10:34.200 --> 01:10:38.960
+If there is no table from the left side then I said okay I am done, I can no longer find
+
+1095
+01:10:38.960 --> 01:10:39.300
+anything.
+
+1096
+01:10:39.920 --> 01:10:44.540
+Otherwise if there is a table from the left side I restart the right side, remember that
+
+1097
+01:10:44.540 --> 01:10:47.540
+we have to read the right side repeatedly for every table from the left, therefore I
+
+1098
+01:10:47.540 --> 01:10:52.140
+call here open on my right side saying please rewind yourself I want to read again.
+
+1099
+01:10:53.560 --> 01:10:59.140
+And then in the next line I clear the step flag and say I no longer want to read from
+
+1100
+01:10:59.140 --> 01:10:59.480
+the left.
+
+1101
+01:10:59.760 --> 01:11:01.600
+Okay then I have a value from the left.
+
+1102
+01:11:01.600 --> 01:11:03.760
+Then I read the next value from the right.
+
+1103
+01:11:04.200 --> 01:11:07.160
+If I get one then I return true saying okay I have a match.
+
+1104
+01:11:09.740 --> 01:11:11.740
+Of course this means that we stop at this point.
+
+1105
+01:11:12.000 --> 01:11:14.980
+So we read one from the left, we read one from the right then we stop.
+
+1106
+01:11:15.840 --> 01:11:19.660
+Later we will be called back again and then of course we must remember what we did.
+
+1107
+01:11:19.760 --> 01:11:22.800
+Namely we must remember that we have already read from the left side.
+
+1108
+01:11:22.960 --> 01:11:24.900
+We remember this step flag here.
+
+1109
+01:11:25.000 --> 01:11:25.800
+Step flag is clear.
+
+1110
+01:11:26.360 --> 01:11:29.780
+So then we read the next table, next table, next table, next table and so on.
+
+1111
+01:11:31.600 --> 01:11:32.780
+says, oh, I have no further tupples.
+
+1112
+01:11:33.000 --> 01:11:34.440
+Then we set step to true,
+
+1113
+01:11:34.660 --> 01:11:35.800
+and then the loop here continues,
+
+1114
+01:11:37.300 --> 01:11:38.700
+reads the next tupple from the left.
+
+1115
+01:11:38.860 --> 01:11:41.140
+If there's none tupple, I stop, otherwise, and so on.
+
+1116
+01:11:41.800 --> 01:11:45.300
+Okay, and this is already a bit more involved,
+
+1117
+01:11:45.480 --> 01:11:47.320
+even though we just did a silly cross product.
+
+1118
+01:11:47.520 --> 01:11:49.720
+I mean, cross product is the most primitive binary operator
+
+1119
+01:11:49.720 --> 01:11:50.460
+that you can imagine.
+
+1120
+01:11:51.200 --> 01:11:53.740
+If you implement a real operator, like a join,
+
+1121
+01:11:54.240 --> 01:11:56.780
+then this bookkeeping, like remembering where am I,
+
+1122
+01:11:56.900 --> 01:11:59.420
+what have to do next, can become quite complicated.
+
+1123
+01:11:59.420 --> 01:12:04.000
+Now, so the iterator model from the outside looks simple, but the implementation is not
+
+1124
+01:12:04.000 --> 01:12:04.460
+so simple.
+
+1125
+01:12:07.480 --> 01:12:11.000
+Okay, now also interesting is this one here, the block-wise processing.
+
+1126
+01:12:12.520 --> 01:12:17.340
+Here I assume that I will output 1000 tuples, at most, of course it could be that I have
+
+1127
+01:12:17.340 --> 01:12:20.040
+less than 1000 tuples, but I want to output 1000 tuples.
+
+1128
+01:12:20.480 --> 01:12:27.900
+So therefore, open just looks like in the iterator model, so I store the relation, I say tuple
+
+1129
+01:12:29.420 --> 01:12:33.600
+limit to such relations just as before. Now interesting here is the next call
+
+1130
+01:12:34.180 --> 01:12:40.000
+in the scan. So here c is the size of my chunk here and I say okay how many
+
+1131
+01:12:40.000 --> 01:12:46.660
+tuples do I output? I output a thousand tuples or the distance between limit and
+
+1132
+01:12:46.660 --> 01:12:50.440
+my corner tuple id whatever is smaller because it could be that of course that I have less than a
+
+1133
+01:12:50.440 --> 01:12:54.280
+thousand tuples left. So I check how much tuples do I have left if there are more
+
+1134
+01:12:54.280 --> 01:13:02.000
+thousand tuples and output a thousand otherwise it takes the rest. Okay then I construct an output
+
+1135
+01:13:02.000 --> 01:13:08.320
+array here r' of size c. Of course I mean I write it here because it's easier to formally like this
+
+1136
+01:13:08.320 --> 01:13:14.040
+construct a tuple array. In reality of course you will reuse the memory. So you will not allocate
+
+1137
+01:13:14.040 --> 01:13:18.540
+a new tuple all the time. But because my buffer size is fixed so I will output a thousand values
+
+1138
+01:13:18.540 --> 01:13:22.420
+I will usually have a pre-allocated buffer that I use all the time.
+
+1139
+01:13:24.860 --> 01:13:30.120
+Then I loop here a small loop, remember that for performance reasons loops are good, so
+
+1140
+01:13:30.120 --> 01:13:30.940
+this is good here.
+
+1141
+01:13:31.300 --> 01:13:42.240
+You have a loop over from 0 to c-1, then I load the tuples from in at position tupler
+
+1142
+01:13:42.240 --> 01:13:45.800
+d plus i to r'i.
+
+1143
+01:13:45.800 --> 01:13:50.140
+So I take, so this looks now looks at the number of tuples.
+
+1144
+01:13:50.280 --> 01:13:52.360
+We load all the tuples and we store them in my array.
+
+1145
+01:13:53.900 --> 01:13:58.120
+Then I increase my tuple id not by one but instead by c because this is the number of
+
+1146
+01:13:58.120 --> 01:13:59.180
+tuples that we have processed.
+
+1147
+01:13:59.480 --> 01:14:01.880
+And then I return r' Okay.
+
+1148
+01:14:02.380 --> 01:14:05.040
+So this is one block of data, a thousand values.
+
+1149
+01:14:05.600 --> 01:14:11.360
+And again, the thousand here will be chosen such that this block array here can fit in
+
+1150
+01:14:11.360 --> 01:14:13.380
+cache because this is important.
+
+1151
+01:14:18.300 --> 01:14:20.420
+Now what about select?
+
+1152
+01:14:22.080 --> 01:14:29.560
+So you know the select here looks interesting, open of course is as usual, so we just say
+
+1153
+01:14:29.560 --> 01:14:31.840
+when we open we just remember what's my input, what's my predicate.
+
+1154
+01:14:33.140 --> 01:14:39.420
+Then when we come to the next call, don't take this one here, go by paste arrow, so
+
+1155
+01:14:41.360 --> 01:14:46.500
+Now I am supposed to output 1000 matching values, or at most, I can output less, but
+
+1156
+01:14:46.500 --> 01:14:47.400
+at most 1000 values.
+
+1157
+01:14:48.520 --> 01:14:53.480
+And again I need a for loop here to make sure that I do find them, because it could be that
+
+1158
+01:14:53.480 --> 01:14:57.420
+I will not find any matches in my next block, so I must do this repeatedly.
+
+1159
+01:14:57.760 --> 01:14:59.920
+So this will repeat until we find a match.
+
+1160
+01:15:00.480 --> 01:15:05.380
+Then here I ask my input, please give me a block of tuppets.
+
+1161
+01:15:05.380 --> 01:15:14.260
+Now it could be that there is no further topic because I have read my input completely, therefore then I stop.
+
+1162
+01:15:14.660 --> 01:15:18.940
+This is what I do here, so I check does my input give me an empty block.
+
+1163
+01:15:19.160 --> 01:15:24.060
+If yes I just output the empty block because there is nothing to be gained, then we are done.
+
+1164
+01:15:24.800 --> 01:15:30.300
+Otherwise now I have a block of values and I only want to keep the values where the predicates true.
+
+1165
+01:15:30.820 --> 01:15:34.720
+And this is done here in a funny way, namely in this range here.
+
+1166
+01:15:37.880 --> 01:15:45.100
+So now how do we do this? Now first let me write this differently, just to make it easier
+
+1167
+01:15:45.100 --> 01:15:51.040
+to understand. But this is what I will write now, conceptually the same but is less efficient.
+
+1168
+01:15:51.660 --> 01:15:55.300
+So we could implement, so this block, so this was in squares, we could implement,
+
+1169
+01:15:56.760 --> 01:15:58.420
+And let's draw an arrow here.
+
+1170
+01:15:58.940 --> 01:16:02.100
+This here corresponds to, of course it is a different implementation, but it corresponds
+
+1171
+01:16:02.100 --> 01:16:02.440
+to.
+
+1172
+01:16:02.660 --> 01:16:04.480
+I set my right pointer to zero.
+
+1173
+01:16:05.520 --> 01:16:07.360
+Then I do just the same for loop.
+
+1174
+01:16:07.600 --> 01:16:14.380
+I say 4i is equal to zero up to r' minus one.
+
+1175
+01:16:14.500 --> 01:16:15.700
+So I loop over all elements.
+
+1176
+01:16:15.700 --> 01:16:38.840
+Then I say, if, I check the predicate, if P of r'i is true, then I say r'w is equal
+
+1177
+01:16:38.840 --> 01:16:49.880
+to r'i w is equal to w plus one okay so this would be probably what you would have written
+
+1178
+01:16:49.880 --> 01:16:56.300
+yeah so this is a more intuitive way i loop over all elements in my block i check if the
+
+1179
+01:16:56.300 --> 01:17:01.500
+predict is true if yes i copy it to the beginning of the block so i have a right pointer perhaps
+
+1180
+01:17:01.500 --> 01:17:05.960
+yeah i should have perhaps explained it more clearly so if this is my block that i get from
+
+1181
+01:17:05.960 --> 01:17:11.000
+input. Could be that I have a match here, I have a match here, I have a match here, but I have
+
+1182
+01:17:11.000 --> 01:17:19.240
+non-matches in between. So what I want, I want to output my parent blocks and contains only matches.
+
+1183
+01:17:19.580 --> 01:17:24.440
+Therefore what I do is I copy this here to the beginning. So I have a bright pointer.
+
+1184
+01:17:25.700 --> 01:17:31.440
+So bright pointer is here initially. Yeah, I write it here, then I increase it to the next position.
+
+1185
+01:17:31.440 --> 01:17:37.160
+Then I copy that value to this position, again I increase the right pointer, and I copy that
+
+1186
+01:17:37.160 --> 01:17:39.020
+value to this position.
+
+1187
+01:17:39.180 --> 01:17:43.480
+You cannot read it anymore unfortunately, but trust me the result is at the end I have
+
+1188
+01:17:43.480 --> 01:17:47.360
+all matches in the beginning and then just some garbage that I don't care for at the
+
+1189
+01:17:47.360 --> 01:17:47.580
+end.
+
+1190
+01:17:48.040 --> 01:17:49.520
+This is the result of the loop.
+
+1191
+01:17:49.920 --> 01:17:55.780
+What will come next here in the code is we set the length of our prime to my right pointer,
+
+1192
+01:17:55.900 --> 01:18:00.920
+which means I truncate my vector here, so I forget everything except matches.
+
+1193
+01:18:01.440 --> 01:18:03.580
+Therefore now my block only contains matches.
+
+1194
+01:18:04.760 --> 01:18:10.420
+Okay, and then just to finish the pseudo code, the very, the very last check here is,
+
+1195
+01:18:10.660 --> 01:18:13.200
+if my block is empty, because it could be that I found no match.
+
+1196
+01:18:13.420 --> 01:18:18.300
+And then I'm not allowed to output this to my parent, because if I output an empty block,
+
+1197
+01:18:18.360 --> 01:18:21.440
+this means that I'm done, but I only want to output non-empty blocks.
+
+1198
+01:18:21.500 --> 01:18:25.200
+Therefore check if the size is larger than zero, then I output the block.
+
+1199
+01:18:25.260 --> 01:18:27.520
+Otherwise my loop continues and I have it on the next block.
+
+1200
+01:18:28.760 --> 01:18:31.580
+Okay, but now coming back to these square parts.
+
+1201
+01:18:32.240 --> 01:18:36.760
+So as I said, this copies all matches to the beginning, but it does it in a very funny
+
+1202
+01:18:36.760 --> 01:18:37.120
+way.
+
+1203
+01:18:37.480 --> 01:18:39.260
+Now, how does this here operate?
+
+1204
+01:18:40.280 --> 01:18:42.420
+Just again, we're looking at this one.
+
+1205
+01:18:42.660 --> 01:18:50.220
+So I have a vector of entries and my i-value here scans over the whole range.
+
+1206
+01:18:50.540 --> 01:18:54.380
+So this is everything and my i-value loops from the beginning to the end.
+
+1207
+01:18:54.920 --> 01:19:00.420
+My w value, this is the write position, so this starts in the beginning, we set it to zero initially.
+
+1208
+01:19:01.080 --> 01:19:05.540
+So now what we do here, so here we copy my read position to my write position.
+
+1209
+01:19:05.640 --> 01:19:08.080
+Note that initially read position and write position are the same,
+
+1210
+01:19:08.440 --> 01:19:11.700
+and that also makes no difference, we just copy the value to the write position,
+
+1211
+01:19:11.860 --> 01:19:14.160
+and the write position is where the next match should be.
+
+1212
+01:19:16.800 --> 01:19:19.620
+Now I want to check if my predicate was true,
+
+1213
+01:19:20.880 --> 01:19:25.960
+and if yes, I want to keep the value, otherwise I want to ignore it, I want to overwrite it.
+
+1214
+01:19:26.160 --> 01:19:29.560
+And this is what this line here does. So here we check the predicate,
+
+1215
+01:19:30.320 --> 01:19:35.940
+and of course this returns true if the predicate is true and zero, sorry, and void if the predicate is wrong.
+
+1216
+01:19:36.220 --> 01:19:39.860
+Now the interesting thing is that in programming languages like C or C++,
+
+1217
+01:19:40.860 --> 01:19:44.560
+true corresponds to one and void corresponds to zero.
+
+1218
+01:19:45.240 --> 01:19:49.300
+Therefore if the predicate is false, I do not increase the right pointer.
+
+1219
+01:19:49.360 --> 01:19:52.760
+The right pointer stays the same because I say right pointer is right pointer plus zero.
+
+1220
+01:19:53.180 --> 01:19:56.640
+The right pointer keeps the same. So therefore if the value a is written here,
+
+1221
+01:19:56.860 --> 01:20:02.880
+and the right pointer is not increased, and afterwards comes b, then a will be overwritten by b.
+
+1222
+01:20:04.520 --> 01:20:09.680
+Now, while if the predicate is true, so let's say we have values abc that we want to store.
+
+1223
+01:20:10.120 --> 01:20:12.340
+So it's here for this one here p is true,
+
+1224
+01:20:13.040 --> 01:20:14.420
+with this one p is false.
+
+1225
+01:20:15.140 --> 01:20:17.480
+Okay, therefore we first copy a,
+
+1226
+01:20:17.880 --> 01:20:21.980
+then we copy b and we overwrite the position because the predicate was false.
+
+1227
+01:20:22.240 --> 01:20:23.900
+Then for b the predicate is true,
+
+1228
+01:20:24.640 --> 01:20:28.440
+therefore the right pointer is increased because a true corresponds to one.
+
+1229
+01:20:28.740 --> 01:20:32.700
+So I increase the right pointer by one, therefore the c now is copied here and so on.
+
+1230
+01:20:33.160 --> 01:20:35.020
+And so whenever a predicate is true,
+
+1231
+01:20:35.560 --> 01:20:39.160
+we advance the right pointer which means that the value will not be overwritten.
+
+1232
+01:20:40.140 --> 01:20:45.820
+If the predicate is false, we keep the right pointer and the predicate is not overwritten.
+
+1233
+01:20:46.380 --> 01:20:49.740
+Okay, now I hope this convinced you that the behavior is correct.
+
+1234
+01:20:49.860 --> 01:20:54.340
+So at the end we have all the values that we want to get.
+
+1235
+01:20:54.580 --> 01:20:56.580
+Now you could ask yourself why did you do this?
+
+1236
+01:20:57.700 --> 01:21:03.360
+So this is what some people here call predicated execution because there is no if here.
+
+1237
+01:21:03.700 --> 01:21:05.380
+We do execute unconditionally.
+
+1238
+01:21:05.380 --> 01:21:11.960
+Instead, we change my pointers and my values depending on the predicate, but not with an
+
+1239
+01:21:11.960 --> 01:21:13.080
+if, just with an arithmetic.
+
+1240
+01:21:13.860 --> 01:21:15.780
+So now, why do we do this?
+
+1241
+01:21:17.120 --> 01:21:24.280
+We do this because CPUs, mean modern CPUs, are out of order execution engines, which
+
+1242
+01:21:24.280 --> 01:21:27.460
+means they do not execute one statement after the other.
+
+1243
+01:21:28.360 --> 01:21:32.920
+Instead, what they do is they execute multiple statements simultaneously, or at least they
+
+1244
+01:21:32.920 --> 01:21:33.600
+tried to do this.
+
+1245
+01:21:36.020 --> 01:21:39.820
+simultaneously but they have a problem when they come to an if because here
+
+1246
+01:21:39.820 --> 01:21:43.580
+let's say here are statements I can execute many of them not all but many of
+
+1247
+01:21:43.580 --> 01:21:50.200
+them simultaneously then comes an if so if then I take here otherwise
+
+1248
+01:21:54.900 --> 01:21:59.440
+so now the CPU has a problem because this if you are most likely depends on
+
+1249
+01:21:59.440 --> 01:22:03.000
+something that you have computed here and because we do execute multiple
+
+1250
+01:22:03.000 --> 01:22:05.460
+but simultaneously this computation is not done yet.
+
+1251
+01:22:05.820 --> 01:22:08.220
+Therefore, I don't know if the predicate is true or false.
+
+1252
+01:22:08.320 --> 01:22:09.740
+I mean, I will know it soon, of course,
+
+1253
+01:22:10.060 --> 01:22:13.040
+but because executing statement takes a moment,
+
+1254
+01:22:13.220 --> 01:22:14.960
+so I currently, I don't know this.
+
+1255
+01:22:15.520 --> 01:22:17.480
+Therefore, what the CPU will do, it will guess.
+
+1256
+01:22:18.480 --> 01:22:20.880
+It will, for example, say, you know what,
+
+1257
+01:22:20.940 --> 01:22:22.400
+in the last 20 loops,
+
+1258
+01:22:23.040 --> 01:22:24.400
+the predicate is always true.
+
+1259
+01:22:24.540 --> 01:22:26.460
+So most likely it will be true now too.
+
+1260
+01:22:26.760 --> 01:22:27.560
+So it will guess.
+
+1261
+01:22:27.900 --> 01:22:30.180
+So now if we're starting executing this part here,
+
+1262
+01:22:30.920 --> 01:22:33.960
+Now, and if this guess was correct, then everything is fine.
+
+1263
+01:22:34.240 --> 01:22:37.140
+So then everything is executed as it is.
+
+1264
+01:22:37.420 --> 01:22:38.960
+So then everything is good, everything is fast.
+
+1265
+01:22:39.320 --> 01:22:46.420
+But if the guess was false, so I started executing this part here, even though I should not have.
+
+1266
+01:22:47.060 --> 01:22:51.320
+Because in reality, I should have executed a different branch, but I didn't know this.
+
+1267
+01:22:51.760 --> 01:22:53.460
+So this is called a branch misprediction.
+
+1268
+01:22:53.820 --> 01:22:58.180
+So I predicted, it takes a true branch, but in reality, it should have taken a false branch.
+
+1269
+01:23:00.180 --> 01:23:04.340
+I must undo everything that my tentative operations are doing.
+
+1270
+01:23:05.380 --> 01:23:10.840
+And I must stop the in-flight pipeline here, that is, of instruction, that is in this part.
+
+1271
+01:23:10.920 --> 01:23:13.680
+So I must basically cancel everything from this block here.
+
+1272
+01:23:13.820 --> 01:23:15.040
+And this is quite expensive.
+
+1273
+01:23:15.600 --> 01:23:20.680
+So a branch miss, so that the CPU is forced to undo its guesses, is an expensive operation,
+
+1274
+01:23:20.940 --> 01:23:21.640
+very expensive.
+
+1275
+01:23:21.900 --> 01:23:27.000
+And this means that if, some people just plot saying here, so how long does a predicate
+
+1276
+01:23:27.000 --> 01:23:27.240
+take?
+
+1277
+01:23:27.340 --> 01:23:28.160
+So a select predicate.
+
+1278
+01:23:28.880 --> 01:23:33.980
+So how long does it take? Depending on the selectivity, also depending on the probability
+
+1279
+01:23:33.980 --> 01:23:40.480
+that p is true. So this is zero means p is always false, this is one means p is always true.
+
+1280
+01:23:41.440 --> 01:23:44.260
+Okay and this here, this is the second axis here is time.
+
+1281
+01:23:50.060 --> 01:23:55.780
+Okay and this here is probability of p.
+
+1282
+01:23:55.780 --> 01:23:57.360
+Oops, sorry, of p.
+
+1283
+01:23:57.700 --> 01:24:02.160
+So what you observe is, if p is always false,
+
+1284
+01:24:02.220 --> 01:24:03.200
+then the if is fast.
+
+1285
+01:24:04.100 --> 01:24:06.880
+Yeah, but the more likely it is that p is true,
+
+1286
+01:24:07.220 --> 01:24:09.060
+the more expensive operation becomes.
+
+1287
+01:24:09.320 --> 01:24:10.720
+So then here's 50%.
+
+1288
+01:24:13.420 --> 01:24:15.820
+And then this is the worst, then it becomes,
+
+1289
+01:24:17.020 --> 01:24:18.320
+I should draw it carefully.
+
+1290
+01:24:22.760 --> 01:24:24.700
+So this is roughly how it looks like.
+
+1291
+01:24:25.780 --> 01:24:31.000
+If my product is nearly always false, then the save is okay.
+
+1292
+01:24:31.460 --> 01:24:35.220
+The CPU will predict correctly that it is not taken, that is okay.
+
+1293
+01:24:35.420 --> 01:24:40.020
+But the more likely it becomes that if it will be taken, the more often the CPU has flushed
+
+1294
+01:24:40.020 --> 01:24:41.640
+its pipeline and undo all the changes.
+
+1295
+01:24:42.100 --> 01:24:42.380
+The expensive.
+
+1296
+01:24:42.760 --> 01:24:46.960
+Worst case, if it is always the 50-50 chance, basically.
+
+1297
+01:24:47.380 --> 01:24:49.340
+Because then you have no idea, you can just guess.
+
+1298
+01:24:49.620 --> 01:24:53.820
+If there is a 50-50 chance of a branch being taken, this is the most expensive case.
+
+1299
+01:24:55.780 --> 01:24:57.200
+always taken is also okay.
+
+1300
+01:24:57.400 --> 01:25:00.340
+So if the P is always true or always false,
+
+1301
+01:25:00.580 --> 01:25:02.680
+it's okay because then we can predict
+
+1302
+01:25:02.680 --> 01:25:04.960
+which we should do and then it becomes cheaper.
+
+1303
+01:25:05.500 --> 01:25:07.820
+Now, if we instead do this one here,
+
+1304
+01:25:07.960 --> 01:25:10.620
+there we don't need any branch prediction
+
+1305
+01:25:10.620 --> 01:25:12.060
+because there's no if here.
+
+1306
+01:25:12.620 --> 01:25:14.420
+Do some automatic, but there's no if.
+
+1307
+01:25:14.620 --> 01:25:16.400
+And this means for that variance,
+
+1308
+01:25:16.600 --> 01:25:18.260
+usually the executioner looks like this.
+
+1309
+01:25:21.880 --> 01:25:23.100
+So it's a flat line.
+
+1310
+01:25:23.100 --> 01:25:25.620
+Now I didn't draw this to scale, admittedly.
+
+1311
+01:25:26.140 --> 01:25:36.820
+So what usually happens is predicated execution is small bits, tiny more expensive than a branch,
+
+1312
+01:25:36.860 --> 01:25:39.800
+if the branch is nearly never or nearly always taken.
+
+1313
+01:25:40.360 --> 01:25:42.920
+Then predicated will be slightly more expensive, usually.
+
+1314
+01:25:43.900 --> 01:25:50.060
+But the moment that we leave the extremes and that sometimes it's true or sometimes
+
+1315
+01:25:50.600 --> 01:25:52.820
+then it is much cheaper to use predicate execution
+
+1316
+01:25:52.820 --> 01:25:54.060
+because there are no branch misses.
+
+1317
+01:25:54.280 --> 01:25:56.480
+So we don't mispredict the branch
+
+1318
+01:25:57.060 --> 01:25:58.180
+because there is no branch.
+
+1319
+01:25:59.740 --> 01:26:03.460
+This of course is a bit advanced way
+
+1320
+01:26:03.460 --> 01:26:04.420
+to implement a predicate,
+
+1321
+01:26:04.500 --> 01:26:05.520
+but this is a very good idea.
+
+1322
+01:26:06.020 --> 01:26:08.780
+So this predicate execution will very often
+
+1323
+01:26:08.780 --> 01:26:10.880
+be much more efficient than if you would have done an if.
+
+1324
+01:26:11.900 --> 01:26:14.460
+Okay, and now for completeness,
+
+1325
+01:26:14.460 --> 01:26:15.500
+we also do a cross product.
+
+1326
+01:26:15.620 --> 01:26:16.900
+You see already that the cross product
+
+1327
+01:26:16.900 --> 01:26:19.600
+does not even fit on a single page.
+
+1328
+01:26:20.060 --> 01:26:28.020
+Now we must be single slides and now we need two slides, because it's not so easy to do.
+
+1329
+01:26:28.540 --> 01:26:33.120
+As in the block was processing, also you see that we have a lot of variables here, so we
+
+1330
+01:26:33.120 --> 01:26:34.640
+have a lot of states that we must store.
+
+1331
+01:26:35.380 --> 01:26:39.220
+So this is of course our input left and right, but then we have a lot of variables that explain
+
+1332
+01:26:39.220 --> 01:26:40.040
+in a moment what to do.
+
+1333
+01:26:40.720 --> 01:26:47.240
+So when we call open, so we say please prepare for execution, we again of course store my
+
+1334
+01:26:47.240 --> 01:26:47.920
+left and right side.
+
+1335
+01:26:47.920 --> 01:26:52.080
+and I say okay I have to read from the left remember step meets I will need from the left
+
+1336
+01:26:52.080 --> 01:26:57.600
+and then I must remember where so where am I currently on the left or on the right side
+
+1337
+01:26:58.740 --> 01:27:03.160
+okay then if somebody calls next says please give me the next 1000 values
+
+1338
+01:27:03.960 --> 01:27:07.100
+then of course I allocate an area of size 1000
+
+1339
+01:27:09.560 --> 01:27:14.300
+and I have a right pointer here this means how many how much of this area I have already written
+
+1340
+01:27:14.300 --> 01:27:15.480
+initially nothing of course.
+
+1341
+01:27:16.320 --> 01:27:20.620
+Now here comes the real work and you barely can squeeze it on a single slide,
+
+1342
+01:27:20.800 --> 01:27:22.780
+there is actually quite a lot of stuff here.
+
+1343
+01:27:23.100 --> 01:27:27.600
+So we have an infinite loop and then I check if my current position,
+
+1344
+01:27:27.860 --> 01:27:30.580
+so cr is my current position on the right hand side,
+
+1345
+01:27:30.780 --> 01:27:34.440
+if my current position on the right hand side is equal to the limit of the right hand side,
+
+1346
+01:27:34.500 --> 01:27:38.180
+this means that I hit the end of my current block from the right.
+
+1347
+01:27:38.820 --> 01:27:41.560
+And remember that we set all these values to zero initially,
+
+1348
+01:27:41.860 --> 01:27:43.660
+so this is in the first call this happens already,
+
+1349
+01:27:44.300 --> 01:27:48.160
+Because I said my right hand block is processed, I mean I have no right hand block.
+
+1350
+01:27:48.520 --> 01:27:55.980
+So then I advance my current position on the left hand side, and here, and then I add one
+
+1351
+01:27:55.980 --> 01:27:59.960
+and then I check is my current position beyond the limit of my left hand side, this will
+
+1352
+01:27:59.960 --> 01:28:01.340
+always be true in the first carol.
+
+1353
+01:28:02.160 --> 01:28:11.020
+Then I fetch the next block from the left hand side, so this gives me a table from the
+
+1354
+01:28:11.020 --> 01:28:11.220
+left.
+
+1355
+01:28:11.780 --> 01:28:16.720
+and then i check is my left side done so if my left block empty if yes
+
+1356
+01:28:18.440 --> 01:28:25.000
+the left box is empty if yes i set the length of r' here to my writer because i might have in
+
+1357
+01:28:25.000 --> 01:28:30.560
+previous loop iterations already stored output tuples in my buffer therefore i cannot just say
+
+1358
+01:28:30.560 --> 01:28:35.360
+i'm done you you must keep what you already have so you take a right position you adjust your length
+
+1359
+01:28:35.360 --> 01:28:39.420
+of r then return up r' then you turn r' saying this is what i got
+
+1360
+01:28:41.320 --> 01:28:43.300
+Otherwise, if there are more tables from the left,
+
+1361
+01:28:43.380 --> 01:28:44.140
+what I do here is,
+
+1362
+01:28:44.480 --> 01:28:46.600
+I remember my current position from the left is zero,
+
+1363
+01:28:46.700 --> 01:28:47.940
+limit of the size of one block
+
+1364
+01:28:47.940 --> 01:28:49.040
+that I get from the left, of course.
+
+1365
+01:28:49.940 --> 01:28:51.900
+Okay, then I fetch the next block from the right.
+
+1366
+01:28:53.100 --> 01:28:57.820
+I do the same check, is my right hand side done?
+
+1367
+01:28:58.440 --> 01:29:02.060
+If yes, here we need a new function ID, namely rewind.
+
+1368
+01:29:02.320 --> 01:29:05.040
+I must tell my right hand side, you know what?
+
+1369
+01:29:06.060 --> 01:29:10.160
+I have to read you again because for the next block,
+
+1370
+01:29:12.100 --> 01:29:14.680
+From the left, I again must process all tables from the right.
+
+1371
+01:29:14.840 --> 01:29:16.560
+So if I rewrite my right hand side,
+
+1372
+01:29:17.120 --> 01:29:20.220
+I mean this depends on how you implement this,
+
+1373
+01:29:20.220 --> 01:29:23.440
+this roughly corresponds to just calling open.
+
+1374
+01:29:24.680 --> 01:29:26.760
+I usually will implement it slightly differently,
+
+1375
+01:29:27.040 --> 01:29:29.100
+but this means you tell your right hand side,
+
+1376
+01:29:29.120 --> 01:29:30.500
+I have to read you again.
+
+1377
+01:29:30.760 --> 01:29:32.840
+And this is roughly like open,
+
+1378
+01:29:33.120 --> 01:29:34.060
+even though the implementation
+
+1379
+01:29:34.060 --> 01:29:35.980
+will probably be slightly different.
+
+1380
+01:29:36.140 --> 01:29:37.160
+So this is what rewrite does.
+
+1381
+01:29:37.160 --> 01:29:45.180
+So remember my right current position limit and then comes, so this is if you want the exception case.
+
+1382
+01:29:45.360 --> 01:29:51.200
+So this is the exception case, namely when you run out of work, most of the work is spent in that part here.
+
+1383
+01:29:53.160 --> 01:30:00.220
+So I take my right position, W, and then I store at my right position the combination of C of here,
+
+1384
+01:30:00.460 --> 01:30:03.900
+so the combination of the current tupper on the left and the current tupper on the right.
+
+1385
+01:30:03.900 --> 01:30:09.920
+So remember we do a cross product, we combine every tuple with every other tuple, so we combine left and right.
+
+1386
+01:30:10.420 --> 01:30:15.480
+And then I advance the pointer here to my current position on the right, because I've
+
+1387
+01:30:16.380 --> 01:30:19.260
+combined this already, and then I also advanced my right pointer.
+
+1388
+01:30:19.440 --> 01:30:24.760
+And if the right pointer hits my limit, so I see I've written my block as full, then I output the block.
+
+1389
+01:30:24.860 --> 01:30:27.800
+Otherwise, the loop continues, I check.
+
+1390
+01:30:29.200 --> 01:30:32.360
+Did I hit the end of the right hand side? If not, I do continue processing.
+
+1391
+01:30:33.900 --> 01:30:34.220
+and so on.
+
+1392
+01:30:34.880 --> 01:30:37.360
+So this is the processing and you see already,
+
+1393
+01:30:37.400 --> 01:30:38.300
+this is quite involved.
+
+1394
+01:30:38.340 --> 01:30:39.140
+So it's not so easy.
+
+1395
+01:30:39.500 --> 01:30:41.360
+In this, even for a block,
+
+1396
+01:30:41.940 --> 01:30:43.380
+sort of cross-strain,
+
+1397
+01:30:43.560 --> 01:30:44.960
+there's a super simple operator,
+
+1398
+01:30:45.160 --> 01:30:46.960
+but even here, it's not so simple
+
+1399
+01:30:46.960 --> 01:30:49.800
+because the block-wise processing,
+
+1400
+01:30:50.000 --> 01:30:51.500
+just like the iterator model,
+
+1401
+01:30:51.760 --> 01:30:53.480
+has to keep a complicated state.
+
+1402
+01:30:53.640 --> 01:30:55.680
+And so we must remember where are we?
+
+1403
+01:30:55.860 --> 01:30:59.200
+And this where are we are basically this, this flex here.
+
+1404
+01:30:59.840 --> 01:31:01.900
+And so these are the flex that we have to store.
+
+1405
+01:31:04.220 --> 01:31:07.660
+we have to mean for cross products not too bad,
+
+1406
+01:31:08.080 --> 01:31:11.060
+but for adjusting things like outer joints or so,
+
+1407
+01:31:11.360 --> 01:31:12.780
+then it's quite complicated,
+
+1408
+01:31:12.860 --> 01:31:15.520
+but you have to store to remember where you are in processing.
+
+1409
+01:31:16.040 --> 01:31:17.600
+And so state can be quite involved.
+
+1410
+01:31:20.000 --> 01:31:20.440
+Okay.
+
+1411
+01:31:20.860 --> 01:31:23.060
+And I see now checking the time,
+
+1412
+01:31:23.240 --> 01:31:24.240
+oh, I'm already over time.
+
+1413
+01:31:24.440 --> 01:31:25.980
+So I will stop you for now
+
+1414
+01:31:25.980 --> 01:31:30.100
+and we will do the examples in the push model
+
+1415
+01:31:30.100 --> 01:31:31.240
+in the next lecture.
+
+1416
+01:31:31.900 --> 01:31:32.340
+Okay.
+
+1417
+01:31:32.720 --> 01:31:33.200
+Thank you.
+
+1418
+01:31:33.900 --> 01:31:34.680
+Thank you.

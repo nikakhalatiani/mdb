@@ -1,0 +1,1268 @@
+{
+  "generated_at": "2026-07-25T19:32:53.465131+00:00",
+  "title": "MDB Lecture Atlas",
+  "subtitle": "Source-traceable exam preparation from 12 recorded lectures",
+  "methodology": {
+    "visual_detection": "Full-frame layout-change detection with slide-counter assistance; footer visibility is never required.",
+    "board_capture": "Board/application intervals retain initial, 30-second progress, and final evidence frames.",
+    "transcription": "MLX Whisper large-v3-turbo, English, with word timestamps and automatic repetition/compression QA.",
+    "notes": "Professor explanations and quotes are extractive selections from the machine transcript. Always check the linked source interval where exact wording matters."
+  },
+  "stats": {
+    "recording_count": 12,
+    "duration_s": 62313.966665,
+    "duration_hours": 17.31,
+    "chapter_count": 17,
+    "visual_interval_count": 527,
+    "slide_interval_count": 491,
+    "board_interval_count": 36,
+    "word_count": 170951
+  },
+  "chapters": [
+    {
+      "id": "01-foundations-and-relational-model",
+      "number": 1,
+      "title": "Foundations and the Relational Model",
+      "summary": "Why database implementation differs from application-level data processing, how set-oriented relational algebra frames execution, and which hardware trends shape the rest of the course.",
+      "objectives": [
+        "Relate declarative queries to set-oriented algebraic operators.",
+        "Explain why a DBMS needs specialized storage and execution machinery.",
+        "Connect traditional database assumptions to modern hardware trends."
+      ],
+      "exam_checklist": [
+        "Derive and recognize the core and derived relational-algebra operators.",
+        "Explain the motivational example as a systems problem, not only as SQL.",
+        "State the course goals and the consequences of memory, storage, and CPU trends."
+      ],
+      "slug": "foundations-and-the-relational-model",
+      "occurrence_ids": [
+        "dbimpl-00-introduction-001",
+        "dbimpl-00-introduction-002",
+        "dbimpl-00-introduction-003",
+        "dbimpl-00-introduction-004",
+        "dbimpl-00-introduction-005",
+        "dbimpl-00-introduction-006",
+        "dbimpl-00-introduction-007",
+        "dbimpl-00-introduction-008",
+        "dbimpl-00-introduction-009",
+        "dbimpl-00-introduction-010",
+        "dbimpl-00-introduction-011",
+        "dbimpl-00-introduction-012",
+        "dbimpl-00-introduction-013",
+        "dbimpl-00-introduction-014",
+        "dbimpl-00-introduction-015",
+        "dbimpl-00-introduction-016",
+        "dbimpl-00-introduction-017",
+        "dbimpl-00-introduction-018",
+        "dbimpl-00-introduction-019",
+        "dbimpl-00-introduction-020",
+        "dbimpl-00-introduction-021"
+      ],
+      "sources": [
+        {
+          "recording_id": "dbimpl-00-introduction",
+          "source_file": "dbimpl-00-introduction.mp4",
+          "start_s": 0.0,
+          "end_s": 4227.433,
+          "start": "00:00:00.000",
+          "end": "01:10:27.433",
+          "visual_interval_count": 21
+        }
+      ],
+      "stats": {
+        "visual_interval_count": 21,
+        "slide_interval_count": 21,
+        "board_interval_count": 0,
+        "board_duration_s": 0,
+        "board_evidence_frame_count": 0,
+        "word_count": 10769
+      }
+    },
+    {
+      "id": "02-storage-architecture-and-memory-hierarchy",
+      "number": 2,
+      "title": "Storage Architecture and Memory Hierarchy",
+      "summary": "The storage manager’s requirements and layers, the influence of the memory hierarchy, and the mechanics and cost of hard-disk access.",
+      "objectives": [
+        "Identify the responsibilities of each storage-layer component.",
+        "Reason about latency and bandwidth across the memory hierarchy.",
+        "Decompose hard-disk access into seek, rotation, and transfer costs."
+      ],
+      "exam_checklist": [
+        "Draw the simple and detailed layer architectures from memory.",
+        "Compare persistent and volatile storage levels.",
+        "Estimate which component dominates an I/O access and why."
+      ],
+      "slug": "storage-architecture-and-memory-hierarchy",
+      "occurrence_ids": [
+        "dbimpl-01-storage-001",
+        "dbimpl-01-storage-002",
+        "dbimpl-01-storage-003",
+        "dbimpl-01-storage-004",
+        "dbimpl-01-storage-005",
+        "dbimpl-01-storage-006",
+        "dbimpl-01-storage-007",
+        "dbimpl-01-storage-008",
+        "dbimpl-01-storage-009",
+        "dbimpl-01-storage-010",
+        "dbimpl-01-storage-011",
+        "dbimpl-01-storage-012",
+        "dbimpl-01-storage-013",
+        "dbimpl-01-storage-014",
+        "dbimpl-01-storage-015",
+        "dbimpl-01-storage-016",
+        "dbimpl-01-storage-017",
+        "dbimpl-01-storage-018",
+        "dbimpl-01-storage-019",
+        "dbimpl-01-storage-020"
+      ],
+      "sources": [
+        {
+          "recording_id": "dbimpl-01-storage",
+          "source_file": "dbimpl-01-storage.mp4",
+          "start_s": 0.0,
+          "end_s": 3441.25,
+          "start": "00:00:00.000",
+          "end": "00:57:21.250",
+          "visual_interval_count": 20
+        }
+      ],
+      "stats": {
+        "visual_interval_count": 20,
+        "slide_interval_count": 20,
+        "board_interval_count": 0,
+        "board_duration_s": 0,
+        "board_evidence_frame_count": 0,
+        "word_count": 9138
+      }
+    },
+    {
+      "id": "03-buffer-management",
+      "number": 3,
+      "title": "Buffer Management",
+      "summary": "How the buffer manager maps disk pages to memory frames, tracks frame state, and chooses replacement victims using FIFO, LRU, LFU, second chance, 2Q, and workload hints.",
+      "objectives": [
+        "Explain pinning, dirty state, and page-to-frame lookup.",
+        "Simulate common replacement policies on an access sequence.",
+        "Evaluate why database workloads can defeat generic caching policies."
+      ],
+      "exam_checklist": [
+        "Contrast FIFO, LRU, LFU, second chance, and 2Q.",
+        "Explain when a frame can be evicted and what must happen if it is dirty.",
+        "Show how operator-provided hints can improve replacement decisions."
+      ],
+      "slug": "buffer-management",
+      "occurrence_ids": [
+        "dbimpl-01-storage-021",
+        "dbimpl-01-storage-022",
+        "dbimpl-01-storage-023",
+        "dbimpl-01-storage-024",
+        "dbimpl-01-storage-025",
+        "dbimpl-01-storage-026",
+        "dbimpl-01-storage-027",
+        "dbimpl-01-storage-028",
+        "dbimpl-01-storage-029",
+        "dbimpl-01-storage-030",
+        "dbimpl-01-storage-031",
+        "dbimpl-01-storage-032",
+        "dbimpl-01-storage-033"
+      ],
+      "sources": [
+        {
+          "recording_id": "dbimpl-01-storage",
+          "source_file": "dbimpl-01-storage.mp4",
+          "start_s": 3441.25,
+          "end_s": 5354.933,
+          "start": "00:57:21.250",
+          "end": "01:29:14.933",
+          "visual_interval_count": 13
+        }
+      ],
+      "stats": {
+        "visual_interval_count": 13,
+        "slide_interval_count": 12,
+        "board_interval_count": 1,
+        "board_duration_s": 2.483,
+        "board_evidence_frame_count": 2,
+        "word_count": 5225
+      }
+    },
+    {
+      "id": "04-segments-space-and-update-strategies",
+      "number": 4,
+      "title": "Segments, Space Management, and Update Strategies",
+      "summary": "Logical segments over physical blocks, allocation and free-space inventories, plus in-place, shadow-paging, and delta-file update strategies.",
+      "objectives": [
+        "Map segment abstractions onto allocated blocks and pages.",
+        "Compare update strategies by write cost, recovery behavior, and locality.",
+        "Use free-space metadata to locate pages for inserts and growth."
+      ],
+      "exam_checklist": [
+        "Explain segment types and standard segment organization.",
+        "Trace a shadow-paging or delta-file update.",
+        "Describe free-space inventory maintenance and allocation choices."
+      ],
+      "slug": "segments-space-management-and-update-strategies",
+      "occurrence_ids": [
+        "dbimpl-02-storage-access-001",
+        "dbimpl-02-storage-access-002",
+        "dbimpl-02-storage-access-003",
+        "dbimpl-02-storage-access-004",
+        "dbimpl-02-storage-access-005",
+        "dbimpl-02-storage-access-006",
+        "dbimpl-02-storage-access-007",
+        "dbimpl-02-storage-access-008",
+        "dbimpl-02-storage-access-009",
+        "dbimpl-02-storage-access-010",
+        "dbimpl-02-storage-access-011",
+        "dbimpl-02-storage-access-012",
+        "dbimpl-02-storage-access-013",
+        "dbimpl-02-storage-access-014",
+        "dbimpl-02-storage-access-015",
+        "dbimpl-02-storage-access-016",
+        "dbimpl-02-storage-access-017",
+        "dbimpl-02-storage-access-018",
+        "dbimpl-02-storage-access-019",
+        "dbimpl-02-storage-access-020",
+        "dbimpl-02-storage-access-021",
+        "dbimpl-02-storage-access-022",
+        "dbimpl-02-storage-access-023",
+        "dbimpl-02-storage-access-024",
+        "dbimpl-02-storage-access-025",
+        "dbimpl-02-storage-access-026",
+        "dbimpl-02-storage-access-027",
+        "dbimpl-02-storage-access-028",
+        "dbimpl-02-storage-access-029",
+        "dbimpl-02-storage-access-030",
+        "dbimpl-02-storage-access-031",
+        "dbimpl-02-storage-access-032",
+        "dbimpl-02-storage-access-033",
+        "dbimpl-02-storage-access-034",
+        "dbimpl-02-storage-access-035",
+        "dbimpl-02-storage-access-036",
+        "dbimpl-02-storage-access-037"
+      ],
+      "sources": [
+        {
+          "recording_id": "dbimpl-02-storage-access",
+          "source_file": "dbimpl-02-storage-access.mp4",
+          "start_s": 0.0,
+          "end_s": 4549.35,
+          "start": "00:00:00.000",
+          "end": "01:15:49.350",
+          "visual_interval_count": 37
+        }
+      ],
+      "stats": {
+        "visual_interval_count": 37,
+        "slide_interval_count": 32,
+        "board_interval_count": 5,
+        "board_duration_s": 846.0,
+        "board_evidence_frame_count": 33,
+        "word_count": 12218
+      }
+    },
+    {
+      "id": "05-slotted-pages-and-record-layout",
+      "number": 5,
+      "title": "Slotted Pages and Record Layout",
+      "summary": "Stable tuple identifiers on slotted pages, page compaction and forwarding, fixed/variable record regions, offsets, and representations of NULL.",
+      "objectives": [
+        "Trace insert, delete, move, and lookup operations on a slotted page.",
+        "Design a record layout with constant-time attribute access.",
+        "Explain how offsets and NULL bitmaps interact with variable-length data."
+      ],
+      "exam_checklist": [
+        "Draw a slotted page with header, slot array, free space, and tuples.",
+        "Explain why tuple movement need not invalidate a tuple identifier.",
+        "Compare length-based and offset-based variable-field layouts."
+      ],
+      "slug": "slotted-pages-and-record-layout",
+      "occurrence_ids": [
+        "dbimpl-02-storage-access-038",
+        "dbimpl-02-storage-access-039",
+        "dbimpl-03-access-tuples-001",
+        "dbimpl-03-access-tuples-002",
+        "dbimpl-03-access-tuples-003",
+        "dbimpl-03-access-tuples-004",
+        "dbimpl-03-access-tuples-005",
+        "dbimpl-03-access-tuples-006",
+        "dbimpl-03-access-tuples-007",
+        "dbimpl-03-access-tuples-008",
+        "dbimpl-03-access-tuples-009",
+        "dbimpl-03-access-tuples-010",
+        "dbimpl-03-access-tuples-011",
+        "dbimpl-03-access-tuples-012",
+        "dbimpl-03-access-tuples-013",
+        "dbimpl-03-access-tuples-014",
+        "dbimpl-03-access-tuples-015",
+        "dbimpl-03-access-tuples-016",
+        "dbimpl-03-access-tuples-017",
+        "dbimpl-03-access-tuples-018",
+        "dbimpl-03-access-tuples-019",
+        "dbimpl-03-access-tuples-020",
+        "dbimpl-03-access-tuples-021",
+        "dbimpl-03-access-tuples-022",
+        "dbimpl-03-access-tuples-023",
+        "dbimpl-03-access-tuples-024",
+        "dbimpl-03-access-tuples-025",
+        "dbimpl-03-access-tuples-026",
+        "dbimpl-03-access-tuples-027",
+        "dbimpl-03-access-tuples-028",
+        "dbimpl-03-access-tuples-029",
+        "dbimpl-03-access-tuples-030"
+      ],
+      "sources": [
+        {
+          "recording_id": "dbimpl-02-storage-access",
+          "source_file": "dbimpl-02-storage-access.mp4",
+          "start_s": 4549.35,
+          "end_s": 4655.033,
+          "start": "01:15:49.350",
+          "end": "01:17:35.033",
+          "visual_interval_count": 2
+        },
+        {
+          "recording_id": "dbimpl-03-access-tuples",
+          "source_file": "dbimpl-03-access-tuples.mp4",
+          "start_s": 0.0,
+          "end_s": 3579.75,
+          "start": "00:00:00.000",
+          "end": "00:59:39.750",
+          "visual_interval_count": 30
+        }
+      ],
+      "stats": {
+        "visual_interval_count": 32,
+        "slide_interval_count": 29,
+        "board_interval_count": 3,
+        "board_duration_s": 610.783,
+        "board_evidence_frame_count": 25,
+        "word_count": 10016
+      }
+    },
+    {
+      "id": "06-compression-and-long-records",
+      "number": 6,
+      "title": "Compression and Long Records",
+      "summary": "Compression choices inside records and pages, plus storage strategies for records that do not fit naturally on a single page.",
+      "objectives": [
+        "Identify redundancy that database storage can compress safely.",
+        "Account for the CPU/I/O trade-off introduced by compression.",
+        "Explain overflow and indirection strategies for long records."
+      ],
+      "exam_checklist": [
+        "Distinguish dictionary, prefix, and value-level compression ideas.",
+        "Reason about random access to compressed attributes.",
+        "Trace access to a long record across primary and overflow storage."
+      ],
+      "slug": "compression-and-long-records",
+      "occurrence_ids": [
+        "dbimpl-03-access-tuples-031",
+        "dbimpl-03-access-tuples-032",
+        "dbimpl-03-access-tuples-033",
+        "dbimpl-03-access-tuples-034",
+        "dbimpl-03-access-tuples-035",
+        "dbimpl-03-access-tuples-036",
+        "dbimpl-03-access-tuples-037",
+        "dbimpl-03-access-tuples-038",
+        "dbimpl-03-access-tuples-039",
+        "dbimpl-03-access-tuples-040",
+        "dbimpl-03-access-tuples-041",
+        "dbimpl-03-access-tuples-042",
+        "dbimpl-03-access-tuples-043",
+        "dbimpl-03-access-tuples-044",
+        "dbimpl-03-access-tuples-045",
+        "dbimpl-03-access-tuples-046",
+        "dbimpl-03-access-tuples-047",
+        "dbimpl-03-access-tuples-048",
+        "dbimpl-04-access-btrees-001",
+        "dbimpl-04-access-btrees-002",
+        "dbimpl-04-access-btrees-003",
+        "dbimpl-04-access-btrees-004",
+        "dbimpl-04-access-btrees-005",
+        "dbimpl-04-access-btrees-006",
+        "dbimpl-04-access-btrees-007",
+        "dbimpl-04-access-btrees-008",
+        "dbimpl-04-access-btrees-009",
+        "dbimpl-04-access-btrees-010",
+        "dbimpl-04-access-btrees-011",
+        "dbimpl-04-access-btrees-012",
+        "dbimpl-04-access-btrees-013",
+        "dbimpl-04-access-btrees-014",
+        "dbimpl-04-access-btrees-015",
+        "dbimpl-04-access-btrees-016"
+      ],
+      "sources": [
+        {
+          "recording_id": "dbimpl-03-access-tuples",
+          "source_file": "dbimpl-03-access-tuples.mp4",
+          "start_s": 3579.75,
+          "end_s": 5239.0,
+          "start": "00:59:39.750",
+          "end": "01:27:19.000",
+          "visual_interval_count": 18
+        },
+        {
+          "recording_id": "dbimpl-04-access-btrees",
+          "source_file": "dbimpl-04-access-btrees.mp4",
+          "start_s": 0.0,
+          "end_s": 2586.85,
+          "start": "00:00:00.000",
+          "end": "00:43:06.850",
+          "visual_interval_count": 16
+        }
+      ],
+      "stats": {
+        "visual_interval_count": 34,
+        "slide_interval_count": 27,
+        "board_interval_count": 7,
+        "board_duration_s": 1370.25,
+        "board_evidence_frame_count": 55,
+        "word_count": 11493
+      }
+    },
+    {
+      "id": "07-btree-fundamentals-and-operations",
+      "number": 7,
+      "title": "B-Tree and B+-Tree Fundamentals",
+      "summary": "Balanced index structure, B-tree versus B+-tree layout, page structure, lookup, insertion, deletion, range scans, composite/non-unique keys, and basic concurrency concerns.",
+      "objectives": [
+        "State the occupancy and balance invariants of B-tree families.",
+        "Trace lookup, split, merge, redistribution, and range-scan behavior.",
+        "Design keys for composite and non-unique indexes."
+      ],
+      "exam_checklist": [
+        "Compare B-tree and B+-tree payload placement.",
+        "Perform an insertion or deletion sequence and show structural changes.",
+        "Explain why leaf links make ordered range scans efficient."
+      ],
+      "slug": "b-tree-and-b-tree-fundamentals",
+      "occurrence_ids": [
+        "dbimpl-04-access-btrees-017",
+        "dbimpl-04-access-btrees-018",
+        "dbimpl-04-access-btrees-019",
+        "dbimpl-04-access-btrees-020",
+        "dbimpl-04-access-btrees-021",
+        "dbimpl-04-access-btrees-022",
+        "dbimpl-04-access-btrees-023",
+        "dbimpl-04-access-btrees-024",
+        "dbimpl-04-access-btrees-025",
+        "dbimpl-04-access-btrees-026",
+        "dbimpl-04-access-btrees-027",
+        "dbimpl-04-access-btrees-028",
+        "dbimpl-04-access-btrees-029",
+        "dbimpl-04-access-btrees-030",
+        "dbimpl-04-access-btrees-031",
+        "dbimpl-04-access-btrees-032",
+        "dbimpl-04-access-btrees-033",
+        "dbimpl-04-access-btrees-034",
+        "dbimpl-04-access-btrees-035",
+        "dbimpl-04-access-btrees-036",
+        "dbimpl-04-access-btrees-037",
+        "dbimpl-04-access-btrees-038",
+        "dbimpl-04-access-btrees-039",
+        "dbimpl-04-access-btrees-040",
+        "dbimpl-04-access-btrees-041",
+        "dbimpl-04-access-btrees-042",
+        "dbimpl-04-access-btrees-043",
+        "dbimpl-04-access-btrees-044",
+        "dbimpl-04-access-btrees-045",
+        "dbimpl-04-access-btrees-046",
+        "dbimpl-04-access-btrees-047",
+        "dbimpl-04-access-btrees-048",
+        "dbimpl-04-access-btrees-049",
+        "dbimpl-04-access-btrees-050",
+        "dbimpl-04-access-btrees-051",
+        "dbimpl-04-access-btrees-052",
+        "dbimpl-04-access-btrees-053",
+        "dbimpl-04-access-btrees-054",
+        "dbimpl-04-access-btrees-055",
+        "dbimpl-05-access-btrees-001",
+        "dbimpl-05-access-btrees-002",
+        "dbimpl-05-access-btrees-003",
+        "dbimpl-05-access-btrees-004",
+        "dbimpl-05-access-btrees-005",
+        "dbimpl-05-access-btrees-006",
+        "dbimpl-05-access-btrees-007",
+        "dbimpl-05-access-btrees-008",
+        "dbimpl-05-access-btrees-009",
+        "dbimpl-05-access-btrees-010"
+      ],
+      "sources": [
+        {
+          "recording_id": "dbimpl-04-access-btrees",
+          "source_file": "dbimpl-04-access-btrees.mp4",
+          "start_s": 2586.85,
+          "end_s": 5715.633,
+          "start": "00:43:06.850",
+          "end": "01:35:15.633",
+          "visual_interval_count": 39
+        },
+        {
+          "recording_id": "dbimpl-05-access-btrees",
+          "source_file": "dbimpl-05-access-btrees.mp4",
+          "start_s": 0.0,
+          "end_s": 2274.35,
+          "start": "00:00:00.000",
+          "end": "00:37:54.350",
+          "visual_interval_count": 10
+        }
+      ],
+      "stats": {
+        "visual_interval_count": 49,
+        "slide_interval_count": 44,
+        "board_interval_count": 5,
+        "board_duration_s": 812.7,
+        "board_evidence_frame_count": 35,
+        "word_count": 14501
+      }
+    },
+    {
+      "id": "08-advanced-btree-techniques",
+      "number": 8,
+      "title": "Advanced B-Tree Techniques",
+      "summary": "B-link trees for concurrent access, bulk loading, partitioned trees, variable-length keys, and prefix B*-tree compression.",
+      "objectives": [
+        "Explain how right links make concurrent tree traversal robust.",
+        "Construct a densely packed tree through bulk loading.",
+        "Reason about prefix compression and variable-length separator keys."
+      ],
+      "exam_checklist": [
+        "Trace a B-link split while another operation traverses the tree.",
+        "Contrast repeated insertion with bulk loading.",
+        "Compute or justify a distinguishing prefix separator."
+      ],
+      "slug": "advanced-b-tree-techniques",
+      "occurrence_ids": [
+        "dbimpl-05-access-btrees-011",
+        "dbimpl-05-access-btrees-012",
+        "dbimpl-05-access-btrees-013",
+        "dbimpl-05-access-btrees-014",
+        "dbimpl-05-access-btrees-015",
+        "dbimpl-05-access-btrees-016",
+        "dbimpl-05-access-btrees-017",
+        "dbimpl-05-access-btrees-018",
+        "dbimpl-05-access-btrees-019",
+        "dbimpl-05-access-btrees-020",
+        "dbimpl-05-access-btrees-021",
+        "dbimpl-05-access-btrees-022",
+        "dbimpl-05-access-btrees-023",
+        "dbimpl-05-access-btrees-024",
+        "dbimpl-05-access-btrees-025",
+        "dbimpl-05-access-btrees-026",
+        "dbimpl-05-access-btrees-027",
+        "dbimpl-05-access-btrees-028",
+        "dbimpl-05-access-btrees-029",
+        "dbimpl-05-access-btrees-030",
+        "dbimpl-05-access-btrees-031",
+        "dbimpl-05-access-btrees-032",
+        "dbimpl-05-access-btrees-033",
+        "dbimpl-05-access-btrees-034",
+        "dbimpl-05-access-btrees-035",
+        "dbimpl-05-access-btrees-036",
+        "dbimpl-06-access-eh-001",
+        "dbimpl-06-access-eh-002",
+        "dbimpl-06-access-eh-003",
+        "dbimpl-06-access-eh-004",
+        "dbimpl-06-access-eh-005",
+        "dbimpl-06-access-eh-006",
+        "dbimpl-06-access-eh-007",
+        "dbimpl-06-access-eh-008",
+        "dbimpl-06-access-eh-009",
+        "dbimpl-06-access-eh-010",
+        "dbimpl-06-access-eh-011"
+      ],
+      "sources": [
+        {
+          "recording_id": "dbimpl-05-access-btrees",
+          "source_file": "dbimpl-05-access-btrees.mp4",
+          "start_s": 2274.35,
+          "end_s": 5452.833,
+          "start": "00:37:54.350",
+          "end": "01:30:52.833",
+          "visual_interval_count": 26
+        },
+        {
+          "recording_id": "dbimpl-06-access-eh",
+          "source_file": "dbimpl-06-access-eh.mp4",
+          "start_s": 0.0,
+          "end_s": 909.55,
+          "start": "00:00:00.000",
+          "end": "00:15:09.550",
+          "visual_interval_count": 11
+        }
+      ],
+      "stats": {
+        "visual_interval_count": 37,
+        "slide_interval_count": 31,
+        "board_interval_count": 6,
+        "board_duration_s": 1277.6,
+        "board_evidence_frame_count": 52,
+        "word_count": 11267
+      }
+    },
+    {
+      "id": "09-hash-and-specialized-indexes",
+      "number": 9,
+      "title": "Hash and Specialized Indexes",
+      "summary": "Static and dynamic hash-based access paths, extendible and linear hashing, multi-level directories, bitmap indexes, small materialized aggregates, and multidimensional indexing.",
+      "objectives": [
+        "Trace directory growth, bucket split, and merge in extendible hashing.",
+        "Explain incremental bucket growth in linear hashing.",
+        "Choose between bitmap, aggregate, multidimensional, tree, and hash access paths."
+      ],
+      "exam_checklist": [
+        "Compute global/local depth and update a directory after a split.",
+        "Trace a linear-hashing split pointer and level.",
+        "Match specialized index structures to equality, analytic, and multidimensional workloads."
+      ],
+      "slug": "hash-and-specialized-indexes",
+      "occurrence_ids": [
+        "dbimpl-06-access-eh-012",
+        "dbimpl-06-access-eh-013",
+        "dbimpl-06-access-eh-014",
+        "dbimpl-06-access-eh-015",
+        "dbimpl-06-access-eh-016",
+        "dbimpl-06-access-eh-017",
+        "dbimpl-06-access-eh-018",
+        "dbimpl-06-access-eh-019",
+        "dbimpl-06-access-eh-020",
+        "dbimpl-06-access-eh-021",
+        "dbimpl-06-access-eh-022",
+        "dbimpl-06-access-eh-023",
+        "dbimpl-06-access-eh-024",
+        "dbimpl-06-access-eh-025",
+        "dbimpl-06-access-eh-026",
+        "dbimpl-06-access-eh-027",
+        "dbimpl-06-access-eh-028",
+        "dbimpl-06-access-eh-029",
+        "dbimpl-06-access-eh-030",
+        "dbimpl-06-access-eh-031",
+        "dbimpl-06-access-eh-032",
+        "dbimpl-06-access-eh-033",
+        "dbimpl-06-access-eh-034",
+        "dbimpl-06-access-eh-035",
+        "dbimpl-06-access-eh-036",
+        "dbimpl-06-access-eh-037",
+        "dbimpl-06-access-eh-038",
+        "dbimpl-07-transactions-001",
+        "dbimpl-07-transactions-002",
+        "dbimpl-07-transactions-003",
+        "dbimpl-07-transactions-004",
+        "dbimpl-07-transactions-005",
+        "dbimpl-07-transactions-006",
+        "dbimpl-07-transactions-007",
+        "dbimpl-07-transactions-008",
+        "dbimpl-07-transactions-009",
+        "dbimpl-07-transactions-010",
+        "dbimpl-07-transactions-011",
+        "dbimpl-07-transactions-012",
+        "dbimpl-07-transactions-013",
+        "dbimpl-07-transactions-014",
+        "dbimpl-07-transactions-015",
+        "dbimpl-07-transactions-016",
+        "dbimpl-07-transactions-017",
+        "dbimpl-07-transactions-018",
+        "dbimpl-07-transactions-019",
+        "dbimpl-07-transactions-020",
+        "dbimpl-07-transactions-021",
+        "dbimpl-07-transactions-022",
+        "dbimpl-07-transactions-023",
+        "dbimpl-07-transactions-024",
+        "dbimpl-07-transactions-025",
+        "dbimpl-07-transactions-026",
+        "dbimpl-07-transactions-027",
+        "dbimpl-07-transactions-028",
+        "dbimpl-07-transactions-029",
+        "dbimpl-07-transactions-030",
+        "dbimpl-07-transactions-031",
+        "dbimpl-07-transactions-032",
+        "dbimpl-07-transactions-033",
+        "dbimpl-07-transactions-034",
+        "dbimpl-07-transactions-035",
+        "dbimpl-07-transactions-036",
+        "dbimpl-07-transactions-037",
+        "dbimpl-07-transactions-038",
+        "dbimpl-07-transactions-039",
+        "dbimpl-07-transactions-040",
+        "dbimpl-07-transactions-041",
+        "dbimpl-07-transactions-042",
+        "dbimpl-07-transactions-043",
+        "dbimpl-07-transactions-044",
+        "dbimpl-07-transactions-045",
+        "dbimpl-07-transactions-046",
+        "dbimpl-07-transactions-047",
+        "dbimpl-07-transactions-048",
+        "dbimpl-07-transactions-049"
+      ],
+      "sources": [
+        {
+          "recording_id": "dbimpl-06-access-eh",
+          "source_file": "dbimpl-06-access-eh.mp4",
+          "start_s": 909.55,
+          "end_s": 5453.733,
+          "start": "00:15:09.550",
+          "end": "01:30:53.733",
+          "visual_interval_count": 27
+        },
+        {
+          "recording_id": "dbimpl-07-transactions",
+          "source_file": "dbimpl-07-transactions.mp4",
+          "start_s": 0.0,
+          "end_s": 4092.65,
+          "start": "00:00:00.000",
+          "end": "01:08:12.650",
+          "visual_interval_count": 49
+        }
+      ],
+      "stats": {
+        "visual_interval_count": 76,
+        "slide_interval_count": 68,
+        "board_interval_count": 8,
+        "board_duration_s": 3860.5,
+        "board_evidence_frame_count": 139,
+        "word_count": 23226
+      }
+    },
+    {
+      "id": "10-transaction-foundations",
+      "number": 10,
+      "title": "Transaction Foundations and Anomalies",
+      "summary": "Why transactions are needed, ACID properties, multi-user synchronization, and the lost-update, non-repeatable-read, and phantom anomalies.",
+      "objectives": [
+        "Connect ACID properties to observable system guarantees.",
+        "Recognize anomalies in interleaved schedules.",
+        "Explain why serial execution is correct but often impractical."
+      ],
+      "exam_checklist": [
+        "Label a schedule that exhibits lost update, non-repeatable read, or phantom.",
+        "Distinguish transaction operations from their synchronization requirements.",
+        "Explain the baseline established by serial execution."
+      ],
+      "slug": "transaction-foundations-and-anomalies",
+      "occurrence_ids": [
+        "dbimpl-07-transactions-050",
+        "dbimpl-07-transactions-051",
+        "dbimpl-07-transactions-052",
+        "dbimpl-07-transactions-053",
+        "dbimpl-07-transactions-054",
+        "dbimpl-07-transactions-055",
+        "dbimpl-07-transactions-056",
+        "dbimpl-07-transactions-057",
+        "dbimpl-07-transactions-058",
+        "dbimpl-07-transactions-059",
+        "dbimpl-07-transactions-060",
+        "dbimpl-07-transactions-061",
+        "dbimpl-07-transactions-062",
+        "dbimpl-07-transactions-063",
+        "dbimpl-07-transactions-064"
+      ],
+      "sources": [
+        {
+          "recording_id": "dbimpl-07-transactions",
+          "source_file": "dbimpl-07-transactions.mp4",
+          "start_s": 4092.65,
+          "end_s": 5411.867,
+          "start": "01:08:12.650",
+          "end": "01:30:11.867",
+          "visual_interval_count": 15
+        }
+      ],
+      "stats": {
+        "visual_interval_count": 15,
+        "slide_interval_count": 15,
+        "board_interval_count": 0,
+        "board_duration_s": 0,
+        "board_evidence_frame_count": 0,
+        "word_count": 3700
+      }
+    },
+    {
+      "id": "11-recovery-and-aries",
+      "number": 11,
+      "title": "Recovery, Write-Ahead Logging, and ARIES",
+      "summary": "Failure classes, update policies, write-ahead logging, ARIES log structure, analysis/redo/undo restart, compensation log records, partial rollback, and fuzzy checkpoints.",
+      "objectives": [
+        "Apply the write-ahead logging rules to page and log writes.",
+        "Trace the ARIES analysis, redo, and undo phases after failure.",
+        "Explain idempotence, compensation log records, and fuzzy checkpoints."
+      ],
+      "exam_checklist": [
+        "Determine which updates must be redone or undone from a log.",
+        "Explain why repeating recovery remains safe after another crash.",
+        "Construct or interpret transaction and dirty-page tables at restart."
+      ],
+      "slug": "recovery-write-ahead-logging-and-aries",
+      "occurrence_ids": [
+        "dbimpl-10-recovery-001",
+        "dbimpl-10-recovery-002",
+        "dbimpl-10-recovery-003",
+        "dbimpl-10-recovery-004",
+        "dbimpl-10-recovery-005",
+        "dbimpl-10-recovery-006",
+        "dbimpl-10-recovery-007",
+        "dbimpl-10-recovery-008",
+        "dbimpl-10-recovery-009",
+        "dbimpl-10-recovery-010",
+        "dbimpl-10-recovery-011",
+        "dbimpl-10-recovery-012",
+        "dbimpl-10-recovery-013",
+        "dbimpl-10-recovery-014",
+        "dbimpl-10-recovery-015",
+        "dbimpl-10-recovery-016",
+        "dbimpl-10-recovery-017",
+        "dbimpl-10-recovery-018",
+        "dbimpl-10-recovery-019",
+        "dbimpl-10-recovery-020",
+        "dbimpl-10-recovery-021",
+        "dbimpl-10-recovery-022",
+        "dbimpl-10-recovery-023",
+        "dbimpl-10-recovery-024",
+        "dbimpl-10-recovery-025",
+        "dbimpl-10-recovery-026",
+        "dbimpl-10-recovery-027",
+        "dbimpl-10-recovery-028",
+        "dbimpl-10-recovery-029",
+        "dbimpl-10-recovery-030",
+        "dbimpl-10-recovery-031",
+        "dbimpl-10-recovery-032",
+        "dbimpl-10-recovery-033",
+        "dbimpl-10-recovery-034",
+        "dbimpl-10-recovery-035",
+        "dbimpl-10-recovery-036",
+        "dbimpl-10-recovery-037",
+        "dbimpl-10-recovery-038",
+        "dbimpl-10-recovery-039",
+        "dbimpl-10-recovery-040",
+        "dbimpl-10-recovery-041",
+        "dbimpl-10-recovery-042"
+      ],
+      "sources": [
+        {
+          "recording_id": "dbimpl-10-recovery",
+          "source_file": "dbimpl-10-recovery.mp4",
+          "start_s": 0.0,
+          "end_s": 4742.35,
+          "start": "00:00:00.000",
+          "end": "01:19:02.350",
+          "visual_interval_count": 42
+        }
+      ],
+      "stats": {
+        "visual_interval_count": 42,
+        "slide_interval_count": 42,
+        "board_interval_count": 0,
+        "board_duration_s": 0,
+        "board_evidence_frame_count": 0,
+        "word_count": 13280
+      }
+    },
+    {
+      "id": "12-set-oriented-execution-models",
+      "number": 12,
+      "title": "Set-Oriented Execution Models",
+      "summary": "From algebraic plans to executable operators: composition, operator interfaces, full materialization, iterator, blockwise, and push models.",
+      "objectives": [
+        "Map an algebraic expression to a tree of physical operators.",
+        "Describe the control and data flow of each execution model.",
+        "Compare materialization, tuple-at-a-time, blockwise, and push execution."
+      ],
+      "exam_checklist": [
+        "Write the interface contract for an iterator-style operator.",
+        "Trace a tuple or block through a composed plan.",
+        "State the memory, call overhead, and pipeline behavior of each model."
+      ],
+      "slug": "set-oriented-execution-models",
+      "occurrence_ids": [
+        "dbimpl-10-recovery-043",
+        "dbimpl-10-recovery-044",
+        "dbimpl-10-recovery-045",
+        "dbimpl-10-recovery-046",
+        "dbimpl-10-recovery-047",
+        "dbimpl-11-setoriented-001",
+        "dbimpl-11-setoriented-002",
+        "dbimpl-11-setoriented-003",
+        "dbimpl-11-setoriented-004",
+        "dbimpl-11-setoriented-005",
+        "dbimpl-11-setoriented-006",
+        "dbimpl-11-setoriented-007",
+        "dbimpl-11-setoriented-008",
+        "dbimpl-11-setoriented-009",
+        "dbimpl-11-setoriented-010",
+        "dbimpl-11-setoriented-011",
+        "dbimpl-11-setoriented-012",
+        "dbimpl-11-setoriented-013",
+        "dbimpl-11-setoriented-014",
+        "dbimpl-11-setoriented-015",
+        "dbimpl-11-setoriented-016",
+        "dbimpl-11-setoriented-017",
+        "dbimpl-11-setoriented-018",
+        "dbimpl-11-setoriented-019",
+        "dbimpl-11-setoriented-020",
+        "dbimpl-11-setoriented-021",
+        "dbimpl-11-setoriented-022",
+        "dbimpl-11-setoriented-023",
+        "dbimpl-11-setoriented-024",
+        "dbimpl-11-setoriented-025",
+        "dbimpl-11-setoriented-026",
+        "dbimpl-11-setoriented-027",
+        "dbimpl-11-setoriented-028",
+        "dbimpl-11-setoriented-029",
+        "dbimpl-11-setoriented-030",
+        "dbimpl-11-setoriented-031",
+        "dbimpl-11-setoriented-032",
+        "dbimpl-11-setoriented-033",
+        "dbimpl-11-setoriented-034",
+        "dbimpl-12-operators-001",
+        "dbimpl-12-operators-002",
+        "dbimpl-12-operators-003",
+        "dbimpl-12-operators-004",
+        "dbimpl-12-operators-005",
+        "dbimpl-12-operators-006",
+        "dbimpl-12-operators-007",
+        "dbimpl-12-operators-008",
+        "dbimpl-12-operators-009",
+        "dbimpl-12-operators-010",
+        "dbimpl-12-operators-011",
+        "dbimpl-12-operators-012",
+        "dbimpl-12-operators-013"
+      ],
+      "sources": [
+        {
+          "recording_id": "dbimpl-10-recovery",
+          "source_file": "dbimpl-10-recovery.mp4",
+          "start_s": 4742.35,
+          "end_s": 5080.167,
+          "start": "01:19:02.350",
+          "end": "01:24:40.167",
+          "visual_interval_count": 5
+        },
+        {
+          "recording_id": "dbimpl-11-setoriented",
+          "source_file": "dbimpl-11-setoriented.mp4",
+          "start_s": 0.0,
+          "end_s": 5494.967,
+          "start": "00:00:00.000",
+          "end": "01:31:34.967",
+          "visual_interval_count": 34
+        },
+        {
+          "recording_id": "dbimpl-12-operators",
+          "source_file": "dbimpl-12-operators.mp4",
+          "start_s": 0.0,
+          "end_s": 215.25,
+          "start": "00:00:00.000",
+          "end": "00:03:35.250",
+          "visual_interval_count": 13
+        }
+      ],
+      "stats": {
+        "visual_interval_count": 52,
+        "slide_interval_count": 51,
+        "board_interval_count": 1,
+        "board_duration_s": 98.2,
+        "board_evidence_frame_count": 5,
+        "word_count": 17268
+      }
+    },
+    {
+      "id": "13-pipelining-and-parallelization",
+      "number": 13,
+      "title": "Pipelining and Parallelization Infrastructure",
+      "summary": "Additional operator functionality, subscript/subquery implementation, pipeline boundaries, and the first principles of parallelizing an operator plan.",
+      "objectives": [
+        "Identify pipeline breakers and pipeline-compatible operators.",
+        "Explain how nested or subscripted computations enter an execution plan.",
+        "Separate intra-operator from inter-operator parallel opportunities."
+      ],
+      "exam_checklist": [
+        "Mark pipelines in a physical plan.",
+        "Explain where materialization is required and why.",
+        "Propose a valid parallel decomposition for a simple operator tree."
+      ],
+      "slug": "pipelining-and-parallelization-infrastructure",
+      "occurrence_ids": [
+        "dbimpl-12-operators-014",
+        "dbimpl-12-operators-015",
+        "dbimpl-12-operators-016",
+        "dbimpl-12-operators-017",
+        "dbimpl-12-operators-018",
+        "dbimpl-12-operators-019",
+        "dbimpl-12-operators-020",
+        "dbimpl-12-operators-021",
+        "dbimpl-12-operators-022",
+        "dbimpl-12-operators-023"
+      ],
+      "sources": [
+        {
+          "recording_id": "dbimpl-12-operators",
+          "source_file": "dbimpl-12-operators.mp4",
+          "start_s": 215.25,
+          "end_s": 1548.15,
+          "start": "00:03:35.250",
+          "end": "00:25:48.150",
+          "visual_interval_count": 10
+        }
+      ],
+      "stats": {
+        "visual_interval_count": 10,
+        "slide_interval_count": 10,
+        "board_interval_count": 0,
+        "board_duration_s": 0,
+        "board_evidence_frame_count": 0,
+        "word_count": 3794
+      }
+    },
+    {
+      "id": "14-relational-operators-and-joins",
+      "number": 14,
+      "title": "Relational Operators and Join Algorithms",
+      "summary": "Physical implementations of scan, selection, map, nested-loop, blockwise nested-loop, sort-merge, hash, singleton, and non-inner joins.",
+      "objectives": [
+        "Derive the I/O and CPU behavior of major join algorithms.",
+        "Choose a join implementation from cardinality, ordering, and memory constraints.",
+        "Preserve outer/semi/anti join semantics in physical execution."
+      ],
+      "exam_checklist": [
+        "Compare nested-loop, blockwise, sort-merge, and hash join costs.",
+        "Trace hash partitioning and probing, including overflow behavior.",
+        "Explain how non-inner joins change result production."
+      ],
+      "slug": "relational-operators-and-join-algorithms",
+      "occurrence_ids": [
+        "dbimpl-12-operators-024",
+        "dbimpl-12-operators-025",
+        "dbimpl-12-operators-026",
+        "dbimpl-12-operators-027",
+        "dbimpl-12-operators-028",
+        "dbimpl-12-operators-029",
+        "dbimpl-12-operators-030",
+        "dbimpl-12-operators-031",
+        "dbimpl-12-operators-032",
+        "dbimpl-12-operators-033",
+        "dbimpl-12-operators-034",
+        "dbimpl-12-operators-035",
+        "dbimpl-12-operators-036",
+        "dbimpl-12-operators-037",
+        "dbimpl-12-operators-038",
+        "dbimpl-12-operators-039",
+        "dbimpl-12-operators-040",
+        "dbimpl-12-operators-041",
+        "dbimpl-12-operators-042",
+        "dbimpl-12-operators-043",
+        "dbimpl-12-operators-044",
+        "dbimpl-12-operators-045",
+        "dbimpl-12-operators-046",
+        "dbimpl-12-operators-047",
+        "dbimpl-12-operators-048",
+        "dbimpl-12-operators-049",
+        "dbimpl-12-operators-050",
+        "dbimpl-12-operators-051",
+        "dbimpl-12-operators-052",
+        "dbimpl-12-operators-053",
+        "dbimpl-12-operators-054",
+        "dbimpl-12-operators-055",
+        "dbimpl-12-operators-056",
+        "dbimpl-12-operators-057",
+        "dbimpl-12-operators-058",
+        "dbimpl-13-codegen-001"
+      ],
+      "sources": [
+        {
+          "recording_id": "dbimpl-12-operators",
+          "source_file": "dbimpl-12-operators.mp4",
+          "start_s": 1548.15,
+          "end_s": 5285.533,
+          "start": "00:25:48.150",
+          "end": "01:28:05.533",
+          "visual_interval_count": 35
+        },
+        {
+          "recording_id": "dbimpl-13-codegen",
+          "source_file": "dbimpl-13-codegen.mp4",
+          "start_s": 0.0,
+          "end_s": 9.95,
+          "start": "00:00:00.000",
+          "end": "00:00:09.950",
+          "visual_interval_count": 1
+        }
+      ],
+      "stats": {
+        "visual_interval_count": 36,
+        "slide_interval_count": 36,
+        "board_interval_count": 0,
+        "board_duration_s": 0,
+        "board_evidence_frame_count": 0,
+        "word_count": 10933
+      }
+    },
+    {
+      "id": "15-sort-group-and-set-operations",
+      "number": 15,
+      "title": "Sorting, Grouping, and Set Operations",
+      "summary": "External sorting, grouping/aggregation, and physical algorithms for union, intersection, difference, duplicate handling, and related set operations.",
+      "objectives": [
+        "Trace run formation and merging in external sort.",
+        "Choose sort- or hash-based grouping.",
+        "Implement set semantics with correct duplicate handling."
+      ],
+      "exam_checklist": [
+        "Estimate passes and I/O for external sorting.",
+        "Contrast streaming, sort-based, and hash-based aggregation.",
+        "Trace a set operation under bag versus set semantics."
+      ],
+      "slug": "sorting-grouping-and-set-operations",
+      "occurrence_ids": [
+        "dbimpl-13-codegen-002",
+        "dbimpl-13-codegen-003",
+        "dbimpl-13-codegen-004",
+        "dbimpl-13-codegen-005",
+        "dbimpl-13-codegen-006",
+        "dbimpl-13-codegen-007",
+        "dbimpl-13-codegen-008",
+        "dbimpl-13-codegen-009",
+        "dbimpl-13-codegen-010",
+        "dbimpl-13-codegen-011",
+        "dbimpl-13-codegen-012",
+        "dbimpl-13-codegen-013",
+        "dbimpl-13-codegen-014",
+        "dbimpl-13-codegen-015"
+      ],
+      "sources": [
+        {
+          "recording_id": "dbimpl-13-codegen",
+          "source_file": "dbimpl-13-codegen.mp4",
+          "start_s": 9.95,
+          "end_s": 1953.05,
+          "start": "00:00:09.950",
+          "end": "00:32:33.050",
+          "visual_interval_count": 14
+        }
+      ],
+      "stats": {
+        "visual_interval_count": 14,
+        "slide_interval_count": 14,
+        "board_interval_count": 0,
+        "board_duration_s": 0,
+        "board_evidence_frame_count": 0,
+        "word_count": 5494
+      }
+    },
+    {
+      "id": "16-query-compilation",
+      "number": 16,
+      "title": "Query Compilation and Data-Centric Execution",
+      "summary": "LLVM-based compilation of scalar expressions and data-centric query execution, including how operators cooperate to produce specialized code.",
+      "objectives": [
+        "Explain why interpretation and iterator calls can dominate in-memory execution.",
+        "Describe code generation for scalar expressions and operator pipelines.",
+        "Relate produce/consume control flow to data-centric execution."
+      ],
+      "exam_checklist": [
+        "Contrast interpreted and compiled query execution.",
+        "Trace produce/consume calls through a pipeline.",
+        "Identify which plan boundaries require generated loops or materialization."
+      ],
+      "slug": "query-compilation-and-data-centric-execution",
+      "occurrence_ids": [
+        "dbimpl-13-codegen-016",
+        "dbimpl-13-codegen-017",
+        "dbimpl-13-codegen-018",
+        "dbimpl-13-codegen-019",
+        "dbimpl-13-codegen-020",
+        "dbimpl-13-codegen-021",
+        "dbimpl-13-codegen-022",
+        "dbimpl-13-codegen-023",
+        "dbimpl-13-codegen-024",
+        "dbimpl-13-codegen-025",
+        "dbimpl-13-codegen-026",
+        "dbimpl-13-codegen-027",
+        "dbimpl-13-codegen-028",
+        "dbimpl-13-codegen-029",
+        "dbimpl-13-codegen-030",
+        "dbimpl-13-codegen-031",
+        "dbimpl-13-codegen-032",
+        "dbimpl-13-codegen-033",
+        "dbimpl-13-codegen-034",
+        "dbimpl-13-codegen-035"
+      ],
+      "sources": [
+        {
+          "recording_id": "dbimpl-13-codegen",
+          "source_file": "dbimpl-13-codegen.mp4",
+          "start_s": 1953.05,
+          "end_s": 3453.35,
+          "start": "00:32:33.050",
+          "end": "00:57:33.350",
+          "visual_interval_count": 20
+        }
+      ],
+      "stats": {
+        "visual_interval_count": 20,
+        "slide_interval_count": 20,
+        "board_interval_count": 0,
+        "board_duration_s": 0,
+        "board_evidence_frame_count": 0,
+        "word_count": 4300
+      }
+    },
+    {
+      "id": "17-parallel-query-execution",
+      "number": 17,
+      "title": "Parallel Query Execution",
+      "summary": "Exchange operators, vertical and horizontal parallelism, parallel aggregation and joins, morsel-driven scheduling, dynamic load balancing, and parallel in-memory hash join.",
+      "objectives": [
+        "Use exchange operators to partition and route data.",
+        "Explain the benefits and limits of static exchange-based plans.",
+        "Describe morsel-driven scheduling and its response to skew."
+      ],
+      "exam_checklist": [
+        "Insert exchanges into an aggregation or join plan.",
+        "Compare static partitioning with dynamic morsel scheduling.",
+        "Trace build and probe work in a parallel in-memory hash join."
+      ],
+      "slug": "parallel-query-execution",
+      "occurrence_ids": [
+        "dbimpl-13-codegen-036",
+        "dbimpl-13-codegen-037",
+        "dbimpl-13-codegen-038",
+        "dbimpl-13-codegen-039",
+        "dbimpl-13-codegen-040",
+        "dbimpl-13-codegen-041",
+        "dbimpl-13-codegen-042",
+        "dbimpl-13-codegen-043",
+        "dbimpl-13-codegen-044",
+        "dbimpl-13-codegen-045",
+        "dbimpl-13-codegen-046",
+        "dbimpl-13-codegen-047",
+        "dbimpl-13-codegen-048",
+        "dbimpl-13-codegen-049",
+        "dbimpl-13-codegen-050",
+        "dbimpl-13-codegen-051",
+        "dbimpl-13-codegen-052",
+        "dbimpl-13-codegen-053",
+        "dbimpl-13-codegen-054"
+      ],
+      "sources": [
+        {
+          "recording_id": "dbimpl-13-codegen",
+          "source_file": "dbimpl-13-codegen.mp4",
+          "start_s": 3453.35,
+          "end_s": 4942.833,
+          "start": "00:57:33.350",
+          "end": "01:22:22.833",
+          "visual_interval_count": 19
+        }
+      ],
+      "stats": {
+        "visual_interval_count": 19,
+        "slide_interval_count": 19,
+        "board_interval_count": 0,
+        "board_duration_s": 0,
+        "board_evidence_frame_count": 0,
+        "word_count": 4329
+      }
+    }
+  ]
+}

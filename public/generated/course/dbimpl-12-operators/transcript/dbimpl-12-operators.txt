@@ -1,0 +1,1325 @@
+[00:00:00.520 --> 00:00:07.560] Welcome to the lecture on database implementation. In the last lecture we have looked at different ways to compose operators.
+[00:00:07.780 --> 00:00:11.340] Actually how to implement the operator interface so that we can compose them.
+[00:00:12.160 --> 00:00:17.880] We first looked at full materialization where we said okay, that's of course the simplest model.
+[00:00:18.040 --> 00:00:23.200] We read all the input and then we write back all the results into a new relation. Very easy.
+[00:00:23.820 --> 00:00:28.500] There's not so great performance. Iterator model where we produce each tuple on demand.
+[00:00:31.060 --> 00:00:41.440] So then we had looked at the block pass model, where we pass not a single tuple, but blocks
+[00:00:41.440 --> 00:00:46.060] of tuple, so this amortizes the call overhead, which is much more efficient than the iterator
+[00:00:46.060 --> 00:00:46.260] model.
+[00:00:47.780 --> 00:00:51.900] But there is a problem that we write quite a few data, and then the push model, so where
+[00:00:51.900 --> 00:00:58.900] the data is not pulled up, so it is set from the leaves of the exclusion plan, pushed up
+[00:01:00.000 --> 00:01:02.300] We also started looking at example code for this.
+[00:01:03.100 --> 00:01:04.960] So, functionalization iterator, this is what we did.
+[00:01:05.360 --> 00:01:07.920] And then blockwise processing, this is what we also did.
+[00:01:08.100 --> 00:01:09.780] And we stopped about here.
+[00:01:10.040 --> 00:01:15.980] So we stopped here, so in the push model, then okay, how can we look and implement the
+[00:01:15.980 --> 00:01:22.480] three most primitive operators, scan, select and cross product using the push model.
+[00:01:23.740 --> 00:01:26.480] So the code is actually quite simple, as you see here.
+[00:01:27.120 --> 00:01:32.860] So in this scan code we say okay we want to scan the relation R and then we call open
+[00:01:32.860 --> 00:01:38.500] we just remember what is the relation R that I want to scan and also I remember who wants
+[00:01:38.500 --> 00:01:45.300] to read it, so consumer here, this is an object or some kind of callback, and then we want
+[00:01:45.300 --> 00:01:48.360] to produce data then we can literally do it.
+[00:01:48.540 --> 00:01:53.600] So we loop over all the tuples in R and then we just pass each tuple to R.
+[00:01:53.600 --> 00:01:55.720] Here is a tuple, here is a tuple, here is a tuple.
+[00:01:55.880 --> 00:01:56.580] So it is very simple.
+[00:01:59.400 --> 00:02:04.180] Now note that in the produce-consume world scan of course has no consume because scan
+[00:02:04.180 --> 00:02:04.660] is a leaf.
+[00:02:05.220 --> 00:02:07.220] So scan can only produce, we never have an input.
+[00:02:08.020 --> 00:02:13.320] Now when we come to select, select does have an input and produces output values.
+[00:02:14.300 --> 00:02:19.420] So when we call produce on the select, we just call produce on the input here.
+[00:02:19.680 --> 00:02:21.380] We just say please give me all the tuples.
+[00:02:21.380 --> 00:02:26.180] Now in the consume callback, so when we get a tuple, we check the condition if it's true,
+[00:02:26.420 --> 00:02:30.320] we pass it along to our consumer here, if not we throw it away.
+[00:02:31.120 --> 00:02:31.220] Okay?
+[00:02:33.340 --> 00:02:39.260] And cross product, so when we want to build a cross between the two inputs,
+[00:02:40.160 --> 00:02:43.960] so in the open call we just remember what's left to right was my consumer.
+[00:02:44.180 --> 00:02:50.100] Now when we call cross produce, this means we ask our left side please produce tuples.
+[00:02:51.380 --> 00:02:56.000] a tuple from the left, note that in reality, I mean I didn't show this in full interface,
+[00:02:56.140 --> 00:03:01.180] but it's a consume interface, you might also know from where the tuple comes. So here we say
+[00:03:01.180 --> 00:03:06.840] the tuple comes from my left input, then we store the tuple here and then we call it produce on my
+[00:03:06.840 --> 00:03:13.960] right side. Okay and when we get the tuple from my right, then we combine it with my store tuple
+[00:03:13.960 --> 00:03:18.460] here and then we output to our consumer.
+[00:03:19.260 --> 00:03:22.180] So actually this code here is very, very simple.
+[00:03:23.700 --> 00:03:28.760] Of course for more complex operators it is not that simple, but nevertheless it does
+[00:03:28.760 --> 00:03:32.700] not have the complexity of the iterator model that has to remember where you are, such that
+[00:03:32.700 --> 00:03:34.740] you can stop at any point in time.
+[00:03:36.620 --> 00:03:43.120] And now so far we have only looked at open and whatever we need to produce tablets next
+[00:03:43.960 --> 00:03:50.400] or so. Of course there are also other functions that we have to implement. One is close, this is
+[00:03:50.400 --> 00:03:56.480] usually a pretty boring function, we just release allocated resources like the free memory, we close
+[00:03:56.480 --> 00:04:00.760] the file, whatever our operator did, so this is pretty simple. Then there are some other
+[00:04:00.760 --> 00:04:05.680] functionalities that we might need that are a bit more advanced, like the first one here is
+[00:04:05.680 --> 00:04:12.460] rewind rebind. Now what is this? These are two functions that look very similar but behave
+[00:04:15.680 --> 00:04:20.980] Rebind means if somebody calls rebind, this says please prepare for re-execution.
+[00:04:21.160 --> 00:04:24.980] So I want to read you again, please prepare for re-execution.
+[00:04:25.360 --> 00:04:28.520] But you can reuse what you have already have.
+[00:04:29.120 --> 00:04:31.280] So this is basically what rebind is.
+[00:04:32.400 --> 00:04:37.900] Rebind means I want to prepare for re-execution, but you must recompute what you already have.
+[00:04:38.200 --> 00:04:40.020] Now why do we need this to function?
+[00:04:40.020 --> 00:04:46.360] ideas now so the easiest case is we have just something like this and so we have uh here
+[00:04:46.360 --> 00:04:53.380] there's a loop join so then r and s so then we need rewind because we take a tupper from r we
+[00:04:53.380 --> 00:04:59.640] read s and now when the next tupper from r comes we tell s please i want to read you again note of
+[00:04:59.640 --> 00:05:04.600] course this is the base table of course is a pretty boring but this could be something complex
+[00:05:05.460 --> 00:05:10.240] large plan and if the next table comes we want to read it again if we do not read necessarily
+[00:05:10.240 --> 00:05:16.440] have to recompute it now because if for example if the top ones operate is a group i also
+[00:05:16.440 --> 00:05:20.560] we can just reuse what you already have in my group by table so we don't have to
+[00:05:21.080 --> 00:05:28.580] recompute it we just read it again while the rebind case we need for another operator namely
+[00:05:28.580 --> 00:05:35.400] for the dependent join so where when for example maybe we have something like this here
+[00:05:50.020 --> 00:05:54.440] so if you have something like this note that the right hand side of the join depends on the left
+[00:05:54.440 --> 00:05:58.300] hand side here because we're on the right hand side we use a to put some R of course this happens
+[00:05:58.580 --> 00:05:59.460] but this can happen.
+[00:05:59.720 --> 00:06:00.740] And if this happens now,
+[00:06:00.900 --> 00:06:03.180] we must, if now we get a new topper from R,
+[00:06:03.280 --> 00:06:06.380] we must throw away the group by results.
+[00:06:06.560 --> 00:06:07.420] We cannot reuse it.
+[00:06:07.540 --> 00:06:08.920] Therefore we must call rebind.
+[00:06:09.260 --> 00:06:11.340] So then now in the real implementation,
+[00:06:11.500 --> 00:06:13.280] we might even track which attribute to change
+[00:06:13.280 --> 00:06:15.740] because sometimes we can reuse some part of the plan,
+[00:06:15.860 --> 00:06:16.580] some others we don't,
+[00:06:16.700 --> 00:06:19.080] but nevertheless with this functionality we also need.
+[00:06:20.420 --> 00:06:22.900] We often also need functionality for memory management
+[00:06:22.900 --> 00:06:25.220] because operators tend to allocate memory.
+[00:06:25.340 --> 00:06:26.680] We want to freeze them probably,
+[00:06:28.580 --> 00:06:30.820] memory pressure, so there might be operators for that.
+[00:06:31.120 --> 00:06:34.620] And you might need more functions for spooling.
+[00:06:34.720 --> 00:06:35.680] So if you run out of memory,
+[00:06:35.760 --> 00:06:38.820] we want to have a functionality to write my result to disk,
+[00:06:39.000 --> 00:06:40.920] my image result to disk, and then read it back.
+[00:06:41.540 --> 00:06:43.400] And so we skip all this.
+[00:06:45.080 --> 00:06:46.560] Another interesting problem here is
+[00:06:46.560 --> 00:06:48.020] what do we actually do with the subscripts?
+[00:06:48.520 --> 00:06:50.980] And so I, you saw already in the example here,
+[00:06:51.060 --> 00:06:54.400] so that when we say, I say A equals B,
+[00:06:55.400 --> 00:06:57.340] so this is of course the subscript here.
+[00:06:58.580 --> 00:07:02.960] but I mean a equals b is always very simple but there can be anything in there yeah so we can for
+[00:07:02.960 --> 00:07:11.880] example write two times a plus b should be less than c or whatever yeah so this can be an arbitrarily
+[00:07:11.880 --> 00:07:17.180] complex over expression and of course we need some mechanism to evaluate this expression
+[00:07:17.180 --> 00:07:24.020] now it's these subscripts here they are the query specific part of the query so for the other
+[00:07:24.020 --> 00:07:29.300] operators we have seen join select we didn't look at join but select cross product and so on
+[00:07:30.080 --> 00:07:35.460] the implementations we have seen don't really care about the query they only talk about control flow
+[00:07:35.460 --> 00:07:40.380] everything that is query specific is handled by subscript as this can be something simple like
+[00:07:40.380 --> 00:07:45.180] just access an attribute so somebody says x or a give me an attribute value or we can have a
+[00:07:45.180 --> 00:07:50.400] predicate of a equals p or we can have some computation or really can be anything you know
+[00:07:50.400 --> 00:07:55.900] and of course now we must somehow implement this such that when a user gives me a query
+[00:07:55.900 --> 00:08:04.380] I'm able to evaluate whatever expression is included in the query and first of course
+[00:08:04.380 --> 00:08:08.920] the squares always look different so the subscripts always look different but on the plus side
+[00:08:08.920 --> 00:08:14.300] these are usually pretty simple a equals b is a very simple expression now you can write something
+[00:08:14.300 --> 00:08:20.160] complex but this happens much more rarely and even if you write a complex expression the operation
+[00:08:20.400 --> 00:08:24.040] itself is easy, a comparison, a plus, a minus, multiplication.
+[00:08:24.320 --> 00:08:25.820] These are all very simple operations,
+[00:08:26.000 --> 00:08:27.480] nothing compared to a join or so.
+[00:08:28.580 --> 00:08:31.900] So that means we have to implement all these functions
+[00:08:31.900 --> 00:08:36.740] somehow is a large number, but conceptually simple.
+[00:08:37.880 --> 00:08:39.560] Also here we have different ways
+[00:08:39.560 --> 00:08:40.720] like implement this.
+[00:08:40.940 --> 00:08:42.420] So the first choice is something,
+[00:08:42.640 --> 00:08:43.800] for example, that DB2 does,
+[00:08:44.500 --> 00:08:46.360] or at least did, I'm not sure if they still do this,
+[00:08:46.480 --> 00:08:47.900] but they did at some point.
+[00:08:48.840 --> 00:08:50.520] they use interpreter objects.
+[00:08:50.780 --> 00:08:57.360] So which basically means you built a small tree, like a tree looks like this here, you
+[00:08:57.360 --> 00:09:04.560] say, my example here doesn't do plus, but could also be plus or let's say equality gets
+[00:09:04.560 --> 00:09:12.480] two inputs here and my input here in this case could be for example, access int, access,
+[00:09:14.820 --> 00:09:18.200] So this is how we can check the condition A equals B.
+[00:09:19.040 --> 00:09:24.900] So we say we express this as a tree, comparison is the top most element and then we have access
+[00:09:24.900 --> 00:09:26.720] to the output further down.
+[00:09:26.880 --> 00:09:32.360] And of course if you do something more complex, like if you do A plus B equals C, so this
+[00:09:32.360 --> 00:09:38.360] works just the same, we have equality at the top, then here we have a plus, then here we
+[00:09:38.360 --> 00:09:41.760] have A, B and then here we have C.
+[00:09:42.660 --> 00:09:49.020] So this, we can accept whatever expression we have, we can build such a tree of objects.
+[00:09:49.220 --> 00:09:54.320] And if we want to evaluate this, we just take the root of this tree and we call evaluate
+[00:09:54.320 --> 00:09:55.360] on this, on this root.
+[00:09:55.480 --> 00:09:57.340] So here now you see some example code.
+[00:09:58.640 --> 00:10:01.560] So when we want to access an attribute, this is what we see here.
+[00:10:01.660 --> 00:10:05.980] Note we want to, here this is called access int, which means we want to access an attribute
+[00:10:05.980 --> 00:10:07.260] that is an integer value.
+[00:10:07.720 --> 00:10:14.920] so then we it gets a pointer here and then we is a tuple pointer and then we say okay please take
+[00:10:14.920 --> 00:10:20.580] a tuple look at the corresponding offset load the value and then return it so this is accessing an
+[00:10:20.580 --> 00:10:26.700] attribute and if you want to do a comparison so this is an integer comparison so then we say okay
+[00:10:26.700 --> 00:10:31.740] i take my left side i call a validator on my left side here i take my right side i will call a valid
+[00:10:31.740 --> 00:10:39.760] on my right side and then i just compare here the two values okay so and yeah you can implement this
+[00:10:39.760 --> 00:10:45.020] for whatever you want plus minus all works the same so you just implement an eval function and
+[00:10:45.020 --> 00:10:49.160] then you can assemble them as you want so this is a good thing about this approach is very easy to
+[00:10:49.160 --> 00:10:54.300] implement now you basically need one line per operator or two lines per operator is a very very
+[00:10:55.700 --> 00:10:59.940] lightweight very flexible also quite popular quite a few people use such in the model
+[00:11:01.740 --> 00:11:03.200] you have is not very fast.
+[00:11:03.420 --> 00:11:06.480] Now the problem is whenever you even think about
+[00:11:06.480 --> 00:11:08.720] this trivial example like A equals B,
+[00:11:10.120 --> 00:11:12.000] when then we had an equality as root,
+[00:11:12.200 --> 00:11:14.860] then we had an excess for A and excess for B.
+[00:11:15.120 --> 00:11:17.900] This extremely simple expression already involves
+[00:11:17.900 --> 00:11:19.300] three virtual function calls.
+[00:11:19.500 --> 00:11:21.300] And because we first call the root,
+[00:11:21.460 --> 00:11:23.900] this calls the left side, this calls the right side,
+[00:11:24.000 --> 00:11:24.820] and then we submit the result.
+[00:11:25.420 --> 00:11:27.880] So virtual function calls are a bit more expensive.
+[00:11:28.100 --> 00:11:29.300] So this is not super fast.
+[00:11:29.300 --> 00:11:35.080] easy, flexible, but not very fast. Now what else can we do? We can decide that
+[00:11:35.080 --> 00:11:40.880] instead of using interpreter objects we compile my expressions into a
+[00:11:40.880 --> 00:11:44.820] small virtual machine. I'm not sure if you are familiar with how virtual machines
+[00:11:44.820 --> 00:11:50.320] work like JVM for example or other engines basically you
+[00:11:51.040 --> 00:11:58.340] construct a sequence of like pseudo opcodes that you can execute and each
+[00:11:59.520 --> 00:12:03.960] And then when you want to execute this you loop over this list of opcodes and you evaluate
+[00:12:03.960 --> 00:12:04.700] whatever it is.
+[00:12:05.080 --> 00:12:07.680] So this is the equivalent what we saw before.
+[00:12:07.920 --> 00:12:15.540] So you see here on the first line we look at the current instruction and then I say
+[00:12:15.540 --> 00:12:19.080] okay look at the next instruction, take its command and then we do switch over whatever
+[00:12:19.080 --> 00:12:19.660] the command is.
+[00:12:19.860 --> 00:12:24.940] Then if the command here is access integer then we do it.
+[00:12:24.940 --> 00:12:30.320] here you see already here we load the value just as that before we forward with the result
+[00:12:30.320 --> 00:12:35.820] we now store it here in some register files. We have a register file and the output register
+[00:12:35.820 --> 00:12:40.220] stored in my opcode. Some opcode says where should the result be stored and when the comparison
+[00:12:40.220 --> 00:12:46.880] function comes here so this is the next comparison then we say we get two arguments from opcode,
+[00:12:47.100 --> 00:12:51.460] take the register value from first argument, take the register value from the second argument,
+[00:12:51.460 --> 00:12:54.740] and compare them and write the result here to this one.
+[00:12:55.260 --> 00:13:00.380] Okay, and this you can also get implemented with the operations that you have.
+[00:13:01.800 --> 00:13:08.660] This is more efficient than an interpreter object.
+[00:13:09.020 --> 00:13:14.000] Because you just have one big loop, it's a one big switch and you can, if you are particularly
+[00:13:14.000 --> 00:13:18.920] use tricks like computer go-tos in your compiler, you can make the switch here very fast.
+[00:13:18.920 --> 00:13:23.240] So this is more efficient than calling.
+[00:13:24.060 --> 00:13:26.560] Downside of course is also more complex to generate this.
+[00:13:26.680 --> 00:13:29.360] Basically you need a compiler that takes your SQL expression
+[00:13:29.360 --> 00:13:31.880] and compiles it into some form of bytecode.
+[00:13:32.200 --> 00:13:34.180] It's not very difficult to build such a compiler,
+[00:13:34.360 --> 00:13:35.580] but you must do this.
+[00:13:35.720 --> 00:13:37.480] So you must now say,
+[00:13:37.600 --> 00:13:40.340] okay, I translate my expression into the sequence.
+[00:13:40.820 --> 00:13:42.440] So I said I had a equals b,
+[00:13:42.600 --> 00:13:45.920] and now translate it into a sequence of operations like
+[00:13:50.500 --> 00:13:58.420] XsInt, XsInt, and then compare echoInt.
+[00:13:58.660 --> 00:14:00.560] So you get through three instructions.
+[00:14:02.280 --> 00:14:05.320] Okay, this is also a decent choice and quite a few systems do this.
+[00:14:05.440 --> 00:14:07.760] So this is also a very valid option.
+[00:14:09.520 --> 00:14:13.980] Now, another technique that is popular in systems like VectorVise, for example, is this one here.
+[00:14:16.280 --> 00:14:22.520] Okay, yeah, of course, and we have a very different queries, but in reality, the number
+[00:14:22.520 --> 00:14:26.640] of primitives that we have, like plus, minus, plus, equality, and so on, this is not that
+[00:14:26.640 --> 00:14:27.040] high.
+[00:14:27.160 --> 00:14:29.960] Yeah, so we can just have them prepared somewhere.
+[00:14:31.080 --> 00:14:35.520] And what we can also do, we can hide the overhead of calling them.
+[00:14:35.640 --> 00:14:37.480] Like the interpreter object, of course, does the same.
+[00:14:37.480 --> 00:14:46.400] We also have prepared code for all parameters that we have in our system, but we want to
+[00:14:46.400 --> 00:14:51.380] hide the high coiling overhead of the interpreter, but not coiling it for one value, but coiling
+[00:14:51.380 --> 00:14:52.400] it for many values.
+[00:14:52.940 --> 00:14:55.440] And therefore it's called to code vectorized execution.
+[00:14:55.640 --> 00:14:57.380] So we do process vector at a time.
+[00:14:57.520 --> 00:15:02.700] So here now you see a comparison function that takes as input two vectors.
+[00:15:03.000 --> 00:15:05.220] So this is one vector of values.
+[00:15:05.220 --> 00:15:10.560] This is the second vector of values, so two integer vectors and we output a result vector
+[00:15:10.560 --> 00:15:13.900] which contains Boolean's and of course we must tell it how many elements it has.
+[00:15:14.540 --> 00:15:22.400] And now what this function does here, it loops over all values in the both two vectors, compares
+[00:15:22.400 --> 00:15:26.660] them here and writes the results to the original output.
+[00:15:27.200 --> 00:15:33.720] So you perform a primitive operation for a large number of input values.
+[00:15:36.340 --> 00:15:42.460] this can be quite efficient in particular if you start using SIMD instructions also for comparison
+[00:15:42.460 --> 00:15:49.240] so these pre-compiled fragments can be quite efficient but of course this requires that the
+[00:15:49.240 --> 00:15:55.240] input is available as nice vectors that you can access and so this more or less means you can
+[00:15:55.240 --> 00:15:59.820] only use this if your input is a column store and probably only for overlap systems so there are quite
+[00:15:59.820 --> 00:16:05.340] a few constraints that you have but if you fall into this constraint this is a very very viable
+[00:16:05.340 --> 00:16:11.800] strategy performance of these engines is good okay so you can average subscript like this
+[00:16:13.380 --> 00:16:20.540] or the fourth option is we take my subscript and we generate machine comfort yeah and so
+[00:16:21.460 --> 00:16:26.660] this is not sure if you're familiar with reading assembler code but basically what we're doing here
+[00:16:26.660 --> 00:16:37.580] is we are loading values so we here we are loading a pointer into my AX register loading
+[00:16:37.580 --> 00:16:44.360] a value relative to that pointer yeah so this is so this will be a my code here this will
+[00:16:44.360 --> 00:16:49.360] be a column a column pointer and we're loading a column point at a certain tupl id here so
+[00:16:49.360 --> 00:16:54.020] we're loading value into my register and look at the second column and load the second value
+[00:16:54.020 --> 00:16:56.100] and then I do a comparison.
+[00:16:56.540 --> 00:16:56.620] Okay.
+[00:16:57.180 --> 00:16:59.000] So this is again, we access two integer values
+[00:16:59.000 --> 00:16:59.760] and we compare.
+[00:17:00.560 --> 00:17:03.700] This of course is about the most efficient agenda of this.
+[00:17:04.680 --> 00:17:07.000] I mean, do you generate here five assembler codes,
+[00:17:07.800 --> 00:17:09.000] five assembler instructions
+[00:17:09.000 --> 00:17:10.440] and basically you cannot do better.
+[00:17:11.060 --> 00:17:12.180] In SIMD can help sometimes,
+[00:17:12.320 --> 00:17:16.000] but in general, this is about the most efficient you can do.
+[00:17:17.660 --> 00:17:19.260] Only downside is, of course,
+[00:17:19.380 --> 00:17:20.260] is also the most difficult.
+[00:17:21.160 --> 00:17:24.840] So generating machine code is more involved than,
+[00:17:24.840 --> 00:17:26.420] of course, the interpreter objects,
+[00:17:26.620 --> 00:17:28.640] but also more involved than generating VM code.
+[00:17:29.280 --> 00:17:30.820] Another problem here is portability.
+[00:17:31.080 --> 00:17:33.300] So what do you do if you don't want to run on Intel,
+[00:17:33.360 --> 00:17:34.480] but want to run on ARM?
+[00:17:34.660 --> 00:17:36.100] So this is of course also a challenge.
+[00:17:36.400 --> 00:17:38.500] We will look at this later in the lecture
+[00:17:38.500 --> 00:17:39.680] in the section code generation.
+[00:17:41.780 --> 00:17:45.860] Okay, and another interesting thing to keep in mind
+[00:17:45.860 --> 00:17:50.100] when talking about operator implementations is pipelining.
+[00:17:50.260 --> 00:17:52.660] So now what do we mean with pipelining?
+[00:17:52.860 --> 00:17:55.800] Usually we try to avoid copying data around
+[00:17:55.800 --> 00:17:57.960] because each copy costs me something.
+[00:17:58.140 --> 00:18:00.000] It costs me space, but also cost me performance
+[00:18:00.000 --> 00:18:02.220] because I have to run a lot of instructions.
+[00:18:03.120 --> 00:18:06.240] And if you manage to pass data between operators
+[00:18:06.240 --> 00:18:08.920] without making your copies, this we call pipelining.
+[00:18:09.380 --> 00:18:14.040] So basically implicitly passing data
+[00:18:14.040 --> 00:18:15.220] from one operator to another.
+[00:18:15.620 --> 00:18:17.260] Now, sometimes this is not possible.
+[00:18:17.260 --> 00:18:24.720] yeah so sometimes operator materializes input and then we call this operator a pipeline breaker
+[00:18:24.720 --> 00:18:34.000] so this operator we cannot pass around and in even more extreme case of this is if an operator
+[00:18:34.000 --> 00:18:40.840] consumes its input completely before producing any output then we call this a full pipeline breaker
+[00:18:40.840 --> 00:18:45.220] so this is the most extreme variant of a pipeline breaker a full pipeline breaker materialize
+[00:18:45.220 --> 00:18:48.000] everything and then start producing.
+[00:18:49.640 --> 00:18:54.420] And so there are operators that binary operators in particular that break only one side.
+[00:18:54.600 --> 00:18:59.200] So it's not only you are a pipeline breaker, but also where are you breaking the pipeline.
+[00:18:59.640 --> 00:19:00.980] So let's make an example.
+[00:19:01.560 --> 00:19:05.400] So this one here, a selection, this is not a pipeline breaker.
+[00:19:05.660 --> 00:19:05.800] Why?
+[00:19:05.980 --> 00:19:10.000] Because we can take a tuple, of course you have some condition here, but we can take
+[00:19:10.000 --> 00:19:12.920] a tuple, check the condition and just pass the data along to the next one.
+[00:19:12.920 --> 00:19:15.540] So the selection is usually not a pipeline breaker.
+[00:19:17.440 --> 00:19:22.640] So the other extreme end of the spectrum is this one here, SORT.
+[00:19:23.400 --> 00:19:27.540] SORT clearly is a pipeline breaker and in fact it is a full pipeline breaker.
+[00:19:27.740 --> 00:19:29.120] Why is it a full pipeline breaker?
+[00:19:29.320 --> 00:19:33.740] Because the last input tuple to SORT might be the first output tuple.
+[00:19:33.840 --> 00:19:37.260] Therefore we cannot output anything before we have seen all the input.
+[00:19:37.880 --> 00:19:42.380] And therefore SORT breaks the pipeline fully.
+[00:19:42.920 --> 00:19:46.800] materialize all my inputs. So this is the other extreme and then there are other
+[00:19:46.800 --> 00:19:53.940] forms like for example this one here. This is also a pipeline breaker but it's
+[00:19:53.940 --> 00:19:59.700] not a full pipeline breaker. Why? Because we can output tuples even though at
+[00:19:59.700 --> 00:20:03.080] least on one side and even though we have not seen my input completely. For
+[00:20:03.080 --> 00:20:06.640] example if you have a five-year tuple that does have a joint partner it can immediately output
+[00:20:06.640 --> 00:20:11.580] this value. Doesn't matter what comes later. So this is not a full, it's a
+[00:20:12.920 --> 00:20:21.640] pipeline breaker and finally this one here so when we talk about hash join
+[00:20:21.640 --> 00:20:26.780] this will break the pipeline on the left usually on the build side we draw it
+[00:20:26.780 --> 00:20:31.800] usually as the left this is built and probe so we do break the pipeline on the
+[00:20:31.800 --> 00:20:35.620] build side because we put the build side in a hash table but we do not break the
+[00:20:35.620 --> 00:20:39.200] pipeline on the probe side because for a prop tuple we look at the hash table
+[00:20:39.200 --> 00:20:41.180] we will check for matches and then output the value.
+[00:20:41.340 --> 00:20:43.820] Okay, so this is just to illustrate
+[00:20:44.920 --> 00:20:47.480] what is a pipeline breaker and where we do this.
+[00:20:47.560 --> 00:20:50.260] And of course, if you break the pipeline or not,
+[00:20:50.260 --> 00:20:51.880] this has implications for other operators,
+[00:20:52.320 --> 00:20:54.240] like can we still access values?
+[00:20:54.840 --> 00:20:57.380] And so like if somebody breaks the pipeline,
+[00:20:57.520 --> 00:21:00.040] this usually means that pointers become invalid.
+[00:21:00.560 --> 00:21:02.220] And so if the pipeline is broken,
+[00:21:02.420 --> 00:21:05.740] I can no longer reference a tuple by a pointer
+[00:21:06.260 --> 00:21:07.200] after the operator,
+[00:21:09.220 --> 00:21:15.200] measure but if my pipeline is preserved the parallel is not broken i can still continue
+[00:21:15.200 --> 00:21:24.320] using pointers and other effects okay yeah so this is just what i said so we affect the behavior
+[00:21:24.320 --> 00:21:28.600] so if a pipeline break is between a source and a sink the original data is no longer accessible
+[00:21:28.600 --> 00:21:33.800] so pointers are becoming invalid and this is relevant if we do tricks like lazy attribute
+[00:21:33.800 --> 00:21:38.720] access so which means we load an attribute only in the moment that we need it if somebody is about
+[00:21:39.200 --> 00:21:42.880] pipeline and must load it at this point in time because otherwise my input is gone.
+[00:21:43.900 --> 00:21:48.780] Or think what do we do with strings, do we have to make a copy of the strings or this
+[00:21:48.780 --> 00:21:53.480] kind of strings or do we do tabular djoins and we only join a tabular d and load the
+[00:21:53.480 --> 00:21:56.560] rest later so there are all kinds of games and we must know this.
+[00:21:58.000 --> 00:22:03.360] And on the other hand if there is a full pipeline breaker between the holes and the sink then
+[00:22:03.360 --> 00:22:10.480] we know that my execution plan is broken into fragments so everything before the full pipeline
+[00:22:10.480 --> 00:22:16.340] breaker and everything after and if this occurs multiple times i can for example execute these
+[00:22:16.340 --> 00:22:22.280] parts in parallel so the full pipeline breaker really means these two are decoupled so i can
+[00:22:22.280 --> 00:22:27.720] run them in parallel or i can schedule them or all kinds of things okay and therefore to make this
+[00:22:27.720 --> 00:22:31.920] correct the code generation must know if an operator is a pipeline breaker and where the
+[00:22:33.360 --> 00:22:36.340] And we, in fact, we will make it so that we will make
+[00:22:36.340 --> 00:22:37.440] this pipeline explicitly.
+[00:22:37.460 --> 00:22:39.480] So we say the pipeline goes from A to B,
+[00:22:39.640 --> 00:22:43.620] and then we know precisely how the data flow works.
+[00:22:45.740 --> 00:22:50.060] Okay, and now another interesting question is,
+[00:22:50.180 --> 00:22:51.740] what do we do with parallelization?
+[00:22:51.940 --> 00:22:53.400] So on today's machines,
+[00:22:54.100 --> 00:22:55.900] you have quite a significant number of cores.
+[00:22:56.220 --> 00:22:58.660] So like the desktop machine I'm currently sitting on
+[00:22:58.660 --> 00:23:01.900] has 16 cores, 32 with hyper,
+[00:23:03.820 --> 00:23:06.900] And this is not so super powerful machine.
+[00:23:07.300 --> 00:23:09.100] I mean, it's quite a good one,
+[00:23:09.180 --> 00:23:11.240] but you can definitely buy much larger machines.
+[00:23:11.420 --> 00:23:13.860] And so you can easily have a computer
+[00:23:13.860 --> 00:23:15.580] with 64 cores or even more.
+[00:23:16.200 --> 00:23:18.540] And so if you have such a high number of cores,
+[00:23:18.920 --> 00:23:20.120] then of course it doesn't make sense
+[00:23:20.120 --> 00:23:21.440] to execute everything single threaded,
+[00:23:21.640 --> 00:23:24.360] because otherwise you're wasting most of your system.
+[00:23:24.980 --> 00:23:26.560] And now how should we do this?
+[00:23:26.680 --> 00:23:30.940] Now, the easy problem of course is interqueryl parallelism,
+[00:23:30.940 --> 00:23:33.120] which just means we take two queries and run them parallel.
+[00:23:33.400 --> 00:23:36.260] This is super easy and we don't have to do anything special.
+[00:23:36.740 --> 00:23:39.360] Now, if you want to parallelize within a query,
+[00:23:39.540 --> 00:23:41.840] so if you want to do intra-query parallelism,
+[00:23:43.800 --> 00:23:45.440] then this is much more difficult.
+[00:23:46.240 --> 00:23:49.620] But of course, in practice, we need intra-query parallelism
+[00:23:49.620 --> 00:23:51.180] because it could be that the user comes to us
+[00:23:51.180 --> 00:23:53.240] with a very big query, a very complicated query,
+[00:23:53.400 --> 00:23:55.080] and we have only one query in my system,
+[00:23:55.200 --> 00:23:58.040] so I must do my best to execute this as fast as we can.
+[00:23:58.280 --> 00:24:00.220] Therefore, we need intra-query parallelism.
+[00:24:01.200 --> 00:24:05.840] Now also here there are easy and not so easy problems.
+[00:24:06.120 --> 00:24:12.000] So easy part is if we have independent parts of the query, for example, because of full
+[00:24:12.000 --> 00:24:15.640] pipeline breakers, so I know that these parts are independent, then I can just run them
+[00:24:15.640 --> 00:24:17.380] in parallel without doing anything.
+[00:24:17.500 --> 00:24:18.440] This is also easy.
+[00:24:19.040 --> 00:24:24.660] Now if you want to parallelize in a single operator, then this is more difficult.
+[00:24:24.660 --> 00:24:26.560] and for example it takes this one,
+[00:24:26.640 --> 00:24:28.180] where if we have a big table here,
+[00:24:28.760 --> 00:24:29.660] say a big table,
+[00:24:31.720 --> 00:24:33.760] and then on top of this big table is a group i.
+[00:24:34.060 --> 00:24:36.480] So there's only two operators,
+[00:24:36.700 --> 00:24:37.780] a table scan and a group i,
+[00:24:38.240 --> 00:24:39.920] and here I compute some group i,
+[00:24:40.120 --> 00:24:41.820] and I compute some or something like this.
+[00:24:42.840 --> 00:24:44.620] So how do I do this in parallel?
+[00:24:47.260 --> 00:24:50.160] Usually the strategy is we look at the input
+[00:24:50.160 --> 00:24:52.080] of the group i, of this big table,
+[00:24:52.320 --> 00:24:53.360] and we partition it.
+[00:24:54.660 --> 00:24:58.460] into let's say 16 pieces, if we have 16 cores,
+[00:24:58.820 --> 00:25:02.140] and then each core aggregates 1 16th of the data,
+[00:25:02.380 --> 00:25:06.140] and then we aggregate the results,
+[00:25:06.280 --> 00:25:08.060] then we produce a real output.
+[00:25:09.240 --> 00:25:10.980] Now for this simple query,
+[00:25:11.140 --> 00:25:13.040] this still works quite easily.
+[00:25:13.260 --> 00:25:14.780] In general, this is more difficult
+[00:25:15.360 --> 00:25:17.020] to how to make everything parallel.
+[00:25:17.860 --> 00:25:19.860] And therefore we will cover this later in the lecture,
+[00:25:19.980 --> 00:25:21.320] but I'd already want to mention this,
+[00:25:21.400 --> 00:25:22.880] this is a problem that we have to look at.
+[00:25:24.800 --> 00:25:31.560] Okay, so now after giving a very brief overview over the high level aspects of set oriented
+[00:25:31.560 --> 00:25:36.660] processing, I now want to look at the individual algebraic operators and discuss how to implement
+[00:25:36.660 --> 00:25:36.980] these.
+[00:25:37.240 --> 00:25:43.120] Also because so far we have only looked at table scan, select and cross product and these
+[00:25:43.120 --> 00:25:45.840] are of course all trivial operators, they don't do anything.
+[00:25:46.040 --> 00:25:50.640] These are very easy, so now we must look at more complex ones.
+[00:25:51.760 --> 00:25:58.940] Okay, and so when we run queries, all queries, at least in most systems, all queries are
+[00:25:58.940 --> 00:26:00.480] translated into relational algebra.
+[00:26:00.860 --> 00:26:04.100] So everything that we do, we express using relational algebra.
+[00:26:07.020 --> 00:26:13.460] And so if we want to offer certain implementation, we must express this in these algebraic operators.
+[00:26:13.940 --> 00:26:18.260] And often, not always, but often we have more than one implementation.
+[00:26:19.140 --> 00:26:21.680] So why do we need more than one implementation?
+[00:26:21.860 --> 00:26:29.980] For example, if I want to run a group by, if for example I would know that my input is
+[00:26:29.980 --> 00:26:34.180] sorted on A and I grouped by A, then the group by is trivial.
+[00:26:34.640 --> 00:26:38.080] I don't have to do anything because I know everything that belongs to the same group
+[00:26:38.080 --> 00:26:39.480] will be next to each other in the input.
+[00:26:39.820 --> 00:26:41.140] So it is very, very simple.
+[00:26:42.000 --> 00:26:46.720] While if my input is not sorted on A, then I must do something, so therefore I probably
+[00:26:48.260 --> 00:26:54.340] as if if we want to cover the special case same with with joints you most likely have at least
+[00:26:54.340 --> 00:27:00.980] two joint implementations potentially more but two is about the minimum that you that you need
+[00:27:01.540 --> 00:27:06.320] yeah and so you will have and probably as for other operators you will have different
+[00:27:07.280 --> 00:27:12.540] implementations sitting around now we will start with simple operators and then look at more
+[00:27:12.540 --> 00:27:16.100] complex one i just want to say the complexity between operators varies
+[00:27:16.760 --> 00:27:20.300] So there are a few operators that are very simple, select for example, super simple.
+[00:27:20.620 --> 00:27:24.820] So a few simple operators, but most operators tend to be quite complex.
+[00:27:25.000 --> 00:27:28.340] So join is a complex operator, group wise even worse.
+[00:27:28.920 --> 00:27:30.740] So these are quite complicated operators.
+[00:27:33.100 --> 00:27:39.120] And so as a rough rule of thumb, we can say pipeline operators tend to be simple because
+[00:27:39.120 --> 00:27:43.060] they pass data around and pipeline breakers tend to be complex.
+[00:27:43.060 --> 00:27:45.960] It's not always true, this is a rule of thumb,
+[00:27:46.060 --> 00:27:47.360] but most cases it's true.
+[00:27:47.600 --> 00:27:50.860] So this gives you an already quite an idea what to expect.
+[00:27:52.760 --> 00:27:56.720] Okay, and we now look at the operators in sequence.
+[00:27:56.920 --> 00:27:59.060] Again, we start with a very simple one, table scan.
+[00:27:59.340 --> 00:28:01.940] We just produce all tuples content in the relations.
+[00:28:02.100 --> 00:28:03.340] Conceptually this is super simple.
+[00:28:03.800 --> 00:28:07.740] And now the real implementation could be more involved.
+[00:28:08.020 --> 00:28:10.480] Yeah, so it depends on what the table scan does.
+[00:28:10.480 --> 00:28:15.640] Now first the table scan of course has to navigate the physical representation
+[00:28:15.640 --> 00:28:20.820] so which means we have to find the place where my data is stored which is not
+[00:28:20.820 --> 00:28:24.200] necessarily super complicated but depending how your storage layer works
+[00:28:24.200 --> 00:28:29.640] can be not non-trivial so here on the bottom you see example implementation
+[00:28:29.640 --> 00:28:35.880] of a reasonable simple table scan so but as you say so what we do here in the
+[00:28:35.880 --> 00:28:43.740] first loop we look at all page extents so we look at the sequence of pages that we have
+[00:28:43.740 --> 00:28:48.780] that belongs to the relations we look at the page extent e here then we loop over all pages
+[00:28:48.780 --> 00:28:55.460] in the page extent here then here we say we fix a page now finally that we have a page
+[00:28:55.460 --> 00:29:00.380] with tuples we loop over all tuples in the page and pass it to my consumer and of course
+[00:29:01.120 --> 00:29:05.680] implicitly here not mentioned there must be some kind of load logic or at least a lazy
+[00:29:05.880 --> 00:29:10.920] load so there must be some way to load the attribute value and so we take my tuple and
+[00:29:10.920 --> 00:29:17.060] pass it to my consumer and then when i'm done with the page i unfix the page and go to the
+[00:29:17.060 --> 00:29:23.780] next page in my extent okay this is already more complicated than what we saw before but
+[00:29:23.780 --> 00:29:29.460] this is still oversimplified the real implementation will be more complicated like this why yeah
+[00:29:29.460 --> 00:29:34.120] you have to all kind of problems that you have to handle now for example what about
+[00:29:35.880 --> 00:29:37.920] So if there are more than one transaction in the system,
+[00:29:38.140 --> 00:29:40.260] how do I make sure that I only see tuples
+[00:29:40.260 --> 00:29:42.020] that are visible to me and not tuples
+[00:29:42.020 --> 00:29:43.940] that are updated by another transaction?
+[00:29:44.300 --> 00:29:45.880] So this is probably, there will be here
+[00:29:45.880 --> 00:29:51.280] some transaction logic here in this for loop.
+[00:29:52.260 --> 00:29:55.020] Then you might want to handle deferred updates, for example.
+[00:29:55.160 --> 00:29:58.060] Now, so sometimes you don't want to update immediately
+[00:29:58.060 --> 00:30:00.300] because of write problems.
+[00:30:00.420 --> 00:30:01.840] So you want to delay this,
+[00:30:01.960 --> 00:30:04.360] and then you have to merge this pending update
+[00:30:05.880 --> 00:30:10.600] it comes. Or your table scan might be able to evaluate predicates, which actually is a good
+[00:30:10.600 --> 00:30:15.840] idea usually. So it could be that your table scan is not just outputting all tuples, but you can tell
+[00:30:15.840 --> 00:30:20.920] your table scan, I only want to find tuples where x equals 5. And then the table scan will already
+[00:30:20.920 --> 00:30:27.400] filter. Doing that on this level instead of just a selection on top is a good idea if your physical
+[00:30:27.400 --> 00:30:33.060] representation allows you to skip tuples that are guaranteed not to qualify. And this is often the
+[00:30:33.060 --> 00:30:37.340] So therefore you have a certain incentive to teach your tablet scan
+[00:30:37.340 --> 00:30:40.240] abroad the predicates because this will make your tablet scan faster.
+[00:30:40.580 --> 00:30:46.420] So even a tablet scan tends to be not so super small even though conceptually it's very simple.
+[00:30:47.500 --> 00:30:50.680] Now selection this is really simple there's not much you can do about this.
+[00:30:50.900 --> 00:30:56.500] So we filter all tablets that do not satisfy a predicate P conceptually very simple and
+[00:30:57.220 --> 00:31:01.020] in fact many systems do not even implement it like this.
+[00:31:01.020 --> 00:31:05.960] What you do instead is you piggyback the selection predicate on the previous operator.
+[00:31:06.120 --> 00:31:10.860] So you look at the input of the select and you say, hey, please check this when outputting
+[00:31:10.860 --> 00:31:11.200] tuples.
+[00:31:13.180 --> 00:31:14.700] This sometimes makes sense.
+[00:31:15.100 --> 00:31:17.780] Again, it depends a lot on how your system is implemented.
+[00:31:18.360 --> 00:31:24.460] But combining a selection into whatever is below you is often a good idea.
+[00:31:24.680 --> 00:31:25.480] Not necessarily.
+[00:31:25.480 --> 00:31:29.320] If your tuple passing is really cheap, then you can implement it in a separate operator.
+[00:31:31.140 --> 00:31:35.220] So now if you look at the produce-consume interface, we already looked at this.
+[00:31:35.980 --> 00:31:39.140] Produce of select just calls produce on its input.
+[00:31:39.660 --> 00:31:41.280] Consume of select checks the predicate.
+[00:31:41.440 --> 00:31:45.340] If it's true, we call consume on my consumer.
+[00:31:46.640 --> 00:31:48.780] Otherwise, we just discard the tuple.
+[00:31:49.900 --> 00:31:50.120] Okay.
+[00:31:52.020 --> 00:31:53.220] Now, MAP.
+[00:31:53.360 --> 00:31:55.420] MAP is also a simple operator.
+[00:31:56.280 --> 00:31:58.620] I think it's probably the last of the simple operators.
+[00:31:58.620 --> 00:32:01.280] and what map does, it computes a new column
+[00:32:01.280 --> 00:32:03.060] by evaluating function f.
+[00:32:04.980 --> 00:32:09.180] And again, some systems allow to piggyback a map
+[00:32:09.180 --> 00:32:11.500] on whatever comes below, but this is more rare.
+[00:32:11.700 --> 00:32:13.880] So there are not that many systems that do this,
+[00:32:14.080 --> 00:32:15.300] but you can do this.
+[00:32:15.760 --> 00:32:18.800] And so implementation is if you call the map
+[00:32:18.800 --> 00:32:22.260] to produce values here, we just call produce on my input.
+[00:32:22.640 --> 00:32:24.000] If a type of comes to me,
+[00:32:24.140 --> 00:32:25.800] so somebody calls me with consume,
+[00:32:26.040 --> 00:32:27.720] now I evaluate the function f,
+[00:32:28.620 --> 00:32:35.140] a new column a i attach it to my tupper and then i pass the combined result to my consumer okay so
+[00:32:35.140 --> 00:32:43.420] this is how we compute new columns during query execution okay now so these were all very simple
+[00:32:43.420 --> 00:32:49.320] now we come to an operator that's definitely not simple yeah join is a very complicated operator
+[00:32:50.160 --> 00:32:56.460] and you will most likely have at least two implementations.
+[00:32:58.220 --> 00:33:03.980] Probably you will even have three.
+[00:33:04.320 --> 00:33:07.200] It depends a bit on how good your query optimizers are.
+[00:33:07.260 --> 00:33:10.340] If your query optimizer is really strong, you might get away with only two.
+[00:33:10.660 --> 00:33:12.060] But two is the minimum that you need.
+[00:33:12.380 --> 00:33:14.400] Three is the most likely the minimum that you need.
+[00:33:15.980 --> 00:33:18.760] Okay, why do we need three different implementations of journal?
+[00:33:19.320 --> 00:33:21.140] and three is really the lower bound,
+[00:33:21.280 --> 00:33:22.580] you could easily have four or five.
+[00:33:22.860 --> 00:33:25.320] So you could have more, but three is lower bound.
+[00:33:25.540 --> 00:33:26.900] So why do we need three?
+[00:33:28.020 --> 00:33:31.540] First case here, if you join E1 with E2,
+[00:33:32.140 --> 00:33:34.140] if E2 depends on E1,
+[00:33:34.300 --> 00:33:36.700] then we must use a nested loop join.
+[00:33:37.860 --> 00:33:40.460] So because this is a dependent join
+[00:33:40.460 --> 00:33:42.540] and we must evaluate the right hand side
+[00:33:42.540 --> 00:33:43.860] for every table from the left hand side.
+[00:33:43.960 --> 00:33:45.360] So this calls for a nested loop join
+[00:33:45.360 --> 00:33:47.260] and this is our only choice.
+[00:33:47.260 --> 00:33:49.560] we must use an nested loop join for this.
+[00:33:49.740 --> 00:33:50.800] And this means of course,
+[00:33:50.860 --> 00:33:52.360] that we must implement an nested loop join.
+[00:33:53.780 --> 00:33:56.120] By the way, nested loop joins are absolutely terrible.
+[00:33:56.280 --> 00:33:58.600] You do not ever want to use an nested loop join
+[00:33:58.600 --> 00:33:59.500] if you can avoid it.
+[00:34:00.540 --> 00:34:00.900] Now,
+[00:34:04.780 --> 00:34:06.640] the system I'm currently building
+[00:34:06.640 --> 00:34:08.380] does not have an nested loop join.
+[00:34:08.880 --> 00:34:09.840] Now, how can this be?
+[00:34:09.940 --> 00:34:12.060] Because I just said everybody needs an nested loop join.
+[00:34:12.200 --> 00:34:14.640] Yeah, the escape route is,
+[00:34:14.780 --> 00:34:16.640] if your query optimizer is smart enough
+[00:34:17.260 --> 00:34:23.960] can eliminate the dependent join and so the user has formulated a query where a part of the query
+[00:34:23.960 --> 00:34:27.600] is correlated with other parts of the query so basically you do a select
+[00:34:31.500 --> 00:34:33.360] and then here you do
+[00:34:36.520 --> 00:34:37.900] from r where
+[00:34:40.220 --> 00:34:44.060] some stuff and then we type a sub query here select
+[00:34:46.060 --> 00:34:47.620] blah blah blah from s.
+[00:34:50.800 --> 00:34:52.600] There are some more stuff here where
+[00:34:56.040 --> 00:35:00.900] r.x equals s.y then here group by or something.
+[00:35:02.020 --> 00:35:08.240] So this is a correlated subquery. So we have a subquery where we use inside the subquery,
+[00:35:08.420 --> 00:35:11.180] a part of the outer query here, a correlation.
+[00:35:11.860 --> 00:35:13.940] this forces us to do an nested loop join
+[00:35:13.940 --> 00:35:14.980] and we get terrible runtime.
+[00:35:16.040 --> 00:35:18.540] If your query compiler is smart,
+[00:35:18.700 --> 00:35:20.120] it can rewrite the query for you
+[00:35:20.120 --> 00:35:23.200] so that the inner query is no longer correlated
+[00:35:23.200 --> 00:35:23.980] without the query.
+[00:35:24.220 --> 00:35:25.920] And if you manage to do this,
+[00:35:26.400 --> 00:35:28.840] you don't need an nested loop join.
+[00:35:29.460 --> 00:35:32.480] But of course, to fully eliminate an nested loop join,
+[00:35:32.600 --> 00:35:34.720] you must guarantee that this unnesting always succeeds
+[00:35:34.720 --> 00:35:36.760] so that you are able to remove any kind of
+[00:35:36.760 --> 00:35:38.460] dependency from a query,
+[00:35:38.560 --> 00:35:39.740] and this is quite a bit involved,
+[00:35:39.920 --> 00:35:40.720] but this is possible.
+[00:35:41.180 --> 00:35:43.640] You can build a system that does not need step one,
+[00:35:43.780 --> 00:35:46.780] but I'm only aware of currently two systems
+[00:35:46.780 --> 00:35:47.460] that can do this.
+[00:35:47.880 --> 00:35:51.560] So most database systems will have to implement
+[00:35:51.560 --> 00:35:52.980] a new state loop join for this reason.
+[00:35:54.360 --> 00:35:55.720] Okay, this is one implementation.
+[00:35:55.880 --> 00:35:58.560] Second implementation, if my predicate here,
+[00:35:58.640 --> 00:36:00.600] my joint predicate has a form A equals B,
+[00:36:00.860 --> 00:36:02.600] we can use any joint algorithm.
+[00:36:03.040 --> 00:36:04.820] So this is called an equi-join.
+[00:36:04.900 --> 00:36:07.840] So we join, checking for equality of two values.
+[00:36:08.020 --> 00:36:09.820] Of course, this is the most common case.
+[00:36:11.180 --> 00:36:13.320] And in that case, we can use everything.
+[00:36:13.560 --> 00:36:14.480] And if you can use everything,
+[00:36:14.520 --> 00:36:16.160] most of the time we will use a hash join.
+[00:36:16.740 --> 00:36:19.120] Because hash join is usually the fastest implementation.
+[00:36:19.380 --> 00:36:20.760] So this is what we can use here.
+[00:36:20.980 --> 00:36:25.740] Now, case three, if my sides are not correlated,
+[00:36:25.780 --> 00:36:29.020] but I also do not have an equal condition,
+[00:36:29.220 --> 00:36:31.380] then we can either use an asset loop join,
+[00:36:31.440 --> 00:36:32.940] if you don't want this for performance reasons,
+[00:36:33.100 --> 00:36:33.300] it's terrible,
+[00:36:33.460 --> 00:36:35.460] or we can use a block-wise-tested loop join.
+[00:36:36.080 --> 00:36:40.580] And this gives you the list of join algorithms
+[00:36:41.180 --> 00:36:47.220] probably implement you need a nested loop join probably you want to have a hash join
+[00:36:47.220 --> 00:36:52.300] and you want to have a block-wise nested loop join okay and we will look at the implementation
+[00:36:52.300 --> 00:36:56.140] of these algorithms in a moment i'm just saying so these are the three that you want you might
+[00:36:56.140 --> 00:37:01.700] want to have more like sort merge join or so but this is a minimum that you that you need
+[00:37:03.360 --> 00:37:08.660] okay we start with the first one nested loop join the nested loop join is the most flexible
+[00:37:08.660 --> 00:37:14.960] of the join but also the most simple and the most inefficient yeah so you never want to use a nested
+[00:37:14.960 --> 00:37:21.560] loop join if you can avoid it nested loop join is terrible yeah and now of course very easy to code
+[00:37:21.560 --> 00:37:27.940] but don't do this yeah so basically what we do here is if you coil produce on my nested loop join
+[00:37:27.940 --> 00:37:32.900] it coils produce on its left side if you get a template from the left we store the table on the
+[00:37:32.900 --> 00:37:38.300] left and we ask my right side to produce values if you get a template from the right we concatenate
+[00:37:38.660 --> 00:37:40.480] new tuple with my existing left tuple,
+[00:37:40.580 --> 00:37:42.680] I check the predicate and if it's true,
+[00:37:42.740 --> 00:37:43.980] I call it to my consumer.
+[00:37:44.160 --> 00:37:45.660] So this is like a cross product,
+[00:37:46.360 --> 00:37:48.340] there's an implicit filter condition.
+[00:37:48.560 --> 00:37:52.640] And so what we saw before is cross plus a filter.
+[00:37:54.140 --> 00:37:56.760] So easy, flexible, you can use any predicate piece
+[00:37:56.760 --> 00:37:59.800] that you might have, but you don't want to do this.
+[00:38:00.020 --> 00:38:00.240] Why?
+[00:38:00.540 --> 00:38:03.520] It means easy to see the runtime here is in the order
+[00:38:03.520 --> 00:38:08.320] of size of my left side times size of my right side.
+[00:38:08.960 --> 00:38:14.540] So this is asymptotically N square and N square is usually unacceptable.
+[00:38:15.140 --> 00:38:20.760] Our values of N tend to be super large and a million square is really an unpleasant number.
+[00:38:21.220 --> 00:38:24.720] So therefore try to not to use the nested loop join.
+[00:38:26.560 --> 00:38:27.780] Okay, what else can we do?
+[00:38:28.140 --> 00:38:34.000] So an improvement of the nested loop join is a blockwise nested loop join.
+[00:38:34.000 --> 00:38:38.000] This is a more sane implementation, this is really more efficient.
+[00:38:41.280 --> 00:38:44.940] But it also can be used for any predicates, it's good.
+[00:38:45.360 --> 00:38:50.980] Like the Nessel-Loop-Jones, the blocker Nessel-Loop-Jones can evaluate all predicates that you have.
+[00:38:51.140 --> 00:38:56.980] Like we can check for, I don't know, A is less than B or we can even do more fancy stuff.
+[00:38:56.980 --> 00:39:05.320] A times B plus C cos of this is less than 0.01, something like this.
+[00:39:05.940 --> 00:39:10.640] So if you want, you can evaluate this with block-faceted loop joint and with a nested loop joint.
+[00:39:10.800 --> 00:39:12.060] Any predicate is possible.
+[00:39:15.540 --> 00:39:19.740] And so how does this work algorithmically?
+[00:39:20.140 --> 00:39:23.140] So remember, the nested loop joint loads one tupper on the left,
+[00:39:23.320 --> 00:39:25.780] and for each tupper on the left, it evaluates the right-hand side,
+[00:39:26.980 --> 00:39:29.940] means that we evaluate the right hand side extremely often.
+[00:39:30.360 --> 00:39:31.500] And this is expensive.
+[00:39:31.700 --> 00:39:33.360] Here could be something like this.
+[00:39:33.560 --> 00:39:35.920] So I have a, there's a loop join,
+[00:39:36.640 --> 00:39:38.040] I have here at relation R
+[00:39:38.560 --> 00:39:40.540] and here I have something that's really expensive.
+[00:39:40.740 --> 00:39:42.960] Like it's not, it doesn't have to be a single table.
+[00:39:43.200 --> 00:39:44.760] Could be a group by whatever.
+[00:39:45.080 --> 00:39:47.280] And we evaluate this for every tupper
+[00:39:47.280 --> 00:39:48.340] from the left hand side.
+[00:39:48.940 --> 00:39:51.400] And so this is terribly expensive.
+[00:39:51.960 --> 00:39:53.760] Therefore the block was in the loop join says,
+[00:39:53.940 --> 00:39:56.460] okay, I also have to look at all pairs of values.
+[00:39:57.100 --> 00:40:00.220] but at least I can reduce the number of passes
+[00:40:00.220 --> 00:40:01.360] over the right hand side.
+[00:40:02.960 --> 00:40:06.580] And what you do is you load as many values
+[00:40:06.580 --> 00:40:08.600] from the left into a buffer as you can.
+[00:40:08.820 --> 00:40:09.940] As I have a memory buffer,
+[00:40:10.320 --> 00:40:12.820] you fill this buffer here with values from the left.
+[00:40:14.220 --> 00:40:16.000] Then we evaluate the right hand side
+[00:40:16.000 --> 00:40:18.260] and we compare all my values with my buffer.
+[00:40:18.640 --> 00:40:19.460] And then I have a,
+[00:40:20.020 --> 00:40:21.240] practically it's true, of course I have a match.
+[00:40:21.900 --> 00:40:23.020] And once we are done,
+[00:40:23.280 --> 00:40:25.660] we load a new batch of values into the left hand
+[00:40:26.980 --> 00:40:33.980] this again. Now you at least if you are more theory oriented you could say hey
+[00:40:33.980 --> 00:40:38.540] how is this an improvement because this is also n squared just like the
+[00:40:38.540 --> 00:40:42.620] the nest loop join because after all i combine every table from the left with
+[00:40:42.620 --> 00:40:48.580] every table from the right and that's true but the great advantage is that we
+[00:40:48.580 --> 00:40:53.000] reduce the number of passes over the right hand side by a factor m where m
+[00:40:53.000 --> 00:40:58.960] is my memory size. This can easily be a value of 1000 or 10,000 or 100,000.
+[00:41:00.520 --> 00:41:06.440] Yes, asymptotically it's n-square, but we improve the runtime by a very large constant factor.
+[00:41:06.700 --> 00:41:10.720] So for practical purposes this can be much faster than the nestle loop join.
+[00:41:11.960 --> 00:41:16.140] Of course, even here it's true, if you can avoid it, don't use the blockwise nestle loop join,
+[00:41:16.280 --> 00:41:20.300] use the hash join if you can. There are some predicates you cannot evaluate with the hash join,
+[00:41:20.300 --> 00:41:27.340] and then a block quest and a loop join is what you want to do okay now how does this implementation
+[00:41:27.340 --> 00:41:32.800] work so we need a buffer to store my tupples initially here we clear the buffer we just
+[00:41:32.800 --> 00:41:39.940] throw away everything that we might have now we we call produce on my left side and note that
+[00:41:39.940 --> 00:41:44.100] the real join here happens in the moment we get tupples so therefore we don't see anything
+[00:41:44.620 --> 00:41:48.800] but it could be that after we processed our left side my buffer is not empty actually it's quite
+[00:41:50.300 --> 00:41:55.140] so i might still have tuples in my buffer and if that is the case we do one final pass over
+[00:41:55.140 --> 00:42:02.560] the right hand side to produce all result values now so this is basically the the left over here
+[00:42:02.560 --> 00:42:10.900] that we do in the last if now the interesting work happens in in the consume call so when we
+[00:42:10.900 --> 00:42:15.160] get a tuple from the left so a new tuple comes from the left we check if we still have space
+[00:42:15.160 --> 00:42:20.960] in my buffer so after all i want to write all my tuples in a buffer and if my buffer is full so i
+[00:42:20.960 --> 00:42:28.820] cannot produce i cannot start in the buffer then i call produce on my right hand side so i ask my
+[00:42:28.820 --> 00:42:35.340] right hand side please give me all your tuples so we do this here and afterwards this by the way
+[00:42:35.340 --> 00:42:39.240] this produce quite implicitly joins with the content of my buffer so everything that was in
+[00:42:39.240 --> 00:42:44.120] my buffer has now be joined with my right hand side therefore i can now clear my buffer so i
+[00:42:45.200 --> 00:42:47.160] And now I can store my tupper in the buffer
+[00:42:47.160 --> 00:42:48.900] because now I have a new space.
+[00:42:50.600 --> 00:42:52.560] And when we get the tupper from the right,
+[00:42:52.780 --> 00:42:53.900] so in the second function here,
+[00:42:54.020 --> 00:42:55.420] so when we get a tupper from the right,
+[00:42:56.920 --> 00:42:59.120] we compare it with every tupper in my buffer,
+[00:42:59.380 --> 00:43:01.560] check the predicate, it's true,
+[00:43:01.680 --> 00:43:03.960] we pass it to my consumer, otherwise we throw it away.
+[00:43:05.060 --> 00:43:07.680] Now, so to illustrate the processing,
+[00:43:08.160 --> 00:43:09.880] let's say this is my left relation,
+[00:43:10.880 --> 00:43:12.520] this is my right relation.
+[00:43:13.740 --> 00:43:17.840] So I load as much as I can, for example, this much here in memory.
+[00:43:18.100 --> 00:43:20.140] And first, so this is now in my buffer.
+[00:43:20.640 --> 00:43:26.340] Now I do one pass here over my right hand side and compare everything here with my buffer content.
+[00:43:26.580 --> 00:43:29.060] And if the product is as true as I have a hit.
+[00:43:29.820 --> 00:43:31.880] Okay, afterwards I throw away my buffer content.
+[00:43:32.120 --> 00:43:33.440] So I clear the memory.
+[00:43:33.840 --> 00:43:35.540] I'm not sure if I can draw this.
+[00:43:35.680 --> 00:43:39.320] Yeah, so I clear my memory now because I have already joined it.
+[00:43:39.320 --> 00:43:42.020] I node the next bunch here in memory,
+[00:43:43.020 --> 00:43:44.880] do another pass over my data,
+[00:43:45.440 --> 00:43:47.200] compare it with that bunch,
+[00:43:47.960 --> 00:43:51.720] afterwards I forget my buffer content
+[00:43:51.720 --> 00:43:54.160] and load the rest here.
+[00:43:55.520 --> 00:43:57.060] And this is then the final call,
+[00:43:57.140 --> 00:43:58.820] do one more pass and that's it.
+[00:43:59.520 --> 00:44:00.920] Okay, so in this example here,
+[00:44:01.020 --> 00:44:02.340] we have the right hand side,
+[00:44:02.540 --> 00:44:05.220] the left hand side once and the right hand side three times.
+[00:44:05.880 --> 00:44:08.280] And because my left hand side was three times
+[00:44:09.320 --> 00:44:09.720] memory buffer.
+[00:44:12.520 --> 00:44:15.180] But, so this compared to a nested loop joint,
+[00:44:15.340 --> 00:44:17.800] this dramatically reduces the number of passes
+[00:44:17.800 --> 00:44:18.740] over the right hand side.
+[00:44:18.860 --> 00:44:20.100] So it will be much, much fewer,
+[00:44:21.280 --> 00:44:23.140] depending of course, how much memory you have.
+[00:44:23.480 --> 00:44:24.640] The more memory you have,
+[00:44:24.740 --> 00:44:27.340] the less passes of the right hand side you need.
+[00:44:29.340 --> 00:44:30.960] Okay, now, but nevertheless,
+[00:44:31.160 --> 00:44:32.740] this here is asymptotically in square,
+[00:44:32.940 --> 00:44:34.680] just with better constants than the other one.
+[00:44:34.680 --> 00:44:41.000] Now for an operator that is more efficient, so it has better run times than n squared,
+[00:44:41.340 --> 00:44:43.340] we look at the sort merge join.
+[00:44:43.540 --> 00:44:49.680] So this was historically the first join algorithm that commercial systems implemented as a reasonable
+[00:44:49.680 --> 00:44:50.580] implementation.
+[00:44:50.580 --> 00:44:56.760] So we say we want to take my two inputs e1 and e2 and I want to join them with the sort
+[00:44:56.760 --> 00:45:02.760] merge join and assume now that my predicate has a form e1.a equals e2.b.
+[00:45:04.680 --> 00:45:07.500] that E1 is sorted on A and E2 is sorted on B.
+[00:45:09.060 --> 00:45:10.360] Okay, now there are some,
+[00:45:10.920 --> 00:45:12.140] there's also in the implementation,
+[00:45:12.300 --> 00:45:13.680] also in the naming, what you see here,
+[00:45:13.780 --> 00:45:16.960] there's some confusion is what we consider
+[00:45:16.960 --> 00:45:18.120] a sort merge join.
+[00:45:19.820 --> 00:45:21.520] Strictly speaking, what we're talking about here
+[00:45:21.520 --> 00:45:23.100] is a merge join.
+[00:45:23.260 --> 00:45:25.540] So we don't sort because I assume my input
+[00:45:25.540 --> 00:45:26.640] is already sorted.
+[00:45:27.100 --> 00:45:28.420] In some of the limitations,
+[00:45:28.800 --> 00:45:32.620] it is a true sort merge join in the sense that
+[00:45:32.620 --> 00:45:35.800] it first sorts its input and then does the merge.
+[00:45:36.160 --> 00:45:39.000] But we assume that a sort will be implemented
+[00:45:39.000 --> 00:45:39.900] by different operators.
+[00:45:40.040 --> 00:45:42.100] So we have a separate sort operator that can sort
+[00:45:42.100 --> 00:45:43.860] if we need, and so we can sort them.
+[00:45:44.120 --> 00:45:46.620] And so our sort merge join assumes my input
+[00:45:46.620 --> 00:45:47.520] is already sorted.
+[00:45:49.080 --> 00:45:52.640] Okay, so the good thing about sort merge join is,
+[00:45:55.000 --> 00:45:56.740] so if my input is already sorted,
+[00:45:57.500 --> 00:46:01.820] then I just need a linear pass over both inputs here.
+[00:46:04.220 --> 00:46:06.600] and always skip over the smallest value.
+[00:46:07.320 --> 00:46:08.720] And the moment that it hits two values
+[00:46:08.720 --> 00:46:10.020] that are the same as a joint partner.
+[00:46:10.860 --> 00:46:12.800] Yeah, so skip, joint partner skip,
+[00:46:12.960 --> 00:46:14.020] joint partner skip, and so on.
+[00:46:14.500 --> 00:46:16.900] Yeah, and always skips the smallest one.
+[00:46:18.020 --> 00:46:21.620] Linear pass over the input, no extra memory.
+[00:46:21.800 --> 00:46:22.620] So everything is good.
+[00:46:22.840 --> 00:46:24.260] So this operator is super efficient,
+[00:46:24.520 --> 00:46:25.660] linear runtime, no memory.
+[00:46:26.720 --> 00:46:29.120] But of course this hides the fact,
+[00:46:29.380 --> 00:46:31.540] the expensive part of the third merge joint
+[00:46:32.620 --> 00:46:35.000] This is very, very cheap, but the sort.
+[00:46:35.980 --> 00:46:38.440] The sort of course is an N log N operation.
+[00:46:38.840 --> 00:46:39.940] So sorting is expensive.
+[00:46:40.360 --> 00:46:41.660] Merging is then very cheap.
+[00:46:42.200 --> 00:46:42.640] Okay.
+[00:46:42.800 --> 00:46:45.900] And because here we talk about implementation that does not do the sort.
+[00:46:46.140 --> 00:46:48.280] Therefore it looks like this operator would be super cheap.
+[00:46:48.860 --> 00:46:51.860] And for practical purposes might not be that cheap.
+[00:46:52.020 --> 00:46:52.960] So it's very fast.
+[00:46:53.020 --> 00:46:56.120] And we say here, it's very fast and efficient after sorting.
+[00:46:56.480 --> 00:46:57.940] And so this is of course, there's a downside.
+[00:46:57.940 --> 00:47:04.420] that. Another problem is a sort merge join is super easy in everything as long as you only do
+[00:47:04.420 --> 00:47:10.660] one to n joins. And also which means that one tuple can have n join partners but it cannot happen
+[00:47:10.660 --> 00:47:16.420] that n tuples have m join partners. So this one is okay so I have one value here that joins with
+[00:47:17.100 --> 00:47:21.820] zzzz so that's okay. Also the other direction of course is okay so if I have this here
+[00:47:22.760 --> 00:47:26.040] This is also okay, one value here joins with many here.
+[00:47:26.500 --> 00:47:29.860] But what we do not allow, at least now we have to allow,
+[00:47:30.180 --> 00:47:31.380] we do allow, but let's say,
+[00:47:31.440 --> 00:47:34.000] which makes your life much more difficult is this one here.
+[00:47:34.140 --> 00:47:36.980] So we have a value that joins with Z, Z, Z,
+[00:47:37.140 --> 00:47:38.980] but also the other way around here.
+[00:47:39.080 --> 00:47:40.960] So we have such a scenario.
+[00:47:41.300 --> 00:47:42.840] So this is an N to M join.
+[00:47:43.720 --> 00:47:46.560] So N values from the left join with N values on the right.
+[00:47:47.600 --> 00:47:50.400] Then suddenly this sort merge join is no longer that simple.
+[00:47:51.820 --> 00:48:01.620] is easy n2m is not easy okay and interestingly the sort merge join is about the only operator
+[00:48:01.620 --> 00:48:06.320] that cannot be implemented very nicely in the push model and it can in fact we will show you
+[00:48:06.320 --> 00:48:12.360] the codes how to do this but the push model has some problems with the with the sort merge join
+[00:48:12.360 --> 00:48:17.460] which is while the sort merge join is very easy in the iterator model so iterator model you can
+[00:48:17.460 --> 00:48:24.280] implements this easily. In the push model it's more nasty. So and we dance around this problem by
+[00:48:24.280 --> 00:48:29.560] materializing the left hand side. Now so all my adjoint operators assume that the left hand side
+[00:48:29.560 --> 00:48:36.300] is the smaller side so therefore materializing this side makes sense and if once you have implemented
+[00:48:36.300 --> 00:48:39.980] the left hand side then also the implementation is even in the push model is reasonably easy
+[00:48:39.980 --> 00:48:45.020] but in the iterator model you could implement it without materializing any of the two sides.
+[00:48:45.020 --> 00:48:46.400] I just want to mention this.
+[00:48:48.020 --> 00:48:50.680] Okay, so now with that declaration,
+[00:48:50.780 --> 00:48:51.640] let's look at the code.
+[00:48:51.880 --> 00:48:55.060] So this is an implementation of a third merge join.
+[00:48:56.400 --> 00:48:59.080] So when we are asked to produce values,
+[00:48:59.400 --> 00:49:04.860] so first we prepare some memory here,
+[00:49:05.020 --> 00:49:08.780] because as I said, we materialize the left hand side,
+[00:49:08.920 --> 00:49:12.040] so I prepare some memory or even some temporary segments
+[00:49:12.040 --> 00:49:13.000] where I can write values.
+[00:49:13.000 --> 00:49:21.100] then I scan over my left side so I call left.produce and then I remember so I
+[00:49:21.100 --> 00:49:25.300] have an iterator here so iterator over the left hand side and I set my iterator
+[00:49:25.300 --> 00:49:31.620] to the first spool tuple and then I scan over the right hand side okay now what
+[00:49:31.620 --> 00:49:34.780] do we do if so this one is a trivial case what do you do if we get a tuple
+[00:49:34.780 --> 00:49:38.240] from the left we don't do anything we just spool the value to a temp segment
+[00:49:38.240 --> 00:49:42.380] so we just write it into a temporary relation and then say okay here or one
+[00:49:43.480 --> 00:49:45.800] and then here we say here are all my values.
+[00:49:46.220 --> 00:49:48.760] So real work happens when we get a tupper from the right.
+[00:49:49.420 --> 00:49:49.940] Okay.
+[00:49:50.260 --> 00:49:52.640] So when we get a tupper from the right,
+[00:49:54.220 --> 00:49:57.460] we check is my current iterator.
+[00:49:57.700 --> 00:50:03.040] So remember we have an iterator over the spool values.
+[00:50:03.300 --> 00:50:07.040] Is my current iterator less than the value that's currently coming?
+[00:50:07.200 --> 00:50:08.720] If yes, I advance the iterator.
+[00:50:09.120 --> 00:50:10.940] So I continue processing.
+[00:50:13.920 --> 00:50:20.080] After I've done this, so I make a, so now I have found a value that is not less than
+[00:50:20.080 --> 00:50:23.260] my value, so it's either equal or larger, not less.
+[00:50:24.000 --> 00:50:29.740] Then I remember this position here, so I remember this, I make a copy of my iterator to the
+[00:50:29.740 --> 00:50:36.900] ib value and then as long as the my ib value is equal to my current triplet, so as long
+[00:50:36.900 --> 00:50:46.300] as a joint partner i output ib concordinated with my table and i advance ib plus one okay now you
+[00:50:46.300 --> 00:50:52.600] could ask yourself why why is this so why why do i don't why do i use two different uh operators and
+[00:50:52.600 --> 00:50:58.880] so on yeah so that's the reason of course is duplicates so assume my input here is one two
+[00:51:07.800 --> 00:51:17.420] So then my right hand side is 2, 3, 5, 6, 6, 9.
+[00:51:17.920 --> 00:51:23.780] So we start with setting the iterator here on 1, then my first value 2 comes.
+[00:51:24.380 --> 00:51:27.740] Okay, I see 2 is less than 1, so I advance my iterator.
+[00:51:29.860 --> 00:51:30.680] I go here.
+[00:51:31.860 --> 00:51:34.540] Then I see 2 is equal to 2, so I'll put a joint partner.
+[00:51:34.740 --> 00:51:35.240] Okay, that's easy.
+[00:51:35.920 --> 00:51:38.620] So then the next value comes 3.
+[00:51:40.080 --> 00:51:42.400] 2 is less than 3, so I advance 2 here.
+[00:51:42.860 --> 00:51:44.500] I don't have a joint partner, I stop.
+[00:51:45.260 --> 00:51:47.220] Next table comes 5.
+[00:51:47.900 --> 00:51:50.160] 4 is less than 5 I advance
+[00:51:53.060 --> 00:52:02.540] to here I have a join partner and now already you see my so my il so this is il so now I start a
+[00:52:02.540 --> 00:52:07.500] new block therefore the ib iterator over the block because I joined with 5 and I also join with the
+[00:52:07.500 --> 00:52:13.020] next value so therefore here in this loop I look at the next value too that's why I join with 5 and
+[00:52:13.020 --> 00:52:15.120] I join with that 5 and then I'm done.
+[00:52:16.520 --> 00:52:17.520] Now comes the 6.
+[00:52:17.860 --> 00:52:22.540] See, 5 is less than 6, so therefore I advance my pointer to the next 5.
+[00:52:23.220 --> 00:52:26.620] This 5 is still less than 6, so I advance the pointer to the next 5.
+[00:52:29.100 --> 00:52:31.760] Sorry, not the next 5, the next value is then they get a 6.
+[00:52:31.960 --> 00:52:33.160] We find a joint partner.
+[00:52:33.960 --> 00:52:36.220] We also look at the next value, we find a joint partner.
+[00:52:36.360 --> 00:52:41.240] But note that we do not advance the IL-Zeiger, sorry, mixing German and English.
+[00:52:43.380 --> 00:52:50.460] IL pointer. So we're still pointing to the first six not to the second six. Why? When the next six
+[00:52:50.460 --> 00:52:55.640] comes, which happens here, so then we must still find the first six as joint partner. So therefore
+[00:52:55.640 --> 00:53:00.340] now if you say here this here is a joint partner and then we advance and then we say that here is
+[00:53:00.340 --> 00:53:05.760] a joint partner. Okay so this is the N2M case, two values from left one with joint with two values
+[00:53:05.760 --> 00:53:06.260] from the right.
+[00:53:07.980 --> 00:53:09.780] Okay, so, but this is how it works.
+[00:53:10.020 --> 00:53:16.680] Now I said the n2m case is difficult and this code here is not that difficult because we
+[00:53:16.680 --> 00:53:19.960] have cheated, namely we have already materialized the left hand side.
+[00:53:20.300 --> 00:53:23.060] And therefore we can just read it multiple times as long as we want.
+[00:53:23.220 --> 00:53:24.340] So this is no problem.
+[00:53:24.580 --> 00:53:29.540] Now there are some pretty tricky and advanced implementations that do the n2m case correctly
+[00:53:29.540 --> 00:53:31.940] without making a copy of the left hand side.
+[00:53:31.940 --> 00:53:36.520] Now this is more involved to process.
+[00:53:39.820 --> 00:53:41.700] And also it does not work well
+[00:53:41.700 --> 00:53:43.000] with the consume-produce model.
+[00:53:43.140 --> 00:53:44.340] It works with the iterator model
+[00:53:44.340 --> 00:53:46.200] but not with the produce-consume model.
+[00:53:46.440 --> 00:53:50.520] Now, if you do want to do this fancy handling
+[00:53:50.520 --> 00:53:51.680] without materialization,
+[00:53:51.940 --> 00:53:54.160] this is what we see here as a marked as beta.
+[00:53:54.880 --> 00:53:57.380] What you do is we scan both lists in parallel,
+[00:53:57.860 --> 00:53:59.560] which we can do in the iterator model.
+[00:53:59.680 --> 00:54:01.220] We can ask each side, give me values.
+[00:54:01.940 --> 00:54:07.360] both sides and parallel and as long as they are different we just skip over the values
+[00:54:07.920 --> 00:54:11.500] only in the moment that we have found a match we start making copies
+[00:54:12.280 --> 00:54:15.940] so then we make a copy until the current block of value ends
+[00:54:15.940 --> 00:54:22.360] so like for this example here we said one two three four five five six six
+[00:54:22.360 --> 00:54:28.400] so we scan here we make no copy then we make a copy of the fives because we don't know how many
+[00:54:28.400 --> 00:54:29.880] on the right hand side we will see.
+[00:54:30.020 --> 00:54:31.480] So we copy the values of five.
+[00:54:32.120 --> 00:54:33.640] Now, when we are done with five,
+[00:54:33.760 --> 00:54:34.740] we forget these five.
+[00:54:34.900 --> 00:54:36.640] And now we're just making copies of six.
+[00:54:36.920 --> 00:54:40.200] Now we only copy what we need to the end-to-end case.
+[00:54:41.480 --> 00:54:43.860] Okay, but this is not so super easy to implement.
+[00:54:44.300 --> 00:54:48.280] Now this is quite, quite involved to do this.
+[00:54:49.080 --> 00:54:51.260] Here we get, because we always materialize
+[00:54:51.260 --> 00:54:52.900] the left hand side, our code is quite simple.
+[00:54:54.560 --> 00:54:56.080] By the way, I said historically,
+[00:54:56.080 --> 00:55:01.020] sort merge join was the first good joint implementation so the first efficient joint
+[00:55:01.020 --> 00:55:07.880] implementation i think today it's largely irrelevant very few people will want to use a
+[00:55:07.880 --> 00:55:13.740] sort merge join why yeah because sort merge can it be parallelized very well it depends of how
+[00:55:13.740 --> 00:55:20.300] of course how your data is stored but in general so merchants usually suitable for single threaded
+[00:55:20.300 --> 00:55:25.600] execution but not for multi-threaded execution and if you have a machine with
+[00:55:25.600 --> 00:55:31.420] 64 cores then single-threaded simply does not matter. Single-threaded is an
+[00:55:31.420 --> 00:55:35.840] irrelevant case if you have a high number of cores. Everything has to be
+[00:55:35.840 --> 00:55:39.700] done in parallel and SWOT MERGE JOIN is not very suited for parallel execution.
+[00:55:40.160 --> 00:55:42.880] Therefore what you want to do is this one here, hash join.
+[00:55:44.580 --> 00:55:48.560] Okay so again like a SWOT MERGE JOIN we assume that my
+[00:55:50.300 --> 00:55:56.860] equals b and what we do here is we build a hash table for the left side and then we probe the
+[00:55:56.860 --> 00:56:03.860] hash value for the value from the right side now of course there are different cases and complexity
+[00:56:04.980 --> 00:56:10.620] and in memory case in an external memory case the in memory case is quite simple the external
+[00:56:10.620 --> 00:56:17.220] memory case is not so simple and of course in in reality you will probably want to have a hybrid
+[00:56:17.220 --> 00:56:22.820] implementation because you don't know reliable how large your input is yeah so you will first
+[00:56:22.820 --> 00:56:27.620] try to do everything in memory and when you run out of memory you fall back to the external memory
+[00:56:27.620 --> 00:56:36.180] so you switch to this um to the slower algorithm if you have to okay but because we don't know this
+[00:56:36.180 --> 00:56:41.700] in beforehand this makes the code quite complicated here we split them in separate code paths we say
+[00:56:41.700 --> 00:56:45.940] we have one in memory hash join and we have an external memory has joined and we describe them
+[00:56:47.220 --> 00:56:52.060] easier to talk about this okay so let's start with looking at the in-memory hash join
+[00:56:53.600 --> 00:56:59.280] so when we call produce of the in-memory hash join we prepare a hash table where all my
+[00:56:59.280 --> 00:57:05.500] values from the left side will be stored in then i scan my left side putting everything that was
+[00:57:05.500 --> 00:57:11.060] in the left side in the hash table then i scan my right hand side and check the hash table for
+[00:57:11.060 --> 00:57:16.980] joint partners yeah and if we have luck with statistics which of course we hope that we have
+[00:57:16.980 --> 00:57:23.460] then this algorithm has linear runtime uh no i shouldn't say linear runtime uh more is very
+[00:57:23.460 --> 00:57:29.320] very dangerous to to say this it has linear runtime if you only have key from key joints
+[00:57:30.020 --> 00:57:36.800] yeah so um but in general because it could be that we have growing joints so that my output is
+[00:57:36.800 --> 00:57:37.700] is larger than my input.
+[00:57:38.280 --> 00:57:40.440] And if that happens, therefore the runtime
+[00:57:40.440 --> 00:57:42.100] of this algorithm here is expected.
+[00:57:42.300 --> 00:57:46.540] So if we look at the runtime of L join R,
+[00:57:46.660 --> 00:57:52.120] so we expect that the runtime here is in order of size
+[00:57:52.120 --> 00:57:55.960] of L plus size of R, which is linear,
+[00:57:56.900 --> 00:58:01.220] plus unfortunately size of L join R.
+[00:58:02.160 --> 00:58:04.260] Now, so this is what we want to have.
+[00:58:05.260 --> 00:58:06.580] Now, why is this term?
+[00:58:06.780 --> 00:58:10.160] Because you must produce your output and of course you cannot be faster than your output.
+[00:58:10.340 --> 00:58:15.080] And if your output is super linear, so output is larger than your input, then of course
+[00:58:15.080 --> 00:58:16.800] your algorithm cannot be better than this.
+[00:58:16.900 --> 00:58:18.220] So then we are also super linear.
+[00:58:18.620 --> 00:58:20.820] But this is usually not the case.
+[00:58:21.040 --> 00:58:22.480] Most queries don't do this.
+[00:58:22.720 --> 00:58:27.920] Therefore we expect here to have linear runtime in my hash join.
+[00:58:28.440 --> 00:58:29.500] Which of course is very good.
+[00:58:31.960 --> 00:58:33.840] Now how can we implement this?
+[00:58:34.260 --> 00:58:37.400] So we already saw the produce side, now about the consume side.
+[00:58:37.920 --> 00:58:42.900] Then we get the tuple from the left, we just take this tuple and store it in the hash table.
+[00:58:43.400 --> 00:58:49.240] So we see this is my join key, I just say hey for the value 5 I have that tuple, for
+[00:58:49.240 --> 00:58:50.560] the value 10 I have that tuple.
+[00:58:50.660 --> 00:58:57.920] So we have a hash table that tells me for each join key what is the corresponding tuple
+[00:58:57.920 --> 00:59:00.240] or corresponding tuple of course can be a multiple.
+[00:59:02.880 --> 00:59:04.940] Now, when we get a tuple from the right,
+[00:59:05.240 --> 00:59:07.280] now we've searched these joint partners.
+[00:59:07.520 --> 00:59:10.260] So here now I look, I look, take a look my tuple,
+[00:59:10.480 --> 00:59:12.680] I look into my hash table and check here, okay,
+[00:59:12.900 --> 00:59:16.260] which tuples do we have that belong to this hash key?
+[00:59:17.380 --> 00:59:19.900] Now, after we found them, we still check the predicate.
+[00:59:20.520 --> 00:59:20.720] Why?
+[00:59:21.960 --> 00:59:24.060] If you remember back about hash tables,
+[00:59:24.580 --> 00:59:27.660] so this look up here will only find entries
+[00:59:27.660 --> 00:59:30.420] that have the same hash value, yeah?
+[00:59:30.720 --> 00:59:33.320] And could be that we have hash collisions,
+[00:59:33.360 --> 00:59:35.640] not very likely, but could be that we have two values
+[00:59:35.640 --> 00:59:36.940] that are relatively different,
+[00:59:37.100 --> 00:59:39.400] but by chance gets the same hash value.
+[00:59:40.680 --> 00:59:43.940] Now here we have to check if this is the case.
+[00:59:44.320 --> 00:59:46.880] So we check the predicate just to be sure.
+[00:59:47.100 --> 00:59:48.040] And now if the predicate is true,
+[00:59:48.160 --> 00:59:50.200] then we really have a joint partner, okay?
+[00:59:51.860 --> 00:59:55.440] And so, yeah, so the implementation
+[00:59:55.440 --> 00:59:57.200] of in-memory hash joint is actually quite simple.
+[00:59:58.160 --> 01:00:03.780] If you want to be more flexible, of course here at some point we would have to check if we are full
+[01:00:04.960 --> 01:00:10.840] If you run out of memory here, I actually check it before of course and before storing in a cache there is check space
+[01:00:14.280 --> 01:00:18.640] And if you run out of space we cannot store the tupples then we fall back to the external memory case
+[01:00:19.480 --> 01:00:25.180] And otherwise you try to be in memory. Okay, so this is how we would implement the hybrid implementation
+[01:00:25.800 --> 01:00:29.140] In-memory has joined still quite simple.
+[01:00:30.220 --> 01:00:32.720] Now, if we do not fit into your memory,
+[01:00:32.820 --> 01:00:36.480] then suddenly we become much, much, much more complicated.
+[01:00:36.760 --> 01:00:39.660] As you see already that we need multiple slides here,
+[01:00:40.000 --> 01:00:42.760] just because there are so many things that we have to do
+[01:00:42.760 --> 01:00:43.740] and that can go wrong.
+[01:00:44.800 --> 01:00:47.540] Okay, so let's look at this piece by piece.
+[01:00:48.860 --> 01:00:51.480] So how can we implement the external memory has joined?
+[01:00:51.480 --> 01:00:59.000] So we start by preparing an in-memory spool buffer because we don't always want to write to disk
+[01:00:59.000 --> 01:01:01.320] so we keep as much in-memory as we can
+[01:01:02.720 --> 01:01:07.540] Then we also prepare some space on disk, some temporary segments that we can use for spooling
+[01:01:07.540 --> 01:01:09.560] So we then we rewrite everything down
+[01:01:10.220 --> 01:01:14.380] Okay, then we define initial partition boundaries. Now what does this mean?
+[01:01:14.860 --> 01:01:18.540] So first perhaps before looking at the code I should explain the algorithm
+[01:01:18.540 --> 01:01:23.340] I mean I hope actually that you have already looked at this in your introduction to databases
+[01:01:23.980 --> 01:01:32.340] yeah because this here is the so-called grace hash join. So grace hash join and what does this
+[01:01:32.340 --> 01:01:36.560] join do? So if this is my left side and this is the domain of my left side
+[01:01:38.520 --> 01:01:42.540] so let's say this is the value a and this here is the value b
+[01:01:45.940 --> 01:01:53.420] and this is of course the smallest possible value and then this is the largest possible value
+[01:01:54.020 --> 01:01:58.620] either by looking at the real values or in our case most likely we just look at the hash values
+[01:01:58.620 --> 01:02:04.620] after all we are hash join yeah we compute the hash value of my of my join attributes then I
+[01:02:04.620 --> 01:02:08.520] have a smallest possible hash value probably zero and have a largest possible value probably
+[01:02:08.520 --> 01:02:16.700] two to the power of 63 minus one okay and uh now if the the smaller side would fit in memory then
+[01:02:16.700 --> 01:02:19.840] everything would be easy because it was just stored in hash tables that it would be done
+[01:02:20.300 --> 01:02:28.820] but if the my side is the left side here is too large what i can do it i'd cut my my side here
+[01:02:28.820 --> 01:02:36.060] into parts like this four parts in this case such that each part can fit in memory of course the
+[01:02:36.060 --> 01:02:39.860] number of cuts that I do, the number of partitions depends on how large my relation is.
+[01:02:40.020 --> 01:02:42.860] The larger my relation is, the more cuts do I need.
+[01:02:43.000 --> 01:02:47.840] So I want to cut it such that my each partition fits in memory.
+[01:02:48.800 --> 01:02:52.860] And then after deciding the partitions, I partitions the other side too by the same
+[01:02:52.860 --> 01:02:53.340] criterion.
+[01:02:53.740 --> 01:02:56.700] For example, I mean, let's just to make up some numbers.
+[01:02:56.900 --> 01:03:01.300] Of course, this is totally bogus here, but I want to get so nice small numbers.
+[01:03:01.400 --> 01:03:04.960] So this says this is zero and this is 16 exclusively.
+[01:03:06.060 --> 01:03:09.880] And I could for example say everything up to 4 exclusive goes in the first partition,
+[01:03:10.180 --> 01:03:16.280] everything between 4 and 8 goes to second, between 8 and 12 goes here and between 12
+[01:03:16.280 --> 01:03:17.660] and 16 goes to the last one.
+[01:03:18.480 --> 01:03:22.700] And then I would do the same partitioning on the other side even though you don't have
+[01:03:22.700 --> 01:03:24.560] to fit it in memory but nevertheless you do it.
+[01:03:25.420 --> 01:03:30.660] And then so also here 0, 4, 8, 12, 16.
+[01:03:31.920 --> 01:03:36.760] and now you know that joint partners can only occur on this diagonal
+[01:03:39.220 --> 01:03:46.740] nobody else can join why everyone we know that these values must be equal in the end
+[01:03:46.740 --> 01:03:57.740] because my predicate is a equals b therefore i know i can only find a joint partner but if my
+[01:03:57.740 --> 01:03:59.320] the hash value is between 0 and 4,
+[01:03:59.460 --> 01:04:02.060] the hash value of the other guy must also be between 0 and 4.
+[01:04:02.180 --> 01:04:05.040] Yeah, so therefore I only have to look at this diagonal here.
+[01:04:05.200 --> 01:04:07.800] And this is the idea of grace hash join.
+[01:04:08.000 --> 01:04:09.400] Now, so if you partition both sides,
+[01:04:09.560 --> 01:04:11.560] and then we look at the corresponding partition.
+[01:04:11.740 --> 01:04:13.300] So basically this partition looks at that,
+[01:04:13.420 --> 01:04:15.380] this here looks at that, this here looks at that,
+[01:04:15.380 --> 01:04:16.380] and this here looks at that,
+[01:04:16.520 --> 01:04:18.240] and we ignore everybody else.
+[01:04:18.400 --> 01:04:20.000] And so we only look at the corresponding partition,
+[01:04:20.240 --> 01:04:23.700] and this allows me to find my joint partners.
+[01:04:23.700 --> 01:04:29.600] and now there are some unpleasant things that can happen namely we might have to
+[01:04:29.600 --> 01:04:35.180] recursively repartition we hope this is never happens yeah but hope is not truth
+[01:04:36.540 --> 01:04:40.580] because so how can this happen that we might have to repartition we want to
+[01:04:40.580 --> 01:04:44.820] partition my input such that each partition and each partition from the
+[01:04:44.820 --> 01:04:48.540] left at least so from the build side that each partition from the left fits in
+[01:04:48.540 --> 01:04:53.580] memory this is what we want and and as in my example I said and for this I break
+[01:04:53.700 --> 01:04:54.840] and put it into four partitions.
+[01:04:55.420 --> 01:04:57.600] But how do I know that I should use four?
+[01:04:58.000 --> 01:04:59.420] Why four? Why not eight?
+[01:05:00.040 --> 01:05:01.300] You know, or some other value.
+[01:05:01.980 --> 01:05:04.640] Basically what we do is we want to use estimates.
+[01:05:04.940 --> 01:05:06.240] We look at how large is my memory,
+[01:05:06.360 --> 01:05:08.400] how large is the tuple, how many tuples do I have?
+[01:05:08.760 --> 01:05:10.220] And then I estimate, okay,
+[01:05:10.320 --> 01:05:12.040] I believe we need four partitions.
+[01:05:12.240 --> 01:05:14.300] And most, in most cases it's probably true.
+[01:05:15.260 --> 01:05:17.020] Sometimes we are probably, we'll be wrong
+[01:05:18.400 --> 01:05:20.560] because tuple size are very uneven
+[01:05:20.560 --> 01:05:22.700] or we simply did not know precisely
+[01:05:23.700 --> 01:05:28.440] we would get because it could be a predicate of the user predicate on input so i don't know how
+[01:05:28.440 --> 01:05:34.380] large my input will be and then i guess wrong and if this happens then i might have to repartition
+[01:05:34.380 --> 01:05:41.320] recursively to to until the each partition fits in memory now so this is a rare case but this can
+[01:05:41.320 --> 01:05:47.380] happen okay and once i manage to break it into small enough pieces that everything fits then
+[01:05:47.380 --> 01:05:52.260] the problem is easy again because then we basically come back to the in-memory case that we already saw
+[01:05:53.860 --> 01:05:56.780] So this is the high level algorithm.
+[01:05:56.980 --> 01:05:58.500] Here is now the corresponding code.
+[01:05:58.660 --> 01:06:04.760] I said already we prepare a spooling buffer in memory
+[01:06:04.760 --> 01:06:07.160] and we prepare a spooling buffer on disk.
+[01:06:07.420 --> 01:06:09.640] Then we define initial page boundaries.
+[01:06:09.920 --> 01:06:11.440] This is of course, it basically means we guess.
+[01:06:11.940 --> 01:06:14.320] Not only guessing, we look at statistics that we have,
+[01:06:14.440 --> 01:06:18.320] but we try to find a good partition boundary, let's say.
+[01:06:18.880 --> 01:06:26.600] okay and then we call produce on my left side and this partitions the left side into the chosen
+[01:06:26.600 --> 01:06:32.300] partitions now then we flush the in-memory buffer if we have to because this could be or actually
+[01:06:32.300 --> 01:06:37.120] it's quite likely that we still have tuples in my buffer when we have finished then we repartition
+[01:06:37.120 --> 01:06:42.620] the left hand side if we have to so this now checks if we if partitions were fine or if you
+[01:06:42.620 --> 01:06:47.720] should have chosen finer partitions so this repartitions if needed afterwards i read the
+[01:06:48.320 --> 01:06:50.420] and produce it into partitions.
+[01:06:51.540 --> 01:06:53.400] Here we never have to repartition again
+[01:06:53.400 --> 01:06:54.840] because we only want to partition
+[01:06:54.840 --> 01:06:57.500] such that the left hand side fits in memory.
+[01:06:57.640 --> 01:07:00.180] If the right hand side is larger than memory, that's okay.
+[01:07:00.940 --> 01:07:03.040] Okay, again, then we flush buffers
+[01:07:03.040 --> 01:07:06.140] if we have tuppets in my buffers
+[01:07:06.140 --> 01:07:09.540] and finally we produce all joint partners.
+[01:07:10.060 --> 01:07:11.500] As you can already see,
+[01:07:11.560 --> 01:07:13.480] this is clearly a full pipeline breaker
+[01:07:14.040 --> 01:07:16.200] because we have processed both left and right side
+[01:07:16.200 --> 01:07:17.800] before producing any output values.
+[01:07:18.340 --> 01:07:23.760] Okay, so a good classic a great search joint breaks a pipeline on both sides
+[01:07:25.400 --> 01:07:30.540] But in memory case breaks it only on the right. Okay, now let's look at the individual pieces here
+[01:07:31.100 --> 01:07:33.420] First what do we do if we get a tupper from the left?
+[01:07:34.880 --> 01:07:35.680] first phase
+[01:07:36.240 --> 01:07:41.920] So we get a tupper from the left and what we want to do is you just want to put it into my in-memory
+[01:07:41.920 --> 01:07:45.220] Pool have a rough of a memory. We just put it in there
+[01:07:45.220 --> 01:07:50.880] and if you can do this it's just fine we do it and if my buffer is full so this is what this if
+[01:07:50.880 --> 01:07:58.300] checks if my buffer is full if yes so my buffer can no longer store a new tupple then I must write
+[01:07:58.920 --> 01:08:04.680] my tupples to disk and so this is an external memory has joined so we can we write everything
+[01:08:04.680 --> 01:08:12.840] to disk that doesn't fit so before we do this we we sort my values in the buffer by hash value
+[01:08:13.600 --> 01:08:18.380] and then we write the entries to the corresponding partitions okay and now
+[01:08:18.380 --> 01:08:23.760] you could ask yourself why sorting now so we do sort because this means that
+[01:08:23.760 --> 01:08:27.920] tuples that belong to the same partition will be next to each other in memory
+[01:08:27.920 --> 01:08:32.160] and this is good because this gives me a nice consecutive IO pattern so you can
+[01:08:32.160 --> 01:08:35.720] just write everything one one partition out sequentially then the next
+[01:08:35.720 --> 01:08:39.460] partition out sequentially next out sequentially so we get sequential IO on
+[01:08:39.460 --> 01:08:44.260] disk and remember when we said in the past sequential I.O. is extremely important
+[01:08:44.260 --> 01:08:47.920] for disks so we want this for performance reasons even for SSDs by the
+[01:08:47.920 --> 01:08:52.580] way it is not only for rotating disks you want to have right locality now so
+[01:08:52.580 --> 01:08:56.580] we therefore sorting memory pays off okay then we update the partition
+[01:08:56.580 --> 01:09:00.800] statistics basically we remember how many tuples do we have and how large was
+[01:09:00.800 --> 01:09:06.180] each tuple so how much space did we use then we empties the buffer and then we
+[01:09:06.180 --> 01:09:07.700] we now have space for the next tuple.
+[01:09:07.860 --> 01:09:09.800] Okay, then after this we can install the tuple.
+[01:09:10.000 --> 01:09:12.460] And we do this till the end.
+[01:09:13.860 --> 01:09:16.720] Okay, so after we process the left hand side,
+[01:09:16.860 --> 01:09:18.920] everything was written out into partitions.
+[01:09:19.400 --> 01:09:22.480] Now we must check if this is fine.
+[01:09:22.660 --> 01:09:23.740] It could be that if we're lucky,
+[01:09:23.780 --> 01:09:24.740] we don't have to do anything.
+[01:09:25.240 --> 01:09:28.280] Or if my partition is too large.
+[01:09:28.400 --> 01:09:30.640] It could be that my partition is larger than my memory.
+[01:09:31.060 --> 01:09:32.560] So this is what we check here
+[01:09:32.560 --> 01:09:35.240] in this function repartition left.
+[01:09:36.180 --> 01:09:42.420] So basically what we do here is we loop over all partitions and we check if the partition is larger than memory.
+[01:09:42.680 --> 01:09:49.160] If yes, a lot of special cases, we check if the number of hash values that we have is larger than one.
+[01:09:50.280 --> 01:09:54.660] Basically what we remember is what is the largest and the smallest hash value that we have in my partition.
+[01:09:54.960 --> 01:09:57.740] If they are equal, I have only one value, then I have a problem.
+[01:09:58.380 --> 01:10:02.200] And then if this happens, then we mark the partition here as overflow.
+[01:10:02.200 --> 01:10:08.620] we say oh this is a large partition with only one value you have to treat this especially okay i
+[01:10:08.620 --> 01:10:14.980] hope this never happens and if we have more than one hash value then we can find a newer
+[01:10:14.980 --> 01:10:23.400] partition boundary so i solve c for example f hash values between 10 and let's say 30 and i know
+[01:10:23.400 --> 01:10:29.160] that my partition is two largest three times larger than memory then i will choose new boundaries yes
+[01:10:29.160 --> 01:10:37.540] here and here such that everything is now evenly distributed okay and so we
+[01:10:37.540 --> 01:10:43.320] do this line we derive new new partition boundaries we load the partition in
+[01:10:43.320 --> 01:10:49.000] memory and then we write out each partition with each part out into this
+[01:10:49.000 --> 01:10:53.040] final partition boundary so we transform one big partition basically into
+[01:10:54.420 --> 01:10:55.820] into three partitions.
+[01:10:58.020 --> 01:11:00.960] Now, so first, second, and third.
+[01:11:01.120 --> 01:11:02.420] And of course, we hope that now
+[01:11:02.420 --> 01:11:04.040] these three partitions do fit.
+[01:11:04.680 --> 01:11:06.660] Now, if we would be extremely unlucky,
+[01:11:06.800 --> 01:11:08.000] of course, this could see be too large,
+[01:11:08.060 --> 01:11:10.360] then we would repeat this until it fits.
+[01:11:10.500 --> 01:11:11.780] But hopefully this never happens.
+[01:11:12.540 --> 01:11:17.940] Okay, and so basically we bring the external memory case
+[01:11:17.940 --> 01:11:19.240] down to the in-memory case,
+[01:11:19.420 --> 01:11:21.440] because once the partition does fit in memory,
+[01:11:21.540 --> 01:11:22.960] everything else is quite simple.
+[01:11:24.680 --> 01:11:26.940] Now coming back to this overflow case here,
+[01:11:26.960 --> 01:11:29.940] this is a special case and this can happen for example,
+[01:11:30.160 --> 01:11:32.660] if you have a lot of duplicates in that relation,
+[01:11:33.000 --> 01:11:35.580] like it could be that my relation contains
+[01:11:35.580 --> 01:11:37.080] 1 million times the same value.
+[01:11:37.620 --> 01:11:39.520] And if the value is really the same,
+[01:11:39.780 --> 01:11:41.040] yeah, I cannot do anything.
+[01:11:41.260 --> 01:11:43.160] If the values are the same,
+[01:11:43.240 --> 01:11:44.740] they will of course have the same hash value.
+[01:11:44.960 --> 01:11:47.140] So a new, no partitioning strategy
+[01:11:49.080 --> 01:11:50.760] will ever solve this problem for me.
+[01:11:50.760 --> 01:11:54.420] So if you have real duplicates or hash collisions,
+[01:11:54.600 --> 01:11:57.480] hash collisions could also be, but this is unlikely.
+[01:11:57.680 --> 01:11:59.020] If you have functions, good hash collision,
+[01:11:59.200 --> 01:12:01.440] not very likely, but you could have real collisions,
+[01:12:01.680 --> 01:12:04.620] as real duplicates, and then we can have a partition
+[01:12:04.620 --> 01:12:07.560] that is larger than memory, and we cannot make it smaller.
+[01:12:07.980 --> 01:12:09.100] Okay, and if this happens,
+[01:12:09.220 --> 01:12:11.080] then we just remember it and treat it specially.
+[01:12:12.980 --> 01:12:14.740] Now, if you get a tupper from the right,
+[01:12:14.900 --> 01:12:16.540] this is now, looks,
+[01:12:16.540 --> 01:12:20.340] It's a principle just like the get tupper from the left case.
+[01:12:22.280 --> 01:12:24.900] So the only difference is now we are sure
+[01:12:24.900 --> 01:12:26.780] that my partition boundary is correct.
+[01:12:27.420 --> 01:12:29.680] Because the right hand side no longer has to guess
+[01:12:29.680 --> 01:12:30.400] partition boundaries.
+[01:12:31.040 --> 01:12:32.820] Then we scan the left hand side,
+[01:12:32.960 --> 01:12:34.860] we have already, after we scan the left hand side,
+[01:12:35.020 --> 01:12:36.320] we already picked my boundary.
+[01:12:36.480 --> 01:12:37.820] So at this point we do know.
+[01:12:38.260 --> 01:12:38.700] Okay.
+[01:12:39.020 --> 01:12:40.180] Otherwise the code is the same.
+[01:12:40.360 --> 01:12:42.760] The tupper comes, we check if there's space.
+[01:12:42.960 --> 01:12:44.400] If yes, we just put it in the buffer.
+[01:12:44.400 --> 01:12:47.540] If no, we sort my values by hash value.
+[01:12:47.820 --> 01:12:50.760] We spool out my, write out my values
+[01:12:50.760 --> 01:12:51.940] in the corresponding partitions,
+[01:12:52.080 --> 01:12:53.280] we empty the buffer and we continue.
+[01:12:53.920 --> 01:12:54.120] Okay.
+[01:12:56.060 --> 01:12:58.920] And now there is a remaining interesting part,
+[01:12:59.040 --> 01:13:00.100] of course, is the join.
+[01:13:00.540 --> 01:13:02.840] So because after this, after this here,
+[01:13:03.040 --> 01:13:05.740] we have partitioned both my left and my right hand side.
+[01:13:05.880 --> 01:13:08.180] And we know that my left partitions do fit in memory.
+[01:13:08.960 --> 01:13:11.180] The right hand side, not necessarily, they can be larger,
+[01:13:11.360 --> 01:13:12.820] but the left side will be fit in memory.
+[01:13:14.400 --> 01:13:20.060] The final step here is join partitions and this now produces the real output values.
+[01:13:20.280 --> 01:13:21.980] For this we look at all partitions.
+[01:13:22.160 --> 01:13:24.700] There are two cases here, the good and the bad case.
+[01:13:24.920 --> 01:13:27.980] We check if P is an overflow partition, that is the bad case.
+[01:13:28.180 --> 01:13:31.780] If yes, we call the function join partition overflow, special logic here.
+[01:13:32.820 --> 01:13:35.480] Otherwise the regular case we just call a join partition.
+[01:13:37.580 --> 01:13:43.600] And again this is a great size join idea because we have an equal join, we know that we can
+[01:13:44.820 --> 01:13:50.540] partners within the partition so on the diagonal in this domain space and
+[01:13:50.540 --> 01:13:56.200] therefore it's sufficient to look at the same partition in each in each side
+[01:13:57.040 --> 01:14:02.940] and yeah the overflow case needs some special care so first look at the regular
+[01:14:02.940 --> 01:14:07.100] case the joint partition case we get a partition P so then what we do is we
+[01:14:07.100 --> 01:14:13.480] load P so this part of my domain space into memory in a hash table and we know
+[01:14:14.400 --> 01:14:20.000] possible because we checked yeah so we we in this recursive repartitioning make sure
+[01:14:20.000 --> 01:14:24.100] that each partition on the left fits so this here must succeed okay so we load it in the
+[01:14:24.100 --> 01:14:29.640] hash table if it's possible and now this remaining code here this looks basically like the in-memory
+[01:14:29.640 --> 01:14:35.640] hash join so so what we do is we loop over all tuples in the corresponding partition
+[01:14:35.640 --> 01:14:41.940] on the right and so here then we check the hash table for a joint partner here we check
+[01:14:41.940 --> 01:14:48.020] if this is a truly equal or not a hash collision here and if it's truly equally output result
+[01:14:48.020 --> 01:14:53.180] now so this basically at this point here we have reached the in-memory case because we know that
+[01:14:53.180 --> 01:14:58.660] my left hand side must fit as the right hand side can be utterly large i mean this of course makes
+[01:14:58.660 --> 01:15:03.780] you are this for each t and repetition a bit more more difficult but not really difficult you know
+[01:15:03.780 --> 01:15:10.000] because also here we mean if it's very large we just load a page with tuples and after we have
+[01:15:11.940 --> 01:15:17.240] so we loop over all pages that contain values but this is not so super complicated
+[01:15:19.620 --> 01:15:28.940] okay and now the the special case is that we did have to process this now is um i said the other
+[01:15:28.940 --> 01:15:36.600] case was like um in memory has joined this here is log like a blockbuster loop join because we know
+[01:15:36.600 --> 01:15:40.700] that my partition doesn't fit because i have so many identical values so all values are equal
+[01:15:41.940 --> 01:15:44.620] if my vacuoles are equal then what should I do?
+[01:15:44.820 --> 01:15:47.080] And so I have to look all of them in sequence.
+[01:15:48.720 --> 01:15:52.320] So here we look at, we load from by,
+[01:15:52.460 --> 01:15:53.480] so you look at the partition P,
+[01:15:53.740 --> 01:15:56.240] we load from P as much as we can in memory,
+[01:15:56.340 --> 01:15:57.240] which might not be everything
+[01:15:57.240 --> 01:15:58.340] because it could be too large,
+[01:15:58.460 --> 01:16:00.320] but we load as much as we can in memory.
+[01:16:01.240 --> 01:16:03.040] We put it in a hash table
+[01:16:03.040 --> 01:16:06.260] and then runs the in-memory hash join here.
+[01:16:06.820 --> 01:16:09.140] And after we're done, we load the next chunk.
+[01:16:09.140 --> 01:16:12.120] and I see we basically do this repeatedly.
+[01:16:12.500 --> 01:16:14.720] This is like a cross here between a block list
+[01:16:14.720 --> 01:16:15.300] and a loop join.
+[01:16:15.380 --> 01:16:17.620] So we read the right hand side repeatedly,
+[01:16:18.520 --> 01:16:19.280] add a hash join.
+[01:16:19.400 --> 01:16:22.900] So we still use hash table to find to speed up matches.
+[01:16:26.820 --> 01:16:31.940] But the principle we have to process the right hand side
+[01:16:32.460 --> 01:16:37.140] as often as we need to get the data into my system.
+[01:16:39.660 --> 01:16:41.380] left hand side divided by memory size.
+[01:16:41.580 --> 01:16:42.760] This is the number of passes that we need.
+[01:16:45.300 --> 01:16:48.240] Okay, so these are the bread and butter join algorithms,
+[01:16:48.320 --> 01:16:51.720] basically, so this is that we saw nested loop join,
+[01:16:52.060 --> 01:16:55.140] block-wise nested loop join, sort merge join, hash join.
+[01:16:55.640 --> 01:16:58.400] And so this is so the most common,
+[01:16:58.660 --> 01:17:00.500] so most systems will implement at least,
+[01:17:01.740 --> 01:17:04.240] perhaps even all of them, or at least many of them.
+[01:17:04.460 --> 01:17:05.720] And so these are the most common ones.
+[01:17:07.220 --> 01:17:12.800] There's some other stuff here that you can do for example you might potentially optimize
+[01:17:12.800 --> 01:17:18.340] for the case that you know for sure that the left hand side contains only a single tuple
+[01:17:19.280 --> 01:17:24.540] yeah and why would you want to do this yeah because this is not that uncommon.
+[01:17:24.960 --> 01:17:29.880] For example if you bind the primary key you know that there will be only one tuple at
+[01:17:29.880 --> 01:17:34.180] most or none could of course the value doesn't exist but if you have something here let's
+[01:17:39.000 --> 01:17:45.260] where key equals seven then you know for sure that this gives you one double at most or none
+[01:17:46.300 --> 01:17:51.660] okay and um or other cases are like you do a group by and then you know they can be only one value
+[01:17:51.660 --> 01:17:56.340] or you do a scalar subcaries this can also produce only one value this is quite common that this
+[01:17:56.340 --> 01:18:03.020] happens okay and um if you can guarantee that you will have at most one value then the joint
+[01:18:03.020 --> 01:18:10.140] implementation is particularly simple okay now you could say uh you can use this loop join yeah
+[01:18:10.140 --> 01:18:16.260] and it's true of course you can use in this loop join and but uh the in fact the singleton join is
+[01:18:16.260 --> 01:18:21.900] even simpler yeah and therefore you because it's so easy to build you might want to use this
+[01:18:22.460 --> 01:18:28.100] yeah so to produce we just call a produce on my left hand side and when we get a table from the
+[01:18:28.100 --> 01:18:32.860] left we just copy it and remember that this happens at most once as there could
+[01:18:32.860 --> 01:18:36.840] be zero or one tuple from the left but never more now so therefore we just
+[01:18:36.840 --> 01:18:40.620] store the tuple from the left and the variable and that's it and then when we
+[01:18:40.620 --> 01:18:44.260] get the tuple from the right and now this of course can be many this happens
+[01:18:44.260 --> 01:18:49.000] here I concretely add the new tuple with my copied value and check the predicate
+[01:18:49.000 --> 01:18:53.800] and if it's true I output it to the consumer now so this is basically an
+[01:18:53.800 --> 01:19:00.460] optimized version to make this simple joint even simpler and so this is now super cheap
+[01:19:02.880 --> 01:19:10.880] okay and another kind of problem that we have to implement is non-inner joints yeah so far we said
+[01:19:10.880 --> 01:19:15.800] all joints that consider the inner joints we said here i want to find tuples where the values are
+[01:19:15.800 --> 01:19:21.880] the same but these are not the only ones yeah so first we have of course the outer joints like here
+[01:19:23.800 --> 01:19:29.480] full outer. So for these joints you must even produce a tuple if it does not have a joint
+[01:19:29.480 --> 01:19:38.440] partner. So remember introduction to the databases, an outer join is like an inner join but a
+[01:19:38.440 --> 01:19:43.340] tuple that did not find a joint partner is padded with null values and then output it
+[01:19:43.340 --> 01:19:49.700] regardless. So we have to produce non-matching tuples too. And then we have also the semi-joins.
+[01:19:51.200 --> 01:19:54.880] So here we have to output only matching tuples without multiplicities.
+[01:19:55.120 --> 01:19:58.060] So this means if you have one joint partner, we must produce a value.
+[01:19:58.220 --> 01:20:01.060] If you have 10 joint partners, we must also produce a value, but only once.
+[01:20:01.840 --> 01:20:10.400] So let's say if I do here, this one here, 1, 2, 3, 4, and on my right hand side here,
+[01:20:10.500 --> 01:20:17.900] I have 2, 4, 4, 4, 5, and then I do a semi-joint between them.
+[01:20:19.700 --> 01:20:23.340] must be one doesn't have a joint partner,
+[01:20:23.620 --> 01:20:25.740] two has a joint partner, yes, so it must be two,
+[01:20:26.020 --> 01:20:27.360] three doesn't have a joint partner,
+[01:20:27.780 --> 01:20:29.160] four does have a joint partner,
+[01:20:29.280 --> 01:20:30.700] in fact it has multiple joint partners,
+[01:20:31.000 --> 01:20:34.260] but we don't care, we should only output four once.
+[01:20:34.980 --> 01:20:36.940] Okay, so for these four similar joints,
+[01:20:37.060 --> 01:20:39.700] that's a problem, we output only once,
+[01:20:39.920 --> 01:20:42.560] and then for anti-joints, we only output
+[01:20:43.020 --> 01:20:44.940] tablets that do not have a joint partner,
+[01:20:45.460 --> 01:20:47.680] again, with all multiplicities, only once.
+[01:20:48.900 --> 01:20:56.980] okay and now at a high level we can in fact implement all these just like a regular joint
+[01:20:56.980 --> 01:21:02.800] so we want to have your regular joint implementations you can handle all these too but you will need
+[01:21:02.800 --> 01:21:07.160] some additional bookkeeping particularly you have to remember if somebody has a joint partner or not
+[01:21:08.680 --> 01:21:16.760] now so the idea is that for non-inner joints you mark a tuple that has a remembering if it has a
+[01:21:18.020 --> 01:21:26.880] okay and so when we do this here my input was say one two three my output
+[01:21:26.880 --> 01:21:32.600] here was other side is two four six I do a regular join here I find a join
+[01:21:32.600 --> 01:21:36.300] partner and then I remember okay two had a join partner these two had join
+[01:21:36.300 --> 01:21:41.520] partners so I remember that these have join partners okay and now when we do an
+[01:21:41.520 --> 01:21:46.480] outer join we first do the regular inner join and then we do an additional pass
+[01:21:47.680 --> 01:21:53.040] and we check if my table was marked and if yes it has a joint partner if not we output the
+[01:21:53.040 --> 01:21:57.480] table padded with null values okay for example if we would do
+[01:22:00.280 --> 01:22:09.580] if we will do this one here so a left outer join yeah then we if we do not
+[01:22:09.580 --> 01:22:16.320] as in this particular case here we would output two two of course this was my first match then we
+[01:22:18.940 --> 01:22:23.620] null and three null. And we figure this out by checking the marks afterwards. So we check the
+[01:22:23.620 --> 01:22:28.200] left hand side and we check. We do not have to check the right hand side because we don't care.
+[01:22:28.540 --> 01:22:32.120] And in fact, from this joint we would not even mark the right hand side. I have not
+[01:22:32.120 --> 01:22:36.660] did markers on both sides. Of course the system would be smart and realize the right hand side
+[01:22:36.660 --> 01:22:41.440] does not have to be marked. So in this case we would only mark the right hand side, sorry,
+[01:22:41.580 --> 01:22:45.780] the left hand side. But in this case, for example, you would have to mark both sides.
+[01:22:47.680 --> 01:22:53.240] both sides depending what you have okay so the auto joints mark and this
+[01:22:53.240 --> 01:22:58.560] additional output be outputs values if if they are marked the semi joints they
+[01:22:58.560 --> 01:23:02.680] also mark but they only output the value if it is not marked yet
+[01:23:02.680 --> 01:23:08.260] yeah so basically if i have a if i find a match i check did this tupper already
+[01:23:08.260 --> 01:23:14.120] find another match if yes don't do anything if if no mark it and do output
+[01:23:14.120 --> 01:23:19.780] it okay if you want to do this multi-thread it this requires you to use atomics basically you
+[01:23:19.780 --> 01:23:26.140] have to do this check and mark in one atomic operation and so you must say okay please mark
+[01:23:26.140 --> 01:23:33.220] this and if i'm the first to mark it then i will output so anti-join process is like the auto join
+[01:23:33.220 --> 01:23:38.380] more or less so we we we run the regular drive we mark but we do not output output so we just mark
+[01:23:38.380 --> 01:23:42.720] we throw away the matches afterwards we just mark them and then we do an additional pass over the
+[01:23:44.120 --> 01:23:48.000] non-marked tuples because these were the ones that did not have a joint partner
+[01:23:48.000 --> 01:23:53.420] this is what we want to have okay so this works nice the only problem is okay
+[01:23:53.420 --> 01:23:57.640] where do we store the marker bit now so somehow we must get a bit from somewhere
+[01:23:57.640 --> 01:24:03.940] that allows me to to say okay this had a joint partner or yes or no and now
+[01:24:04.460 --> 01:24:09.240] marking the left side is usually easy so the left side is the one that sits in a
+[01:24:09.240 --> 01:24:14.980] hash table somewhere now so this is not a not a big deal because what we can do
+[01:24:14.980 --> 01:24:18.820] is we just change just reserve a single bit or single byte whatever that we
+[01:24:18.820 --> 01:24:23.180] serve you make this type of tiny bit smaller sorry larger and smaller it's
+[01:24:23.180 --> 01:24:28.000] tiny bit larger then we reserve one bit or one byte and then when we have a
+[01:24:28.000 --> 01:24:33.000] joint partner we write in this byte yes i had a joint partner and then we can
+[01:24:33.000 --> 01:24:38.940] check this afterwards okay so this is this is easy marking the right hand side
+[01:24:39.240 --> 01:24:42.440] This is not so easy, it depends on what kind of operator you are.
+[01:24:43.600 --> 01:24:49.560] If you read the right hand side only once, like in hash join, hash join reads the right
+[01:24:49.560 --> 01:24:50.440] hand side only once.
+[01:24:50.660 --> 01:24:56.560] If you do a single pass over the right hand side then it's okay because then we just have
+[01:24:56.560 --> 01:25:01.820] a local variable somewhere or register which works as a marker and then when we have a
+[01:25:01.820 --> 01:25:05.100] joint partner which sets this variable to true and afterwards you check did we have
+[01:25:05.100 --> 01:25:05.540] a joint partner.
+[01:25:05.720 --> 01:25:06.220] Okay, that's okay.
+[01:25:06.220 --> 01:25:13.960] but if we do something like this okay who is so insane to do this but yeah you
+[01:25:13.960 --> 01:25:19.200] know you can potentially then suddenly you have a problem because now we read
+[01:25:19.200 --> 01:25:25.460] the right hand side multiple times yeah and we must remember of course if in the
+[01:25:25.460 --> 01:25:31.900] previous pass over my right hand side this table was marked or not so now this
+[01:25:31.900 --> 01:25:36.640] This is more difficult because there is no obvious place where I can put the marker on
+[01:25:36.640 --> 01:25:37.680] my right hand side.
+[01:25:37.800 --> 01:25:41.620] So what you probably want to do in this case, you want to maintain an extra data structure,
+[01:25:41.820 --> 01:25:47.140] so some associative data structure that says okay tuple 5 was marked, tuple 10 was marked,
+[01:25:47.300 --> 01:25:48.300] tuple 20 was marked.
+[01:25:49.100 --> 01:25:54.760] So you remember basically which tuple's did find a drawing partner.
+[01:25:55.700 --> 01:26:01.640] Now one observation here is that in most queries, not always of course, but in most queries
+[01:26:01.900 --> 01:26:10.320] you tend to have locality, which means either nothing is joined or everything is joined for a particular range of tupples.
+[01:26:10.640 --> 01:26:14.360] It's extremely common that you have a range of tupples that all have a joint partner.
+[01:26:14.700 --> 01:26:17.120] Then perhaps you might have another range that have non-joint partners.
+[01:26:17.660 --> 01:26:22.000] Therefore, this associated data structure, you probably want to use interval compression.
+[01:26:22.320 --> 01:26:27.120] So you don't want to just want to have, means the most trivial implementation, of course, would be to say,
+[01:26:27.120 --> 01:26:35.260] I just store a set of tabl IDs or something yes this would be possible yeah but this would
+[01:26:35.260 --> 01:26:41.320] probably waste a lot of space instead what you want to have is some fancy data structure
+[01:26:41.320 --> 01:26:52.860] that stores okay tuples 10 to 50 all joined tuple 90 to 105 all joined and so on and so
+[01:26:52.860 --> 01:26:57.680] So you want to store the runs of values, intervals of values.
+[01:26:57.980 --> 01:27:00.140] And then you no longer have a problem.
+[01:27:00.400 --> 01:27:01.880] I mean, think about the extreme case.
+[01:27:02.020 --> 01:27:03.160] Everybody finds a joint partner.
+[01:27:04.040 --> 01:27:04.800] Now it can easily happen.
+[01:27:04.920 --> 01:27:05.940] Everybody finds a joint partner.
+[01:27:06.140 --> 01:27:08.860] And then you want this extra data structure
+[01:27:08.860 --> 01:27:10.460] that you have is very small.
+[01:27:10.620 --> 01:27:12.700] And so you don't want to make it as large as the relation.
+[01:27:13.280 --> 01:27:14.940] Now, so if you use interval compression,
+[01:27:15.040 --> 01:27:16.440] it's not a problem because we just say,
+[01:27:16.580 --> 01:27:18.060] hey, from first tupper to last tupper,
+[01:27:18.440 --> 01:27:19.580] everybody has a joint partner.
+[01:27:20.300 --> 01:27:22.560] Now implementing such a thing is not so super easy,
+[01:27:22.860 --> 01:27:29.380] But you can do this for example using a B-tree where the intervals are stored in a B-tree
+[01:27:29.380 --> 01:27:34.480] and if an interval grows and touches the neighboring interval it's merged with its neighbor.
+[01:27:34.700 --> 01:27:39.580] So then the number of intervals that you have is kept reasonably low.
+[01:27:42.380 --> 01:27:45.760] Okay and just me quickly check my time.
+[01:27:45.960 --> 01:27:48.100] Oh I'm seeing I'm running out of time already.
+[01:27:48.100 --> 01:27:52.940] So we look today at different ways to implement joints.
+[01:27:53.360 --> 01:27:55.900] Of course, knee joints are super important operators,
+[01:27:56.040 --> 01:27:56.980] but they're not the only ones.
+[01:27:57.140 --> 01:27:58.960] There are also some others that we have to process
+[01:27:58.960 --> 01:28:00.420] like a sort and group by,
+[01:28:00.800 --> 01:28:02.320] but this we will do in the next lecture.
+[01:28:02.760 --> 01:28:03.760] Okay, thank you.

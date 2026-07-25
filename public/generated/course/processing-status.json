@@ -1,0 +1,219 @@
+{
+  "pipeline_version": 2,
+  "config_digest": "99541d2a83c6510a",
+  "started_at": "2026-07-25T17:18:52.483287+00:00",
+  "state": "completed",
+  "selected_recording_count": 5,
+  "current_recording": null,
+  "completed_recording_count": 12,
+  "recordings": {
+    "dbimpl-00-introduction": {
+      "file": "dbimpl-00-introduction.mp4",
+      "position": 1,
+      "state": "completed",
+      "stage": "completed",
+      "started_at": "2026-07-25T17:18:52.483753+00:00",
+      "error": null,
+      "transcript_quality": {
+        "passed": true,
+        "longest_consecutive_word_run": 4,
+        "flags": []
+      },
+      "completed_at": "2026-07-25T17:29:48.853102+00:00",
+      "visual_interval_count": 21,
+      "word_count": 10769,
+      "unassigned_word_count": 0
+    },
+    "dbimpl-01-storage": {
+      "file": "dbimpl-01-storage.mp4",
+      "position": 2,
+      "state": "completed",
+      "stage": "completed",
+      "started_at": "2026-07-25T17:22:52.567911+00:00",
+      "error": null,
+      "transcript_quality": {
+        "passed": true,
+        "longest_consecutive_word_run": 4,
+        "flags": []
+      },
+      "completed_at": "2026-07-25T17:35:38.627108+00:00",
+      "visual_interval_count": 33,
+      "word_count": 14363,
+      "unassigned_word_count": 0
+    },
+    "dbimpl-02-storage-access": {
+      "file": "dbimpl-02-storage-access.mp4",
+      "position": 3,
+      "state": "completed",
+      "stage": "completed",
+      "started_at": "2026-07-25T17:35:38.679347+00:00",
+      "error": null,
+      "transcript_quality": {
+        "passed": true,
+        "longest_consecutive_word_run": 3,
+        "flags": []
+      },
+      "completed_at": "2026-07-25T17:42:11.325618+00:00",
+      "visual_interval_count": 39,
+      "word_count": 12521,
+      "unassigned_word_count": 0
+    },
+    "dbimpl-03-access-tuples": {
+      "file": "dbimpl-03-access-tuples.mp4",
+      "position": 4,
+      "state": "completed",
+      "stage": "completed",
+      "started_at": "2026-07-25T17:42:11.410323+00:00",
+      "error": null,
+      "transcript_quality": {
+        "passed": true,
+        "longest_consecutive_word_run": 5,
+        "flags": []
+      },
+      "completed_at": "2026-07-25T17:49:41.483508+00:00",
+      "visual_interval_count": 48,
+      "word_count": 14260,
+      "unassigned_word_count": 0
+    },
+    "dbimpl-04-access-btrees": {
+      "file": "dbimpl-04-access-btrees.mp4",
+      "position": 5,
+      "state": "completed",
+      "stage": "completed",
+      "started_at": "2026-07-25T17:49:41.606337+00:00",
+      "error": null,
+      "transcript_quality": {
+        "passed": true,
+        "longest_consecutive_word_run": 4,
+        "flags": []
+      },
+      "completed_at": "2026-07-25T17:56:43.627880+00:00",
+      "visual_interval_count": 55,
+      "word_count": 15223,
+      "unassigned_word_count": 0
+    },
+    "dbimpl-05-access-btrees": {
+      "file": "dbimpl-05-access-btrees.mp4",
+      "position": 6,
+      "state": "completed",
+      "stage": "completed",
+      "started_at": "2026-07-25T17:56:43.781315+00:00",
+      "error": null,
+      "transcript_quality": {
+        "passed": true,
+        "longest_consecutive_word_run": 4,
+        "flags": []
+      },
+      "completed_at": "2026-07-25T18:05:32.873626+00:00",
+      "visual_interval_count": 36,
+      "word_count": 15055,
+      "unassigned_word_count": 0
+    },
+    "dbimpl-06-access-eh": {
+      "file": "dbimpl-06-access-eh.mp4",
+      "position": 1,
+      "state": "completed",
+      "stage": "completed",
+      "started_at": "2026-07-25T18:05:33.076896+00:00",
+      "error": null,
+      "transcript_quality": {
+        "passed": true,
+        "longest_consecutive_word_run": 4,
+        "flags": []
+      },
+      "completed_at": "2026-07-25T18:35:03.095543+00:00",
+      "visual_interval_count": 38,
+      "word_count": 14250,
+      "unassigned_word_count": 0
+    },
+    "dbimpl-07-transactions": {
+      "file": "dbimpl-07-transactions.mp4",
+      "position": 1,
+      "state": "completed",
+      "stage": "completed",
+      "started_at": "2026-07-25T18:14:33.738519+00:00",
+      "error": null,
+      "transcript_quality": {
+        "passed": true,
+        "longest_consecutive_word_run": 7,
+        "flags": []
+      },
+      "completed_at": "2026-07-25T18:42:39.060429+00:00",
+      "visual_interval_count": 64,
+      "word_count": 15112,
+      "unassigned_word_count": 0
+    },
+    "dbimpl-10-recovery": {
+      "file": "dbimpl-10-recovery.mp4",
+      "position": 2,
+      "state": "completed",
+      "stage": "completed",
+      "started_at": "2026-07-25T18:21:27.571101+00:00",
+      "error": null,
+      "transcript_quality": {
+        "passed": true,
+        "longest_consecutive_word_run": 2,
+        "flags": []
+      },
+      "completed_at": "2026-07-25T18:44:18.277060+00:00",
+      "visual_interval_count": 47,
+      "word_count": 14235,
+      "unassigned_word_count": 0
+    },
+    "dbimpl-11-setoriented": {
+      "file": "dbimpl-11-setoriented.mp4",
+      "position": 3,
+      "state": "completed",
+      "stage": "completed",
+      "started_at": "2026-07-25T18:29:36.885009+00:00",
+      "error": null,
+      "failed_at": "2026-07-25T18:29:41.076773+00:00",
+      "transcript_quality": {
+        "passed": true,
+        "longest_consecutive_word_run": 4,
+        "flags": []
+      },
+      "completed_at": "2026-07-25T18:51:36.224325+00:00",
+      "visual_interval_count": 34,
+      "word_count": 15699,
+      "unassigned_word_count": 0
+    },
+    "dbimpl-12-operators": {
+      "file": "dbimpl-12-operators.mp4",
+      "position": 4,
+      "state": "completed",
+      "stage": "completed",
+      "started_at": "2026-07-25T18:29:41.078813+00:00",
+      "error": null,
+      "transcript_quality": {
+        "passed": true,
+        "longest_consecutive_word_run": 3,
+        "flags": []
+      },
+      "completed_at": "2026-07-25T18:59:19.000538+00:00",
+      "visual_interval_count": 58,
+      "word_count": 15310,
+      "unassigned_word_count": 0
+    },
+    "dbimpl-13-codegen": {
+      "file": "dbimpl-13-codegen.mp4",
+      "position": 5,
+      "state": "completed",
+      "stage": "completed",
+      "started_at": "2026-07-25T18:59:19.347083+00:00",
+      "error": null,
+      "transcript_quality": {
+        "passed": true,
+        "longest_consecutive_word_run": 4,
+        "flags": []
+      },
+      "completed_at": "2026-07-25T19:05:59.076448+00:00",
+      "visual_interval_count": 54,
+      "word_count": 14154,
+      "unassigned_word_count": 0
+    }
+  },
+  "updated_at": "2026-07-25T19:05:59.488482+00:00",
+  "failures": [],
+  "completed_at": "2026-07-25T19:05:59.488471+00:00"
+}

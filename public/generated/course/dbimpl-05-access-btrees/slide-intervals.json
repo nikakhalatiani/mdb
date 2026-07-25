@@ -1,0 +1,1818 @@
+{
+  "video": "dbimpl-05-access-btrees.mp4",
+  "video_path": "/Users/nkhalatiani/Desktop/mdb/dbimpl-05-access-btrees.mp4",
+  "start_s": 0.0,
+  "end_s": 5452.833333,
+  "sample_count": 5453,
+  "thresholds": {
+    "full_change": 0.012,
+    "title_change": 0.04,
+    "counter_change": 0.008
+  },
+  "candidate_count": 43,
+  "reviewed_candidate_count": 43,
+  "accepted_boundary_count": 35,
+  "slide_count": 36,
+  "slides": [
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-001",
+      "canonical_slide_id": "slide-0086",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 1,
+      "start_s": 0.0,
+      "end_s": 24.05,
+      "start": "00:00:00.000",
+      "end": "00:00:24.050",
+      "duration_s": 24.05,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 86,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B+-Tree",
+      "screen_title_ocr": "Bt-Tree",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "86 / 375",
+      "slide_text_ocr": "Bt-Tree\n\nMost DBMS use the Bt-Tree variant:\n\nBt-Tree\n\nK49\n\nwith k= 2, h=3\n\nK25\n\nK35\n\nK58\n\nK90\n\nK02[*]K03 Je] K16]¢] K25]e]\n\nK36]¢] K41]*] K43]¢] K47|*]\n\nK91|*]_K95]e]\n\n|\n\nK26[@] K29 Je] K35]¢]\n\nK51]e] K53]e] K55|\n\ne] K58|e\n\nKr» Kale] Kass] =\n\nkey+TID only in leaf nodes\n\ninner nodes contain separators, might or might not occur in the data\n\nincreases the fanout of inner nodes\n\ncimnlifiac tha PR_Traa Incir-",
+      "initial_frame_s": 1.0,
+      "annotated_frame_s": 23.65,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/001-slide-0086-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/001-slide-0086-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 1.0,
+          "timestamp": "00:00:01.000",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/001-slide-0086-initial.jpg"
+        },
+        {
+          "timestamp_s": 23.65,
+          "timestamp": "00:00:23.650",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/001-slide-0086-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": null,
+      "boundary_reason": "pilot interval start"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-002",
+      "canonical_slide_id": "slide-0088",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 2,
+      "start_s": 24.05,
+      "end_s": 50.75,
+      "start": "00:00:24.050",
+      "end": "00:00:50.750",
+      "duration_s": 26.7,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 88,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Operations - Lookup",
+      "screen_title_ocr": "Operations - Lookup",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "88 / 375",
+      "slide_text_ocr": "Operations - Lookup\n\nLookup a search key within the Bt-tree:\n\n1\n\nstart with the root node\n\n2\n\nis the current node a leaf?\n\n> if yes, return the current page (locate the entry on it)\n\nfind the first entry > search key (binary search)\n\nif no such entry is found, go the upper, otherwise go to the corresponding page\n\ncontinue with 2\n\nLookup can return a concrete entry or just the position on the appropriate leaf page (depends\n\non usage pattern).",
+      "initial_frame_s": 25.05,
+      "annotated_frame_s": 50.35,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/002-slide-0088-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/002-slide-0088-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 25.05,
+          "timestamp": "00:00:25.050",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/002-slide-0088-initial.jpg"
+        },
+        {
+          "timestamp_s": 50.35,
+          "timestamp": "00:00:50.350",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/002-slide-0088-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-003",
+      "canonical_slide_id": "slide-0089",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 3,
+      "start_s": 50.75,
+      "end_s": 326.05,
+      "start": "00:00:50.750",
+      "end": "00:05:26.050",
+      "duration_s": 275.3,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 89,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Operations - Insert",
+      "screen_title_ocr": "Operations - Insert",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "89 / 375",
+      "slide_text_ocr": "Operations - Insert\n\nInsert a new entry into the Bt-tree:\n\nlookup the appropriate leaf page\n\nis there free space on the leaf?\n\n> if yes, insert entry and stop\n\nsplit the leaf into two, insert entry on proper side\n\ninsert maximum of left page as separator into parent\n\nif the parent overflow, split parent and continue with 4\n\ncreate a new root if needed",
+      "initial_frame_s": 51.75,
+      "annotated_frame_s": 325.65,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/003-slide-0089-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/003-slide-0089-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 51.75,
+          "timestamp": "00:00:51.750",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/003-slide-0089-initial.jpg"
+        },
+        {
+          "timestamp_s": 325.65,
+          "timestamp": "00:05:25.650",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/003-slide-0089-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-004",
+      "canonical_slide_id": "slide-0090",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 4,
+      "start_s": 326.05,
+      "end_s": 762.05,
+      "start": "00:05:26.050",
+      "end": "00:12:42.050",
+      "duration_s": 436.0,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 90,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Operations - Delete",
+      "screen_title_ocr": "Operations - Delete",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "90 / 375",
+      "slide_text_ocr": "Operations - Delete\n\nRemove an entry from the Bt-tree:\n\n1\n\nlookup the appropriate leaf page\n\n2\n\nremove the entry from the current page\n\n3\n\nis the current page at least half full?\n\n> if yes, stop\n\n4. is the neighboring page more than half full?\n\nP if yes, balance both pages, update separator, and stop\n\nmerge neighboring page into current page\n\nremove the separator from the parent, continue with 3\n\nMost systems simplify the delete logic and accept under-full pages",
+      "initial_frame_s": 327.05,
+      "annotated_frame_s": 761.65,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/004-slide-0090-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/004-slide-0090-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 327.05,
+          "timestamp": "00:05:27.050",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/004-slide-0090-initial.jpg"
+        },
+        {
+          "timestamp_s": 761.65,
+          "timestamp": "00:12:41.650",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/004-slide-0090-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-005",
+      "canonical_slide_id": "slide-0091",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 5,
+      "start_s": 762.05,
+      "end_s": 913.45,
+      "start": "00:12:42.050",
+      "end": "00:15:13.450",
+      "duration_s": 151.4,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 91,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Operations - Range Scan",
+      "screen_title_ocr": "Operations - Range Scan",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "91 / 375",
+      "slide_text_ocr": "Operations - Range Scan\n\nRead all entries within a (start,stop( range\n\nlookup the start value\n\nenumerate subsequent entries on the current page\n\nuse the next pointer to find the next page\n\nstop once the stop value is reached\n\nVery efficient, in particular if leaf nodes are consecutive on disk",
+      "initial_frame_s": 763.05,
+      "annotated_frame_s": 913.05,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/005-slide-0091-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/005-slide-0091-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 763.05,
+          "timestamp": "00:12:43.050",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/005-slide-0091-initial.jpg"
+        },
+        {
+          "timestamp_s": 913.05,
+          "timestamp": "00:15:13.050",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/005-slide-0091-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-006",
+      "canonical_slide_id": "slide-0092",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 6,
+      "start_s": 913.45,
+      "end_s": 1180.45,
+      "start": "00:15:13.450",
+      "end": "00:19:40.450",
+      "duration_s": 267.0,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 92,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Indexing Multiple Attribute",
+      "screen_title_ocr": "Indexing Multiple Attribute",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "92 / 375",
+      "slide_text_ocr": "Indexing Multiple Attribute\n\nCompound keys are compared lexicographically:\n\n(a1, a2) < (by, bo) S (a1 < by) V (a1 =bjAa< bo)\n\nOtherwise compound keys are quite similar to atomic keys.\n\ne when all attributes are bound, difference is minor\n\ne if only a prefix is bound, the suffix is specified as range\n\na, = 5 => (5, —00) < (a1, a2) < (5,00)",
+      "initial_frame_s": 914.45,
+      "annotated_frame_s": 1180.05,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/006-slide-0092-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/006-slide-0092-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 914.45,
+          "timestamp": "00:15:14.450",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/006-slide-0092-initial.jpg"
+        },
+        {
+          "timestamp_s": 1180.05,
+          "timestamp": "00:19:40.050",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/006-slide-0092-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-007",
+      "canonical_slide_id": "slide-0093",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 7,
+      "start_s": 1180.45,
+      "end_s": 1552.45,
+      "start": "00:19:40.450",
+      "end": "00:25:52.450",
+      "duration_s": 372.0,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 93,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Indexing Non-Unique Values",
+      "screen_title_ocr": "Indexing Non-Unique Values",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "93 / 375",
+      "slide_text_ocr": "Indexing Non-Unique Values\n\nUsers can create indexes on any attributes\n\ne\n\nnot necessarily unique\n\ne\n\nin fact might contain millions of duplicates\n\ne\n\nmain problem: index maintenance\n\ne\n\nhow to locate a tuple for update/delete?\n\nSolution: only index unique values\n\ne\n\nappend TID to non-key attributes\n\ne\n\nTID works as a tie-breaker\n\ne\n\nincreases space consumption a bit\n\nbut guarantees O(log n) access",
+      "initial_frame_s": 1181.45,
+      "annotated_frame_s": 1552.05,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/007-slide-0093-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/007-slide-0093-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 1181.45,
+          "timestamp": "00:19:41.450",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/007-slide-0093-initial.jpg"
+        },
+        {
+          "timestamp_s": 1552.05,
+          "timestamp": "00:25:52.050",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/007-slide-0093-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-008",
+      "canonical_slide_id": "slide-0094",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 8,
+      "start_s": 1552.45,
+      "end_s": 1870.35,
+      "start": "00:25:52.450",
+      "end": "00:31:10.350",
+      "duration_s": 317.9,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 94,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Concurrent Access",
+      "screen_title_ocr": "Concurrent Access",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "94 / 375",
+      "slide_text_ocr": "Concurrent Access\n\nHow to handle concurrent access?\n\ne simple page locking/latching is not enough\n\ne will protect against “simple” (single page) changes\n\ne but pages depend upon each other (pointers)\n\nThe classical technique is lock coupling\n\ne\n\na thread latches both the page and its parent page\n\ne\n\ni.e., latch the root, latch the first level, release the root, latch the second level etc\n\ne\n\nprevents conflicts, as pages can only be split when the parent is latched\n\nno deadlocks, as the latches are ordered",
+      "initial_frame_s": 1553.45,
+      "annotated_frame_s": 1869.95,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/008-slide-0094-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/008-slide-0094-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 1553.45,
+          "timestamp": "00:25:53.450",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/008-slide-0094-initial.jpg"
+        },
+        {
+          "timestamp_s": 1869.95,
+          "timestamp": "00:31:09.950",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/008-slide-0094-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-009",
+      "canonical_slide_id": "slide-0095",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 9,
+      "start_s": 1870.35,
+      "end_s": 2107.85,
+      "start": "00:31:10.350",
+      "end": "00:35:07.850",
+      "duration_s": 237.5,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 95,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Concurrent Access (2)",
+      "screen_title_ocr": "Concurrent Access (2)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "95 / 375",
+      "slide_text_ocr": "Concurrent Access (2)\n\nBut what about inserts?\n\ne when a leaf is split, the separator is propagated up\n\n¢ might go up to the root\n\ne but we have only locked one parent\n\nLock coupling up is not an option (deadlocks)\n\nOne way around it: “safe” inner pages\n\ne while going down, check if the inner page has enough space\n\nfor one more entry\n\ne if not, split it\n\ne ensures that we never go up more than one step",
+      "initial_frame_s": 1871.35,
+      "annotated_frame_s": 2107.45,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/009-slide-0095-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/009-slide-0095-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 1871.35,
+          "timestamp": "00:31:11.350",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/009-slide-0095-initial.jpg"
+        },
+        {
+          "timestamp_s": 2107.45,
+          "timestamp": "00:35:07.450",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/009-slide-0095-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-010",
+      "canonical_slide_id": "slide-0096",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 10,
+      "start_s": 2107.85,
+      "end_s": 2274.35,
+      "start": "00:35:07.850",
+      "end": "00:37:54.350",
+      "duration_s": 166.5,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 96,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Concurrent Access (3)",
+      "screen_title_ocr": "Concurrent Access (3)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "96 / 375",
+      "slide_text_ocr": "Concurrent Access (3)\n\nAlternative: restart\n\n1\n\nfirst try to insert using simple lock coupling\n\n2\n\nif we do not have to split the inner node everything is fine\n\n3\n\notherwise release all latches\n\nrestart the operation, but now keep all latches up to the root\n\nall operations can be executed safely now\n\n© greatly reduces concurrency\n\ne but should happen rarely\n\ne simpler to implement, in particular for variable-length keys",
+      "initial_frame_s": 2108.85,
+      "annotated_frame_s": 2273.95,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/010-slide-0096-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/010-slide-0096-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 2108.85,
+          "timestamp": "00:35:08.850",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/010-slide-0096-initial.jpg"
+        },
+        {
+          "timestamp_s": 2273.95,
+          "timestamp": "00:37:53.950",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/010-slide-0096-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-011",
+      "canonical_slide_id": "slide-0097",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 11,
+      "start_s": 2274.35,
+      "end_s": 2284.35,
+      "start": "00:37:54.350",
+      "end": "00:38:04.350",
+      "duration_s": 10.0,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 97,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B-link Trees",
+      "screen_title_ocr": "B-link Trees",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "97 / 375",
+      "slide_text_ocr": "B-link Trees\n\ne lock coupling latches two nodes at a time\n\ne seems cheap, but effectively it locks hundreds (all children of the parent node)\n\ne it would be nicer to lock only one page\n\nFor pure lookups that is possible when adding next pointers to inner nodes:\n\n1. latch a page, find the child page, release the page\n\n2. latch the child page\n\n3. might have been split in between, check neighboring pages\n\nRequires some care when deleting.",
+      "initial_frame_s": 2275.35,
+      "annotated_frame_s": 2283.95,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/011-slide-0097-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/011-slide-0097-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 2275.35,
+          "timestamp": "00:37:55.350",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/011-slide-0097-initial.jpg"
+        },
+        {
+          "timestamp_s": 2283.95,
+          "timestamp": "00:38:03.950",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/011-slide-0097-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-012",
+      "canonical_slide_id": "professor-board-application-012",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 12,
+      "start_s": 2284.35,
+      "end_s": 2534.75,
+      "start": "00:38:04.350",
+      "end": "00:42:14.750",
+      "duration_s": 250.4,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "board_or_application",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 0.0,
+      "title": "Professor board / application",
+      "screen_title_ocr": "",
+      "chapter_header": "",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "",
+      "initial_frame_s": 2285.35,
+      "annotated_frame_s": 2534.35,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/012-professor-board-application-012-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/012-professor-board-application-012-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 2285.35,
+          "timestamp": "00:38:05.350",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/012-professor-board-application-012-initial.jpg"
+        },
+        {
+          "timestamp_s": 2315.35,
+          "timestamp": "00:38:35.350",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/012-professor-board-application-012-progress-01.jpg"
+        },
+        {
+          "timestamp_s": 2345.35,
+          "timestamp": "00:39:05.350",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/012-professor-board-application-012-progress-02.jpg"
+        },
+        {
+          "timestamp_s": 2375.35,
+          "timestamp": "00:39:35.350",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/012-professor-board-application-012-progress-03.jpg"
+        },
+        {
+          "timestamp_s": 2405.35,
+          "timestamp": "00:40:05.350",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/012-professor-board-application-012-progress-04.jpg"
+        },
+        {
+          "timestamp_s": 2435.35,
+          "timestamp": "00:40:35.350",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/012-professor-board-application-012-progress-05.jpg"
+        },
+        {
+          "timestamp_s": 2465.35,
+          "timestamp": "00:41:05.350",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/012-professor-board-application-012-progress-06.jpg"
+        },
+        {
+          "timestamp_s": 2495.35,
+          "timestamp": "00:41:35.350",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/012-professor-board-application-012-progress-07.jpg"
+        },
+        {
+          "timestamp_s": 2525.35,
+          "timestamp": "00:42:05.350",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/012-professor-board-application-012-progress-08.jpg"
+        },
+        {
+          "timestamp_s": 2534.35,
+          "timestamp": "00:42:14.350",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/012-professor-board-application-012-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-013",
+      "canonical_slide_id": "slide-0097",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 13,
+      "start_s": 2534.75,
+      "end_s": 2557.55,
+      "start": "00:42:14.750",
+      "end": "00:42:37.550",
+      "duration_s": 22.8,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 97,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B-link Trees",
+      "screen_title_ocr": "B-link Trees",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "97 / 375",
+      "slide_text_ocr": "B-link Trees\n\ne lock coupling latches two nodes at a time\n\ne seems cheap, but effectively it locks hundreds (all children of the parent node)\n\ne it would be nicer to lock only one page\n\nFor pure lookups that is possible when adding next pointers to inner nodes:\n\n1. latch a page, find the child page, release the page\n\n2. latch the child page\n\n3. might have been split in between, check neighboring pages\n\nRequires some care when deleting.",
+      "initial_frame_s": 2535.75,
+      "annotated_frame_s": 2557.15,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/013-slide-0097-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/013-slide-0097-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 2535.75,
+          "timestamp": "00:42:15.750",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/013-slide-0097-initial.jpg"
+        },
+        {
+          "timestamp_s": 2557.15,
+          "timestamp": "00:42:37.150",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/013-slide-0097-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-014",
+      "canonical_slide_id": "professor-board-application-014",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 14,
+      "start_s": 2557.55,
+      "end_s": 2566.95,
+      "start": "00:42:37.550",
+      "end": "00:42:46.950",
+      "duration_s": 9.4,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "board_or_application",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 0.0,
+      "title": "Professor board / application",
+      "screen_title_ocr": "",
+      "chapter_header": "",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "ON",
+      "initial_frame_s": 2558.55,
+      "annotated_frame_s": 2566.55,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/014-professor-board-application-014-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/014-professor-board-application-014-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 2558.55,
+          "timestamp": "00:42:38.550",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/014-professor-board-application-014-initial.jpg"
+        },
+        {
+          "timestamp_s": 2566.55,
+          "timestamp": "00:42:46.550",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/014-professor-board-application-014-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-015",
+      "canonical_slide_id": "slide-0097",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 15,
+      "start_s": 2566.95,
+      "end_s": 2648.85,
+      "start": "00:42:46.950",
+      "end": "00:44:08.850",
+      "duration_s": 81.9,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 97,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B-link Trees",
+      "screen_title_ocr": "B-link Trees",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "97 / 375",
+      "slide_text_ocr": "B-link Trees\n\ne lock coupling latches two nodes at a time\n\ne seems cheap, but effectively it locks hundreds (all children of the parent node)\n\ne it would be nicer to lock only one page\n\nFor pure lookups that is possible when adding next pointers to inner nodes:\n\n1. latch a page, find the child page, release the page\n\n2. latch the child page\n\n3. might have been split in between, check neighboring pages\n\nRequires some care when deleting.",
+      "initial_frame_s": 2567.95,
+      "annotated_frame_s": 2648.45,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/015-slide-0097-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/015-slide-0097-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 2567.95,
+          "timestamp": "00:42:47.950",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/015-slide-0097-initial.jpg"
+        },
+        {
+          "timestamp_s": 2648.45,
+          "timestamp": "00:44:08.450",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/015-slide-0097-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-016",
+      "canonical_slide_id": "professor-board-application-016",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 16,
+      "start_s": 2648.85,
+      "end_s": 3500.85,
+      "start": "00:44:08.850",
+      "end": "00:58:20.850",
+      "duration_s": 852.0,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "board_or_application",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 0.0,
+      "title": "Professor board / application",
+      "screen_title_ocr": "",
+      "chapter_header": "",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "ron\n\nLf!",
+      "initial_frame_s": 2649.85,
+      "annotated_frame_s": 3500.45,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 2649.85,
+          "timestamp": "00:44:09.850",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-initial.jpg"
+        },
+        {
+          "timestamp_s": 2679.85,
+          "timestamp": "00:44:39.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-01.jpg"
+        },
+        {
+          "timestamp_s": 2709.85,
+          "timestamp": "00:45:09.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-02.jpg"
+        },
+        {
+          "timestamp_s": 2739.85,
+          "timestamp": "00:45:39.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-03.jpg"
+        },
+        {
+          "timestamp_s": 2769.85,
+          "timestamp": "00:46:09.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-04.jpg"
+        },
+        {
+          "timestamp_s": 2799.85,
+          "timestamp": "00:46:39.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-05.jpg"
+        },
+        {
+          "timestamp_s": 2829.85,
+          "timestamp": "00:47:09.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-06.jpg"
+        },
+        {
+          "timestamp_s": 2859.85,
+          "timestamp": "00:47:39.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-07.jpg"
+        },
+        {
+          "timestamp_s": 2889.85,
+          "timestamp": "00:48:09.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-08.jpg"
+        },
+        {
+          "timestamp_s": 2919.85,
+          "timestamp": "00:48:39.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-09.jpg"
+        },
+        {
+          "timestamp_s": 2949.85,
+          "timestamp": "00:49:09.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-10.jpg"
+        },
+        {
+          "timestamp_s": 2979.85,
+          "timestamp": "00:49:39.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-11.jpg"
+        },
+        {
+          "timestamp_s": 3009.85,
+          "timestamp": "00:50:09.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-12.jpg"
+        },
+        {
+          "timestamp_s": 3039.85,
+          "timestamp": "00:50:39.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-13.jpg"
+        },
+        {
+          "timestamp_s": 3069.85,
+          "timestamp": "00:51:09.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-14.jpg"
+        },
+        {
+          "timestamp_s": 3099.85,
+          "timestamp": "00:51:39.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-15.jpg"
+        },
+        {
+          "timestamp_s": 3129.85,
+          "timestamp": "00:52:09.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-16.jpg"
+        },
+        {
+          "timestamp_s": 3159.85,
+          "timestamp": "00:52:39.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-17.jpg"
+        },
+        {
+          "timestamp_s": 3189.85,
+          "timestamp": "00:53:09.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-18.jpg"
+        },
+        {
+          "timestamp_s": 3219.85,
+          "timestamp": "00:53:39.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-19.jpg"
+        },
+        {
+          "timestamp_s": 3249.85,
+          "timestamp": "00:54:09.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-20.jpg"
+        },
+        {
+          "timestamp_s": 3279.85,
+          "timestamp": "00:54:39.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-21.jpg"
+        },
+        {
+          "timestamp_s": 3309.85,
+          "timestamp": "00:55:09.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-22.jpg"
+        },
+        {
+          "timestamp_s": 3339.85,
+          "timestamp": "00:55:39.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-23.jpg"
+        },
+        {
+          "timestamp_s": 3369.85,
+          "timestamp": "00:56:09.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-24.jpg"
+        },
+        {
+          "timestamp_s": 3399.85,
+          "timestamp": "00:56:39.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-25.jpg"
+        },
+        {
+          "timestamp_s": 3429.85,
+          "timestamp": "00:57:09.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-26.jpg"
+        },
+        {
+          "timestamp_s": 3459.85,
+          "timestamp": "00:57:39.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-27.jpg"
+        },
+        {
+          "timestamp_s": 3489.85,
+          "timestamp": "00:58:09.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-progress-28.jpg"
+        },
+        {
+          "timestamp_s": 3500.45,
+          "timestamp": "00:58:20.450",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/016-professor-board-application-016-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-017",
+      "canonical_slide_id": "slide-0097",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 17,
+      "start_s": 3500.85,
+      "end_s": 3536.55,
+      "start": "00:58:20.850",
+      "end": "00:58:56.550",
+      "duration_s": 35.7,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 97,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B-link Trees",
+      "screen_title_ocr": "B-link Trees",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "97 / 375",
+      "slide_text_ocr": "B-link Trees\n\ne lock coupling latches two nodes at a time\n\ne seems cheap, but effectively it locks hundreds (all children of the parent node)\n\ne it would be nicer to lock only one page\n\nFor pure lookups that is possible when adding next pointers to inner nodes:\n\n1. latch a page, find the child page, release the page\n\n2. latch the child page\n\n3. might have been split in between, check neighboring pages\n\nRequires some care when deleting.",
+      "initial_frame_s": 3501.85,
+      "annotated_frame_s": 3536.15,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/017-slide-0097-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/017-slide-0097-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 3501.85,
+          "timestamp": "00:58:21.850",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/017-slide-0097-initial.jpg"
+        },
+        {
+          "timestamp_s": 3536.15,
+          "timestamp": "00:58:56.150",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/017-slide-0097-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-018",
+      "canonical_slide_id": "slide-0098",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 18,
+      "start_s": 3536.55,
+      "end_s": 3855.35,
+      "start": "00:58:56.550",
+      "end": "01:04:15.350",
+      "duration_s": 318.8,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 98,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Bulkloading",
+      "screen_title_ocr": "Bulkloading",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "98 / 375",
+      "slide_text_ocr": "Bulkloading\n\nHow to build an B-tree for a large amount of data?\n\ne repeated inserts are inefficient\n\n¢ a lot of random |/O\n\n¢ pages are touched multiple times\n\nInstead: sort the data before inserting\n\ne now inserts become more efficient\n\ne good locality\n\nBut we can do even better.",
+      "initial_frame_s": 3537.55,
+      "annotated_frame_s": 3854.95,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/018-slide-0098-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/018-slide-0098-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 3537.55,
+          "timestamp": "00:58:57.550",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/018-slide-0098-initial.jpg"
+        },
+        {
+          "timestamp_s": 3854.95,
+          "timestamp": "01:04:14.950",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/018-slide-0098-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-019",
+      "canonical_slide_id": "slide-0099",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 19,
+      "start_s": 3855.35,
+      "end_s": 4092.25,
+      "start": "01:04:15.350",
+      "end": "01:08:12.250",
+      "duration_s": 236.9,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 99,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Bulkloading (2)",
+      "screen_title_ocr": "Bulkloading (2)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "99 / 375",
+      "slide_text_ocr": "Bulkloading (2)\n\nTo construct an initial Bt-Tree:\n\n1. sort the data\n\n2. spool data into leaf pages\n\n> fill the pages completely\n\n> remember largest value (separator) in each page in a temp file\n\n3. spool the separators into inner pages\n\n> fill the pages completely\n\n> remember largest value (separator) in each page in a temp file\n\n4. repeat 3 until only one inner page remains (root)\n\nProduces a compact, clustered Bt-tree.",
+      "initial_frame_s": 3856.35,
+      "annotated_frame_s": 4091.85,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/019-slide-0099-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/019-slide-0099-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 3856.35,
+          "timestamp": "01:04:16.350",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/019-slide-0099-initial.jpg"
+        },
+        {
+          "timestamp_s": 4091.85,
+          "timestamp": "01:08:11.850",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/019-slide-0099-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-020",
+      "canonical_slide_id": "slide-0100",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 20,
+      "start_s": 4092.25,
+      "end_s": 4431.65,
+      "start": "01:08:12.250",
+      "end": "01:13:51.650",
+      "duration_s": 339.4,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 100,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Bulkloading (3)",
+      "screen_title_ocr": "Bulkloading (3)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "100 / 375",
+      "slide_text_ocr": "Bulkloading (3)\n\nExisting B*-trees are a bit more problematic, but can still be updated in bulk\n\n1\n\nsort the data\n\nmerge the data into the existing tree\n\nform pages, remember separators, etc.\n\nstart a new chunk once a page would contain only entries from the original tree\n\nmerge in the separators as above\n\nMinimizes 1/O, but destroys clustering. Usually a good compromise.",
+      "initial_frame_s": 4093.25,
+      "annotated_frame_s": 4431.25,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/020-slide-0100-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/020-slide-0100-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4093.25,
+          "timestamp": "01:08:13.250",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/020-slide-0100-initial.jpg"
+        },
+        {
+          "timestamp_s": 4431.25,
+          "timestamp": "01:13:51.250",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/020-slide-0100-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-021",
+      "canonical_slide_id": "slide-0101",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 21,
+      "start_s": 4431.65,
+      "end_s": 4455.95,
+      "start": "01:13:51.650",
+      "end": "01:14:15.950",
+      "duration_s": 24.3,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 101,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Partitioned B- Tree",
+      "screen_title_ocr": "Partitioned B- Tree",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "101 / 375",
+      "slide_text_ocr": "Partitioned B- Tree\n\nBulk operations are fine if they are rare, but they are disruptive\n\ne usually the B-tree has to be take offline\n\ne the new cannot be queries easily\n\ne existing queries must be halted\n\nBasic idea: partition the B-tree\n\ne add an artificial column in front\n\n© creates separate partitions with the B-tree\n\nEE collie Ss alll Se ol",
+      "initial_frame_s": 4432.65,
+      "annotated_frame_s": 4455.55,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/021-slide-0101-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/021-slide-0101-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4432.65,
+          "timestamp": "01:13:52.650",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/021-slide-0101-initial.jpg"
+        },
+        {
+          "timestamp_s": 4455.55,
+          "timestamp": "01:14:15.550",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/021-slide-0101-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-022",
+      "canonical_slide_id": "slide-0098",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 22,
+      "start_s": 4455.95,
+      "end_s": 4463.55,
+      "start": "01:14:15.950",
+      "end": "01:14:23.550",
+      "duration_s": 7.6,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 98,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Bulkloading",
+      "screen_title_ocr": "Bulkloading",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "98 / 375",
+      "slide_text_ocr": "Bulkloading\n\nHow to build an B-tree for a large amount of data?\n\ne repeated inserts are inefficient\n\ne a lot of random |/O\n\n@ pages are touched multiple times\n\nInstead: sort the data before inserting\n\ne now inserts become more efficient\n\ne good locality\n\nBut we can do even better.",
+      "initial_frame_s": 4456.95,
+      "annotated_frame_s": 4463.15,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/022-slide-0098-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/022-slide-0098-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4456.95,
+          "timestamp": "01:14:16.950",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/022-slide-0098-initial.jpg"
+        },
+        {
+          "timestamp_s": 4463.15,
+          "timestamp": "01:14:23.150",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/022-slide-0098-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-023",
+      "canonical_slide_id": "slide-0101",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 23,
+      "start_s": 4463.55,
+      "end_s": 4615.75,
+      "start": "01:14:23.550",
+      "end": "01:16:55.750",
+      "duration_s": 152.2,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 101,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Partitioned B- Tree",
+      "screen_title_ocr": "Partitioned B- Tree",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "101 / 375",
+      "slide_text_ocr": "Partitioned B- Tree\n\nBulk operations are fine if they are rare, but they are disruptive\n\ne usually the B-tree has to be take offline\n\ne the new cannot be queries easily\n\ne existing queries must be halted\n\nBasic idea: partition the B-tree\n\ne add an artificial column in front\n\n© creates separate partitions with the B-tree\n\nollie Ss oll Se al",
+      "initial_frame_s": 4464.55,
+      "annotated_frame_s": 4615.35,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/023-slide-0101-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/023-slide-0101-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4464.55,
+          "timestamp": "01:14:24.550",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/023-slide-0101-initial.jpg"
+        },
+        {
+          "timestamp_s": 4615.35,
+          "timestamp": "01:16:55.350",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/023-slide-0101-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-024",
+      "canonical_slide_id": "slide-0102",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 24,
+      "start_s": 4615.75,
+      "end_s": 4666.65,
+      "start": "01:16:55.750",
+      "end": "01:17:46.650",
+      "duration_s": 50.9,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 102,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Partitioned B-Tree (2)",
+      "screen_title_ocr": "Partitioned B-Tree (2)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "102 / 375",
+      "slide_text_ocr": "Partitioned B-Tree (2)\n\nBenefits:\n\ne\n\npartitions are largely independent of each other\n\ne\n\none can append to the “rightmost” partition without disrupting the rest\n\ne\n\nthe index stays always online\n\ne\n\npartitions can be merged lazily\n\ne\n\nmerge only when beneficial\n\nDrawbacks:\n\ne no “global” order any more\n\ne lookups have to access all partitions\n\ne deletion is non-trivial (“anti-matter”)",
+      "initial_frame_s": 4616.75,
+      "annotated_frame_s": 4666.25,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/024-slide-0102-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/024-slide-0102-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4616.75,
+          "timestamp": "01:16:56.750",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/024-slide-0102-initial.jpg"
+        },
+        {
+          "timestamp_s": 4666.25,
+          "timestamp": "01:17:46.250",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/024-slide-0102-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-025",
+      "canonical_slide_id": "slide-0101",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 25,
+      "start_s": 4666.65,
+      "end_s": 4701.25,
+      "start": "01:17:46.650",
+      "end": "01:18:21.250",
+      "duration_s": 34.6,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 101,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Partitioned B- Tree",
+      "screen_title_ocr": "Partitioned B- Tree",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "101 / 375",
+      "slide_text_ocr": "Partitioned B- Tree\n\nBulk operations are fine if they are rare, but they are disruptive\n\ne usually the B-tree has to be take offline\n\ne the new cannot be queries easily\n\ne existing queries must be halted\n\n0, KES.\n\nCG, Bet\n\nBasic idea: partition the B-tree\n\ne add an artificial column in front\n\n4, Kee\n\n© creates separate partitions with the B-tree\n\ni OC SC",
+      "initial_frame_s": 4667.65,
+      "annotated_frame_s": 4700.85,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/025-slide-0101-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/025-slide-0101-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4667.65,
+          "timestamp": "01:17:47.650",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/025-slide-0101-initial.jpg"
+        },
+        {
+          "timestamp_s": 4700.85,
+          "timestamp": "01:18:20.850",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/025-slide-0101-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-026",
+      "canonical_slide_id": "slide-0102",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 26,
+      "start_s": 4701.25,
+      "end_s": 4768.95,
+      "start": "01:18:21.250",
+      "end": "01:19:28.950",
+      "duration_s": 67.7,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 102,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Partitioned B-Tree (2)",
+      "screen_title_ocr": "Partitioned B-Tree (2)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "102 / 375",
+      "slide_text_ocr": "Partitioned B-Tree (2)\n\nBenefits:\n\ne\n\npartitions are largely independent of each other\n\ne\n\none can append to the “rightmost” partition without disrupting the rest\n\ne\n\nthe index stays always online\n\ne\n\npartitions can be merged lazily\n\ne\n\nmerge only when beneficial\n\nDrawbacks:\n\ne no “global” order any more\n\ne lookups have to access all partitions\n\ne deletion is non-trivial (“anti-matter”)",
+      "initial_frame_s": 4702.25,
+      "annotated_frame_s": 4768.55,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/026-slide-0102-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/026-slide-0102-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4702.25,
+          "timestamp": "01:18:22.250",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/026-slide-0102-initial.jpg"
+        },
+        {
+          "timestamp_s": 4768.55,
+          "timestamp": "01:19:28.550",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/026-slide-0102-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-027",
+      "canonical_slide_id": "slide-0101",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 27,
+      "start_s": 4768.95,
+      "end_s": 4786.05,
+      "start": "01:19:28.950",
+      "end": "01:19:46.050",
+      "duration_s": 17.1,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 101,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Partitioned B- Tree",
+      "screen_title_ocr": "Partitioned B- Tree",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "101 / 375",
+      "slide_text_ocr": "Partitioned B- Tree\n\nBulk operations are fine if they are rare, but they are disruptive\n\ne usually the B-tree has to be take offline\n\ne the new cannot be queries easily\n\ne existing queries must be halted\n\nBasic idea: partition the B-tree\n\ne add an artificial column in front\n\n© creates separate partitions with the B-tree\n\nollie Ss oll Se al",
+      "initial_frame_s": 4769.95,
+      "annotated_frame_s": 4785.65,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/027-slide-0101-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/027-slide-0101-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4769.95,
+          "timestamp": "01:19:29.950",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/027-slide-0101-initial.jpg"
+        },
+        {
+          "timestamp_s": 4785.65,
+          "timestamp": "01:19:45.650",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/027-slide-0101-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-028",
+      "canonical_slide_id": "slide-0102",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 28,
+      "start_s": 4786.05,
+      "end_s": 4788.75,
+      "start": "01:19:46.050",
+      "end": "01:19:48.750",
+      "duration_s": 2.7,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 102,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Partitioned B-Tree (2)",
+      "screen_title_ocr": "Partitioned B-Tree (2)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "102 / 375",
+      "slide_text_ocr": "Partitioned B-Tree (2)\n\nBenefits:\n\ne\n\npartitions are largely independent of each other\n\ne\n\none can append to the “rightmost” partition without disrupting the rest\n\ne\n\nthe index stays always online\n\ne\n\npartitions can be merged lazily\n\ne\n\nmerge only when beneficial\n\nDrawbacks:\n\ne no “global” order any more\n\ne lookups have to access all partitions\n\ne deletion is non-trivial (“anti-matter”)",
+      "initial_frame_s": 4787.05,
+      "annotated_frame_s": 4788.35,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/028-slide-0102-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/028-slide-0102-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4787.05,
+          "timestamp": "01:19:47.050",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/028-slide-0102-initial.jpg"
+        },
+        {
+          "timestamp_s": 4788.35,
+          "timestamp": "01:19:48.350",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/028-slide-0102-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-029",
+      "canonical_slide_id": "slide-0101",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 29,
+      "start_s": 4788.75,
+      "end_s": 4820.25,
+      "start": "01:19:48.750",
+      "end": "01:20:20.250",
+      "duration_s": 31.5,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 101,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Partitioned B- Tree",
+      "screen_title_ocr": "Partitioned B- Tree",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "101 / 375",
+      "slide_text_ocr": "Partitioned B- Tree\n\nBulk operations are fine if they are rare, but they are disruptive\n\ne usually the B-tree has to be take offline\n\ne the new cannot be queries easily\n\ne existing queries must be halted\n\nBasic idea: partition the B-tree\n\ne add an artificial column in front\n\n© creates separate partitions with the B-tree\n\ntt collie Ss alll Se ol",
+      "initial_frame_s": 4789.75,
+      "annotated_frame_s": 4819.85,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/029-slide-0101-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/029-slide-0101-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4789.75,
+          "timestamp": "01:19:49.750",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/029-slide-0101-initial.jpg"
+        },
+        {
+          "timestamp_s": 4819.85,
+          "timestamp": "01:20:19.850",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/029-slide-0101-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-030",
+      "canonical_slide_id": "slide-0102",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 30,
+      "start_s": 4820.25,
+      "end_s": 4858.45,
+      "start": "01:20:20.250",
+      "end": "01:20:58.450",
+      "duration_s": 38.2,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 102,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Partitioned B-Tree (2)",
+      "screen_title_ocr": "Partitioned B-Tree (2)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "102 / 375",
+      "slide_text_ocr": "Partitioned B-Tree (2)\n\nBenefits:\n\ne\n\npartitions are largely independent of each other\n\ne\n\none can append to the “rightmost” partition without disrupting the rest\n\ne\n\nthe index stays always online\n\ne\n\npartitions can be merged lazily\n\ne\n\nmerge only when beneficial\n\nDrawbacks:\n\ne no “global” order any more\n\ne lookups have to access all partitions\n\ne deletion is non-trivial (“anti-matter”)",
+      "initial_frame_s": 4821.25,
+      "annotated_frame_s": 4858.05,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/030-slide-0102-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/030-slide-0102-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4821.25,
+          "timestamp": "01:20:21.250",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/030-slide-0102-initial.jpg"
+        },
+        {
+          "timestamp_s": 4858.05,
+          "timestamp": "01:20:58.050",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/030-slide-0102-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-031",
+      "canonical_slide_id": "variable-length-records-031",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 31,
+      "start_s": 4858.45,
+      "end_s": 5001.65,
+      "start": "01:20:58.450",
+      "end": "01:23:21.650",
+      "duration_s": 143.2,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Variable Length Records",
+      "screen_title_ocr": "Variable Length Records",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "» could special-case",
+      "slide_text_ocr": "Variable Length Records\n\nSo far B-trees are defined for fixed-length keys\n\ne all nodes have between k and 2k entries\n\ne simplifies life considerably\n\ne e.g., we “know” if an inner node is full\n\nBut in reality, entries can be variable length\n\ne strings\n\ne variable-length encoding, NULL\n\n© compounds of these\n\nUsually keys are opaque. The B-tree does not understand the structure. (One could special-case",
+      "initial_frame_s": 4859.45,
+      "annotated_frame_s": 5001.25,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/031-variable-length-records-031-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/031-variable-length-records-031-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4859.45,
+          "timestamp": "01:20:59.450",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/031-variable-length-records-031-initial.jpg"
+        },
+        {
+          "timestamp_s": 5001.25,
+          "timestamp": "01:23:21.250",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/031-variable-length-records-031-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-032",
+      "canonical_slide_id": "slide-0104",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 32,
+      "start_s": 5001.65,
+      "end_s": 5135.15,
+      "start": "01:23:21.650",
+      "end": "01:25:35.150",
+      "duration_s": 133.5,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 104,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Variable Length Records (2)",
+      "screen_title_ocr": "Variable Length Records (2)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "104 / 375",
+      "slide_text_ocr": "Variable Length Records (2)\n\nVariable length keys are problematic. Consider the following example:\n\ne\n\nfffff[fff\n\na | bbbbbbbb | C | dddddddd\n\ng || hhhhhhhh\n\n1\n\nm\n\nnnnnnnnn\n\nfo}\n\njj55353j || & || 11121121\n\nAll entries have either length 1 or length 8.",
+      "initial_frame_s": 5002.65,
+      "annotated_frame_s": 5134.75,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/032-slide-0104-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/032-slide-0104-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 5002.65,
+          "timestamp": "01:23:22.650",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/032-slide-0104-initial.jpg"
+        },
+        {
+          "timestamp_s": 5134.75,
+          "timestamp": "01:25:34.750",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/032-slide-0104-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-033",
+      "canonical_slide_id": "slide-0104",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 33,
+      "start_s": 5135.15,
+      "end_s": 5191.25,
+      "start": "01:25:35.150",
+      "end": "01:26:31.250",
+      "duration_s": 56.1,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 104,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Variable Length Records (2)",
+      "screen_title_ocr": "Variable Length Records (2)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "104 / 375",
+      "slide_text_ocr": "Variable Length Records (2)\n\nVariable length keys are problematic. Consider the following example:\n\na | bbbbbbbb | c | dddddddd\n\ne\n\nfffff{[fff\n\ng || hhhhhhhh\n\n1\n\njj55355j || x || 11121121\n\nm\n\nnnnnnnnn\n\nfo}\n\nVariant B:\n\na bbbbbbbi c dddddddd e FFFFFTFF g|} hhhhhhhhi i |] iid kJ) UTI nf nnnnnnnr]o\n\nHeight 2 (ignores space consumption for pointers)",
+      "initial_frame_s": 5136.15,
+      "annotated_frame_s": 5190.85,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/033-slide-0104-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/033-slide-0104-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 5136.15,
+          "timestamp": "01:25:36.150",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/033-slide-0104-initial.jpg"
+        },
+        {
+          "timestamp_s": 5190.85,
+          "timestamp": "01:26:30.850",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/033-slide-0104-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-034",
+      "canonical_slide_id": "slide-0105",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 34,
+      "start_s": 5191.25,
+      "end_s": 5310.95,
+      "start": "01:26:31.250",
+      "end": "01:28:30.950",
+      "duration_s": 119.7,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 105,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Variable Length Records (3)",
+      "screen_title_ocr": "Variable Length Records (3)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "105 / 375",
+      "slide_text_ocr": "Variable Length Records (3)\n\nSeparator choice is crucial!\n\ne affects fanout and space consumption\n\ne all standard guarantees are off if normal algorithms are used for variable-length keys\n\nNon-trivial issue\n\ne greedy algorithms exist for the bulkloading case\n\ne idea: recursively pick the smallest value as separator such that the resulting group sizes\n\nvary within a constant factor\n\ne can also be extended to the dynamic case (rebuild as need), but non-trivial\n\ne difficult, but gives good amortized bounds",
+      "initial_frame_s": 5192.25,
+      "annotated_frame_s": 5310.55,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/034-slide-0105-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/034-slide-0105-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 5192.25,
+          "timestamp": "01:26:32.250",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/034-slide-0105-initial.jpg"
+        },
+        {
+          "timestamp_s": 5310.55,
+          "timestamp": "01:28:30.550",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/034-slide-0105-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-035",
+      "canonical_slide_id": "slide-0106",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 35,
+      "start_s": 5310.95,
+      "end_s": 5435.35,
+      "start": "01:28:30.950",
+      "end": "01:30:35.350",
+      "duration_s": 124.4,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 106,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Variable Length Records (4)",
+      "screen_title_ocr": "Variable Length Records (4)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "106 / 375",
+      "slide_text_ocr": "Variable Length Records (4)\n\nMinimal support: modify the split logic\n\n1. when a page overflows, build the sorted list of all values\n\n2. instead of picking the median value as separator, pick the smallest value within 20% around\n\nthe median\n\n3. for ties, prefer values closer to the median\n\ne pragmatic solution, but not optimal\n\ne can still degenerate\n\ne avoids the worst mistakes",
+      "initial_frame_s": 5311.95,
+      "annotated_frame_s": 5434.95,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/035-slide-0106-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/035-slide-0106-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 5311.95,
+          "timestamp": "01:28:31.950",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/035-slide-0106-initial.jpg"
+        },
+        {
+          "timestamp_s": 5434.95,
+          "timestamp": "01:30:34.950",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/035-slide-0106-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-05-access-btrees-036",
+      "canonical_slide_id": "slide-0106",
+      "video_id": "dbimpl-05-access-btrees",
+      "source_file": "dbimpl-05-access-btrees.mp4",
+      "sequence": 36,
+      "start_s": 5435.35,
+      "end_s": 5452.833,
+      "start": "01:30:35.350",
+      "end": "01:30:52.833",
+      "duration_s": 17.483,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 106,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Variable Length Records (4)",
+      "screen_title_ocr": "Variable Length Records (4)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "106 / 375",
+      "slide_text_ocr": ">\n\nVariable Length Records (4)\n\n¢\n\nMinimal support: modify the split logic\n\noT\n\n1. when a page overflows, build the sorted list of all values\n\n2. instead of picking the median value as separator, pick the smallest value within 20% around\n\nthe median\n\n3. for ties, prefer values closer to the median\n\ne pragmatic solution, but not optimal\n\ne can still degenerate\n\ne avoids the worst mistakes",
+      "initial_frame_s": 5436.35,
+      "annotated_frame_s": 5452.433,
+      "initial_image": "assets/slides/dbimpl-05-access-btrees/036-slide-0106-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-05-access-btrees/036-slide-0106-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 5436.35,
+          "timestamp": "01:30:36.350",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-05-access-btrees/036-slide-0106-initial.jpg"
+        },
+        {
+          "timestamp_s": 5452.433,
+          "timestamp": "01:30:52.433",
+          "role": "final",
+          "image": "assets/slides/dbimpl-05-access-btrees/036-slide-0106-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    }
+  ]
+}

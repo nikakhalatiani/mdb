@@ -1,0 +1,2738 @@
+{
+  "video": "dbimpl-04-access-btrees.mp4",
+  "video_path": "/Users/nkhalatiani/Desktop/mdb/dbimpl-04-access-btrees.mp4",
+  "start_s": 0.0,
+  "end_s": 5715.633333,
+  "sample_count": 5716,
+  "thresholds": {
+    "full_change": 0.012,
+    "title_change": 0.04,
+    "counter_change": 0.008
+  },
+  "candidate_count": 63,
+  "reviewed_candidate_count": 63,
+  "accepted_boundary_count": 54,
+  "slide_count": 55,
+  "slides": [
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-001",
+      "canonical_slide_id": "slide-0070",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 1,
+      "start_s": 0.0,
+      "end_s": 46.35,
+      "start": "00:00:00.000",
+      "end": "00:00:46.350",
+      "duration_s": 46.35,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 70,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Record Layout (2)",
+      "screen_title_ocr": "Record Layout (2)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "70 / 375",
+      "slide_text_ocr": "Record Layout (2)\n\nIt is better to store offset instead of lengths\n\nieee eee] [eee a fae\n\nsplits tuple into two parts\n\nfixed size header and variable size tail\n\nheader contains pointers into the tail\n\nallows for accessing any attribute in O(1)",
+      "initial_frame_s": 1.0,
+      "annotated_frame_s": 45.95,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/001-slide-0070-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/001-slide-0070-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 1.0,
+          "timestamp": "00:00:01.000",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/001-slide-0070-initial.jpg"
+        },
+        {
+          "timestamp_s": 45.95,
+          "timestamp": "00:00:45.950",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/001-slide-0070-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": null,
+      "boundary_reason": "pilot interval start"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-002",
+      "canonical_slide_id": "slide-0073",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 2,
+      "start_s": 46.35,
+      "end_s": 57.85,
+      "start": "00:00:46.350",
+      "end": "00:00:57.850",
+      "duration_s": 11.5,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 73,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Compression",
+      "screen_title_ocr": "Compression",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "73 / 375",
+      "slide_text_ocr": "Compression\n\nSome DBMS apply compression techniques to the tuples\n\ne\n\nmost of the time, compression is not added to save space!\n\ne\n\ndisk is cheap after all\n\ne\n\ncompression is used to improve performance!\n\ne\n\nreducing the size reduces the bandwidth consumption\n\nSome people really care about space consumption, of course.\n\nBut outside embedded DBMSs it is usually an afterthought.",
+      "initial_frame_s": 47.35,
+      "annotated_frame_s": 57.45,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/002-slide-0073-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/002-slide-0073-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 47.35,
+          "timestamp": "00:00:47.350",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/002-slide-0073-initial.jpg"
+        },
+        {
+          "timestamp_s": 57.45,
+          "timestamp": "00:00:57.450",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/002-slide-0073-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-003",
+      "canonical_slide_id": "slide-0078",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 3,
+      "start_s": 57.85,
+      "end_s": 364.85,
+      "start": "00:00:57.850",
+      "end": "00:06:04.850",
+      "duration_s": 307.0,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 78,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Long Records",
+      "screen_title_ocr": "Long Records",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "78 / 375",
+      "slide_text_ocr": "Long Records\n\nData is organized in pages\n\ne many reasons for this, including recovery, buffer management, etc\n\ne a tuple must fit on a single page\n\ne limits the maximum size of a tuple\n\nWhat about large tuples?\n\ne sometimes the user wants to store something large\n\ne e.g., embed a document\n\ne SQL supports this via BLOB/CLOB\n\nRequires some mechanism so handle these large records.",
+      "initial_frame_s": 58.85,
+      "annotated_frame_s": 364.45,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/003-slide-0078-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/003-slide-0078-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 58.85,
+          "timestamp": "00:00:58.850",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/003-slide-0078-initial.jpg"
+        },
+        {
+          "timestamp_s": 364.45,
+          "timestamp": "00:06:04.450",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/003-slide-0078-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-004",
+      "canonical_slide_id": "long-records-2-004",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 4,
+      "start_s": 364.85,
+      "end_s": 460.55,
+      "start": "00:06:04.850",
+      "end": "00:07:40.550",
+      "duration_s": 95.7,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Long Records (2)",
+      "screen_title_ocr": "Long Records (2)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "NS",
+      "slide_text_ocr": "Long Records (2)\n\nSimply spanning pages is not a good idea:\n\ne\n\nmust read an unbounded number of pages to access a tuple\n\ne\n\ngreatly complicates buffering\n\ne\n\na tuple might not even fit into main memory!\n\ne\n\nupdates that change the size are complicated\n\ne\n\nintermediate results during query processing\n\nInstead, keep the main tuple size down\n\ne BLOBS/CLOBS are stored separate from the tuple\n\ne tuple only contains a pointer\n\ne increases the costs of accessing the BLOB, but simplifies tuple processing",
+      "initial_frame_s": 365.85,
+      "annotated_frame_s": 460.15,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/004-long-records-2-004-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/004-long-records-2-004-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 365.85,
+          "timestamp": "00:06:05.850",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/004-long-records-2-004-initial.jpg"
+        },
+        {
+          "timestamp_s": 460.15,
+          "timestamp": "00:07:40.150",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/004-long-records-2-004-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-005",
+      "canonical_slide_id": "long-records-2-005",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 5,
+      "start_s": 460.55,
+      "end_s": 512.85,
+      "start": "00:07:40.550",
+      "end": "00:08:32.850",
+      "duration_s": 52.3,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Long Records (2)",
+      "screen_title_ocr": "Long Records (2)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "NS",
+      "slide_text_ocr": "Long Records (2)\n\nSimply spanning pages is not a good idea:\n\ne\n\nmust read an unbounded number of pages to access a tuple\n\ne\n\ngreatly complicates buffering\n\ne\n\na tuple might not even fit into main memory!\n\ne\n\nupdates that change the size are complicated\n\ne\n\nintermediate results during query processing\n\nInstead, keep the main tuple size down\n\ne BLOBS/CLOBS are stored separate from the tuple\n\ne tuple only contains a pointer\n\ne increases the costs of accessing the BLOB, but simplifies tuple processing",
+      "initial_frame_s": 461.55,
+      "annotated_frame_s": 512.45,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/005-long-records-2-005-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/005-long-records-2-005-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 461.55,
+          "timestamp": "00:07:41.550",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/005-long-records-2-005-initial.jpg"
+        },
+        {
+          "timestamp_s": 512.45,
+          "timestamp": "00:08:32.450",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/005-long-records-2-005-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.86,
+      "boundary_reason": "title changed with sustained visual change"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-006",
+      "canonical_slide_id": "professor-board-application-006",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 6,
+      "start_s": 512.85,
+      "end_s": 526.45,
+      "start": "00:08:32.850",
+      "end": "00:08:46.450",
+      "duration_s": 13.6,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "board_or_application",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 0.0,
+      "title": "Professor board / application",
+      "screen_title_ocr": "\\ mers | Abe |p) ae",
+      "chapter_header": "",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "\\ MEA CT\n\n7|\n\neo",
+      "initial_frame_s": 513.85,
+      "annotated_frame_s": 526.05,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/006-professor-board-application-006-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/006-professor-board-application-006-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 513.85,
+          "timestamp": "00:08:33.850",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/006-professor-board-application-006-initial.jpg"
+        },
+        {
+          "timestamp_s": 526.05,
+          "timestamp": "00:08:46.050",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/006-professor-board-application-006-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.86,
+      "boundary_reason": "title changed with sustained visual change"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-007",
+      "canonical_slide_id": "long-records-2-007",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 7,
+      "start_s": 526.45,
+      "end_s": 801.75,
+      "start": "00:08:46.450",
+      "end": "00:13:21.750",
+      "duration_s": 275.3,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Long Records (2)",
+      "screen_title_ocr": "Long Records (2)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "NS",
+      "slide_text_ocr": "Long Records (2)\n\nSimply spanning pages is not a good idea:\n\ne\n\nmust read an unbounded number of pages to access a tuple\n\ne\n\ngreatly complicates buffering\n\ne\n\na tuple might not even fit into main memory!\n\ne\n\nupdates that change the size are complicated\n\ne\n\nintermediate results during query processing\n\nInstead, keep the main tuple size down\n\ne BLOBS/CLOBS are stored separate from the tuple\n\ne tuple only contains a pointer\n\ne increases the costs of accessing the BLOB, but simplifies tuple processing",
+      "initial_frame_s": 527.45,
+      "annotated_frame_s": 801.35,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/007-long-records-2-007-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/007-long-records-2-007-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 527.45,
+          "timestamp": "00:08:47.450",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/007-long-records-2-007-initial.jpg"
+        },
+        {
+          "timestamp_s": 801.35,
+          "timestamp": "00:13:21.350",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/007-long-records-2-007-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.86,
+      "boundary_reason": "title changed with sustained visual change"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-008",
+      "canonical_slide_id": "slide-0080",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 8,
+      "start_s": 801.75,
+      "end_s": 1384.55,
+      "start": "00:13:21.750",
+      "end": "00:23:04.550",
+      "duration_s": 582.8,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 80,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Long Records (3)",
+      "screen_title_ocr": "Long Records (3)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "80 / 375",
+      "slide_text_ocr": "Long Records (3)\n\nBLOBs can be stored in a B-Tree like fashion\n\nWL\n\nMUA,\n\nWL\n\nWML\n\nWML\n\n(relative) offset is search key\n\nallows for accessing and updating arbitrary parts\n\nvery flexible and powerful\n\nbut might be over-sophisticated\n\nCOI doec not offer thie interface anyway",
+      "initial_frame_s": 802.75,
+      "annotated_frame_s": 1384.15,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/008-slide-0080-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/008-slide-0080-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 802.75,
+          "timestamp": "00:13:22.750",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/008-slide-0080-initial.jpg"
+        },
+        {
+          "timestamp_s": 1384.15,
+          "timestamp": "00:23:04.150",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/008-slide-0080-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-009",
+      "canonical_slide_id": "slide-0081",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 9,
+      "start_s": 1384.55,
+      "end_s": 1536.05,
+      "start": "00:23:04.550",
+      "end": "00:25:36.050",
+      "duration_s": 151.5,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 81,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Long Records (4)",
+      "screen_title_ocr": "Long Records (4)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "81 / 375",
+      "slide_text_ocr": "Long Records (4)\n\nUsing an extent list is simpler\n\nhash\n\nlength\n\n(page/#)(page/7#) chain\n\nari 50000 ]13/3]90/2]\n\n13\n\n90\n\nWWM\n\nMALL\n\nWML\n\nLiL\n\nreal tuple points to BLOB tuple\n\nBLOB tuple contains a header and an extent list\n\nin worst case the extent list is chained, but should rarely happen\n\nextent list only allows for manipulating the BLOB in one piece\n\nhach ard laneth tn eran\n\nbut this is usually good enough\n\nRnR FAMmMmMRARANPFICARC",
+      "initial_frame_s": 1385.55,
+      "annotated_frame_s": 1535.65,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/009-slide-0081-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/009-slide-0081-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 1385.55,
+          "timestamp": "00:23:05.550",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/009-slide-0081-initial.jpg"
+        },
+        {
+          "timestamp_s": 1535.65,
+          "timestamp": "00:25:35.650",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/009-slide-0081-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-010",
+      "canonical_slide_id": "slide-0082",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 10,
+      "start_s": 1536.05,
+      "end_s": 1548.45,
+      "start": "00:25:36.050",
+      "end": "00:25:48.450",
+      "duration_s": 12.4,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 82,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Long Records (5)",
+      "screen_title_ocr": "Long Records (5)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "82 / 375",
+      "slide_text_ocr": "Long Records (5)\n\nIt makes sense to optimize for short BLOBs/CLOBs\n\ne\n\nusers misuse BLOBs/CLOBs\n\ne\n\nthey use CLOB to avoid specifying a maximum length\n\ne\n\nbut most CLOBs are short in reality\n\ne\n\non the other hand some BLOBs are really huge\n\ne\n\nthe DBMS cannot know\n\ne\n\nso BLOBs can be arbitrary large, but short BLOBs should be more efficient\n\nApproach:\n\n1. BLOBs smaller than TID are encoded in BLOB TID\n\n2. BLOBs smaller than page size are stored in BLOB record\n\n3. only larger BLOBs use the full mechanism",
+      "initial_frame_s": 1537.05,
+      "annotated_frame_s": 1548.05,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/010-slide-0082-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/010-slide-0082-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 1537.05,
+          "timestamp": "00:25:37.050",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/010-slide-0082-initial.jpg"
+        },
+        {
+          "timestamp_s": 1548.05,
+          "timestamp": "00:25:48.050",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/010-slide-0082-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-011",
+      "canonical_slide_id": "professor-board-application-011",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 11,
+      "start_s": 1548.45,
+      "end_s": 2269.95,
+      "start": "00:25:48.450",
+      "end": "00:37:49.950",
+      "duration_s": 721.5,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "board_or_application",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 0.0,
+      "title": "Professor board / application",
+      "screen_title_ocr": "",
+      "chapter_header": "",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "",
+      "initial_frame_s": 1549.45,
+      "annotated_frame_s": 2269.55,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 1549.45,
+          "timestamp": "00:25:49.450",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-initial.jpg"
+        },
+        {
+          "timestamp_s": 1579.45,
+          "timestamp": "00:26:19.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-progress-01.jpg"
+        },
+        {
+          "timestamp_s": 1609.45,
+          "timestamp": "00:26:49.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-progress-02.jpg"
+        },
+        {
+          "timestamp_s": 1639.45,
+          "timestamp": "00:27:19.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-progress-03.jpg"
+        },
+        {
+          "timestamp_s": 1669.45,
+          "timestamp": "00:27:49.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-progress-04.jpg"
+        },
+        {
+          "timestamp_s": 1699.45,
+          "timestamp": "00:28:19.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-progress-05.jpg"
+        },
+        {
+          "timestamp_s": 1729.45,
+          "timestamp": "00:28:49.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-progress-06.jpg"
+        },
+        {
+          "timestamp_s": 1759.45,
+          "timestamp": "00:29:19.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-progress-07.jpg"
+        },
+        {
+          "timestamp_s": 1789.45,
+          "timestamp": "00:29:49.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-progress-08.jpg"
+        },
+        {
+          "timestamp_s": 1819.45,
+          "timestamp": "00:30:19.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-progress-09.jpg"
+        },
+        {
+          "timestamp_s": 1849.45,
+          "timestamp": "00:30:49.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-progress-10.jpg"
+        },
+        {
+          "timestamp_s": 1879.45,
+          "timestamp": "00:31:19.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-progress-11.jpg"
+        },
+        {
+          "timestamp_s": 1909.45,
+          "timestamp": "00:31:49.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-progress-12.jpg"
+        },
+        {
+          "timestamp_s": 1939.45,
+          "timestamp": "00:32:19.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-progress-13.jpg"
+        },
+        {
+          "timestamp_s": 1969.45,
+          "timestamp": "00:32:49.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-progress-14.jpg"
+        },
+        {
+          "timestamp_s": 1999.45,
+          "timestamp": "00:33:19.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-progress-15.jpg"
+        },
+        {
+          "timestamp_s": 2029.45,
+          "timestamp": "00:33:49.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-progress-16.jpg"
+        },
+        {
+          "timestamp_s": 2059.45,
+          "timestamp": "00:34:19.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-progress-17.jpg"
+        },
+        {
+          "timestamp_s": 2089.45,
+          "timestamp": "00:34:49.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-progress-18.jpg"
+        },
+        {
+          "timestamp_s": 2119.45,
+          "timestamp": "00:35:19.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-progress-19.jpg"
+        },
+        {
+          "timestamp_s": 2149.45,
+          "timestamp": "00:35:49.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-progress-20.jpg"
+        },
+        {
+          "timestamp_s": 2179.45,
+          "timestamp": "00:36:19.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-progress-21.jpg"
+        },
+        {
+          "timestamp_s": 2209.45,
+          "timestamp": "00:36:49.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-progress-22.jpg"
+        },
+        {
+          "timestamp_s": 2239.45,
+          "timestamp": "00:37:19.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-progress-23.jpg"
+        },
+        {
+          "timestamp_s": 2269.55,
+          "timestamp": "00:37:49.550",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/011-professor-board-application-011-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-012",
+      "canonical_slide_id": "slide-0082",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 12,
+      "start_s": 2269.95,
+      "end_s": 2488.05,
+      "start": "00:37:49.950",
+      "end": "00:41:28.050",
+      "duration_s": 218.1,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 82,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Long Records (5)",
+      "screen_title_ocr": "Long Records (5)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "82 / 375",
+      "slide_text_ocr": "Long Records (5)\n\nIt makes sense to optimize for short BLOBs/CLOBs\n\ne\n\nusers misuse BLOBs/CLOBs\n\ne\n\nthey use CLOB to avoid specifying a maximum length\n\ne\n\nbut most CLOBs are short in reality\n\ne\n\non the other hand some BLOBs are really huge\n\ne\n\nthe DBMS cannot know\n\ne\n\nso BLOBs can be arbitrary large, but short BLOBs should be more efficient\n\nApproach:\n\n1. BLOBs smaller than TID are encoded in BLOB TID\n\n2. BLOBs smaller than page size are stored in BLOB record\n\n3. only larger BLOBs use the full mechanism",
+      "initial_frame_s": 2270.95,
+      "annotated_frame_s": 2487.65,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/012-slide-0082-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/012-slide-0082-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 2270.95,
+          "timestamp": "00:37:50.950",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/012-slide-0082-initial.jpg"
+        },
+        {
+          "timestamp_s": 2487.65,
+          "timestamp": "00:41:27.650",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/012-slide-0082-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-013",
+      "canonical_slide_id": "slide-0083",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 13,
+      "start_s": 2488.05,
+      "end_s": 2491.65,
+      "start": "00:41:28.050",
+      "end": "00:41:31.650",
+      "duration_s": 3.6,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 83,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Index Structures",
+      "screen_title_ocr": "Index Structures",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "83 / 375",
+      "slide_text_ocr": "Index Structures\n\nData is often indexed\n\ne speeds up lookup\n\ne de-facto mandatory for primary keys\n\ne useful for selective queries\n\nTwo important access classes:\n\n@ point queries\n\nfind all tuples with a given value (might be a compound)\n\ne range queries\n\nfind all tuples within a given value range\n\nSupport for more complex predicates is rare.",
+      "initial_frame_s": 2489.05,
+      "annotated_frame_s": 2491.25,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/013-slide-0083-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/013-slide-0083-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 2489.05,
+          "timestamp": "00:41:29.050",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/013-slide-0083-initial.jpg"
+        },
+        {
+          "timestamp_s": 2491.25,
+          "timestamp": "00:41:31.250",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/013-slide-0083-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-014",
+      "canonical_slide_id": "slide-0082",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 14,
+      "start_s": 2491.65,
+      "end_s": 2512.65,
+      "start": "00:41:31.650",
+      "end": "00:41:52.650",
+      "duration_s": 21.0,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 82,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Long Records (5)",
+      "screen_title_ocr": "Long Records (5)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "82 / 375",
+      "slide_text_ocr": "Long Records (5)\n\nIt makes sense to optimize for short BLOBs/CLOBs\n\ne\n\nusers misuse BLOBs/CLOBs\n\ne\n\nthey use CLOB to avoid specifying a maximum length\n\ne\n\nbut most CLOBs are short in reality\n\ne\n\non the other hand some BLOBs are really huge\n\ne\n\nthe DBMS cannot know\n\ne\n\nso BLOBs can be arbitrary large, but short BLOBs should be more efficient\n\nApproach:\n\n1. BLOBs smaller than TID are encoded in BLOB TID\n\n2. BLOBs smaller than page size are stored in BLOB record\n\n3. only larger BLOBs use the full mechanism",
+      "initial_frame_s": 2492.65,
+      "annotated_frame_s": 2512.25,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/014-slide-0082-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/014-slide-0082-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 2492.65,
+          "timestamp": "00:41:32.650",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/014-slide-0082-initial.jpg"
+        },
+        {
+          "timestamp_s": 2512.25,
+          "timestamp": "00:41:52.250",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/014-slide-0082-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-015",
+      "canonical_slide_id": "slide-0083",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 15,
+      "start_s": 2512.65,
+      "end_s": 2516.65,
+      "start": "00:41:52.650",
+      "end": "00:41:56.650",
+      "duration_s": 4.0,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 83,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Index Structures",
+      "screen_title_ocr": "Index Structures",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "83 / 375",
+      "slide_text_ocr": "Index Structures\n\nData is often indexed\n\ne speeds up lookup\n\ne de-facto mandatory for primary keys\n\ne useful for selective queries\n\nTwo important access classes:\n\n@ point queries\n\nfind all tuples with a given value (might be a compound)\n\ne range queries\n\nfind all tuples within a given value range\n\nSupport for more complex predicates is rare.",
+      "initial_frame_s": 2513.65,
+      "annotated_frame_s": 2516.25,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/015-slide-0083-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/015-slide-0083-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 2513.65,
+          "timestamp": "00:41:53.650",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/015-slide-0083-initial.jpg"
+        },
+        {
+          "timestamp_s": 2516.25,
+          "timestamp": "00:41:56.250",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/015-slide-0083-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-016",
+      "canonical_slide_id": "professor-board-application-016",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 16,
+      "start_s": 2516.65,
+      "end_s": 2586.85,
+      "start": "00:41:56.650",
+      "end": "00:43:06.850",
+      "duration_s": 70.2,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "board_or_application",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 0.0,
+      "title": "Professor board / application",
+      "screen_title_ocr": "",
+      "chapter_header": "",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "",
+      "initial_frame_s": 2517.65,
+      "annotated_frame_s": 2586.45,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/016-professor-board-application-016-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/016-professor-board-application-016-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 2517.65,
+          "timestamp": "00:41:57.650",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/016-professor-board-application-016-initial.jpg"
+        },
+        {
+          "timestamp_s": 2547.65,
+          "timestamp": "00:42:27.650",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/016-professor-board-application-016-progress-01.jpg"
+        },
+        {
+          "timestamp_s": 2577.65,
+          "timestamp": "00:42:57.650",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/016-professor-board-application-016-progress-02.jpg"
+        },
+        {
+          "timestamp_s": 2586.45,
+          "timestamp": "00:43:06.450",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/016-professor-board-application-016-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-017",
+      "canonical_slide_id": "slide-0083",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 17,
+      "start_s": 2586.85,
+      "end_s": 2865.15,
+      "start": "00:43:06.850",
+      "end": "00:47:45.150",
+      "duration_s": 278.3,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 83,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Index Structures",
+      "screen_title_ocr": "Index Structures",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "83 / 375",
+      "slide_text_ocr": "Index Structures\n\nData is often indexed\n\ne speeds up lookup\n\ne de-facto mandatory for primary keys\n\ne useful for selective queries\n\nTwo important access classes:\n\n@ point queries\n\nfind all tuples with a given value (might be a compound)\n\ne range queries\n\nfind all tuples within a given value range\n\nSupport for more complex predicates is rare.",
+      "initial_frame_s": 2587.85,
+      "annotated_frame_s": 2864.75,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/017-slide-0083-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/017-slide-0083-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 2587.85,
+          "timestamp": "00:43:07.850",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/017-slide-0083-initial.jpg"
+        },
+        {
+          "timestamp_s": 2864.75,
+          "timestamp": "00:47:44.750",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/017-slide-0083-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-018",
+      "canonical_slide_id": "slide-0084",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 18,
+      "start_s": 2865.15,
+      "end_s": 3112.65,
+      "start": "00:47:45.150",
+      "end": "00:51:52.650",
+      "duration_s": 247.5,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 84,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B- Tree",
+      "screen_title_ocr": "B- Tree",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "84 / 375",
+      "slide_text_ocr": "B- Tree\n\nB-Trees (including variants) are the dominant data structure for external storage.\n\nClassical definition:\n\ne a B-Tree has a degree k\n\ne each node except the root has at least k entries\n\ne each node has at most 2k entries\n\ne all leaf nodes are at the same depth",
+      "initial_frame_s": 2866.15,
+      "annotated_frame_s": 3112.25,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/018-slide-0084-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/018-slide-0084-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 2866.15,
+          "timestamp": "00:47:46.150",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/018-slide-0084-initial.jpg"
+        },
+        {
+          "timestamp_s": 3112.25,
+          "timestamp": "00:51:52.250",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/018-slide-0084-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-019",
+      "canonical_slide_id": "professor-board-application-019",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 19,
+      "start_s": 3112.65,
+      "end_s": 3403.45,
+      "start": "00:51:52.650",
+      "end": "00:56:43.450",
+      "duration_s": 290.8,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "board_or_application",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 0.0,
+      "title": "Professor board / application",
+      "screen_title_ocr": "",
+      "chapter_header": "",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "",
+      "initial_frame_s": 3113.65,
+      "annotated_frame_s": 3403.05,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/019-professor-board-application-019-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/019-professor-board-application-019-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 3113.65,
+          "timestamp": "00:51:53.650",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/019-professor-board-application-019-initial.jpg"
+        },
+        {
+          "timestamp_s": 3143.65,
+          "timestamp": "00:52:23.650",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/019-professor-board-application-019-progress-01.jpg"
+        },
+        {
+          "timestamp_s": 3173.65,
+          "timestamp": "00:52:53.650",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/019-professor-board-application-019-progress-02.jpg"
+        },
+        {
+          "timestamp_s": 3203.65,
+          "timestamp": "00:53:23.650",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/019-professor-board-application-019-progress-03.jpg"
+        },
+        {
+          "timestamp_s": 3233.65,
+          "timestamp": "00:53:53.650",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/019-professor-board-application-019-progress-04.jpg"
+        },
+        {
+          "timestamp_s": 3263.65,
+          "timestamp": "00:54:23.650",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/019-professor-board-application-019-progress-05.jpg"
+        },
+        {
+          "timestamp_s": 3293.65,
+          "timestamp": "00:54:53.650",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/019-professor-board-application-019-progress-06.jpg"
+        },
+        {
+          "timestamp_s": 3323.65,
+          "timestamp": "00:55:23.650",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/019-professor-board-application-019-progress-07.jpg"
+        },
+        {
+          "timestamp_s": 3353.65,
+          "timestamp": "00:55:53.650",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/019-professor-board-application-019-progress-08.jpg"
+        },
+        {
+          "timestamp_s": 3383.65,
+          "timestamp": "00:56:23.650",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/019-professor-board-application-019-progress-09.jpg"
+        },
+        {
+          "timestamp_s": 3403.05,
+          "timestamp": "00:56:43.050",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/019-professor-board-application-019-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-020",
+      "canonical_slide_id": "slide-0084",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 20,
+      "start_s": 3403.45,
+      "end_s": 3479.05,
+      "start": "00:56:43.450",
+      "end": "00:57:59.050",
+      "duration_s": 75.6,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 84,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B- Tree",
+      "screen_title_ocr": "B- Tree",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "84 / 375",
+      "slide_text_ocr": "B- Tree\n\nB-Trees (including variants) are the dominant data structure for external storage.\n\nClassical definition:\n\ne a B-Tree has a degree k\n\n/\n\ne each node except the root has at least k entries\n\n47 Léger VALE\n\ne each node has at most 2k entries\n\nMeO aa\n\né° all leaf nodes are at the same depth\n\nJertk TREE\n\n< 4° 6 F eerpyes)\n\nyp £. kL\n\nJDoecw",
+      "initial_frame_s": 3404.45,
+      "annotated_frame_s": 3478.65,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/020-slide-0084-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/020-slide-0084-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 3404.45,
+          "timestamp": "00:56:44.450",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/020-slide-0084-initial.jpg"
+        },
+        {
+          "timestamp_s": 3478.65,
+          "timestamp": "00:57:58.650",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/020-slide-0084-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-021",
+      "canonical_slide_id": "slide-0085",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 21,
+      "start_s": 3479.05,
+      "end_s": 3645.25,
+      "start": "00:57:59.050",
+      "end": "01:00:45.250",
+      "duration_s": 166.2,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 85,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B-Tree (2)",
+      "screen_title_ocr": "B-Tree (2)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "85 / 375",
+      "slide_text_ocr": "B-Tree (2)\n\nExample:\n\nB-Tree\n\nH K47 lel]\n\nwith k = 2,h=3\n\ni[K25|e]| K36]e||\n\n|| K67 |e] | K83]e]|\n\n|[Ko2|*] Ko3]e] K16]e\n\n[K41 |e] Ka3e\n\n[[Ko1]¢] Ko5]¢]\n\n|[K26]e] K29]e] K35]°\n\n|[K51[*] K53]e] K55 |e] K58|¢]|\n\n||K78 |e] K86]«\n\nTha aic tha TIN nf tha rranrracnnnding tinla",
+      "initial_frame_s": 3480.05,
+      "annotated_frame_s": 3644.85,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/021-slide-0085-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/021-slide-0085-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 3480.05,
+          "timestamp": "00:58:00.050",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/021-slide-0085-initial.jpg"
+        },
+        {
+          "timestamp_s": 3644.85,
+          "timestamp": "01:00:44.850",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/021-slide-0085-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-022",
+      "canonical_slide_id": "slide-0086",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 22,
+      "start_s": 3645.25,
+      "end_s": 3713.85,
+      "start": "01:00:45.250",
+      "end": "01:01:53.850",
+      "duration_s": 68.6,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 86,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B+-Tree",
+      "screen_title_ocr": "Bt-Tree",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "86 / 375",
+      "slide_text_ocr": "Bt-Tree\n\nMost DBMS use the Bt-Tree variant:\n\nBt-Tree\n\nK49\n\nwith k= 2, h = 3\n\nK25\n\nK35\n\nK58\n\nK90\n\nK02[*]K03 |e] K16]e] K25]e]\n\nK36]¢] K41]*] K43]¢] K47|*]\n\nK91|*]_K95]e]\n\n|\n\nK26[@] K29 Je] K35]¢]\n\nK51]e] K53]e] K55|\n\no] K58 |e\n\nKer >| Kale] Ka6]>| =\n\nkey+TID only in leaf nodes\n\ninner nodes contain separators, might or might not occur in the data\n\nincreases the fanout of inner nodes\n\ncimnlifiac tha PR_Traa Incir-",
+      "initial_frame_s": 3646.25,
+      "annotated_frame_s": 3713.45,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/022-slide-0086-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/022-slide-0086-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 3646.25,
+          "timestamp": "01:00:46.250",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/022-slide-0086-initial.jpg"
+        },
+        {
+          "timestamp_s": 3713.45,
+          "timestamp": "01:01:53.450",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/022-slide-0086-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-023",
+      "canonical_slide_id": "slide-0085",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 23,
+      "start_s": 3713.85,
+      "end_s": 3729.25,
+      "start": "01:01:53.850",
+      "end": "01:02:09.250",
+      "duration_s": 15.4,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 85,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B-Tree (2)",
+      "screen_title_ocr": "B-Tree (2)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "85 / 375",
+      "slide_text_ocr": "B-Tree (2)\n\nExample:\n\nB-Tree\n\nH K47 lel]\n\nwith k = 2,h=3\n\ni[K25|e]| K36]e||\n\n|| K67 |e] | K83]e]|\n\n|[Ko2|*] Ko3]e] K16]e\n\n[K41 |e] Ka3e\n\n[[Ko1]¢] Ko5]¢]\n\n|[K26]e] K29]e] K35]°\n\n|[K51[*] K53]e] K55 |e] K58|¢]|\n\n||K78 |e] K86]«\n\nTha aic tha TIN nf tha rranrracnnnding tinla",
+      "initial_frame_s": 3714.85,
+      "annotated_frame_s": 3728.85,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/023-slide-0085-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/023-slide-0085-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 3714.85,
+          "timestamp": "01:01:54.850",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/023-slide-0085-initial.jpg"
+        },
+        {
+          "timestamp_s": 3728.85,
+          "timestamp": "01:02:08.850",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/023-slide-0085-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-024",
+      "canonical_slide_id": "slide-0086",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 24,
+      "start_s": 3729.25,
+      "end_s": 3766.05,
+      "start": "01:02:09.250",
+      "end": "01:02:46.050",
+      "duration_s": 36.8,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 86,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B+-Tree",
+      "screen_title_ocr": "Bt-Tree",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "86 / 375",
+      "slide_text_ocr": "Bt-Tree\n\nMost DBMS use the Bt-Tree variant:\n\nK49\n\nBt-Tree\n\nwith k= 2,h = 3\n\nK25\n\nK35\n\nK58\n\nK90\n\nK02 |e\n\nKo3|°\n\nKole] 25/4\n\nK36]¢] K41]*] K43]¢] K47|*]\n\nK91|*]_K95]e]\n\n|\n\nK26 |e] K29 Je] K35]¢]\n\nK51]e] K53]e] K55]@] K58]°\n\nK67 >| Kale] Ka6]>] =\n\nkey+TID only in leaf nodes\n\ninner nodes contain separators, might or might not occur in the data\n\nincreases the fanout of inner nodes\n\ncimnlifiac tha R_Traa Incir-",
+      "initial_frame_s": 3730.25,
+      "annotated_frame_s": 3765.65,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/024-slide-0086-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/024-slide-0086-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 3730.25,
+          "timestamp": "01:02:10.250",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/024-slide-0086-initial.jpg"
+        },
+        {
+          "timestamp_s": 3765.65,
+          "timestamp": "01:02:45.650",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/024-slide-0086-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-025",
+      "canonical_slide_id": "slide-0085",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 25,
+      "start_s": 3766.05,
+      "end_s": 3772.55,
+      "start": "01:02:46.050",
+      "end": "01:02:52.550",
+      "duration_s": 6.5,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 85,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B-Tree (2)",
+      "screen_title_ocr": "B-Tree (2)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "85 / 375",
+      "slide_text_ocr": "B-Tree (2)\n\nExample:\n\nB-Tree\n\n}| Ka7 lel]\n\nwith k = 2,h=3\n\ni[K25|e]| K36]e||\n\n|| K67 |e] | K83]e]|\n\n|[Ko2|*] Ko3]e] K16]e\n\n[K41 |e] Ka3e\n\n[[Ko1]¢] Ko5]¢]\n\n|[K26]e] K29]e] K35]°\n\n|[K51[*] K53]e] K55 |e] K58|¢]|\n\n||K78 |e] K86]«\n\nTha aic tha TIN nf tha rranrracnnnding tinla",
+      "initial_frame_s": 3767.05,
+      "annotated_frame_s": 3772.15,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/025-slide-0085-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/025-slide-0085-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 3767.05,
+          "timestamp": "01:02:47.050",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/025-slide-0085-initial.jpg"
+        },
+        {
+          "timestamp_s": 3772.15,
+          "timestamp": "01:02:52.150",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/025-slide-0085-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-026",
+      "canonical_slide_id": "slide-0086",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 26,
+      "start_s": 3772.55,
+      "end_s": 3853.05,
+      "start": "01:02:52.550",
+      "end": "01:04:13.050",
+      "duration_s": 80.5,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 86,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B+-Tree",
+      "screen_title_ocr": "Bt-Tree",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "86 / 375",
+      "slide_text_ocr": "Bt-Tree\n\nMost DBMS use the Bt-Tree variant:\n\n=t7\n\nBt-Tree\n\nK49\n\nwith k= 2,h = 3\n\nK25\n\nK35\n\nK58\n\nK90\n\nK02[*]K03 Je] K16]¢] K25]e]\n\nK36]¢] K41]*] K43]¢] K47|*]\n\nK91|*]_K95 |e]\n\n|\n\nK26 |e] K29 Je] K35]¢]\n\nK51[e] K53]e] K55]\n\ne] K58 |e\n\nK67 >| Kale] Ka6]>] =\n\nkey+TID only in leaf nodes\n\ninner nodes contain separators, might or might not occur in the data\n\nincreases the fanout of inner nodes\n\ncimnlifiac tha R_Traa Incir-",
+      "initial_frame_s": 3773.55,
+      "annotated_frame_s": 3852.65,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/026-slide-0086-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/026-slide-0086-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 3773.55,
+          "timestamp": "01:02:53.550",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/026-slide-0086-initial.jpg"
+        },
+        {
+          "timestamp_s": 3852.65,
+          "timestamp": "01:04:12.650",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/026-slide-0086-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-027",
+      "canonical_slide_id": "professor-board-application-027",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 27,
+      "start_s": 3853.05,
+      "end_s": 3864.85,
+      "start": "01:04:13.050",
+      "end": "01:04:24.850",
+      "duration_s": 11.8,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "board_or_application",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 0.0,
+      "title": "Professor board / application",
+      "screen_title_ocr": "CPS",
+      "chapter_header": "— L06,CA)< 1K 26 €, 4}",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "— coat a\n\nKP TREES\n\nO\n\ncK 7\n\nCog e\n\n[3 TRE ec\n\nWe Se\n\nP <-G ic (4)\n\neC ae,\n\noD\n\n4/128",
+      "initial_frame_s": 3854.05,
+      "annotated_frame_s": 3864.45,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/027-professor-board-application-027-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/027-professor-board-application-027-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 3854.05,
+          "timestamp": "01:04:14.050",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/027-professor-board-application-027-initial.jpg"
+        },
+        {
+          "timestamp_s": 3864.45,
+          "timestamp": "01:04:24.450",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/027-professor-board-application-027-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-028",
+      "canonical_slide_id": "slide-0086",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 28,
+      "start_s": 3864.85,
+      "end_s": 3893.45,
+      "start": "01:04:24.850",
+      "end": "01:04:53.450",
+      "duration_s": 28.6,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 86,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B+-Tree",
+      "screen_title_ocr": "Bt-Tree",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "86 / 375",
+      "slide_text_ocr": "Bt-Tree\n\nMost DBMS use the Bt-Tree variant:\n\nBt-Tree\n\nK49\n\nwith k= 2,h = 3\n\nK25\n\nK35\n\nK58\n\nK90\n\nK02]*]K03 Je] K16]¢] K25]e]\n\nK36]¢] K41]*] K43]¢] K47|*]\n\nK91|*]_K95]e]\n\n|\n\nK26 |e] K29 Je] K35]¢]\n\nK51[e] K53]e] K55]\n\ne] K58 |e\n\nK67 >| Kale] Ka6]>] =\n\nkey+TID only in leaf nodes\n\ninner nodes contain separators, might or might not occur in the data\n\nincreases the fanout of inner nodes\n\ncimnlifiac tha R_Traa Incir-",
+      "initial_frame_s": 3865.85,
+      "annotated_frame_s": 3893.05,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/028-slide-0086-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/028-slide-0086-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 3865.85,
+          "timestamp": "01:04:25.850",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/028-slide-0086-initial.jpg"
+        },
+        {
+          "timestamp_s": 3893.05,
+          "timestamp": "01:04:53.050",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/028-slide-0086-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-029",
+      "canonical_slide_id": "slide-0085",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 29,
+      "start_s": 3893.45,
+      "end_s": 3959.55,
+      "start": "01:04:53.450",
+      "end": "01:05:59.550",
+      "duration_s": 66.1,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 85,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B-Tree (2)",
+      "screen_title_ocr": "B-Tree (2)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "85 / 375",
+      "slide_text_ocr": "B-Tree (2)\n\nExample:\n\n“EX\n\nB-Tree\n\n}| Ka7 lel]\n\nwith k = 2,h=3\n\ni[K25|e]| K36]e||\n\n|| K67 |e] | K83]e]|\n\n|[Ko2|*] Ko3]e] K16]e\n\n[K41 |e] Ka3e\n\n[[Ko1]¢] Ko5]¢]\n\n|[K26]e] K29]e] K35]°\n\n|[K51[*] K53]e] K55 |e] K58|¢]|\n\n||K78 |e] K86]«\n\nTha aic tha TIN nf tha rranrracnnnding tinla",
+      "initial_frame_s": 3894.45,
+      "annotated_frame_s": 3959.15,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/029-slide-0085-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/029-slide-0085-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 3894.45,
+          "timestamp": "01:04:54.450",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/029-slide-0085-initial.jpg"
+        },
+        {
+          "timestamp_s": 3959.15,
+          "timestamp": "01:05:59.150",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/029-slide-0085-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-030",
+      "canonical_slide_id": "slide-0086",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 30,
+      "start_s": 3959.55,
+      "end_s": 4019.75,
+      "start": "01:05:59.550",
+      "end": "01:06:59.750",
+      "duration_s": 60.2,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 86,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B+-Tree",
+      "screen_title_ocr": "Bt-Tree",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "86 / 375",
+      "slide_text_ocr": "Bt-Tree\n\nMost DBMS use the Bt-Tree variant:\n\nBt-Tree\n\nK49\n\nwith k= 2,h = 3\n\nK25\n\nK35\n\nK58\n\nK90\n\nK02[*]K03 Je] K16]¢] K25]e]\n\nK36]¢] K41]*] K43]¢] K47|*]\n\nK91|*]_K95 |e]\n\n|\n\nK26 |e] K29 Je] K35]¢]\n\nK51[e] K53]e] K55]\n\ne] K58 |e\n\nK67 >| Kale] Ka6]>] =\n\nkey+TID only in leaf nodes\n\ninner nodes contain separators, might or might not occur in the data\n\nincreases the fanout of inner nodes\n\ncimnlifiac tha R_Traa Incir-",
+      "initial_frame_s": 3960.55,
+      "annotated_frame_s": 4019.35,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/030-slide-0086-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/030-slide-0086-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 3960.55,
+          "timestamp": "01:06:00.550",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/030-slide-0086-initial.jpg"
+        },
+        {
+          "timestamp_s": 4019.35,
+          "timestamp": "01:06:59.350",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/030-slide-0086-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-031",
+      "canonical_slide_id": "slide-0087",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 31,
+      "start_s": 4019.75,
+      "end_s": 4051.65,
+      "start": "01:06:59.750",
+      "end": "01:07:31.650",
+      "duration_s": 31.9,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 87,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Page Structure",
+      "screen_title_ocr": "Page Structure",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "87 / 375",
+      "slide_text_ocr": "Page Structure\n\nInner Node:\n\nLSN\n\nfor recovery\n\nupper\n\npage of right-most child\n\ncount\n\nnumber of entries\n\nrey child Key /chikt- page pairs\n\nLeaf Node:\n\nLSN\n\nfor recovery\n\n“0\n\nleaf node marker\n\nnext\n\nnext leaf node\n\ncount\n\nnumber of entries\n\nkey/te\n\nkey/TID pairs\n\nrf\n\n1\n\n1\n\n1\n\n-\n\ntd\n\n1",
+      "initial_frame_s": 4020.75,
+      "annotated_frame_s": 4051.25,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/031-slide-0087-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/031-slide-0087-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4020.75,
+          "timestamp": "01:07:00.750",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/031-slide-0087-initial.jpg"
+        },
+        {
+          "timestamp_s": 4051.25,
+          "timestamp": "01:07:31.250",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/031-slide-0087-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-032",
+      "canonical_slide_id": "slide-0086",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 32,
+      "start_s": 4051.65,
+      "end_s": 4108.75,
+      "start": "01:07:31.650",
+      "end": "01:08:28.750",
+      "duration_s": 57.1,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 86,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B+-Tree",
+      "screen_title_ocr": "Bt-Tree",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "86 / 375",
+      "slide_text_ocr": "Bt-Tree\n\nMost DBMS use the Bt-Tree variant:\n\nBt-Tree\n\nK49\n\nwith k= 2,h = 3\n\nK25\n\nK35\n\nK58\n\nK90\n\nK02[*]K03 Je] K16]¢] K25]e]\n\nK36]¢] K41]*] K43]¢] K47|*]\n\nK91|*]_K95 |e]\n\n|\n\nK26 |e] K29 Je] K35]¢]\n\nK51[e] K53]e] K55]\n\ne] K58 |e\n\nK67 >| Kale] Ka6]>] =\n\nkey+TID only in leaf nodes\n\ninner nodes contain separators, might or might not occur in the data\n\nincreases the fanout of inner nodes\n\ncimnlifiac tha R_Traa Incir-",
+      "initial_frame_s": 4052.65,
+      "annotated_frame_s": 4108.35,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/032-slide-0086-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/032-slide-0086-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4052.65,
+          "timestamp": "01:07:32.650",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/032-slide-0086-initial.jpg"
+        },
+        {
+          "timestamp_s": 4108.35,
+          "timestamp": "01:08:28.350",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/032-slide-0086-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-033",
+      "canonical_slide_id": "slide-0087",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 33,
+      "start_s": 4108.75,
+      "end_s": 4169.75,
+      "start": "01:08:28.750",
+      "end": "01:09:29.750",
+      "duration_s": 61.0,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 87,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Page Structure",
+      "screen_title_ocr": "Page Structure",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "87 / 375",
+      "slide_text_ocr": "Page Structure\n\nInner Node:\n\nLSN\n\nfor recovery\n\nupper\n\npage of right-most child\n\ncount\n\nnumber of entries\n\nrey child Key /chikt- page pairs\n\nLeaf Node:\n\nLSN\n\nfor recovery\n\n“0\n\nleaf node marker\n\nnext\n\nnext leaf node\n\ncount\n\nnumber of entries\n\nkey/te\n\nkey/TID pairs\n\nrf\n\n1\n\n1\n\n1\n\n-\n\ntd\n\n1",
+      "initial_frame_s": 4109.75,
+      "annotated_frame_s": 4169.35,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/033-slide-0087-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/033-slide-0087-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4109.75,
+          "timestamp": "01:08:29.750",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/033-slide-0087-initial.jpg"
+        },
+        {
+          "timestamp_s": 4169.35,
+          "timestamp": "01:09:29.350",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/033-slide-0087-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-034",
+      "canonical_slide_id": "slide-0086",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 34,
+      "start_s": 4169.75,
+      "end_s": 4305.85,
+      "start": "01:09:29.750",
+      "end": "01:11:45.850",
+      "duration_s": 136.1,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 86,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B+-Tree",
+      "screen_title_ocr": "Bt-Tree",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "86 / 375",
+      "slide_text_ocr": "Bt-Tree\n\nMost DBMS use the Bt-Tree variant:\n\nBt-Tree\n\nK49]\n\nwith k= 2,h = 3\n\nGp\n\nK25\n\nK35\n\nK58\n\nK90\n\nK02]*]K03 Je] K16]¢] K25]e]\n\nK36]¢] K41]*] K43]¢] K47|*]\n\nK91[*]_K95]o]\n\nZe\n\nK26 [@] K29 Je] K35]¢]\n\nK51]e] K53]e] K55|\n\ne] K58 |e\n\nK67 |e] K78|*] K86]¢] K88|*]\n\nkey+TID only in leaf nodes\n\ninner nodes contain separators, might or might not occur in the data\n\nincreases the fanout of inner nodes\n\ncimnlifiac tha PR_Traa Incir",
+      "initial_frame_s": 4170.75,
+      "annotated_frame_s": 4305.45,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/034-slide-0086-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/034-slide-0086-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4170.75,
+          "timestamp": "01:09:30.750",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/034-slide-0086-initial.jpg"
+        },
+        {
+          "timestamp_s": 4305.45,
+          "timestamp": "01:11:45.450",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/034-slide-0086-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-035",
+      "canonical_slide_id": "slide-0087",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 35,
+      "start_s": 4305.85,
+      "end_s": 4340.05,
+      "start": "01:11:45.850",
+      "end": "01:12:20.050",
+      "duration_s": 34.2,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 87,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Page Structure",
+      "screen_title_ocr": "Page Structure",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "87 / 375",
+      "slide_text_ocr": "Page Structure\n\nInner Node:\n\nLSN\n\nfor recovery\n\nupper\n\npage of right-most child\n\ncount\n\nnumber of entries\n\nrey child Key /chikt- page pairs\n\nLeaf Node:\n\n-LSN\n\nfor recovery\n\neK\n\nleaf node marker\n\nnext\n\nnext leaf node\n\n—count\n\nnumber of entries\n\nHey ite\n\nkey/TID pairs\n\nrf\n\n1\n\n1\n\n1\n\n-\n\ntd\n\n1",
+      "initial_frame_s": 4306.85,
+      "annotated_frame_s": 4339.65,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/035-slide-0087-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/035-slide-0087-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4306.85,
+          "timestamp": "01:11:46.850",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/035-slide-0087-initial.jpg"
+        },
+        {
+          "timestamp_s": 4339.65,
+          "timestamp": "01:12:19.650",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/035-slide-0087-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-036",
+      "canonical_slide_id": "slide-0086",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 36,
+      "start_s": 4340.05,
+      "end_s": 4395.05,
+      "start": "01:12:20.050",
+      "end": "01:13:15.050",
+      "duration_s": 55.0,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 86,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B+-Tree",
+      "screen_title_ocr": "Bt-Tree",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "86 / 375",
+      "slide_text_ocr": "Bt-Tree\n\nMost DBMS use the Bt-Tree variant:\n\nBt-Tree\n\nK49\n\nwith k= 2,h = 3\n\nK25\n\nK35\n\nK58\n\nK90\n\nK02[*]K03 Je] K16]¢] K25]e]\n\nK36]¢] K41]e] K43]¢] K47|*]\n\nK91|*]_K95]e]\n\n|\n\nK26[@] K29 Je] K35]¢]\n\nK51[e] K53]e] K55|\n\ne] K58 |e\n\nKer >| Kale] Ka6]>| a\n\nkey+TID only in leaf nodes\n\ninner nodes contain separators, might or might not occur in the data\n\nincreases the fanout of inner nodes\n\ncimnlifiac tha R_Traa Incir-",
+      "initial_frame_s": 4341.05,
+      "annotated_frame_s": 4394.65,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/036-slide-0086-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/036-slide-0086-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4341.05,
+          "timestamp": "01:12:21.050",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/036-slide-0086-initial.jpg"
+        },
+        {
+          "timestamp_s": 4394.65,
+          "timestamp": "01:13:14.650",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/036-slide-0086-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-037",
+      "canonical_slide_id": "slide-0087",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 37,
+      "start_s": 4395.05,
+      "end_s": 4459.25,
+      "start": "01:13:15.050",
+      "end": "01:14:19.250",
+      "duration_s": 64.2,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 87,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Page Structure",
+      "screen_title_ocr": "Page Structure",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "87 / 375",
+      "slide_text_ocr": "Page Structure\n\nInner Node:\n\nLSN\n\nfor recovery\n\nupper\n\npage of right-most child\n\ncount\n\nnumber of entries\n\nrey child Key /chikt- page pairs\n\nLeaf Node:\n\nLSN\n\nfor recovery\n\n“0\n\nleaf node marker\n\nnext\n\nnext leaf node\n\ncount\n\nnumber of entries\n\nkey/te\n\nkey/TID pairs\n\nrf\n\n1\n\n1\n\n1\n\n-\n\ntd\n\n1",
+      "initial_frame_s": 4396.05,
+      "annotated_frame_s": 4458.85,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/037-slide-0087-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/037-slide-0087-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4396.05,
+          "timestamp": "01:13:16.050",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/037-slide-0087-initial.jpg"
+        },
+        {
+          "timestamp_s": 4458.85,
+          "timestamp": "01:14:18.850",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/037-slide-0087-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-038",
+      "canonical_slide_id": "slide-0086",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 38,
+      "start_s": 4459.25,
+      "end_s": 4535.85,
+      "start": "01:14:19.250",
+      "end": "01:15:35.850",
+      "duration_s": 76.6,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 86,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B+-Tree",
+      "screen_title_ocr": "Bt-Tree",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "86 / 375",
+      "slide_text_ocr": "Bt-Tree\n\nMost DBMS use the B*-Tree variant;\n\n\\\n\nK49\n\nBt-Tree\n\nwith k= 2,h = 3\n\n[vs\n\nle\n\nK25\n\nK35\n\nK58\n\nK90\n\nK02]@]K03 Je] K16]¢] K25]\n\n‘\n\nK36]¢] K41]*] K43]¢] K47|*|\n\nK91[*]_K95]e]\n\n|\n\nK26 [@] K29 Je] K35]¢]\n\nK51]e] K53]e] K55]@] K58]°\n\nK67 >| Kale] Ka6]>] =\n\nkey+TID only in leaf nodes\n\ninner nodes contain separators, might or might not occur in the data\n\nincreases the fanout of inner nodes\n\ncimnlifiac tha PR_Traa Incir",
+      "initial_frame_s": 4460.25,
+      "annotated_frame_s": 4535.45,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/038-slide-0086-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/038-slide-0086-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4460.25,
+          "timestamp": "01:14:20.250",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/038-slide-0086-initial.jpg"
+        },
+        {
+          "timestamp_s": 4535.45,
+          "timestamp": "01:15:35.450",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/038-slide-0086-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-039",
+      "canonical_slide_id": "slide-0087",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 39,
+      "start_s": 4535.85,
+      "end_s": 4542.05,
+      "start": "01:15:35.850",
+      "end": "01:15:42.050",
+      "duration_s": 6.2,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 87,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Page Structure",
+      "screen_title_ocr": "Page Structure",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "87 / 375",
+      "slide_text_ocr": "Page Structure\n\nInner Node:\n\nLSN\n\nfor recovery\n\n(upper\n\npage of right-most child\n\ncount\n\nnumber of entries\n\nrey child Key /chikt- page pairs\n\nLeaf Node:\n\nLSN\n\nfor recovery\n\n“0\n\nleaf node marker\n\nnext\n\nnext leaf node\n\ncount\n\nnumber of entries\n\nkey/te\n\nkey/TID pairs\n\nrf\n\n1\n\n1\n\n1\n\n-\n\ntd\n\n1",
+      "initial_frame_s": 4536.85,
+      "annotated_frame_s": 4541.65,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/039-slide-0087-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/039-slide-0087-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4536.85,
+          "timestamp": "01:15:36.850",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/039-slide-0087-initial.jpg"
+        },
+        {
+          "timestamp_s": 4541.65,
+          "timestamp": "01:15:41.650",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/039-slide-0087-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-040",
+      "canonical_slide_id": "slide-0086",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 40,
+      "start_s": 4542.05,
+      "end_s": 4566.45,
+      "start": "01:15:42.050",
+      "end": "01:16:06.450",
+      "duration_s": 24.4,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 86,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B+-Tree",
+      "screen_title_ocr": "Bt-Tree",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "86 / 375",
+      "slide_text_ocr": "Bt-Tree\n\nMost DBMS use the Bt-Tree variant:\n\nBt-Tree\n\nK49\n\nwith k= 2,h = 3\n\nK25\n\nK35\n\nK58\n\nK90\n\nK02[*]K03 Je] K16]¢] K25]e]\n\nK36]¢] K41]*] K43]¢] K47|*]\n\nK91|*]_K95]e]\n\n|\n\nK26 |e] K29 Je] K35]¢]\n\nK51[e] K53]e] K55]\n\ne] K58 |e\n\nK67 >| Kale] Ka6]>] =\n\nkey+TID only in leaf nodes\n\ninner nodes contain separators, might or might not occur in the data\n\nincreases the fanout of inner nodes\n\ncimnlifiac tha R_Traa Incir-",
+      "initial_frame_s": 4543.05,
+      "annotated_frame_s": 4566.05,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/040-slide-0086-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/040-slide-0086-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4543.05,
+          "timestamp": "01:15:43.050",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/040-slide-0086-initial.jpg"
+        },
+        {
+          "timestamp_s": 4566.05,
+          "timestamp": "01:16:06.050",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/040-slide-0086-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-041",
+      "canonical_slide_id": "slide-0088",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 41,
+      "start_s": 4566.45,
+      "end_s": 4611.95,
+      "start": "01:16:06.450",
+      "end": "01:16:51.950",
+      "duration_s": 45.5,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 88,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Operations - Lookup",
+      "screen_title_ocr": "Operations - Lookup",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "88 / 375",
+      "slide_text_ocr": "Operations - Lookup\n\nLookup a search key within the Bt-tree:\n\n1\n\nstart with the root node\n\n2\n\nis the current node a leaf?\n\n> if yes, return the current page (locate the entry on it)\n\nfind the first entry > search key (binary search)\n\nif no such entry is found, go the upper, otherwise go to the corresponding page\n\ncontinue with 2\n\nLookup can return a concrete entry or just the position on the appropriate leaf page (depends\n\non usage pattern).",
+      "initial_frame_s": 4567.45,
+      "annotated_frame_s": 4611.55,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/041-slide-0088-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/041-slide-0088-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4567.45,
+          "timestamp": "01:16:07.450",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/041-slide-0088-initial.jpg"
+        },
+        {
+          "timestamp_s": 4611.55,
+          "timestamp": "01:16:51.550",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/041-slide-0088-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-042",
+      "canonical_slide_id": "slide-0086",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 42,
+      "start_s": 4611.95,
+      "end_s": 4636.85,
+      "start": "01:16:51.950",
+      "end": "01:17:16.850",
+      "duration_s": 24.9,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 86,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B+-Tree",
+      "screen_title_ocr": "Bt-Tree",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "86 / 375",
+      "slide_text_ocr": "Bt-Tree\n\nMost DBMS use the Bt-Tree variant:\n\nBt-Tree\n\nK49\n\nwith k= 2, h = 3\n\nK25\n\nK35\n\nK58\n\nK90\n\nK02[*]K03 Je] K16]¢] K25]e]\n\nK36]¢] K41]e] K43]¢] K47|*]\n\nK91|*]_K95]e]\n\n|\n\nK26[@] K29 Je] K35]¢]\n\nK51]e] K53]e] K55]\n\ne]_K58 |e\n\nKer >| Kale] Ka6]>] =\n\nkey+TID only in leaf nodes\n\ninner nodes contain separators, might or might not occur in the data\n\nincreases the fanout of inner nodes\n\ncimnlifiac tha PR_Traa Incir-",
+      "initial_frame_s": 4612.95,
+      "annotated_frame_s": 4636.45,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/042-slide-0086-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/042-slide-0086-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4612.95,
+          "timestamp": "01:16:52.950",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/042-slide-0086-initial.jpg"
+        },
+        {
+          "timestamp_s": 4636.45,
+          "timestamp": "01:17:16.450",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/042-slide-0086-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-043",
+      "canonical_slide_id": "slide-0088",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 43,
+      "start_s": 4636.85,
+      "end_s": 4678.45,
+      "start": "01:17:16.850",
+      "end": "01:17:58.450",
+      "duration_s": 41.6,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 88,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Operations - Lookup",
+      "screen_title_ocr": "Operations - Lookup",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "88 / 375",
+      "slide_text_ocr": "Operations - Lookup\n\nLookup a search key within the Bt-tree:\n\n1\n\nstart with the root node\n\n2\n\nis the current node a leaf?\n\n> if yes, return the current page (locate the entry on it)\n\nfind the first entry > search key (binary search)\n\nif no such entry is found, go the upper, otherwise go to the corresponding page\n\ncontinue with 2\n\nLookup can return a concrete entry or just the position on the appropriate leaf page (depends\n\non usage pattern).",
+      "initial_frame_s": 4637.85,
+      "annotated_frame_s": 4678.05,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/043-slide-0088-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/043-slide-0088-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4637.85,
+          "timestamp": "01:17:17.850",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/043-slide-0088-initial.jpg"
+        },
+        {
+          "timestamp_s": 4678.05,
+          "timestamp": "01:17:58.050",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/043-slide-0088-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-044",
+      "canonical_slide_id": "slide-0086",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 44,
+      "start_s": 4678.45,
+      "end_s": 4738.65,
+      "start": "01:17:58.450",
+      "end": "01:18:58.650",
+      "duration_s": 60.2,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 86,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B+-Tree",
+      "screen_title_ocr": "Bt-Tree",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "86 / 375",
+      "slide_text_ocr": "Bt-Tree\n\nMost DBMS use the Bt-Tree variant:\n\nBt-Tree\n\nK49\n\nwith k= 2,h = 3\n\nth\n\nK25\n\nK35\n\nK58\n\nK90\n\nK02[*]K03 Je] K16]¢] K25]e]\n\nK36]¢] K41]*] K43]¢] K47|*]\n\nK91|*]_K95 |e]\n\n|\n\nK26 |e] K29 Je] K35]¢]\n\nK51[e] K53]e] K55]\n\ne] K58 |e\n\nK67 >| Kale] Ka6]>] =\n\nkey+TID only in leaf nodes\n\ninner nodes contain separators, might or might not occur in the data\n\nincreases the fanout of inner nodes\n\ncimnlifiac tha R_Traa Incir-",
+      "initial_frame_s": 4679.45,
+      "annotated_frame_s": 4738.25,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/044-slide-0086-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/044-slide-0086-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4679.45,
+          "timestamp": "01:17:59.450",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/044-slide-0086-initial.jpg"
+        },
+        {
+          "timestamp_s": 4738.25,
+          "timestamp": "01:18:58.250",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/044-slide-0086-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-045",
+      "canonical_slide_id": "professor-board-application-045",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 45,
+      "start_s": 4738.65,
+      "end_s": 4751.85,
+      "start": "01:18:58.650",
+      "end": "01:19:11.850",
+      "duration_s": 13.2,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "board_or_application",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 0.0,
+      "title": "Professor board / application",
+      "screen_title_ocr": "CPS",
+      "chapter_header": "— L06,CA)< 1K 26 €, 4}",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "— - a\n\nKP ~TRES\n\nO\n\n<a\n\nCog vy\n\n[3 —TRee&\n\nWa Se\n\ns <6,\n\nae\n\n(x)\n\nToce\n\nCe\n\n47U=>5 2",
+      "initial_frame_s": 4739.65,
+      "annotated_frame_s": 4751.45,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/045-professor-board-application-045-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/045-professor-board-application-045-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4739.65,
+          "timestamp": "01:18:59.650",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/045-professor-board-application-045-initial.jpg"
+        },
+        {
+          "timestamp_s": 4751.45,
+          "timestamp": "01:19:11.450",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/045-professor-board-application-045-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-046",
+      "canonical_slide_id": "slide-0086",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 46,
+      "start_s": 4751.85,
+      "end_s": 4754.85,
+      "start": "01:19:11.850",
+      "end": "01:19:14.850",
+      "duration_s": 3.0,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 86,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B+-Tree",
+      "screen_title_ocr": "Bt-Tree",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "86 / 375",
+      "slide_text_ocr": "Bt-Tree\n\nMost DBMS use the Bt-Tree variant:\n\nBt-Tree\n\n= K49\n\nwith k= 2,h = 3\n\nK25\n\nK35\n\nK58\n\nK90\n\nK02[*]K03 Je] K16]¢] K25]e]\n\nK36]¢] K41]e] K43]¢] K47|*]\n\nK91|*]_K95]e]\n\n|\n\nK26 |e] K29 Je] K35]¢]\n\nK51[e] K53]e] K55]\n\ne] K58 |e\n\nK67 >| Kale] Ka6]>] =\n\nkey+TID only in leaf nodes\n\ninner nodes contain separators, might or might not occur in the data\n\nincreases the fanout of inner nodes\n\ncimnlifiac tha R_Traa Incir-",
+      "initial_frame_s": 4752.85,
+      "annotated_frame_s": 4754.45,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/046-slide-0086-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/046-slide-0086-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4752.85,
+          "timestamp": "01:19:12.850",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/046-slide-0086-initial.jpg"
+        },
+        {
+          "timestamp_s": 4754.45,
+          "timestamp": "01:19:14.450",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/046-slide-0086-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-047",
+      "canonical_slide_id": "slide-0088",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 47,
+      "start_s": 4754.85,
+      "end_s": 4784.45,
+      "start": "01:19:14.850",
+      "end": "01:19:44.450",
+      "duration_s": 29.6,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 88,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Operations - Lookup",
+      "screen_title_ocr": "Operations - Lookup",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "88 / 375",
+      "slide_text_ocr": "Operations - Lookup\n\nLookup a search key within the Bt-tree:\n\n1\n\nstart with the root node\n\n2\n\nis the current node a leaf?\n\n> if yes, return the current page (locate the entry on it)\n\nfind the first entry > search key (binary search)\n\nif no such entry is found, go the upper, otherwise go to the corresponding page\n\ncontinue with 2\n\nLookup can return a concrete entry or just the position on the appropriate leaf page (depends\n\non usage pattern).",
+      "initial_frame_s": 4755.85,
+      "annotated_frame_s": 4784.05,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/047-slide-0088-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/047-slide-0088-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4755.85,
+          "timestamp": "01:19:15.850",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/047-slide-0088-initial.jpg"
+        },
+        {
+          "timestamp_s": 4784.05,
+          "timestamp": "01:19:44.050",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/047-slide-0088-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-048",
+      "canonical_slide_id": "professor-board-application-048",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 48,
+      "start_s": 4784.45,
+      "end_s": 4789.35,
+      "start": "01:19:44.450",
+      "end": "01:19:49.350",
+      "duration_s": 4.9,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "board_or_application",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 0.0,
+      "title": "Professor board / application",
+      "screen_title_ocr": "",
+      "chapter_header": "",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "",
+      "initial_frame_s": 4785.45,
+      "annotated_frame_s": 4788.95,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/048-professor-board-application-048-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/048-professor-board-application-048-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4785.45,
+          "timestamp": "01:19:45.450",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/048-professor-board-application-048-initial.jpg"
+        },
+        {
+          "timestamp_s": 4788.95,
+          "timestamp": "01:19:48.950",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/048-professor-board-application-048-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-049",
+      "canonical_slide_id": "slide-0086",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 49,
+      "start_s": 4789.35,
+      "end_s": 4835.45,
+      "start": "01:19:49.350",
+      "end": "01:20:35.450",
+      "duration_s": 46.1,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 86,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B+-Tree",
+      "screen_title_ocr": "Bt-Tree",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "86 / 375",
+      "slide_text_ocr": "Bt-Tree\n\nMost DBMS use the Bt-Tree variant:\n\nBt-Tree\n\nK49\n\nwith k= 2, h = 3\n\nK25\n\nK35\n\nK58\n\nK90\n\nK02[*]K03 Je] K16]¢] K25]e]\n\nK36]¢] K41]e] K43]¢] K47|*]\n\nK91|*]_K95]e]\n\n|\n\nK26[@] K29 Je] K35]¢]\n\nK51]e] K53]e] K55]\n\ne]_K58 |e\n\nKer >| Kale] Ka6]>] =\n\nkey+TID only in leaf nodes\n\ninner nodes contain separators, might or might not occur in the data\n\nincreases the fanout of inner nodes\n\ncimnlifiac tha PR_Traa Incir-",
+      "initial_frame_s": 4790.35,
+      "annotated_frame_s": 4835.05,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/049-slide-0086-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/049-slide-0086-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4790.35,
+          "timestamp": "01:19:50.350",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/049-slide-0086-initial.jpg"
+        },
+        {
+          "timestamp_s": 4835.05,
+          "timestamp": "01:20:35.050",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/049-slide-0086-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-050",
+      "canonical_slide_id": "professor-board-application-050",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 50,
+      "start_s": 4835.45,
+      "end_s": 5327.45,
+      "start": "01:20:35.450",
+      "end": "01:28:47.450",
+      "duration_s": 492.0,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "board_or_application",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 0.0,
+      "title": "Professor board / application",
+      "screen_title_ocr": "",
+      "chapter_header": "",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "",
+      "initial_frame_s": 4836.45,
+      "annotated_frame_s": 5327.05,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/050-professor-board-application-050-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/050-professor-board-application-050-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4836.45,
+          "timestamp": "01:20:36.450",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/050-professor-board-application-050-initial.jpg"
+        },
+        {
+          "timestamp_s": 4866.45,
+          "timestamp": "01:21:06.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/050-professor-board-application-050-progress-01.jpg"
+        },
+        {
+          "timestamp_s": 4896.45,
+          "timestamp": "01:21:36.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/050-professor-board-application-050-progress-02.jpg"
+        },
+        {
+          "timestamp_s": 4926.45,
+          "timestamp": "01:22:06.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/050-professor-board-application-050-progress-03.jpg"
+        },
+        {
+          "timestamp_s": 4956.45,
+          "timestamp": "01:22:36.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/050-professor-board-application-050-progress-04.jpg"
+        },
+        {
+          "timestamp_s": 4986.45,
+          "timestamp": "01:23:06.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/050-professor-board-application-050-progress-05.jpg"
+        },
+        {
+          "timestamp_s": 5016.45,
+          "timestamp": "01:23:36.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/050-professor-board-application-050-progress-06.jpg"
+        },
+        {
+          "timestamp_s": 5046.45,
+          "timestamp": "01:24:06.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/050-professor-board-application-050-progress-07.jpg"
+        },
+        {
+          "timestamp_s": 5076.45,
+          "timestamp": "01:24:36.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/050-professor-board-application-050-progress-08.jpg"
+        },
+        {
+          "timestamp_s": 5106.45,
+          "timestamp": "01:25:06.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/050-professor-board-application-050-progress-09.jpg"
+        },
+        {
+          "timestamp_s": 5136.45,
+          "timestamp": "01:25:36.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/050-professor-board-application-050-progress-10.jpg"
+        },
+        {
+          "timestamp_s": 5166.45,
+          "timestamp": "01:26:06.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/050-professor-board-application-050-progress-11.jpg"
+        },
+        {
+          "timestamp_s": 5196.45,
+          "timestamp": "01:26:36.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/050-professor-board-application-050-progress-12.jpg"
+        },
+        {
+          "timestamp_s": 5226.45,
+          "timestamp": "01:27:06.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/050-professor-board-application-050-progress-13.jpg"
+        },
+        {
+          "timestamp_s": 5256.45,
+          "timestamp": "01:27:36.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/050-professor-board-application-050-progress-14.jpg"
+        },
+        {
+          "timestamp_s": 5286.45,
+          "timestamp": "01:28:06.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/050-professor-board-application-050-progress-15.jpg"
+        },
+        {
+          "timestamp_s": 5316.45,
+          "timestamp": "01:28:36.450",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-04-access-btrees/050-professor-board-application-050-progress-16.jpg"
+        },
+        {
+          "timestamp_s": 5327.05,
+          "timestamp": "01:28:47.050",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/050-professor-board-application-050-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-051",
+      "canonical_slide_id": "slide-0086",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 51,
+      "start_s": 5327.45,
+      "end_s": 5632.15,
+      "start": "01:28:47.450",
+      "end": "01:33:52.150",
+      "duration_s": 304.7,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 86,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B+-Tree",
+      "screen_title_ocr": "Bt-Tree",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "86 / 375",
+      "slide_text_ocr": "Bt-Tree\n\nMost DBMS use the Bt-Tree variant:\n\nBt-Tree\n\nK49\n\nwith k= 2,h = 3\n\nK25\n\nK35\n\nK58\n\nK90\n\nK02[*]K03 Je] K16]¢] K25]e]\n\nK36]¢] K41]*] K43]¢] K47|*]\n\nK91|*]_K95]e]\n\n|\n\nK26 |e] K29 Je] K35]¢]\n\nK51[e] K53]e] K55]\n\ne] K58 |e\n\nK67 >| Kale] Ka6]>] =\n\nkey+TID only in leaf nodes\n\ninner nodes contain separators, might or might not occur in the data\n\nincreases the fanout of inner nodes\n\ncimnlifiac tha R_Traa Incir-",
+      "initial_frame_s": 5328.45,
+      "annotated_frame_s": 5631.75,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/051-slide-0086-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/051-slide-0086-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 5328.45,
+          "timestamp": "01:28:48.450",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/051-slide-0086-initial.jpg"
+        },
+        {
+          "timestamp_s": 5631.75,
+          "timestamp": "01:33:51.750",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/051-slide-0086-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-052",
+      "canonical_slide_id": "slide-0086",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 52,
+      "start_s": 5632.15,
+      "end_s": 5639.15,
+      "start": "01:33:52.150",
+      "end": "01:33:59.150",
+      "duration_s": 7.0,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 86,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "B+-Tree",
+      "screen_title_ocr": "Bt-Tree",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "86 / 375",
+      "slide_text_ocr": "Bt-Tree\n\nMost DBMS use the Bt-Tree variant:\n\nBt-Tree\n\nK49\n\nwith k= 2,h = 3\n\nK25\n\nK35\n\nK58\n\nK90\n\nK02[*]K03 Je] K16]¢] K25]e]\n\nK36]¢] K41]*] K43]¢] K47|*]\n\nK91|*]_K95]e]\n\n|\n\nK26 |e] K29 Je] K35]¢]\n\nK51[e] K53]e] K55]\n\ne] K58|e\n\nK67 >| Kale] Ka6]>] =\n\nkey+TID only in leaf nodes\n\ninner nodes contain separators, might or might not occur in the data\n\nincreases the fanout of inner nodes\n\ncimnlifiac tha R_Traa Incir-",
+      "initial_frame_s": 5633.15,
+      "annotated_frame_s": 5638.75,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/052-slide-0086-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/052-slide-0086-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 5633.15,
+          "timestamp": "01:33:53.150",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/052-slide-0086-initial.jpg"
+        },
+        {
+          "timestamp_s": 5638.75,
+          "timestamp": "01:33:58.750",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/052-slide-0086-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-053",
+      "canonical_slide_id": "slide-0088",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 53,
+      "start_s": 5639.15,
+      "end_s": 5643.05,
+      "start": "01:33:59.150",
+      "end": "01:34:03.050",
+      "duration_s": 3.9,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 88,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Operations - Lookup",
+      "screen_title_ocr": "Operations - Lookup",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "88 / 375",
+      "slide_text_ocr": "Operations - Lookup\n\nLookup a search key within the Bt-tree:\n\n1\n\nstart with the root node\n\nis the current node a leaf?\n\n> if yes, return the current page (locate the entry on it)\n\nfind the first entry > search key (binary search)\n\nif no such entry is found, go the upper, otherwise go to the corresponding page\n\ncontinue with 2\n\nLookup can return a concrete entry or just the position on the appropriate leaf page (depends\n\non usage pattern).",
+      "initial_frame_s": 5640.15,
+      "annotated_frame_s": 5642.65,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/053-slide-0088-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/053-slide-0088-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 5640.15,
+          "timestamp": "01:34:00.150",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/053-slide-0088-initial.jpg"
+        },
+        {
+          "timestamp_s": 5642.65,
+          "timestamp": "01:34:02.650",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/053-slide-0088-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.99,
+      "boundary_reason": "slide counter changed"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-054",
+      "canonical_slide_id": "untitled-slide-54-054",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 54,
+      "start_s": 5643.05,
+      "end_s": 5646.55,
+      "start": "01:34:03.050",
+      "end": "01:34:06.550",
+      "duration_s": 3.5,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.888,
+      "deck_layout_score": 0.777,
+      "title": "Untitled slide 54",
+      "screen_title_ocr": "",
+      "chapter_header": "",
+      "counter_ocr": "",
+      "slide_text_ocr": "",
+      "initial_frame_s": 5644.05,
+      "annotated_frame_s": 5646.15,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/054-untitled-slide-54-054-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/054-untitled-slide-54-054-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 5644.05,
+          "timestamp": "01:34:04.050",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/054-untitled-slide-54-054-initial.jpg"
+        },
+        {
+          "timestamp_s": 5646.15,
+          "timestamp": "01:34:06.150",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/054-untitled-slide-54-054-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-04-access-btrees-055",
+      "canonical_slide_id": "slide-0088",
+      "video_id": "dbimpl-04-access-btrees",
+      "source_file": "dbimpl-04-access-btrees.mp4",
+      "sequence": 55,
+      "start_s": 5646.55,
+      "end_s": 5715.633,
+      "start": "01:34:06.550",
+      "end": "01:35:15.633",
+      "duration_s": 69.083,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": 88,
+      "deck_total": 375,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Operations - Lookup",
+      "screen_title_ocr": "Operations - Lookup",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "88 / 375",
+      "slide_text_ocr": "Operations - Lookup\n\nLookup a search key within the Bt-tree:\n\n1\n\nstart with the root node\n\nis the current node a leaf?\n\n> if yes, return the current page (locate the entry on it)\n\nfind the first entry > search key (binary search)\n\nif no such entry is found, go the upper, otherwise go to the corresponding page\n\ncontinue with 2\n\nLookup can return a concrete entry or just the position on the appropriate leaf page (depends\n\non usage pattern).",
+      "initial_frame_s": 5647.55,
+      "annotated_frame_s": 5715.233,
+      "initial_image": "assets/slides/dbimpl-04-access-btrees/055-slide-0088-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-04-access-btrees/055-slide-0088-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 5647.55,
+          "timestamp": "01:34:07.550",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-04-access-btrees/055-slide-0088-initial.jpg"
+        },
+        {
+          "timestamp_s": 5715.233,
+          "timestamp": "01:35:15.233",
+          "role": "final",
+          "image": "assets/slides/dbimpl-04-access-btrees/055-slide-0088-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.88,
+      "boundary_reason": "switched between slide deck and board/application"
+    }
+  ]
+}

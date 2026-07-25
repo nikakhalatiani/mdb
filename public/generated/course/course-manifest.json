@@ -1,0 +1,230 @@
+{
+  "pipeline_version": 2,
+  "generated_at": "2026-07-25T19:05:59.803496+00:00",
+  "recording_count": 12,
+  "expected_recording_count": 12,
+  "total_duration_s": 62313.966665,
+  "total_visual_interval_count": 527,
+  "total_slide_interval_count": 491,
+  "total_board_interval_count": 36,
+  "total_word_count": 170951,
+  "quality_flag_count": 0,
+  "recordings": [
+    {
+      "id": "dbimpl-00-introduction",
+      "file": "dbimpl-00-introduction.mp4",
+      "duration_s": 4227.433333,
+      "duration": "01:10:27.433",
+      "visual_interval_count": 21,
+      "slide_interval_count": 21,
+      "board_interval_count": 0,
+      "word_count": 10769,
+      "transcript_quality": {
+        "passed": true,
+        "longest_consecutive_word_run": 4,
+        "flags": []
+      },
+      "aligned_path": "dbimpl-00-introduction/aligned-slides.json",
+      "slide_intervals_path": "dbimpl-00-introduction/slide-intervals.json",
+      "transcript_path": "dbimpl-00-introduction/transcript/dbimpl-00-introduction.json"
+    },
+    {
+      "id": "dbimpl-01-storage",
+      "file": "dbimpl-01-storage.mp4",
+      "duration_s": 5354.933333,
+      "duration": "01:29:14.933",
+      "visual_interval_count": 33,
+      "slide_interval_count": 32,
+      "board_interval_count": 1,
+      "word_count": 14363,
+      "transcript_quality": {
+        "passed": true,
+        "longest_consecutive_word_run": 4,
+        "flags": []
+      },
+      "aligned_path": "dbimpl-01-storage/aligned-slides.json",
+      "slide_intervals_path": "dbimpl-01-storage/slide-intervals.json",
+      "transcript_path": "dbimpl-01-storage/transcript/dbimpl-01-storage.json"
+    },
+    {
+      "id": "dbimpl-02-storage-access",
+      "file": "dbimpl-02-storage-access.mp4",
+      "duration_s": 4655.033333,
+      "duration": "01:17:35.033",
+      "visual_interval_count": 39,
+      "slide_interval_count": 33,
+      "board_interval_count": 6,
+      "word_count": 12521,
+      "transcript_quality": {
+        "passed": true,
+        "longest_consecutive_word_run": 3,
+        "flags": []
+      },
+      "aligned_path": "dbimpl-02-storage-access/aligned-slides.json",
+      "slide_intervals_path": "dbimpl-02-storage-access/slide-intervals.json",
+      "transcript_path": "dbimpl-02-storage-access/transcript/dbimpl-02-storage-access.json"
+    },
+    {
+      "id": "dbimpl-03-access-tuples",
+      "file": "dbimpl-03-access-tuples.mp4",
+      "duration_s": 5239.0,
+      "duration": "01:27:19.000",
+      "visual_interval_count": 48,
+      "slide_interval_count": 42,
+      "board_interval_count": 6,
+      "word_count": 14260,
+      "transcript_quality": {
+        "passed": true,
+        "longest_consecutive_word_run": 5,
+        "flags": []
+      },
+      "aligned_path": "dbimpl-03-access-tuples/aligned-slides.json",
+      "slide_intervals_path": "dbimpl-03-access-tuples/slide-intervals.json",
+      "transcript_path": "dbimpl-03-access-tuples/transcript/dbimpl-03-access-tuples.json"
+    },
+    {
+      "id": "dbimpl-04-access-btrees",
+      "file": "dbimpl-04-access-btrees.mp4",
+      "duration_s": 5715.633333,
+      "duration": "01:35:15.633",
+      "visual_interval_count": 55,
+      "slide_interval_count": 47,
+      "board_interval_count": 8,
+      "word_count": 15223,
+      "transcript_quality": {
+        "passed": true,
+        "longest_consecutive_word_run": 4,
+        "flags": []
+      },
+      "aligned_path": "dbimpl-04-access-btrees/aligned-slides.json",
+      "slide_intervals_path": "dbimpl-04-access-btrees/slide-intervals.json",
+      "transcript_path": "dbimpl-04-access-btrees/transcript/dbimpl-04-access-btrees.json"
+    },
+    {
+      "id": "dbimpl-05-access-btrees",
+      "file": "dbimpl-05-access-btrees.mp4",
+      "duration_s": 5452.833333,
+      "duration": "01:30:52.833",
+      "visual_interval_count": 36,
+      "slide_interval_count": 33,
+      "board_interval_count": 3,
+      "word_count": 15055,
+      "transcript_quality": {
+        "passed": true,
+        "longest_consecutive_word_run": 4,
+        "flags": []
+      },
+      "aligned_path": "dbimpl-05-access-btrees/aligned-slides.json",
+      "slide_intervals_path": "dbimpl-05-access-btrees/slide-intervals.json",
+      "transcript_path": "dbimpl-05-access-btrees/transcript/dbimpl-05-access-btrees.json"
+    },
+    {
+      "id": "dbimpl-06-access-eh",
+      "file": "dbimpl-06-access-eh.mp4",
+      "duration_s": 5453.733333,
+      "duration": "01:30:53.733",
+      "visual_interval_count": 38,
+      "slide_interval_count": 31,
+      "board_interval_count": 7,
+      "word_count": 14250,
+      "transcript_quality": {
+        "passed": true,
+        "longest_consecutive_word_run": 4,
+        "flags": []
+      },
+      "aligned_path": "dbimpl-06-access-eh/aligned-slides.json",
+      "slide_intervals_path": "dbimpl-06-access-eh/slide-intervals.json",
+      "transcript_path": "dbimpl-06-access-eh/transcript/dbimpl-06-access-eh.json"
+    },
+    {
+      "id": "dbimpl-07-transactions",
+      "file": "dbimpl-07-transactions.mp4",
+      "duration_s": 5411.866667,
+      "duration": "01:30:11.867",
+      "visual_interval_count": 64,
+      "slide_interval_count": 60,
+      "board_interval_count": 4,
+      "word_count": 15112,
+      "transcript_quality": {
+        "passed": true,
+        "longest_consecutive_word_run": 7,
+        "flags": []
+      },
+      "aligned_path": "dbimpl-07-transactions/aligned-slides.json",
+      "slide_intervals_path": "dbimpl-07-transactions/slide-intervals.json",
+      "transcript_path": "dbimpl-07-transactions/transcript/dbimpl-07-transactions.json"
+    },
+    {
+      "id": "dbimpl-10-recovery",
+      "file": "dbimpl-10-recovery.mp4",
+      "duration_s": 5080.166667,
+      "duration": "01:24:40.167",
+      "visual_interval_count": 47,
+      "slide_interval_count": 47,
+      "board_interval_count": 0,
+      "word_count": 14235,
+      "transcript_quality": {
+        "passed": true,
+        "longest_consecutive_word_run": 2,
+        "flags": []
+      },
+      "aligned_path": "dbimpl-10-recovery/aligned-slides.json",
+      "slide_intervals_path": "dbimpl-10-recovery/slide-intervals.json",
+      "transcript_path": "dbimpl-10-recovery/transcript/dbimpl-10-recovery.json"
+    },
+    {
+      "id": "dbimpl-11-setoriented",
+      "file": "dbimpl-11-setoriented.mp4",
+      "duration_s": 5494.966667,
+      "duration": "01:31:34.967",
+      "visual_interval_count": 34,
+      "slide_interval_count": 33,
+      "board_interval_count": 1,
+      "word_count": 15699,
+      "transcript_quality": {
+        "passed": true,
+        "longest_consecutive_word_run": 4,
+        "flags": []
+      },
+      "aligned_path": "dbimpl-11-setoriented/aligned-slides.json",
+      "slide_intervals_path": "dbimpl-11-setoriented/slide-intervals.json",
+      "transcript_path": "dbimpl-11-setoriented/transcript/dbimpl-11-setoriented.json"
+    },
+    {
+      "id": "dbimpl-12-operators",
+      "file": "dbimpl-12-operators.mp4",
+      "duration_s": 5285.533333,
+      "duration": "01:28:05.533",
+      "visual_interval_count": 58,
+      "slide_interval_count": 58,
+      "board_interval_count": 0,
+      "word_count": 15310,
+      "transcript_quality": {
+        "passed": true,
+        "longest_consecutive_word_run": 3,
+        "flags": []
+      },
+      "aligned_path": "dbimpl-12-operators/aligned-slides.json",
+      "slide_intervals_path": "dbimpl-12-operators/slide-intervals.json",
+      "transcript_path": "dbimpl-12-operators/transcript/dbimpl-12-operators.json"
+    },
+    {
+      "id": "dbimpl-13-codegen",
+      "file": "dbimpl-13-codegen.mp4",
+      "duration_s": 4942.833333,
+      "duration": "01:22:22.833",
+      "visual_interval_count": 54,
+      "slide_interval_count": 54,
+      "board_interval_count": 0,
+      "word_count": 14154,
+      "transcript_quality": {
+        "passed": true,
+        "longest_consecutive_word_run": 4,
+        "flags": []
+      },
+      "aligned_path": "dbimpl-13-codegen/aligned-slides.json",
+      "slide_intervals_path": "dbimpl-13-codegen/slide-intervals.json",
+      "transcript_path": "dbimpl-13-codegen/transcript/dbimpl-13-codegen.json"
+    }
+  ]
+}

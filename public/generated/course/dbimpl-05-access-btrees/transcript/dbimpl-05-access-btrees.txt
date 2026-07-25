@@ -1,0 +1,1358 @@
+[00:00:01.260 --> 00:00:03.980] Welcome to the lecture on database implementation.
+[00:00:04.820 --> 00:00:07.580] So in the last lecture, we have started looking at B-trees.
+[00:00:07.720 --> 00:00:11.100] And you are hopefully all familiar with how a B-tree roughly looks like.
+[00:00:11.240 --> 00:00:13.780] As we know, the introduction to databases.
+[00:00:14.080 --> 00:00:15.660] So here's a picture of a B-plus-tree.
+[00:00:15.920 --> 00:00:21.820] So a multi-way tree where all leaves have the same distance to the root and every node is at least half full.
+[00:00:22.300 --> 00:00:25.480] And we have seen how a lookup works.
+[00:00:25.580 --> 00:00:29.180] So we start with the root, then go down and then we find the entry.
+[00:00:30.000 --> 00:00:33.660] Because our nodes are pretty wide, so they can have hundreds or even thousands of entries,
+[00:00:34.220 --> 00:00:37.840] we use binary search based in the leaves to speed this up.
+[00:00:38.440 --> 00:00:42.600] And we have seen there are multiple ways to make even better binary search, like branch
+[00:00:42.600 --> 00:00:45.560] tree, binary search, or try to interpolate all these kind of tricks.
+[00:00:45.820 --> 00:00:47.600] So this is roughly how a P3 looks like.
+[00:00:48.780 --> 00:00:51.500] This is a logic for lookups.
+[00:00:51.640 --> 00:00:52.780] Now what about inserts?
+[00:00:53.140 --> 00:00:54.100] So how do we insert?
+[00:00:54.420 --> 00:00:59.460] The good thing about P3s is insert logic is so simple, you can implement it by heart.
+[00:01:00.000 --> 00:01:01.160] have to look up in a book.
+[00:01:01.500 --> 00:01:06.280] So while the red black tree you most likely cannot implement by heart, a Btree you can.
+[00:01:06.700 --> 00:01:08.740] So Btree is pretty easy.
+[00:01:10.060 --> 00:01:13.540] So you firstly perform a lookup because we must find the appropriate leave node.
+[00:01:13.680 --> 00:01:18.100] So just like for searching, we'll go down to the leave page where the entry should have
+[00:01:18.100 --> 00:01:18.360] been.
+[00:01:20.420 --> 00:01:25.440] Now then the next step, so step two, we check is there enough free space for the new entry.
+[00:01:25.620 --> 00:01:26.660] If yes, easy.
+[00:01:26.780 --> 00:01:28.180] So we just add the new entry.
+[00:01:30.020 --> 00:01:35.360] is that we keep the leaf node sorted, which means that if these are my entries here and
+[00:01:35.360 --> 00:01:39.360] now my new entry would belong here in the middle, then of course I must move everything here to the
+[00:01:39.360 --> 00:01:46.280] right, then move myself into the middle. But this is the only challenge, otherwise it's easy.
+[00:01:46.440 --> 00:01:51.680] Now of course a tricky problem happens, what happens if the node is full? So we don't have
+[00:01:51.680 --> 00:01:58.680] enough space in the node. What we do then is we split the page into two and then we insert the
+[00:02:00.140 --> 00:02:02.260] Now, what does this mean precisely?
+[00:02:02.560 --> 00:02:05.320] So this is my page here,
+[00:02:06.380 --> 00:02:07.700] there's many, many entries.
+[00:02:08.820 --> 00:02:10.060] Remember that they are sorted.
+[00:02:11.160 --> 00:02:12.880] So I cut them into,
+[00:02:13.480 --> 00:02:15.160] I think this is roughly half.
+[00:02:15.460 --> 00:02:17.180] So now after the split,
+[00:02:17.360 --> 00:02:19.020] I have two pages that are not full.
+[00:02:19.520 --> 00:02:23.680] So first page up to here,
+[00:02:23.840 --> 00:02:25.160] let's call this element here,
+[00:02:26.780 --> 00:02:27.820] m for example.
+[00:02:28.020 --> 00:02:28.860] So the last element is m.
+[00:02:30.260 --> 00:02:40.340] m then this is m plus one then the new node gets everything here also half
+[00:02:40.340 --> 00:02:47.020] will everything from m plus one and so on okay so m for the media this is the
+[00:02:47.020 --> 00:02:53.360] middle element and and now of course because my f now two half will pages I
+[00:02:53.360 --> 00:02:57.340] have enough space for my new element so I insert it wherever it belongs now I
+[00:02:57.340 --> 00:03:01.800] I cannot know before and if it is the first page or the second page after the split, because
+[00:03:01.800 --> 00:03:05.840] if a value that is smaller than m of course it ends up in the first page, if it's larger
+[00:03:05.840 --> 00:03:07.680] than m it ends up in the second page.
+[00:03:07.800 --> 00:03:09.320] Yes, so we insert it wherever it is.
+[00:03:09.880 --> 00:03:15.900] So but now we have two pages, but our parent node, remember that above us there sits a
+[00:03:15.900 --> 00:03:16.600] parent node.
+[00:03:23.980 --> 00:03:33.240] So the parent had many children, I just point them away, and of course one of the pointers
+[00:03:33.240 --> 00:03:34.420] here pointed to us.
+[00:03:35.040 --> 00:03:43.920] But now we must, and this had, let's call this else, the last element here was the separator
+[00:03:45.900 --> 00:03:50.420] page. So now we have split our page into two. So what happens now, what must happen now is,
+[00:03:50.740 --> 00:04:00.340] you insert the new value here into our parent and this now has the value L and the old entry
+[00:04:00.940 --> 00:04:07.180] no longer has L but instead has M as separate. So the largest value on our current page.
+[00:04:07.340 --> 00:04:12.260] So this is how it works after split. So when my leaf page is pulled, we split it into two,
+[00:04:12.260 --> 00:04:17.100] So the new insert is my new element is appropriate set and the maximum of the last page is a
+[00:04:17.100 --> 00:04:18.760] new separate of the parent page.
+[00:04:19.340 --> 00:04:25.420] So the M basically, logically we insert the M with my old page and then the old separate
+[00:04:25.420 --> 00:04:27.640] is updated to point to the new page.
+[00:04:29.240 --> 00:04:33.920] Okay, now so this is easy, but what happens if my parent page is full too?
+[00:04:34.040 --> 00:04:36.740] Because it could happen, then we do the same recursively.
+[00:04:36.900 --> 00:04:40.000] So if the inner page is full, we do exactly the same.
+[00:04:40.000 --> 00:04:49.600] So if this is my page, everything full, I split it into two pages, now half full, should
+[00:04:49.600 --> 00:04:53.120] be half, you know, and then here another page half full.
+[00:04:53.300 --> 00:04:55.680] So these are the two halves that we had.
+[00:04:55.980 --> 00:04:59.960] And then we insert the separator in the appropriate page and we insert a new separator between
+[00:04:59.960 --> 00:05:01.420] these two in my parent page.
+[00:05:02.440 --> 00:05:08.840] And if I have no parent page because I am the root, then I create a new root and lets
+[00:05:10.540 --> 00:05:12.420] So this is the insert, pretty simple.
+[00:05:14.560 --> 00:05:19.280] You can remember if the page is not fully, we insert, if it is fully split it into two
+[00:05:19.280 --> 00:05:20.860] and insert a separate then my parent.
+[00:05:21.040 --> 00:05:23.760] And this we do recursively until everything is done.
+[00:05:24.160 --> 00:05:25.760] So inserting is easy.
+[00:05:27.480 --> 00:05:31.200] Now what is unfortunately not easy is deletion.
+[00:05:32.900 --> 00:05:37.320] So insertion is easy, deletion is not easy at all, because there are so many things that
+[00:05:37.320 --> 00:05:37.700] can happen.
+[00:05:37.700 --> 00:05:45.660] Remember the criteria that we had for B3 was, so that guarantees logarithmic lookup was,
+[00:05:46.500 --> 00:05:50.020] every leaf node has the same distance to the root and every page except the root is at
+[00:05:50.020 --> 00:05:50.840] least half full.
+[00:05:52.520 --> 00:05:57.380] With our insertion logic this happens automatically because if it's full we break it into two
+[00:05:57.380 --> 00:06:00.700] which means we get two half full pages and then we can insert.
+[00:06:00.880 --> 00:06:04.600] Now with this deletion we can violate this half fullness criterion.
+[00:06:05.120 --> 00:06:06.420] So how do we do this?
+[00:06:07.920 --> 00:06:11.400] So first we start performing your loop as usual.
+[00:06:11.540 --> 00:06:16.780] So we find the leaf entries, we move down the tree, so this is my tree here, I move
+[00:06:16.780 --> 00:06:21.000] down the tree following pointers until I come to the leaf node, for example this one.
+[00:06:21.860 --> 00:06:23.280] And of course I have more entries here.
+[00:06:24.240 --> 00:06:27.200] And then, so this is the leaf page that contains my entry.
+[00:06:27.420 --> 00:06:29.280] Now is my leaf page at least half full?
+[00:06:30.240 --> 00:06:32.440] No, sorry, first we remove the entry.
+[00:06:32.580 --> 00:06:34.520] So we search the entry, we remove the entry.
+[00:06:34.520 --> 00:06:37.560] Now I check afterwards, is my leaf page at least half full?
+[00:06:37.720 --> 00:06:42.580] If yes, I am done, because my balancing criteria was not violated.
+[00:06:42.940 --> 00:06:43.340] So that is good.
+[00:06:44.780 --> 00:06:49.600] Now what happens if my leaf page is not half full, so it is less than half full.
+[00:06:49.720 --> 00:06:55.080] So now I have a problem, because I must make it at least half full to guarantee logarithmic cost.
+[00:06:55.420 --> 00:06:59.700] So what happens now is, I look at my neighboring nodes.
+[00:07:01.120 --> 00:07:05.240] So in this case, my neighbor is this one here.
+[00:07:05.700 --> 00:07:12.460] So I look at my neighboring node and then I check if I can take away elements from my
+[00:07:12.460 --> 00:07:13.160] neighboring node.
+[00:07:13.320 --> 00:07:16.960] Now basically there are two cases, either my neighboring node is more than half full,
+[00:07:17.220 --> 00:07:21.100] then I can just take elements from my neighboring node to make myself half full.
+[00:07:21.780 --> 00:07:26.540] Or if my neighboring neighbor is also just half full, not over half full, then I cannot
+[00:07:26.540 --> 00:07:31.580] take elements away because otherwise the other node would be under full.
+[00:07:31.740 --> 00:07:34.540] But if this happens, then I just merge my neighboring.
+[00:07:34.860 --> 00:07:39.780] So if that happens, so my neighbor is only half full, I merge with my neighbor,
+[00:07:39.960 --> 00:07:43.480] this must work because I'm less than half full, the other one is half full.
+[00:07:43.540 --> 00:07:46.140] So I can merge them into one big node and one full node.
+[00:07:46.300 --> 00:07:51.460] And then of course I remove the separator for my parent and then recursive is the same.
+[00:07:51.560 --> 00:07:54.480] So it could be that my parent is less than half full and so on.
+[00:07:55.520 --> 00:07:59.460] And we do this until everybody is at least half full.
+[00:07:59.880 --> 00:08:00.820] So this is the idea.
+[00:08:02.020 --> 00:08:08.960] Now one pretty important trick to realize here is that, first, how do I find my neighbor?
+[00:08:09.120 --> 00:08:11.660] Because in the general case, this is a very difficult problem.
+[00:08:11.840 --> 00:08:17.280] So there was a paper long time ago from someone from MIT, I think, who studied all the problems,
+[00:08:17.560 --> 00:08:21.360] all the cases that could occur in B-tree deletions.
+[00:08:22.000 --> 00:08:24.400] And these were tons of them.
+[00:08:24.580 --> 00:08:26.360] So incredibly many things can happen.
+[00:08:26.980 --> 00:08:29.220] Because semantically we have another neighbor here.
+[00:08:29.280 --> 00:08:35.480] So this is, and because this here is also a neighbor from us, at least from a logical
+[00:08:35.480 --> 00:08:36.000] perspective.
+[00:08:36.240 --> 00:08:42.620] Because this leaf node here, so this one here, holds the next largest value after myself.
+[00:08:42.780 --> 00:08:47.280] So in theory I could balance with that node.
+[00:08:47.380 --> 00:08:49.340] So this node here could balance with that node.
+[00:08:49.340 --> 00:08:51.320] But trust me, don't do this.
+[00:08:51.880 --> 00:08:54.420] So it would work from a logical perspective,
+[00:08:54.760 --> 00:08:58.280] but finding this other element can be surprisingly difficult,
+[00:08:58.480 --> 00:09:00.500] because it can be very far away from you in the tree.
+[00:09:01.560 --> 00:09:02.540] So don't do this.
+[00:09:04.320 --> 00:09:06.020] What you can do instead is,
+[00:09:06.440 --> 00:09:10.380] you know that you must have at least one entry that has,
+[00:09:10.520 --> 00:09:14.400] you have at least one node, other node,
+[00:09:14.560 --> 00:09:15.820] that has the same parent as you.
+[00:09:15.820 --> 00:09:18.280] So this must be the case because otherwise,
+[00:09:19.220 --> 00:09:20.840] if you have only one entry,
+[00:09:21.080 --> 00:09:23.960] then we would have eliminated my parent node.
+[00:09:24.180 --> 00:09:26.740] So because my parent node is also at least half full,
+[00:09:26.840 --> 00:09:30.120] I must have at least one neighboring node.
+[00:09:30.540 --> 00:09:32.780] So what we do is we go to my parent
+[00:09:32.780 --> 00:09:33.860] and then I check my neighbor.
+[00:09:33.980 --> 00:09:35.140] I don't know if it's a neighbor
+[00:09:35.140 --> 00:09:36.460] is to the left or to the right,
+[00:09:36.600 --> 00:09:38.260] but one of these two must exist.
+[00:09:38.520 --> 00:09:39.860] So there must exist a node,
+[00:09:39.960 --> 00:09:40.860] it's the same parent.
+[00:09:41.080 --> 00:09:42.540] And you take that node,
+[00:09:42.720 --> 00:09:44.420] and then you can balance with that node.
+[00:09:45.820 --> 00:09:49.160] only go one step up and one step down and not further in the tree.
+[00:09:51.600 --> 00:09:58.400] And then you can find your body to merge with and then everything works fine.
+[00:10:00.440 --> 00:10:03.400] Now, nevertheless, deletion is pretty complicated.
+[00:10:04.280 --> 00:10:05.580] Insertion is easy to implement.
+[00:10:05.720 --> 00:10:11.000] Deletion, at least if you want to do this properly, is very difficult in many cases,
+[00:10:11.860 --> 00:10:16.860] even more so because you have realized that there are many systems that many users that operate in
+[00:10:16.860 --> 00:10:23.320] the same tree so there's multi-user aspect which we didn't cover yet but trust me multi-user access
+[00:10:23.320 --> 00:10:30.060] with deletions is particularly difficult now and because of this problem so many systems just say
+[00:10:30.060 --> 00:10:37.840] i don't implement it yeah so they accept under full pages they don't implement the proper deletion
+[00:10:38.640 --> 00:10:39.200] logic.
+[00:10:39.240 --> 00:10:43.920] The only thing that they do is if a page is really empty, so that there is no element
+[00:10:43.920 --> 00:10:47.660] left, then they remove the whole page.
+[00:10:47.960 --> 00:10:52.900] So the trivial empty nodes are removed, otherwise under full pages are accepted.
+[00:10:54.100 --> 00:10:56.420] And this is of course much easier to implement.
+[00:10:57.100 --> 00:11:04.960] And the argument in favor of this approach is they say, you know, but in the long run,
+[00:11:04.960 --> 00:11:07.720] then the system has more insertions than deletions.
+[00:11:08.260 --> 00:11:12.800] Because if this would not be the case, then your database would be empty.
+[00:11:14.800 --> 00:11:18.820] And because if you have more deletions than insertions, your database is empty after some
+[00:11:18.820 --> 00:11:21.380] point and empty databases are uninteresting.
+[00:11:21.640 --> 00:11:25.240] Therefore, we assume that we have more insertions than deletions.
+[00:11:25.460 --> 00:11:28.660] Therefore, it's okay to just ignore the problem.
+[00:11:28.740 --> 00:11:30.660] So because the empty pages will be filled again.
+[00:11:32.580 --> 00:11:35.200] And at the first glance, this is a plausible argument.
+[00:11:36.280 --> 00:11:41.860] At the second glance, unfortunately, you can construct sequences of insertions and deletions
+[00:11:41.860 --> 00:11:44.580] where this argument does not save you.
+[00:11:45.340 --> 00:11:52.780] Because this argument is only valid if your insertions and deletions are uniform over
+[00:11:52.780 --> 00:11:54.460] the whole domain.
+[00:11:54.740 --> 00:12:00.560] But if for example, you insert consecutive increasing numbers, and then you will
+[00:12:00.660 --> 00:12:06.720] time to time delete all numbers that are not a multiple of 10 for example.
+[00:12:07.500 --> 00:12:12.280] So then you get a lot of free space because most of your values are deleted.
+[00:12:12.540 --> 00:12:16.680] And this free space is never used because your new values are larger than the largest
+[00:12:16.680 --> 00:12:22.600] value you have ever inserted. So you can construct degenerate examples where the
+[00:12:22.600 --> 00:12:29.740] simple deletion strategy is not good enough. Because of this, you should implement the full
+[00:12:30.660 --> 00:12:32.180] deletion, even though it's complicated.
+[00:12:32.460 --> 00:12:36.080] So I know it's pretty hard to implement, but no's less you should implement the
+[00:12:36.880 --> 00:12:41.160] full deletion logic just to cover all the corner cases correctly.
+[00:12:43.080 --> 00:12:47.700] Okay, so now we have seen insertion, deletion and lookup.
+[00:12:47.920 --> 00:12:49.960] Now there are some other operations that we need.
+[00:12:50.220 --> 00:12:53.360] The obvious one is a range scan.
+[00:12:53.620 --> 00:12:59.180] So because remember we wanted to use an index both for point lookup and for range queries.
+[00:13:00.880 --> 00:13:07.520] support range scans and range scan is pretty simple basically what we do is
+[00:13:07.520 --> 00:13:11.660] we search do a regular look up so a point query for the start conditions we go
+[00:13:11.660 --> 00:13:16.580] down so this is my tree I go down my tree until I find the leaf node where my
+[00:13:16.580 --> 00:13:22.360] start condition is could be of course that my start doesn't exist so then it
+[00:13:22.360 --> 00:13:26.360] takes the next largest value so for example here so this is my start let's
+[00:13:27.480 --> 00:13:30.440] And then I continue reading everything on this page
+[00:13:30.440 --> 00:13:32.460] because everything on this page here to the right
+[00:13:32.460 --> 00:13:33.580] is larger than the start.
+[00:13:34.060 --> 00:13:37.300] And when I hit the end of the page,
+[00:13:37.480 --> 00:13:38.860] then I follow the next point.
+[00:13:38.980 --> 00:13:41.520] I remember that B plus trees have typically a next point.
+[00:13:41.660 --> 00:13:43.160] So they can't go next entry.
+[00:13:43.340 --> 00:13:45.580] And you know, everything is also larger than the start
+[00:13:45.580 --> 00:13:45.980] and so on.
+[00:13:46.080 --> 00:13:49.420] So we do this until at some point we hit a value
+[00:13:49.420 --> 00:13:53.540] that is larger than my stop condition.
+[00:13:54.280 --> 00:13:57.780] And then I stop of course, because I know everything further to the right is also larger
+[00:13:57.780 --> 00:13:58.200] than my stop.
+[00:14:00.700 --> 00:14:06.940] And this is pretty efficient because we'd go one traverse and then we go from leaf node
+[00:14:06.940 --> 00:14:07.520] to leaf node.
+[00:14:07.780 --> 00:14:12.280] And this is particularly efficient if the leaf node that we point here, I give them
+[00:14:12.280 --> 00:14:14.780] our numbers, that is L1, L2, L3.
+[00:14:15.380 --> 00:14:21.100] So if L1, L2, L3 are next to each other on disk, yes, if you're consecutive disk, then
+[00:14:21.100 --> 00:14:23.420] And this here is brutally efficient.
+[00:14:23.680 --> 00:14:25.680] Because if you go to one position,
+[00:14:25.800 --> 00:14:28.040] then we just read linear from disk,
+[00:14:28.200 --> 00:14:29.480] and this is as fast as we can be.
+[00:14:30.080 --> 00:14:31.680] Of course, if I catch the memory,
+[00:14:31.800 --> 00:14:35.320] then it's always pretty fast.
+[00:14:35.540 --> 00:14:38.720] But even on this case,
+[00:14:39.280 --> 00:14:42.080] this range scans are very fast once you have started.
+[00:14:43.780 --> 00:14:45.540] By the way, if you have such a B-tree,
+[00:14:45.620 --> 00:14:48.840] so a B-tree where the nodes are physically next to us
+[00:14:48.840 --> 00:14:55.020] on disk, then we call this a cluster to cluster. And clustering is very good for performance.
+[00:14:55.740 --> 00:15:00.160] Of course, if you have updates in between, your clustering might degenerate over time.
+[00:15:00.340 --> 00:15:04.220] Yeah, because you write them nicely at one point on disk, everything is good.
+[00:15:04.420 --> 00:15:08.500] Then somebody inserts something in the middle. So then of course you can no longer have everything
+[00:15:08.500 --> 00:15:12.640] consecutive on disk. But conceptually, so this works pretty well.
+[00:15:14.280 --> 00:15:17.020] Now, what do we do if we have more than one attribute?
+[00:15:17.300 --> 00:15:22.700] So far we just said we have one value and our examples always just use simple integers.
+[00:15:23.120 --> 00:15:27.820] But in SQL you can generate indexes not on one attribute, on many.
+[00:15:27.960 --> 00:15:38.960] So the easiest way to achieve this is of course to say create table and then you blah blah
+[00:15:38.960 --> 00:15:41.400] blah, so the attributes and then we say primary key.
+[00:15:45.320 --> 00:15:48.580] primary key, a comma b.
+[00:15:48.740 --> 00:15:52.160] So this is easiest way to construct a multi-attribute index.
+[00:15:52.440 --> 00:15:55.560] So now we must check if the combination of a and b is unique.
+[00:15:55.860 --> 00:15:57.600] So we index both attributes.
+[00:15:59.600 --> 00:16:01.500] And so how do we do this?
+[00:16:01.620 --> 00:16:04.120] So for the index, it doesn't really matter.
+[00:16:04.360 --> 00:16:08.080] The index treats a, b as one compound value.
+[00:16:08.240 --> 00:16:11.940] So of course it's a bit larger than a single number, but for the index, it doesn't really
+[00:16:12.640 --> 00:16:14.780] we store them both as values.
+[00:16:16.280 --> 00:16:19.020] And then we compare them lexicographically.
+[00:16:19.200 --> 00:16:19.940] Now what does this mean?
+[00:16:20.180 --> 00:16:25.760] So if I have two pairs here and I want to compare them, then we say the first pair A1,
+[00:16:25.760 --> 00:16:33.000] A2 is less than the second pair B1, B2, if and only if A is less than B, okay, the obvious
+[00:16:33.000 --> 00:16:41.000] thing, or A is equal to, sorry, A1 is less than B1, or A1 is equal to B1 and A2 is less
+[00:16:42.940 --> 00:16:47.380] So this is called lexicographic ordering, this is just like a telephone book.
+[00:16:47.540 --> 00:16:52.880] So if you think of a telephone, usually they are sorted primarily by last name, but if
+[00:16:52.880 --> 00:16:55.240] people have the same last name, they are sorted by first name.
+[00:16:55.420 --> 00:16:59.600] So this is just the same here, so we sort them on the first attribute, and if the first
+[00:16:59.600 --> 00:17:01.200] attribute is the same, we sort them on the second.
+[00:17:04.520 --> 00:17:10.700] Otherwise, so compound keys behave more or less like atomic keys, so keys with just a
+[00:17:12.640 --> 00:17:20.280] So if you do a point query, so if you just search for one value, exact value, then the
+[00:17:20.280 --> 00:17:24.660] difference between a compound key and atomic key is pretty trivial.
+[00:17:25.200 --> 00:17:30.320] But interesting thing is if you have a compound key and you bind only a prefix, which means
+[00:17:30.320 --> 00:17:34.200] in our case here we might search for all values where a1 is 5.
+[00:17:34.740 --> 00:17:45.480] So this is, so we bind only one part, my total key is a1, a2, this is my total key, but now
+[00:17:45.480 --> 00:17:48.920] I want to say something about a1, say a1 is 5.
+[00:17:50.440 --> 00:17:55.560] And this is then internally transformed into a range query because this says, okay, this
+[00:17:55.560 --> 00:18:00.940] means that a1, a2 is between 5 and minus infinity, this means basically the smallest possible
+[00:18:00.940 --> 00:18:04.600] value of the domain, it depends on which data type A2 has.
+[00:18:04.940 --> 00:18:10.140] So, but this is the smallest possible value, well let's call this here, I don't want to
+[00:18:10.140 --> 00:18:15.200] call it inmin, let's say with min value, and this here is maximum value.
+[00:18:15.400 --> 00:18:22.580] So, we say, so this gives me implicitly a range query, and then we of course execute
+[00:18:22.580 --> 00:18:23.620] this as a range query.
+[00:18:24.880 --> 00:18:27.920] Okay, so this works nice.
+[00:18:27.920 --> 00:18:33.020] This is now a trick question, what happens if the user says a2 equals to 5?
+[00:18:34.500 --> 00:18:38.820] So if that happens, then we have tough luck, then we cannot use an index.
+[00:18:39.540 --> 00:18:43.780] So you have to remember, if you have an index and a compound attribute, you can search for
+[00:18:43.780 --> 00:18:48.200] a prefix of the attributes, but not for a suffix or any other combination.
+[00:18:49.520 --> 00:18:57.080] So just to keep the telephone book example, if you have a telephone book and you know
+[00:18:57.920 --> 00:19:02.840] the last name of somebody it's easy to find. If you just only know the last names, also pretty
+[00:19:02.840 --> 00:19:06.660] easy to find, of course you get more candidates because they get everybody with the same last name
+[00:19:06.660 --> 00:19:11.640] but this also works. But if you have only the first name then you have no chance because then
+[00:19:11.640 --> 00:19:15.940] you would have to look at every entry in the telephone book which of course you don't want to
+[00:19:15.940 --> 00:19:24.200] do. Now so in the index you can search only on a prefix. So if my index attributes for example are
+[00:19:24.200 --> 00:19:30.340] A, B, C, D, then I can't search for A, B, C, D, of course I can only search for A, B,
+[00:19:30.440 --> 00:19:34.320] C works, I can search for A, B works, I can search for A, this also works, but if I search
+[00:19:34.320 --> 00:19:38.580] for anything else, like only for C or for B, C, also this doesn't work, I cannot search
+[00:19:38.580 --> 00:19:39.420] for this.
+[00:19:41.740 --> 00:19:47.800] Okay, another tricky problem is, this doesn't occur with primary case, but this occurs with
+[00:19:50.300 --> 00:19:51.020] explicit indexes.
+[00:19:51.020 --> 00:19:52.260] So if somebody says create index,
+[00:19:53.000 --> 00:19:55.440] so you say create index.
+[00:19:58.080 --> 00:19:59.620] Now the interesting question is,
+[00:19:59.780 --> 00:20:03.120] what do you do if my index values are not unique?
+[00:20:03.920 --> 00:20:07.020] So if I do create index, I can say I want to index,
+[00:20:07.120 --> 00:20:10.500] for example, all students by, let's say,
+[00:20:11.400 --> 00:20:15.380] so create index, I can use a project with index,
+[00:20:15.540 --> 00:20:19.740] let's call this create index student name.
+[00:20:21.020 --> 00:20:25.320] has absolutely no meaning, you only use it to remove the index later.
+[00:20:25.500 --> 00:20:27.940] And so your name, you give it as other as it doesn't matter.
+[00:20:28.560 --> 00:20:35.000] So on students name.
+[00:20:36.040 --> 00:20:37.960] So now we create an index on all the students,
+[00:20:38.020 --> 00:20:39.380] I want to index the students by name.
+[00:20:39.500 --> 00:20:40.400] And of course I can do this.
+[00:20:43.760 --> 00:20:48.420] But so what do I do if I have multiple students with the same name,
+[00:20:48.560 --> 00:20:49.700] which is actually quite likely.
+[00:20:51.020 --> 00:20:56.760] name is not particularly unique so there are multiple people with that name so therefore
+[00:20:56.760 --> 00:21:00.120] i will have duplicates or can have duplicates
+[00:21:01.660 --> 00:21:08.540] in i mean with name you will want to have too many duplicates but let's assume some
+[00:21:09.100 --> 00:21:13.560] not so smart user decides to create an index not on the name but on something that is
+[00:21:14.540 --> 00:21:16.820] totally non-selective for example on
+[00:21:20.660 --> 00:21:24.700] on, let's say, country where they are born.
+[00:21:26.440 --> 00:21:28.380] Of course, we have many different values.
+[00:21:28.520 --> 00:21:33.460] We have people from all over the world, but nevertheless, many of our students come from
+[00:21:33.460 --> 00:21:33.780] Germany.
+[00:21:34.000 --> 00:21:42.960] Now, which means that if you index students by country, then countries that were born
+[00:21:42.960 --> 00:21:46.820] in, then a large fraction of your tuple will have the same value.
+[00:21:47.480 --> 00:21:51.340] Potentially thousands or even millions of values will have the same value.
+[00:21:51.840 --> 00:21:53.080] This of course is bad.
+[00:21:55.660 --> 00:22:01.620] Because so this means that we can no longer easily identify a single tuple just because
+[00:22:01.620 --> 00:22:02.020] of value.
+[00:22:02.480 --> 00:22:09.700] Now, as long as you only insert and look up, you might not notice it that much.
+[00:22:09.700 --> 00:22:13.020] But what if somebody does a delete or an update?
+[00:22:13.360 --> 00:22:16.640] So somebody says, I want to delete a certain tuple.
+[00:22:16.840 --> 00:22:18.060] I want to see delete, delete.
+[00:22:18.320 --> 00:22:24.180] So somebody says, delete, delete from students.
+[00:22:26.920 --> 00:22:28.800] Oh, should try it next.
+[00:22:29.400 --> 00:22:32.300] Delete from students.
+[00:22:38.800 --> 00:22:42.300] student ID equals 1, 2, 3.
+[00:22:42.760 --> 00:22:47.840] So if you do this, first you ask your index on student ID,
+[00:22:48.160 --> 00:22:50.180] please find me student 1, 2, 3, then you find it.
+[00:22:50.300 --> 00:22:56.680] So you use the first index, you use index on student ID.
+[00:22:57.000 --> 00:22:58.740] So this gives you the tuple ID.
+[00:23:00.540 --> 00:23:05.280] Now I can physically delete the tuple, but of course I must also remove it from all other
+[00:23:05.280 --> 00:23:07.500] indexes where the tuple is part of.
+[00:23:09.700 --> 00:23:14.600] And so how do we do this?
+[00:23:14.960 --> 00:23:22.920] So now we can of course retrieve the country, so we can retrieve the country, so fetch country.
+[00:23:25.240 --> 00:23:27.520] And now, yeah, but what now?
+[00:23:28.420 --> 00:23:37.080] So if you just have the country, if you try to locate the tuple within the relations,
+[00:23:37.220 --> 00:23:43.820] this doesn't help us because there can be thousands or millions of, of course not millions,
+[00:23:43.960 --> 00:23:47.980] but in general there can be millions of entries with the same value.
+[00:23:49.460 --> 00:23:53.920] And therefore searching for this value with the regular scans is not a good idea.
+[00:23:53.920 --> 00:23:56.900] And so instead what we do to fix this problem is,
+[00:23:57.060 --> 00:24:00.140] we make sure we never have a non-unique value.
+[00:24:00.320 --> 00:24:02.840] So all values that we store in the index have to be unique.
+[00:24:03.200 --> 00:24:05.080] So this parameter key, this happens naturally,
+[00:24:05.120 --> 00:24:06.840] of course, because we know that it's unique.
+[00:24:07.200 --> 00:24:08.660] But what if you don't,
+[00:24:08.740 --> 00:24:10.760] and index a non-unique value,
+[00:24:11.920 --> 00:24:13.100] so then we use a trick.
+[00:24:13.280 --> 00:24:15.280] Because remember, so what we said,
+[00:24:15.340 --> 00:24:17.140] you can search for every prefix of a value.
+[00:24:17.240 --> 00:24:18.300] So basically what we do then,
+[00:24:18.360 --> 00:24:21.440] if we index the key as provided by the user,
+[00:24:22.060 --> 00:24:26.800] It can be multiple attributes of course, but we index the key and we append the tablid.
+[00:24:28.780 --> 00:24:34.760] So the tablid works as a tiebreaker, so it means if the key is identical, the tablid
+[00:24:34.760 --> 00:24:38.760] nevertheless will be different and therefore we can distinguish these cases.
+[00:24:39.000 --> 00:24:44.700] So we can distinguish entries with the same value by tablid.
+[00:24:47.620 --> 00:24:51.980] And with this, we can now locate an arbitrary element again in logarithmic time.
+[00:24:52.460 --> 00:24:58.100] So if you'd want to delete a certain element, we first find the element, take the tablid
+[00:24:58.100 --> 00:25:02.200] and then we take the key and tablid, we know this is unique, we can't do this in logarithmic
+[00:25:02.200 --> 00:25:02.460] time.
+[00:25:03.320 --> 00:25:06.900] The downside of course is that we have a higher space consumption because we must store the
+[00:25:06.900 --> 00:25:10.700] tablid, but this is the price you have to pay.
+[00:25:10.700 --> 00:25:12.280] So, the table ID must be stored.
+[00:25:14.240 --> 00:25:20.020] But this, in reality, this space consumption is not that high, because in the leaf nodes,
+[00:25:20.260 --> 00:25:21.820] we would store the table ID anyway.
+[00:25:22.240 --> 00:25:26.660] Remember that in the B tree, we store key, table ID values, so we have the table ID.
+[00:25:26.880 --> 00:25:31.940] So the only space cost that we have is in the inner nodes, we must now store table IDs
+[00:25:31.940 --> 00:25:34.420] too, which usually we would not do.
+[00:25:34.960 --> 00:25:39.100] So, space consumption increases a bit, but really this increase is minor.
+[00:25:40.700 --> 00:25:43.680] leaf nodes and inner nodes, space consumption is minor,
+[00:25:44.500 --> 00:25:47.640] and therefore we can just afford to do this.
+[00:25:47.800 --> 00:25:51.700] And doing this is essential to get logarithmic access cost.
+[00:25:56.700 --> 00:25:58.500] Now, if you implement all this,
+[00:25:58.640 --> 00:26:02.420] you get a B-tree that allows you insert deletion and lookup.
+[00:26:03.280 --> 00:26:06.580] But what do we do if you have more than one user
+[00:26:06.580 --> 00:26:07.580] accesses a page?
+[00:26:07.580 --> 00:26:16.000] Yeah, so we must somehow protect our sense against concurrent threats, which run other
+[00:26:16.000 --> 00:26:16.840] queries simultaneously.
+[00:26:18.720 --> 00:26:23.220] Now, in the buffer manager that I have used so far, we always locked a single page,
+[00:26:23.340 --> 00:26:24.700] but this is clearly not enough.
+[00:26:25.160 --> 00:26:33.580] So just locking one page, I mean, walking one page is necessary, of course, but not sufficient.
+[00:26:34.240 --> 00:26:40.160] Now, so to illustrate this, so if you have a leaf node and I find the, I move somewhere
+[00:26:40.160 --> 00:26:41.940] here, then I lock the leaf node.
+[00:26:42.160 --> 00:26:46.460] This is okay because at this moment in time I have the leaf and then I can read it as
+[00:26:46.460 --> 00:26:46.980] long as I want.
+[00:26:47.020 --> 00:26:50.600] And if somebody else wants to update the leaf while I hold the lock, then the other one
+[00:26:50.600 --> 00:26:53.200] has to wait until I'm done and then I'm finished.
+[00:26:54.080 --> 00:26:57.580] Okay, for leaf nodes it's good enough, but for inner nodes it's not good enough because
+[00:26:57.580 --> 00:27:08.160] what can happen is, so I have an, I have a, I go here, I have an inner node, I lock or ledge,
+[00:27:08.460 --> 00:27:13.980] the ledge is a database slang for this. If it's latching, we mean short-term lockings like a mutex,
+[00:27:14.080 --> 00:27:22.220] mutex is a classic ledge. So we ledge the inner node and then after we have ledged the node,
+[00:27:22.420 --> 00:27:27.380] we find out, okay, what is the child node that I want to go to? For example, I want to see,
+[00:27:27.580 --> 00:27:33.000] to go to this, then I would, at least in a naive implementation, I would release the lock on the
+[00:27:33.000 --> 00:27:37.360] inner node and then I would go down here, I would go to that node and then I would try to find the
+[00:27:37.360 --> 00:27:44.140] value. This is not safe because in the meantime between my unlock here and the lock here, there
+[00:27:44.140 --> 00:27:49.340] is some time spent between this. A small period of time perhaps, but it is time. And if I am really
+[00:27:49.340 --> 00:27:56.560] unlucky, somebody else overtakes me in the meantime and also locks the leave node, which means I now
+[00:27:57.580 --> 00:28:02.360] And then for example, it splits the leaf node into two, and then my values I'm searching
+[00:28:02.360 --> 00:28:04.900] for ends up being at that new leaf node.
+[00:28:05.900 --> 00:28:13.780] But when I finally managed to lock the page, I only find the old entries, so I miss my
+[00:28:13.780 --> 00:28:16.000] value because I'd go to the wrong page.
+[00:28:16.240 --> 00:28:18.480] So locking a single page is not good enough.
+[00:28:18.800 --> 00:28:22.640] So the traditional solution to this problem is called lock coupling.
+[00:28:23.420 --> 00:28:29.380] So which means whenever you access a page, you access both the page and its parent page.
+[00:28:29.660 --> 00:28:45.620] So which means when we start, so if this is my tree, so I start and I lock the root, of
+[00:28:45.620 --> 00:28:46.540] course I have to lock the root.
+[00:28:46.700 --> 00:28:49.960] And then I find out, for example, I have to go to the left.
+[00:28:49.960 --> 00:28:53.740] Then I also lock the left node and I still hold the lock on the root
+[00:28:54.420 --> 00:29:00.580] That's which means that nobody else can in the meantime can mess up the meaning of my page. So I hold both locks
+[00:29:01.400 --> 00:29:08.200] Okay, then I have the child I have the child page then I can release my parent page
+[00:29:08.200 --> 00:29:13.040] Now I find out what is my new child that it matches it in for example is the right child here
+[00:29:13.040 --> 00:29:16.960] Then I go here acquire the lock so for a more short moment in time
+[00:29:16.960 --> 00:29:21.700] hold both locks, then I can release my parent and so on. So this is called lock coupling.
+[00:29:22.400 --> 00:29:28.480] Also there's a children's toy that you might know potentially. So this is, I believe the
+[00:29:28.480 --> 00:29:33.000] brand name for this is called a splinky or something like this. So this is basically a
+[00:29:33.000 --> 00:29:39.240] metal coil that can walk down the stairs. This is a fun toy to play with. By the way, there are also
+[00:29:39.240 --> 00:29:43.940] other vendors that don't want to make advertisement for them. So it looks like this. So you have
+[00:29:43.940 --> 00:29:49.380] of your coil here and then the coil goes down here and then it pulls it ends up and then
+[00:29:49.380 --> 00:29:58.040] moves it away from the parent stair so to say and then falls down on the next page.
+[00:29:58.200 --> 00:30:04.080] Then again pulls itself up, takes away from here and then moves it down one step further.
+[00:30:04.200 --> 00:30:05.900] And this is exactly like lock coupling works.
+[00:30:06.440 --> 00:30:13.560] So we, for a short moment in time we hold two locks but then we always flip down to the next
+[00:30:13.940 --> 00:30:20.120] So then we no longer have to hold all the locks.
+[00:30:20.200 --> 00:30:24.220] We just hold two locks for a short period of time and then we continue.
+[00:30:26.300 --> 00:30:32.980] The nice thing about lock coupling is that not only prevents problems with concurrent access,
+[00:30:33.320 --> 00:30:37.760] but it also has no deadlocks.
+[00:30:37.980 --> 00:30:43.100] So classic locking obviously has a certain risk that if multiple people lock the same page,
+[00:30:43.940 --> 00:30:45.680] in the wrong order, then we get a deadlock.
+[00:30:45.800 --> 00:30:46.780] Here, this cannot happen.
+[00:30:46.980 --> 00:30:52.580] And because you always lock from root down to the leaf, so there's an order in my locking
+[00:30:52.580 --> 00:30:54.640] and therefore no deadlock is possible.
+[00:30:54.780 --> 00:30:55.780] That's why this is very nice.
+[00:30:57.040 --> 00:31:01.540] And so lock coupling solves our correctness problems.
+[00:31:01.800 --> 00:31:07.380] Now already we want you, it solves our correctness problems, but it does not necessarily solve
+[00:31:07.380 --> 00:31:08.440] our performance problem.
+[00:31:08.600 --> 00:31:10.800] But we come back to that in a moment.
+[00:31:11.480 --> 00:31:21.460] Okay, so first, so with lookups, everything is easy because I just go down from the roots
+[00:31:21.460 --> 00:31:22.220] down to the leaf.
+[00:31:22.380 --> 00:31:23.380] But what about inserts?
+[00:31:23.780 --> 00:31:29.580] Now the problem is, if I insert my split, if my page is full, it propagates up.
+[00:31:30.000 --> 00:31:36.300] So you know, I start here by going down, everything is good, so I lock everything in one order.
+[00:31:36.460 --> 00:31:40.220] But now if my page is not full, everything is also okay, you can just insert.
+[00:31:40.800 --> 00:31:46.580] Now, but if my page is full, then I want to split this into two, and then I insert a new
+[00:31:46.580 --> 00:31:47.640] separator in my parent.
+[00:31:47.780 --> 00:31:51.820] So suddenly, and of course this can happen again if I'm unlucky, so this means that now
+[00:31:51.820 --> 00:31:57.940] suddenly I go from leaf down to the root, sorry, yeah, leaf up to the root.
+[00:32:00.040 --> 00:32:05.220] And so this is a problem because even, so if you do traditional log coupling, we have,
+[00:32:05.300 --> 00:32:09.560] we might have locked, have locked our parent because at least for one short period in time,
+[00:32:11.260 --> 00:32:16.140] So remember when we went down here, let's clear the back arrows.
+[00:32:16.440 --> 00:32:22.580] So when we went down, we locked the route, we locked the first level, we released the
+[00:32:22.580 --> 00:32:26.140] route, now we lock the leaf.
+[00:32:26.280 --> 00:32:31.440] And you know, you see in this short period of time, we hold both the inner node and the
+[00:32:31.440 --> 00:32:31.760] leaf node.
+[00:32:31.940 --> 00:32:35.820] Now what you can do in this moment is we check if you have enough space.
+[00:32:36.780 --> 00:32:41.740] If yes, we can release the inner node because we know that we don't have to split.
+[00:32:41.920 --> 00:32:43.360] So in this then we can release the inner node.
+[00:32:43.860 --> 00:32:47.480] If we don't have enough space then we hold the lock on the inner node so we don't release
+[00:32:47.480 --> 00:32:47.700] it.
+[00:32:48.700 --> 00:32:56.000] And then if my inner node has to be split, I can update my, sorry, if my leaf node has
+[00:32:56.000 --> 00:32:59.500] to be split then I can update my inner node because I still hold the lock to it.
+[00:32:59.700 --> 00:33:01.740] So that's okay, we can do this.
+[00:33:02.600 --> 00:33:05.120] But what happens if my inner node is full too?
+[00:33:05.980 --> 00:33:08.240] So then I would have to go one step further.
+[00:33:08.620 --> 00:33:12.140] So this of course we cannot do, because if you start doing log coupling in the wrong
+[00:33:12.140 --> 00:33:13.260] direction then we get that looks.
+[00:33:15.340 --> 00:33:17.940] Now there are multiple ways to do this.
+[00:33:18.100 --> 00:33:24.640] One way to solve this problem is so called safe inner pages, which means basically when
+[00:33:24.640 --> 00:33:27.720] we go down we check if my inner page is full.
+[00:33:28.360 --> 00:33:34.800] and if yes we split it even though in this moment we don't need all the space
+[00:33:34.800 --> 00:33:41.440] so we see my inner page is full and then I split it and because I did the same
+[00:33:41.440 --> 00:33:46.460] with my parent page of course this means I never have to propagate further
+[00:33:46.460 --> 00:33:52.340] than one level and I already hold the level as one level so when we go down we go to the root
+[00:33:53.060 --> 00:33:57.580] If my root page is full, then we split the root page, create a new root.
+[00:33:59.300 --> 00:34:02.120] Otherwise I go to this page and check if the page is full.
+[00:34:02.380 --> 00:34:06.840] If yes, in this moment in time I still hold the log to my parent, which means I can split
+[00:34:06.840 --> 00:34:08.600] myself, update the parent and I am done.
+[00:34:09.200 --> 00:34:14.480] Otherwise I release the log to my parent, I go down to the leaf and again the same.
+[00:34:14.480 --> 00:34:21.660] So we check inner pages in the moment they are full, even though we don't need it, but
+[00:34:21.660 --> 00:34:26.980] not strictly needed, but this guarantees I said a proper split never propagates higher
+[00:34:26.980 --> 00:34:29.100] up than one level and this is safe with low coupling.
+[00:34:30.700 --> 00:34:35.920] Now downside of course is we waste one element on the inner page because we could have waited
+[00:34:35.920 --> 00:34:36.780] one insert longer.
+[00:34:36.980 --> 00:34:38.400] So we do it one insert too early.
+[00:34:38.560 --> 00:34:43.780] But that's okay because I mean if I can fit 1000 elements on the inner page, if I do this
+[00:34:44.480 --> 00:34:46.920] Too early means this is not a critical issue.
+[00:34:47.280 --> 00:34:52.280] So I'm wasting one promilio of my space, that's okay.
+[00:34:52.540 --> 00:34:57.420] That's a very small overhead and the logic is pretty simple.
+[00:34:57.580 --> 00:35:02.660] So I don't have all this nasty, complicated, going up logic.
+[00:35:02.840 --> 00:35:03.580] No, this is good.
+[00:35:08.340 --> 00:35:14.740] Now, the main problem with save pages, I mean why don't we always use save pages, the main
+[00:35:14.740 --> 00:35:16.600] problem with save pages are strings.
+[00:35:18.800 --> 00:35:23.380] Because if you have string values, it's not so easy to decide if your page is full.
+[00:35:23.500 --> 00:35:27.040] So how do I know if I have enough space for one more element?
+[00:35:27.040 --> 00:35:37.240] And so for integer values, that's not a problem because I know I can just need 4 bytes or
+[00:35:37.240 --> 00:35:38.720] 8 bytes, it depends on my data type.
+[00:35:38.840 --> 00:35:40.440] I know when I can squeeze this in.
+[00:35:40.580 --> 00:35:43.340] But if I have string columns, I don't know this.
+[00:35:46.080 --> 00:35:52.780] And this makes save pages unsuited for variable size records.
+[00:35:52.780 --> 00:35:59.960] So I cannot really decide if I should split this page or not.
+[00:36:00.320 --> 00:36:05.060] So what we can do as an alternative is what is shown here, this is a so called restart
+[00:36:05.060 --> 00:36:05.720] strategy.
+[00:36:06.260 --> 00:36:12.640] So basically what we do is we first try using simple log coupling.
+[00:36:12.820 --> 00:36:15.220] So we just go down and then it.
+[00:36:15.400 --> 00:36:19.120] So if we do not have to split the inner nodes, everything is okay.
+[00:36:19.120 --> 00:36:24.020] We can split the relief node, but we don't split the inner node.
+[00:36:24.200 --> 00:36:28.940] So otherwise, if you do have to split the inner page, then we release all the ledges
+[00:36:29.520 --> 00:36:36.800] and now start again, but during the second walk down, we keep all the ledges up to the
+[00:36:36.800 --> 00:36:37.020] root.
+[00:36:37.600 --> 00:36:41.240] That means that we don't release them, we keep them.
+[00:36:42.500 --> 00:36:47.740] And now we know that all operations can be executed safely, because I have all the ledges
+[00:36:47.740 --> 00:36:48.360] up to the root.
+[00:36:49.880 --> 00:36:54.560] The good thing is this is pretty easy to implement, simple to implement.
+[00:36:57.340 --> 00:37:02.080] Downside of course is if this happens, I mean keep all the latches up to the root,
+[00:37:02.220 --> 00:37:04.720] this is expensive because I really lock my whole path.
+[00:37:04.900 --> 00:37:06.340] So this is a pretty invasive operation.
+[00:37:06.760 --> 00:37:08.440] On the other hand, this happens rarely.
+[00:37:08.780 --> 00:37:10.080] So how do you know this?
+[00:37:10.200 --> 00:37:14.960] I mean if you can fit about 1000 elements on a page, this means if you split a page,
+[00:37:14.960 --> 00:37:21.140] In the inner page, roughly every 1000 inserts, that depends on how you implement it, perhaps
+[00:37:21.140 --> 00:37:23.040] every 500, but roughly every 1000.
+[00:37:23.840 --> 00:37:30.720] And we also split the inner page after we have 1000 inserts in the leaf page.
+[00:37:30.840 --> 00:37:34.100] So it means every 1 million elements we have to do this.
+[00:37:34.420 --> 00:37:35.520] This is really rare.
+[00:37:36.220 --> 00:37:42.580] So this restart here happens extremely rarely and therefore we can afford to do this.
+[00:37:42.580 --> 00:37:44.400] Yes, it should be really rare.
+[00:37:44.580 --> 00:37:46.140] And then we can now we can handle
+[00:37:47.980 --> 00:37:50.420] both fixed size and variable size records.
+[00:37:50.760 --> 00:37:50.820] Fine.
+[00:37:51.180 --> 00:37:55.020] So that's, this covers this case.
+[00:37:56.840 --> 00:38:00.260] Now, there are some more strategies,
+[00:38:00.500 --> 00:38:02.320] I mean, even with log coupling,
+[00:38:02.580 --> 00:38:04.380] I mean, if you do this, then log coupling works.
+[00:38:04.640 --> 00:38:06.100] The problem with log coupling is,
+[00:38:06.340 --> 00:38:08.160] log coupling is more expensive
+[00:38:08.160 --> 00:38:09.900] than you think at the first glance.
+[00:38:10.100 --> 00:38:11.500] Because what does this mean?
+[00:38:13.180 --> 00:38:14.840] This small picture here.
+[00:38:18.760 --> 00:38:23.540] So if you look at this, we know every node here contains for example 1000 elements to
+[00:38:23.540 --> 00:38:24.180] keep it simple.
+[00:38:24.580 --> 00:38:29.020] That means that if I lock this node here, then I have locked 1000 elements.
+[00:38:30.140 --> 00:38:38.180] If I have locked that node, then I have locked myself and implicitly because nobody can come
+[00:38:38.180 --> 00:38:45.860] by me, I have implicitly locked at least concerning concurrent traversals, my descendants too,
+[00:38:45.860 --> 00:38:49.520] which means that I have locked implicitly 1 million elements.
+[00:38:49.660 --> 00:38:55.180] Because I have 1000 shared nodes, each with 1000 entries, which means by locking this
+[00:38:55.180 --> 00:38:59.900] in a node, I lock at least for a short period of time, 1 million elements.
+[00:39:00.520 --> 00:39:02.600] And so this is pretty expensive.
+[00:39:02.600 --> 00:39:06.780] So, I mean, you have to, in worst case,
+[00:39:07.000 --> 00:39:09.580] is this page that I want to access to this leaf page here,
+[00:39:09.700 --> 00:39:10.660] that's called this L1.
+[00:39:10.780 --> 00:39:14.100] In worst case, the L1 page is not in memory,
+[00:39:14.160 --> 00:39:15.420] so I have to load it from disk,
+[00:39:15.720 --> 00:39:18.020] which means I, let's call this I1.
+[00:39:18.180 --> 00:39:21.400] So I access this I1, I have not locked this one yet,
+[00:39:21.740 --> 00:39:22.520] well, I'll try to lock this.
+[00:39:22.900 --> 00:39:25.440] So I have locked the inner page I1,
+[00:39:26.180 --> 00:39:28.120] so I want to access leaf page L1,
+[00:39:29.180 --> 00:39:31.200] and wait for this leaf page to come,
+[00:39:32.600 --> 00:39:36.960] this time nobody else can access for example L2 because they cannot pass by me.
+[00:39:37.120 --> 00:39:48.300] So I block L1, nobody can access L2 and so I'm blocking implicitly 1000 pages, meaning
+[00:39:48.300 --> 00:39:52.840] one million elements just because I wait for my page L1 and have locked the inner page.
+[00:39:53.300 --> 00:39:58.400] So this is not so, I mean it's correct, but it's not so super great from a performance
+[00:39:58.400 --> 00:39:59.000] perspective.
+[00:40:01.000 --> 00:40:02.560] So performance could be better.
+[00:40:03.040 --> 00:40:06.540] And therefore people said, hey, wouldn't it be great if we don't do this?
+[00:40:06.720 --> 00:40:11.220] So wouldn't it be great if you only link at most one node?
+[00:40:11.500 --> 00:40:15.380] So one node we can lock, but we never lock more than one node.
+[00:40:15.520 --> 00:40:21.920] So this means we lock I1, then I figure out, okay, I want to go to L1, so I know the node,
+[00:40:22.340 --> 00:40:27.560] then I release my lock here and then acquire that lock here instead.
+[00:40:29.000 --> 00:40:31.080] That means I still have to wait until A1 comes from this,
+[00:40:31.140 --> 00:40:33.420] that's true, but in the meantime,
+[00:40:33.640 --> 00:40:35.820] everybody else can go to A1 if they want to.
+[00:40:36.040 --> 00:40:38.260] That's why I don't prevent this,
+[00:40:38.360 --> 00:40:39.760] I get much better concurrency.
+[00:40:40.960 --> 00:40:43.180] So this is the idea of B-linked trees.
+[00:40:43.780 --> 00:40:45.560] So not the whole idea.
+[00:40:45.740 --> 00:40:47.140] So this is the motivation of B-linked trees.
+[00:40:47.300 --> 00:40:48.420] Yeah, so this is what they want.
+[00:40:49.560 --> 00:40:52.200] The problem is, if you do this,
+[00:40:56.480 --> 00:40:59.560] what happens if somebody splits a page behind myself
+[00:40:59.560 --> 00:41:00.120] in the meantime?
+[00:41:00.360 --> 00:41:04.120] Yeah, so I want to get to L1, but I cannot therefore,
+[00:41:04.180 --> 00:41:05.360] because I'm scheduled away,
+[00:41:05.540 --> 00:41:06.380] I don't get to lock whatever.
+[00:41:06.860 --> 00:41:09.540] It could be that the moment I came L1,
+[00:41:09.700 --> 00:41:11.260] my data element, so let's say,
+[00:41:11.380 --> 00:41:13.100] I'm searching for this element X here,
+[00:41:13.860 --> 00:41:14.820] until the point in time
+[00:41:14.820 --> 00:41:16.580] that I finally managed to get to L1,
+[00:41:16.840 --> 00:41:18.040] X has moved somewhere else.
+[00:41:18.260 --> 00:41:19.660] Can happen because somebody split the page.
+[00:41:19.800 --> 00:41:21.400] Yeah, so this means I jumped here
+[00:41:22.200 --> 00:41:22.540] is gone.
+[00:41:23.660 --> 00:41:31.800] And then the idea of be linked trees is to say, okay, I do this, I willingly accept that
+[00:41:31.800 --> 00:41:32.940] my element might be gone.
+[00:41:34.960 --> 00:41:40.800] But because I always have this next pointer here, so if I am searching for a value and
+[00:41:40.800 --> 00:41:44.480] I see the value that I am searching for is larger than the largest value that is on my
+[00:41:44.480 --> 00:41:46.960] current page, I just go to the next page.
+[00:41:46.960 --> 00:41:53.660] So I proactively go to the next page, even though I would not go there, but naturally
+[00:41:53.660 --> 00:41:57.000] I go to the next page and then if x was moved to there, I find it.
+[00:41:57.200 --> 00:42:00.020] Of course, it could be that it was split again, so I have to go to the next page again.
+[00:42:00.180 --> 00:42:06.040] So I follow the pointers here until I either find x or I find elements, values that are
+[00:42:06.040 --> 00:42:09.180] larger than x and then I know for sure that x cannot exist.
+[00:42:09.460 --> 00:42:10.340] So then I can stop.
+[00:42:10.720 --> 00:42:13.000] So this is a so-called B-link idea.
+[00:42:14.400 --> 00:42:23.880] So we go to the neighboring pages and to go there.
+[00:42:24.000 --> 00:42:28.140] By the way you have to do this not only in the leaf pages but also on the inner nodes
+[00:42:28.140 --> 00:42:29.920] because the inner nodes the same can happen.
+[00:42:30.060 --> 00:42:35.180] So I go to an inner node until I arrive there, somebody else has split the page, therefore
+[00:42:35.180 --> 00:42:39.520] I have to introduce the next pointers on inner nodes too.
+[00:42:39.520 --> 00:42:45.080] So, if somebody goes here, doesn't find its value, can go to the next point and so on.
+[00:42:46.820 --> 00:42:55.260] So this is already pretty complicated, but this can be implemented reasonably well as
+[00:42:55.260 --> 00:42:58.140] long as we have only lookup and insert.
+[00:42:58.960 --> 00:43:03.580] What is a total nightmare in this B-Link tree is deletion.
+[00:43:05.100 --> 00:43:10.100] Because with deletion, suddenly values can not only move to the right, but at least in
+[00:43:10.100 --> 00:43:11.360] principle can also move to the left.
+[00:43:11.480 --> 00:43:19.640] So because if I merge them, then they can be balanced with the neighboring nodes, so
+[00:43:19.640 --> 00:43:24.540] it means my values that I'm looking for goes to the left and not only to the right.
+[00:43:24.680 --> 00:43:27.040] And therefore following the next pointer is not good enough.
+[00:43:27.240 --> 00:43:33.560] Now as there are solutions for this, basically this boils down to, you can only merge the
+[00:43:33.580 --> 00:43:38.960] a tree or delete a node if you are sure that at this point in time nobody is currently
+[00:43:39.800 --> 00:43:45.620] going down to this. Yeah, this creates some special programming mechanisms like an epoch
+[00:43:45.620 --> 00:43:54.520] mechanism or something like this. Pretty difficult to implement and, but as I said, many people just
+[00:43:54.520 --> 00:43:59.400] don't bother with this deletion problem, so they don't implement this correctly, then of course
+[00:43:59.400 --> 00:44:04.600] it's easy, but if you want to do proper deletions in B-link trees, this is possible, but quite
+[00:44:04.600 --> 00:44:04.960] challenging.
+[00:44:06.660 --> 00:44:12.480] Now just for completeness, I want to cover one technique more, that is strictly speaking
+[00:44:12.480 --> 00:44:16.300] not on the slides, but nevertheless is pretty interesting.
+[00:44:18.420 --> 00:44:24.000] The problem we have here with synchronization is, with log coupling, is basically a problem
+[00:44:24.000 --> 00:44:26.460] that we have in all kinds of hierarchical data structures.
+[00:44:26.460 --> 00:44:29.960] The problem is that the root here is a bottleneck.
+[00:44:31.540 --> 00:44:37.020] Or in general, the higher up nodes will be visited much more frequently than the lower nodes.
+[00:44:37.160 --> 00:44:41.800] So that means we have many, many logs here, so we make many dots here, many dots here,
+[00:44:42.080 --> 00:44:44.700] a few bit less here, and then even less here.
+[00:44:45.120 --> 00:44:48.620] So this will be extremely hard because everybody goes through the root.
+[00:44:49.980 --> 00:44:51.640] This is of course bad for concurrency.
+[00:44:52.780 --> 00:44:56.980] Interestingly, it's even bad if you have no concordial problem at all.
+[00:44:58.240 --> 00:45:00.620] So just assume everybody's reading.
+[00:45:01.300 --> 00:45:02.520] So reading is not a problem.
+[00:45:02.700 --> 00:45:08.660] So everybody can get a read log on everything, because I mean, readers don't conflict with
+[00:45:08.660 --> 00:45:09.280] themselves.
+[00:45:09.600 --> 00:45:13.900] So you can have one million people reading the same notes, no problem, conceptually.
+[00:45:14.120 --> 00:45:15.900] But in reality, this is a problem.
+[00:45:15.900 --> 00:45:18.960] So if you acquire many read logs here,
+[00:45:19.980 --> 00:45:27.820] so if you do log reading, log reading, log reading,
+[00:45:28.020 --> 00:45:28.720] and so on, many of these,
+[00:45:28.960 --> 00:45:31.940] this will be a problem in practice,
+[00:45:32.140 --> 00:45:33.500] even though semantically it's not a problem,
+[00:45:33.600 --> 00:45:34.780] but in practice it's a problem.
+[00:45:35.020 --> 00:45:35.420] Why?
+[00:45:36.740 --> 00:45:39.340] Because this log must be implemented somehow.
+[00:45:39.920 --> 00:45:42.280] And the classical way to implement this
+[00:45:42.280 --> 00:45:44.840] is to use a read writer log,
+[00:45:45.900 --> 00:45:48.540] In first approximation, it's a bit more complicated,
+[00:45:48.720 --> 00:45:49.800] but in first approximation,
+[00:45:50.020 --> 00:45:51.300] read-writer logs look like this.
+[00:45:52.540 --> 00:45:56.540] Read-writer log, it means you have two kinds of fields.
+[00:45:57.440 --> 00:46:01.600] You have an exclusive bit here, exclusive bit,
+[00:46:01.820 --> 00:46:03.360] and then you have a counter
+[00:46:03.360 --> 00:46:05.180] that tells you how many readers we have.
+[00:46:07.120 --> 00:46:09.180] Ready, you need probably at least one bit more.
+[00:46:09.960 --> 00:46:13.220] But this is how a very simple read-writer log
+[00:46:13.800 --> 00:46:15.120] could work like.
+[00:46:16.340 --> 00:46:19.060] So you could say, okay, when you try to get,
+[00:46:19.420 --> 00:46:21.060] you lock something in exclusive mode,
+[00:46:21.120 --> 00:46:23.380] you check if this bit here is clear.
+[00:46:23.700 --> 00:46:27.500] If yes, you check if everything is clear.
+[00:46:27.540 --> 00:46:30.080] So if there's no reader and not an exclusive bit,
+[00:46:30.160 --> 00:46:32.480] and if yes, you set the exclusive bit to one.
+[00:46:32.620 --> 00:46:34.260] And of course you do this using atomics
+[00:46:34.260 --> 00:46:36.760] or some other mechanisms that is thread safe.
+[00:46:37.100 --> 00:46:38.440] And so you set this to one.
+[00:46:39.060 --> 00:46:40.640] And of course, if you cannot set this,
+[00:46:40.720 --> 00:46:42.080] then you have to wait until this changes.
+[00:46:42.080 --> 00:46:46.520] And if you read this, the end you increase the read counter.
+[00:46:46.800 --> 00:46:48.240] So this you increase the reader here.
+[00:46:48.900 --> 00:46:50.360] You basically plus plus on the reader.
+[00:46:50.600 --> 00:46:55.280] And then nobody will create an exclusive log as long as there are readers.
+[00:46:56.280 --> 00:46:58.720] So this is classical implementation read writer log.
+[00:46:58.900 --> 00:47:00.820] And this is of course, semantically correct.
+[00:47:01.080 --> 00:47:06.320] But in practice, it has very poor performance for this because this log that we have here
+[00:47:06.320 --> 00:47:10.700] at the root of this node is changed all the time.
+[00:47:12.200 --> 00:47:18.200] changing and then many threads try to change the same memory location this is slow.
+[00:47:18.440 --> 00:47:23.080] Now because on the practical level the cache lines that holds this read writer lock here
+[00:47:23.080 --> 00:47:28.760] will bounce between the different cores because everybody will try to update this counter
+[00:47:28.760 --> 00:47:30.500] all the time this is very slow.
+[00:47:32.800 --> 00:47:35.920] This is a performance problem even without contention.
+[00:47:35.920 --> 00:47:46.420] So, therefore, there is an alternative approach that allows you to solve both this contention
+[00:47:46.420 --> 00:47:53.960] problem in the log and the concordial problem in concerning other readers as well as log
+[00:47:53.960 --> 00:47:54.280] coupling.
+[00:47:54.600 --> 00:47:57.540] And this is something that is called optimistic log coupling.
+[00:47:59.040 --> 00:48:01.480] So, how does this work?
+[00:48:04.680 --> 00:48:06.240] Optimistic lock-up link.
+[00:48:12.200 --> 00:48:20.880] And basically the key idea is that we assume that if a system is fast, conflicts are unlikely.
+[00:48:21.200 --> 00:48:24.860] Of course conflicts can happen, but most of the time we have no conflicts.
+[00:48:24.860 --> 00:48:29.260] Therefore we optimize for the case that we have no conflict and we do it as follows.
+[00:48:29.940 --> 00:48:35.760] So we don't, if we replace my read writer log with an optimistic log.
+[00:48:38.900 --> 00:48:43.720] And we still have an exclusive bit, but we don't have a read counter.
+[00:48:46.460 --> 00:48:50.200] instead what you have here is a version.
+[00:48:55.060 --> 00:48:57.460] So now and how can we, how do we do this?
+[00:48:57.860 --> 00:49:02.100] If you do exclusive access, if you do write logs, you do traditional logging.
+[00:49:02.300 --> 00:49:07.820] So you would get a log here and a log here and so you do everything traditional.
+[00:49:08.120 --> 00:49:10.260] But most of the time we don't write.
+[00:49:10.260 --> 00:49:14.720] Even when you insert you have to realize most of the time we don't write because the inner nodes
+[00:49:14.720 --> 00:49:19.140] So for example this one here then that one here and then we probably will only read
+[00:49:19.140 --> 00:49:23.400] So let's say we read this we read this and then we write this most of the time
+[00:49:23.400 --> 00:49:29.180] If the node is full is not true of course, but again we optimize for the read case and
+[00:49:29.180 --> 00:49:31.660] by with the B3 insert
+[00:49:33.020 --> 00:49:36.900] 999 inserts will only write the leaf one will also write inner nodes
+[00:49:36.900 --> 00:49:39.340] So let's first assume we only write the leaf node.
+[00:49:39.520 --> 00:49:42.880] So we read the inner node, we read the inner node, we try to write the inner node.
+[00:49:43.820 --> 00:49:48.380] If this is not possible, so if you realize, oh no, you have to split this, then we start
+[00:49:48.380 --> 00:49:48.820] again.
+[00:49:49.280 --> 00:49:55.600] We start again from the root and then we say, read the root node, but now on the second
+[00:49:55.600 --> 00:49:57.820] level I acquire a write log.
+[00:49:58.680 --> 00:50:02.480] Because I saw that I had to split the leaf node.
+[00:50:02.720 --> 00:50:04.160] Now of course this is racy.
+[00:50:04.160 --> 00:50:08.460] It could be that the second time with my restart, somebody else has already split the leaf.
+[00:50:08.640 --> 00:50:10.780] So I no longer have to split the leaf.
+[00:50:10.860 --> 00:50:11.420] But this is okay.
+[00:50:11.640 --> 00:50:13.840] I mean, you have one write lock too much, but it's okay.
+[00:50:14.240 --> 00:50:19.640] So now at this point in time, I can split the leaf node because I have a write lock
+[00:50:19.640 --> 00:50:20.220] in a node.
+[00:50:20.740 --> 00:50:26.000] Now it could be that I also have to split the inner node, but then again, I give up,
+[00:50:26.160 --> 00:50:32.940] start again and now restart and now acquire write locks from here and have all the write
+[00:50:32.940 --> 00:50:33.280] locks.
+[00:50:34.160 --> 00:50:35.900] becomes more and more rare.
+[00:50:36.200 --> 00:50:38.340] So that you have to do this extremely unlikely.
+[00:50:39.160 --> 00:50:41.600] So therefore we now ignore the writer and only look at the reader.
+[00:50:42.780 --> 00:50:44.240] So how do the readers operate?
+[00:50:44.700 --> 00:50:50.840] So if you have a reader on the leaf node, then in first approximation we do nothing.
+[00:50:51.720 --> 00:50:52.820] So we just read.
+[00:50:53.700 --> 00:50:56.180] So I go to this node here and I read.
+[00:50:57.500 --> 00:51:01.120] But then you ask yourself, okay, what about concurrent writes?
+[00:51:01.220 --> 00:51:02.900] I mean somebody can write this while I am reading.
+[00:51:04.160 --> 00:51:04.900] First we do two things.
+[00:51:05.200 --> 00:51:10.600] First, this is what we call verify here basically.
+[00:51:11.440 --> 00:51:18.500] So here this lock, let's give this a name, let's call this a zero, let's lock zero.
+[00:51:18.960 --> 00:51:28.980] So first we, when we try to read the leaf node, then we say, we make a local copy.
+[00:51:32.700 --> 00:51:34.480] So let's do it like this.
+[00:51:34.680 --> 00:51:35.780] So let's call this here start.
+[00:51:38.500 --> 00:51:49.920] Then we say certifyL0 is readL0.
+[00:51:49.920 --> 00:51:51.620] So we read the log.
+[00:51:52.160 --> 00:51:57.780] Now if somebody is in this moment in time modifying this page, then we have to...
+[00:51:59.560 --> 00:52:01.520] C1.exclusive, this means we have to,
+[00:52:02.180 --> 00:52:04.260] somebody else is modifying this page in this moment,
+[00:52:04.420 --> 00:52:06.740] while I'm coming, then we go restart.
+[00:52:06.900 --> 00:52:09.560] This is unlikely, this is the route after all.
+[00:52:09.960 --> 00:52:12.180] Go to start, then we restart.
+[00:52:16.580 --> 00:52:21.400] And then we try to find the binary search on the page,
+[00:52:21.480 --> 00:52:22.180] whatever we have to do.
+[00:52:24.120 --> 00:52:27.880] So binary search, binary search on the page.
+[00:52:31.140 --> 00:52:35.440] Now we did the binary search, but remember that we don't hold visible lock, because nobody
+[00:52:35.440 --> 00:52:36.700] else knows that we are reading.
+[00:52:36.860 --> 00:52:41.000] So we are reading the page, but nobody knows this because we don't increase the page point
+[00:52:41.000 --> 00:52:43.040] as a reference counter.
+[00:52:43.120 --> 00:52:47.460] So this means somebody else can modify the page while we do the binary search.
+[00:52:47.760 --> 00:52:49.280] And we don't know this.
+[00:52:49.280 --> 00:53:02.840] So what we do at the end, before we go to the child node, is if not validate, validate
+[00:53:05.640 --> 00:53:09.040] C0, go to start.
+[00:53:09.900 --> 00:53:11.100] So we restart.
+[00:53:11.360 --> 00:53:12.960] So now how's the validation work?
+[00:53:12.960 --> 00:53:29.660] So validation says, validate C means first of all, the current log is equal to my certifier.
+[00:53:29.860 --> 00:53:33.000] So remember I stored the log in the beginning.
+[00:53:33.000 --> 00:53:36.260] So I check if the log is the same after I'm done
+[00:53:39.220 --> 00:53:39.660] and
+[00:53:42.620 --> 00:53:43.060] not
+[00:53:44.140 --> 00:53:46.360] C dot exclusive. It's not a lot exclusive.
+[00:53:46.860 --> 00:53:50.020] So basically I validate a log. It's if
+[00:53:51.080 --> 00:53:55.940] it's currently not held in exclusive mode and it was the same as it was as it got it before.
+[00:53:56.320 --> 00:53:59.760] So now perhaps I'm not sure if I explained this before. So when I
+[00:53:59.760 --> 00:54:02.540] when I do a write, let's say I do a write here.
+[00:54:03.300 --> 00:54:05.840] When I begin the write, I set the exclusive bit.
+[00:54:06.160 --> 00:54:13.340] So I set here, so lw.exclusive is one.
+[00:54:14.160 --> 00:54:15.580] Then I do my stuff here.
+[00:54:15.800 --> 00:54:26.120] Then when I'm done, then I say the version is increased and then I release the exclusive
+[00:54:26.120 --> 00:54:26.500] bit.
+[00:54:28.380 --> 00:54:29.800] So this is how I update words.
+[00:54:29.800 --> 00:54:34.720] which means that a reader can check if somebody has modified the page while he was reading
+[00:54:34.720 --> 00:54:36.560] and by Jack is looking at the version.
+[00:54:37.540 --> 00:54:40.940] So after his read, he checked if somebody changed the page in the meantime.
+[00:54:41.160 --> 00:54:42.980] If not, then the read was safe.
+[00:54:43.340 --> 00:54:49.280] So I didn't acquire a log, I just validated at the end if my read was okay.
+[00:54:50.500 --> 00:54:55.340] And if yes, if not, I try again because it means very unlikely that somebody modifies
+[00:54:55.340 --> 00:54:56.260] it while I'm reading.
+[00:54:56.800 --> 00:54:58.300] So if it happens, I just restart.
+[00:54:59.920 --> 00:55:02.140] I mean, you could even rate limit this,
+[00:55:02.240 --> 00:55:04.000] like you try a few times and if it doesn't work,
+[00:55:04.080 --> 00:55:05.540] we get a real log or something like this.
+[00:55:05.720 --> 00:55:07.480] But in practice, you don't need this.
+[00:55:07.560 --> 00:55:08.320] You can just restart.
+[00:55:08.560 --> 00:55:11.880] So this means you have to read the root node
+[00:55:11.880 --> 00:55:12.700] without doing anything.
+[00:55:13.080 --> 00:55:15.060] Now let's go to this one here, L1.
+[00:55:16.600 --> 00:55:19.980] Because I figured out that I need L1.
+[00:55:20.420 --> 00:55:21.820] So then let's say here,
+[00:55:23.300 --> 00:55:28.640] take the credential here for the certifier
+[00:55:28.640 --> 00:55:29.440] for the next log.
+[00:55:30.400 --> 00:55:33.540] then I read L1, so I get the next log.
+[00:55:34.260 --> 00:55:37.020] Just like in log coupling, the only thing is I don't write, I just read.
+[00:55:37.460 --> 00:55:46.780] So now at this point in time, after I read this, if I must validate, so if not validate,
+[00:55:47.520 --> 00:55:59.100] I must validate both the parent and the child, or not validate, validate C1, then go to restart.
+[00:55:59.800 --> 00:56:02.640] Go to start so and after this point I can forget
+[00:56:04.760 --> 00:56:08.700] So this works just like lock coupling I look at the route I
+[00:56:08.700 --> 00:56:12.840] All my reads are inherently unsafe because it's commodified
+[00:56:12.840 --> 00:56:17.200] Therefore before I do anything based upon the value that I get from there. I must validate
+[00:56:17.200 --> 00:56:20.800] Okay, so after I've validated I can't go to this note here
+[00:56:21.800 --> 00:56:28.080] After I have accessed this node I accessed a one I must validate if my reference to this page was still okay
+[00:56:29.800 --> 00:56:32.340] I can't forget this so I have an optimistic log here
+[00:56:32.340 --> 00:56:35.260] I have an optimistic log here and after I got the second optimistic log
+[00:56:35.260 --> 00:56:38.560] I can't forget the first optimistic log just like in log coupling
+[00:56:38.560 --> 00:56:41.320] yeah so you log couple down optimistically
+[00:56:42.500 --> 00:56:46.100] until at some point you come to a leaf now if you only read you can
+[00:56:46.100 --> 00:56:50.220] probably stop here if you want to insert the end at some point you get a real
+[00:56:51.240 --> 00:56:53.900] real log on the leaf and
+[00:56:54.540 --> 00:56:57.260] technically speaking even if you do a real
+[00:56:57.260 --> 00:57:01.860] a query, so a range query, on the leaf level probably you want to get a read writer log.
+[00:57:02.000 --> 00:57:07.320] Yeah, because you hold this page for some time because you are running a query, it can take a
+[00:57:07.320 --> 00:57:12.380] while and then you don't want to be optimistic because let's be honest, the longer a query runs,
+[00:57:12.480 --> 00:57:17.060] the more likely is that your optimistic assumptions falls. Somebody else will modify the pages in
+[00:57:17.060 --> 00:57:21.960] the meantime. Therefore, if you do something for a serious amount of time, then get a real log.
+[00:57:22.160 --> 00:57:25.860] But this is okay, because if you do something for a serious amount of time,
+[00:57:27.260 --> 00:57:32.620] the lock doesn't matter maybe we can get the lock and also this we will do this only on the leaf
+[00:57:32.620 --> 00:57:37.340] levels and we don't have high contention on the leaf levels on the inner nodes where we do have
+[00:57:37.340 --> 00:57:42.100] high contention because everybody goes for example to the root we don't want to acquire a lock unless
+[00:57:42.100 --> 00:57:48.580] we have to now so we don't acquire a lock and so we only lock optimistically with inner nodes on the
+[00:57:48.580 --> 00:57:54.000] leaf nodes we mean mean for point queries we could do this optimistic too for other queries we do a
+[00:57:54.000 --> 00:57:56.780] real lock or even exclusive lock if you want to insert.
+[00:57:57.240 --> 00:58:01.800] And if you do this approach, then you don't have this problem with,
+[00:58:01.840 --> 00:58:08.040] neither of the problem with B-Link nor with this lock coupling,
+[00:58:08.320 --> 00:58:11.620] with traditional lock coupling, because somebody else can bypass me,
+[00:58:11.880 --> 00:58:14.060] where I don't hold a real lock on the inner node.
+[00:58:14.200 --> 00:58:15.940] So somebody else can bypass me.
+[00:58:16.080 --> 00:58:20.340] I only have to check afterwards if my inner node is still valid.
+[00:58:21.260 --> 00:58:27.360] Now this is a pretty neat technique to get high concurrency on a B-3 data structure.
+[00:58:27.560 --> 00:58:29.800] But this is a newer technique, therefore it is not on the slide.
+[00:58:29.920 --> 00:58:34.700] So you will not find it in traditional books and database systems.
+[00:58:35.000 --> 00:58:38.940] But if you search for optimistic log coupling, for example, you find a paper where Victor
+[00:58:38.940 --> 00:58:48.300] Lise and some of my former PhD students, now he is a professor in Jena, and he described
+[00:58:48.300 --> 00:58:48.980] how to do this.
+[00:58:50.340 --> 00:58:56.260] performance if you do locking in tree structures like B trees.
+[00:58:57.920 --> 00:59:08.520] Okay, so we have seen now insertion, deletion, lookup, range queries and concurrency for traditional
+[00:59:08.520 --> 00:59:08.960] B trees.
+[00:59:09.200 --> 00:59:12.380] What we have not seen yet are bulk operations.
+[00:59:12.780 --> 00:59:14.620] So now what are bulk operations?
+[00:59:14.940 --> 00:59:18.720] Assume you have your database and then you want to import a large amount of data.
+[00:59:20.420 --> 00:59:24.580] database import yeah so far you have all your files you have all your data and
+[00:59:24.580 --> 00:59:30.800] files a few million records now you want to load it into a database now what you
+[00:59:30.800 --> 00:59:34.580] could do of course is you could just do 1 million inserts and also would be
+[00:59:34.580 --> 00:59:38.940] semantically correct yeah so you do insert tupper by tupper but in practice
+[00:59:38.940 --> 00:59:43.420] this is slow yeah so 1 million inserts is probably slow I mean if you think
+[00:59:43.420 --> 00:59:47.580] about the poor b3 I mean if you're there if your data comes in a funny order you
+[00:59:47.580 --> 00:59:49.460] we do random IO all over the place.
+[00:59:49.600 --> 00:59:51.500] We touch the same data multiple times,
+[00:59:51.560 --> 00:59:52.600] so this is all very slow.
+[00:59:53.380 --> 00:59:54.960] And so therefore we don't want to do this.
+[00:59:55.360 --> 00:59:59.740] And by the way, this is true for virtually all systems.
+[01:00:00.380 --> 01:00:02.120] Inserting millions of tuples is slow.
+[01:00:02.660 --> 01:00:03.860] And so therefore here,
+[01:00:04.680 --> 01:00:08.860] millions of inserts, of inserts is slow.
+[01:00:12.360 --> 01:00:16.020] So what you do instead is you use something that,
+[01:00:18.700 --> 01:00:20.420] Unfortunately, this is not standardized.
+[01:00:20.620 --> 01:00:22.340] Each database system does it differently.
+[01:00:23.100 --> 01:00:25.220] Oracle, for example, doesn't have a copy statement.
+[01:00:25.460 --> 01:00:27.120] I think perhaps it does, but I think it doesn't.
+[01:00:27.500 --> 01:00:31.020] But they have a dedicated program instead, so a bulk loader.
+[01:00:31.900 --> 01:00:34.620] By Postgres does it from SQL, bulk loader.
+[01:00:36.880 --> 01:00:38.120] Or some other mechanism.
+[01:00:38.360 --> 01:00:39.700] So each system does it differently.
+[01:00:39.840 --> 01:00:40.620] Copy is Postgres.
+[01:00:42.940 --> 01:00:48.720] And so what the copy statement does basically is, it tells the system, here is a file with
+[01:00:48.720 --> 01:00:50.940] input data, please load the whole file.
+[01:00:51.140 --> 01:00:53.440] And if this is a million entries, that's okay.
+[01:00:54.180 --> 01:00:58.560] And the same with this bulk loading tool, it also gives them files as input and say,
+[01:00:58.720 --> 01:01:00.920] please load all the records.
+[01:01:02.340 --> 01:01:08.460] And this is typically vastly more efficient than thousands or millions of inserts, much,
+[01:01:08.460 --> 01:01:09.320] much more efficient.
+[01:01:10.620 --> 01:01:12.020] load large amounts of data quickly.
+[01:01:13.440 --> 01:01:16.320] So, but now how does this work internally?
+[01:01:16.660 --> 01:01:20.460] Yeah, so now how can we bring data into our Btree quickly?
+[01:01:20.460 --> 01:01:21.620] So we know that it's coming
+[01:01:21.620 --> 01:01:24.160] because the user does a copy or backlog statement.
+[01:01:24.320 --> 01:01:26.660] So we know that it's coming, but how do we do this?
+[01:01:27.400 --> 01:01:29.780] Okay, so the first thing we could do is
+[01:01:30.500 --> 01:01:32.560] we could sort the data before we insert it.
+[01:01:32.980 --> 01:01:35.840] And I see we sort the data by the index key.
+[01:01:37.180 --> 01:01:45.600] and this already has a good good properties because now we know that we will so the data
+[01:01:47.620 --> 01:01:51.760] we will always everything right everything here then we write everything here and so on
+[01:01:51.760 --> 01:01:57.540] there because we are sorted so my get my data in in increasing order so therefore i fill my page
+[01:01:57.540 --> 01:02:03.420] from by p trees from left to right okay so therefore this has locality better much better
+[01:02:03.420 --> 01:02:04.920] I obey have good locality.
+[01:02:06.420 --> 01:02:09.680] But even though this is the case, in practice this is not ideal.
+[01:02:10.480 --> 01:02:13.940] It means better than a random order, much better than a random order, but it is not
+[01:02:13.940 --> 01:02:14.300] ideal.
+[01:02:14.720 --> 01:02:17.800] In fact, in a way it even triggers a worst case.
+[01:02:18.300 --> 01:02:23.460] Not concerning performance, performance might be okay, it might not be that bad, but concerning
+[01:02:23.460 --> 01:02:26.120] space utilization it will trigger the worst case.
+[01:02:26.600 --> 01:02:27.880] Now why is this a case?
+[01:02:28.220 --> 01:02:33.260] Just think about this, we have the first leaf page, then we write, blah blah blah blah
+[01:02:33.420 --> 01:02:34.100] that's not what it's full.
+[01:02:35.140 --> 01:02:37.120] So then we split the page.
+[01:02:41.840 --> 01:02:43.000] Now I have two pages,
+[01:02:44.260 --> 01:02:45.540] you have an inner node of course,
+[01:02:45.900 --> 01:02:46.700] and I have two pages.
+[01:02:47.560 --> 01:02:49.140] First here, this one is half full.
+[01:02:49.820 --> 01:02:51.380] The second page is also half full.
+[01:02:53.440 --> 01:02:55.080] Yeah, and because my data is sorted,
+[01:02:55.300 --> 01:02:57.400] I insert of course in the second page to the right.
+[01:02:57.520 --> 01:02:59.580] So I'm continue until the page is full.
+[01:03:00.320 --> 01:03:02.180] Then this page is full, I split it again,
+[01:03:03.640 --> 01:03:12.260] this you know it and add two half full pages and then i continue inserting here and then split it
+[01:03:12.260 --> 01:03:18.480] again and so on and so if you insert data in increasing order in a b tree performance will
+[01:03:18.480 --> 01:03:22.640] be okay but space utilization will be bad because all your pages will be half full
+[01:03:23.140 --> 01:03:27.560] yeah because we always split the right most page therefore all your pages are half full
+[01:03:28.800 --> 01:03:30.360] This is of course a bit unfortunate.
+[01:03:31.060 --> 01:03:34.920] Now there are multiple ways to tackle this.
+[01:03:35.360 --> 01:03:41.420] One way is to realize if you are the rightmost page and this is happening to you, you are
+[01:03:41.420 --> 01:03:47.800] split, you can look at if is my left neighbor only half full, if yes, I put my left half
+[01:03:47.800 --> 01:03:52.300] to my left neighbor just because I know that monotronic increasing inserts are frequent.
+[01:03:52.300 --> 01:03:54.660] So some trick like this you can do.
+[01:03:55.500 --> 01:04:00.900] So then you will get nicely full pages, but this requires extra coding effort and it's
+[01:04:00.900 --> 01:04:02.540] not so totally simple to implement.
+[01:04:03.180 --> 01:04:07.380] In fact, if we know that we are bulk loading, so if we don't have regular inserts, then
+[01:04:07.380 --> 01:04:09.900] we can do better even easier.
+[01:04:10.060 --> 01:04:14.940] So we don't have this magic recognition that I'm the rightmost one, you can do this always
+[01:04:14.940 --> 01:04:15.260] right.
+[01:04:15.940 --> 01:04:19.380] Okay, so and this is how we build an initial B plus 3.
+[01:04:19.380 --> 01:04:21.880] So initially means my relation is empty.
+[01:04:22.120 --> 01:04:24.340] So no, there's no data inside so far.
+[01:04:24.500 --> 01:04:27.380] And then I bulk load a large amount of data inside.
+[01:04:27.560 --> 01:04:28.280] So how do I do this?
+[01:04:28.660 --> 01:04:32.080] So first I sort the data on the index key.
+[01:04:34.360 --> 01:04:36.380] And as you do this, of course, to get locality.
+[01:04:36.560 --> 01:04:39.800] And we know that in the Btree, we have the data in sort order.
+[01:04:39.980 --> 01:04:40.980] And so we sort my data.
+[01:04:41.880 --> 01:04:44.600] Then I've spooled my data into leaf pages
+[01:04:44.600 --> 01:04:47.740] and I don't use the regular split logic.
+[01:04:49.380 --> 01:04:53.040] I split it, instead I just make the leaf page full completely.
+[01:04:53.180 --> 01:04:56.940] So I have the first leaf page and I fill it up to the rim.
+[01:04:57.080 --> 01:04:59.140] So I make it completely full.
+[01:05:00.460 --> 01:05:04.060] And then when this happens, my page is full, then I go to the next page.
+[01:05:04.820 --> 01:05:10.740] The only thing I do is, if this happens, I remember the largest value I had here and
+[01:05:10.740 --> 01:05:16.480] we write this, so the largest, let's call it the separators, and I write the largest
+[01:05:16.480 --> 01:05:17.980] value here, L1.
+[01:05:19.380 --> 01:05:19.800] this page.
+[01:05:20.380 --> 01:05:25.720] Then I fill this page completely, L2, the largest value here, I write the largest value
+[01:05:25.720 --> 01:05:27.600] in the next, in a separate file.
+[01:05:27.840 --> 01:05:35.640] I fill the next leaf page completely, L3, and again, write the largest value, and so
+[01:05:35.640 --> 01:05:35.780] on.
+[01:05:36.240 --> 01:05:38.820] Now until the largest value of the last page, Ln.
+[01:05:42.500 --> 01:05:46.200] Okay, so this, of course, is probably not full because this is the last page.
+[01:05:46.200 --> 01:05:52.180] So now what happens is, in this step I will get all my data into leaf pages and all leaf
+[01:05:52.180 --> 01:05:55.040] pages will be full, except for the last page.
+[01:05:56.900 --> 01:05:59.800] So now this gives me the lowest level of my B tree.
+[01:06:00.080 --> 01:06:01.920] Now I form the next higher level.
+[01:06:02.040 --> 01:06:06.760] What I do is, I take the separators from the file and now I spool them into inner nodes.
+[01:06:06.920 --> 01:06:08.060] So I do the same trick.
+[01:06:08.740 --> 01:06:11.160] So I fill this until it's completely.
+[01:06:11.780 --> 01:06:16.260] And then the largest value on the first node, let's call this i1.
+[01:06:16.500 --> 01:06:18.620] And again I write i1 in a separate file.
+[01:06:19.480 --> 01:06:26.080] And then I fill the next largest value here until I get i2.
+[01:06:27.280 --> 01:06:28.240] I2 in a separate file.
+[01:06:28.380 --> 01:06:28.540] And so on.
+[01:06:28.620 --> 01:06:33.400] So which means I take these separators here and I spool them into an array of inner pages.
+[01:06:35.700 --> 01:06:37.400] Until i k.
+[01:06:39.440 --> 01:06:42.220] Okay, now I do this again.
+[01:06:42.500 --> 01:06:49.020] Once I text these values and spool them into inner pages, until everything fits in the
+[01:06:49.020 --> 01:06:49.360] inner page.
+[01:06:49.460 --> 01:06:53.200] So basically I create one level, next level, next level, next level, and so on for my B
+[01:06:53.200 --> 01:06:53.380] tree.
+[01:06:53.640 --> 01:06:58.740] So each pass here, so this is of course the lowest level, then comes the intermediate
+[01:06:58.740 --> 01:06:59.260] level.
+[01:06:59.460 --> 01:07:06.300] So I take my separator, spool them into inner pages, and remember the largest value, and
+[01:07:08.180 --> 01:07:10.120] until I have only one inner page.
+[01:07:10.320 --> 01:07:11.780] This is then my new root.
+[01:07:12.240 --> 01:07:14.260] Now, of course, it depends on how many values you have,
+[01:07:16.180 --> 01:07:18.540] but it could be that you have only one inner page,
+[01:07:18.640 --> 01:07:20.560] or could be there also only one level of inner pages,
+[01:07:20.700 --> 01:07:21.900] which means one inner page,
+[01:07:22.000 --> 01:07:23.980] or it could be that you have two levels or three levels,
+[01:07:24.020 --> 01:07:25.240] it depends on how many values you have.
+[01:07:25.320 --> 01:07:27.420] But we spool them in there
+[01:07:29.200 --> 01:07:32.340] until everything fits into the root page.
+[01:07:32.800 --> 01:07:34.740] And the beauty of this approach is that,
+[01:07:34.860 --> 01:07:36.560] first we only do sequential I.O.
+[01:07:37.400 --> 01:07:38.760] we only write data sequentially.
+[01:07:39.280 --> 01:07:42.460] Also this separate the values in the temp files
+[01:07:42.460 --> 01:07:43.180] are written sequentially.
+[01:07:43.260 --> 01:07:44.700] Everything is done sequentially.
+[01:07:45.000 --> 01:07:48.580] And we get a perfect compact cluster B plus three.
+[01:07:48.860 --> 01:07:50.120] Perfect means all pages are full
+[01:07:50.120 --> 01:07:51.460] except for the right most page.
+[01:07:51.640 --> 01:07:53.640] And it's clustered because each page
+[01:07:53.640 --> 01:07:55.160] that is next to each other logically
+[01:07:55.160 --> 01:07:56.420] is next to each other on disk.
+[01:07:56.860 --> 01:07:58.800] Now so which means if you do a range query,
+[01:07:59.020 --> 01:08:01.520] you do a beautiful sequential read on disk.
+[01:08:01.700 --> 01:08:02.800] So perfect performance.
+[01:08:03.360 --> 01:08:05.340] So this is, and it's fast.
+[01:08:05.460 --> 01:08:06.560] The whole thing here is fast
+[01:08:07.400 --> 01:08:16.040] perfect B-tree. Now this is called backloading. So it works very, very well. Now this is easy if we do
+[01:08:18.680 --> 01:08:23.600] the initial B-tree load, but what happens if you insert data into an existing B-tree?
+[01:08:25.820 --> 01:08:31.000] That's more difficult. So we start the same, so we start the data and then what we do is we
+[01:08:31.000 --> 01:08:36.580] merge the data into an existing tree, which means we read both the input, the new input and the
+[01:08:37.780 --> 01:08:39.020] And we merge them.
+[01:08:41.860 --> 01:08:47.060] So basically we use the same strategy, we form new pages, remember the separator and
+[01:08:47.060 --> 01:08:48.420] so on, just as we did before.
+[01:08:48.680 --> 01:08:56.640] The only tricky thing here is step four, namely, we start a new chunk once a page would contain
+[01:08:56.640 --> 01:08:58.080] only entries from the original tree.
+[01:08:58.220 --> 01:08:59.660] So what do you mean with this?
+[01:08:59.960 --> 01:09:03.560] So to illustrate this, assume we have only two pages initially, both full.
+[01:09:06.940 --> 01:09:09.160] Or perhaps some more pages, doesn't matter, could be some more pages.
+[01:09:09.480 --> 01:09:15.820] So now a new entry comes, many multiple entries, but one is good enough, a new one entry that
+[01:09:15.820 --> 01:09:18.580] we want to merge, or a few entries that we want to merge into this.
+[01:09:18.800 --> 01:09:23.080] So now we would start, these are the new entries, I could draw them like this.
+[01:09:23.780 --> 01:09:28.940] So if you would merge them, let's assume by the way this is not that large, a small amount
+[01:09:28.940 --> 01:09:29.300] of data.
+[01:09:30.860 --> 01:09:37.060] If you merge them, what would happen is I start writing here, I form a new page, new
+[01:09:37.060 --> 01:09:39.440] leaf page and start with the content that I had.
+[01:09:39.620 --> 01:09:40.980] Then comes my new content.
+[01:09:41.180 --> 01:09:43.020] So I write in, merge it in there.
+[01:09:43.140 --> 01:09:45.200] Then I continue with the content that I had.
+[01:09:45.320 --> 01:09:51.280] And of course the original page doesn't fit because, so I went up to here, let's say I
+[01:09:51.280 --> 01:09:56.780] can fit it here and then I form a new page and it takes the content from here.
+[01:09:56.780 --> 01:10:02.560] So the remaining part and now what if you would implement it naively
+[01:10:02.560 --> 01:10:07.360] What would happen is you would take this page and start filling it in here?
+[01:10:07.580 --> 01:10:10.920] And yeah, but then of course what happened is you rewrite all your leaf pages
+[01:10:10.920 --> 01:10:14.020] because clearly you would start
+[01:10:15.340 --> 01:10:19.860] Filling because everything is shifted because here's the same problem. You cannot form
+[01:10:20.660 --> 01:10:24.760] Can I fit everything on a page or everything it would squeeze you to a new page?
+[01:10:24.760 --> 01:10:29.680] So if you have 1 million further pages coming here, you would rewrite all the 1 million entries.
+[01:10:29.880 --> 01:10:31.000] Of course, you don't want to do this.
+[01:10:32.160 --> 01:10:37.680] What you do instead is you try to stop this merge by accepting under full pages.
+[01:10:37.880 --> 01:10:43.760] So if you realize that you have a page that contains only notes, values that already existed,
+[01:10:43.920 --> 01:10:47.060] because this here is old, this is old, and this is old.
+[01:10:47.180 --> 01:10:49.200] So everything's old, it's just shifted.
+[01:10:49.280 --> 01:10:53.840] If this happens, you try to stop this by accepting under full page.
+[01:10:54.760 --> 01:10:58.020] If you just take the tail, this might not be good enough because then you are less than
+[01:10:58.020 --> 01:10:58.460] half full.
+[01:10:58.620 --> 01:11:01.100] So let's take a bit from this page too.
+[01:11:01.900 --> 01:11:03.600] So then it's at least half full.
+[01:11:03.880 --> 01:11:06.760] Then we have the remaining part fits on a page and then we stop.
+[01:11:07.360 --> 01:11:09.260] So we have one page more and then we stop.
+[01:11:09.460 --> 01:11:17.140] So the remaining 1 million entries, we do not have to move because we managed to create
+[01:11:17.140 --> 01:11:19.580] a new run that is identical to existing pages.
+[01:11:19.740 --> 01:11:20.840] And we want to do this of course.
+[01:11:20.840 --> 01:11:28.660] So once you notice that only old pages are relevant, we don't do this.
+[01:11:28.860 --> 01:11:34.580] And then of course you do the same on the next higher level because we got new separators
+[01:11:34.580 --> 01:11:38.300] from this, this has to be merged into existing separators and so on.
+[01:11:38.660 --> 01:11:40.020] So then we merge this.
+[01:11:41.480 --> 01:11:46.000] And of course this is not so easy to implement, you see already what we have to do here, this
+[01:11:46.000 --> 01:11:48.800] step here is not so easy to implement.
+[01:11:49.800 --> 01:11:54.120] The good thing is we minimize I.O. because we still do sequential access.
+[01:11:55.500 --> 01:11:59.200] Disadvantages, we destroy clustering. We can no longer guarantee that neighboring
+[01:11:59.200 --> 01:12:03.880] pages are next to each other on disk, clearly because not all pages were updated.
+[01:12:04.500 --> 01:12:07.840] But nevertheless, this is usually a decent compromise.
+[01:12:08.240 --> 01:12:13.740] Now I should mention that some systems support the initial backlog, but do not
+[01:12:13.740 --> 01:12:18.280] support incremental backlog like this. So they can do initial, but if you do this
+[01:12:18.800 --> 01:12:22.900] So if you load data into existing trees, they will just do individual inserts.
+[01:12:23.220 --> 01:12:28.000] Also they will sort the data and do individual inserts, but will not do this fancy re-merging
+[01:12:28.000 --> 01:12:29.600] here because it is not so easy to implement.
+[01:12:31.080 --> 01:12:34.380] But sorting and inserting at least is already better.
+[01:12:34.980 --> 01:12:40.720] Now if you look at the documentation of Postgres for example, what the Postgres says if you
+[01:12:40.720 --> 01:12:41.540] want to do this here.
+[01:12:41.660 --> 01:12:46.900] So if you want to bulk load data into an existing B-tree and you insert a non-trivial amount
+[01:12:48.800 --> 01:12:50.480] 10 tuples or 100 tuples, it doesn't matter,
+[01:12:50.640 --> 01:12:51.200] just do inserts.
+[01:12:51.400 --> 01:12:53.120] But if you want to insert thousands
+[01:12:53.120 --> 01:12:53.960] or millions of entries,
+[01:12:54.160 --> 01:12:56.980] what Postgres suggests is you first throw away
+[01:12:56.980 --> 01:12:57.860] the existing index.
+[01:12:58.300 --> 01:13:00.240] So your alternative basically is to say,
+[01:13:01.000 --> 01:13:04.880] drop index, drop index, then you do copy,
+[01:13:06.880 --> 01:13:08.820] copy, so you insert all your data
+[01:13:09.480 --> 01:13:10.960] and then you do create index.
+[01:13:13.640 --> 01:13:15.880] So this is what Postgres took,
+[01:13:15.880 --> 01:13:17.340] because they don't support it.
+[01:13:18.720 --> 01:13:23.860] alternative. So the alternative to do this, this incremental backloading is to say, forget the
+[01:13:23.860 --> 01:13:28.200] index, copy everything into the database and recreate the index, because this is of course
+[01:13:28.200 --> 01:13:32.860] the initial backload. This here, it corresponds to initial backload.
+[01:13:39.000 --> 01:13:42.880] And because then we throw away the index, we create the index from scratch,
+[01:13:42.880 --> 01:13:49.220] which means we read all the data that we have and we treat this like an initial loader.
+[01:13:49.220 --> 01:13:49.560] Okay.
+[01:13:50.440 --> 01:13:52.740] So this will be faster than this.
+[01:13:53.140 --> 01:13:59.360] Now if you are really fancy, I mean fancy in the sense that you have a big commercial
+[01:13:59.360 --> 01:14:05.900] enterprise system and you have a lot of users all over the world, then you might have a
+[01:14:05.900 --> 01:14:10.200] problem with bulk loads because bulk loads are fast.
+[01:14:10.200 --> 01:14:14.480] So there's good performance and so on, but they are disruptive.
+[01:14:15.140 --> 01:14:19.060] Because while the bulk load is running, so I mean, think about this, what we're doing
+[01:14:19.060 --> 01:14:19.320] here.
+[01:14:19.440 --> 01:14:21.580] So we're building the B3 layer by layer.
+[01:14:21.720 --> 01:14:23.060] So lowest layer, next layer and so on.
+[01:14:23.180 --> 01:14:26.980] So while the bulk load is running, we cannot use the index.
+[01:14:27.660 --> 01:14:34.680] So we take the B3 offline, build the index, update the index, and then we can take it
+[01:14:34.680 --> 01:14:36.180] online and then we can run queries again.
+[01:14:36.340 --> 01:14:38.160] Which means queries must be halted during the meet.
+[01:14:38.160 --> 01:14:39.760] It means they are not strictly halted,
+[01:14:39.860 --> 01:14:42.160] means they can run, but they cannot use the index.
+[01:14:42.380 --> 01:14:44.400] Now, so they have to use table scans
+[01:14:44.400 --> 01:14:45.400] so they can read everything.
+[01:14:47.200 --> 01:14:50.040] And some people, at least some enterprise customers say
+[01:14:50.040 --> 01:14:51.560] that this is unacceptable.
+[01:14:51.900 --> 01:14:56.200] Taking the index offline for a significant amount of time,
+[01:14:56.300 --> 01:14:57.600] minutes or so, this is unacceptable
+[01:14:57.600 --> 01:14:59.820] because then queries will be terrible slow during this time.
+[01:15:01.120 --> 01:15:03.420] So the alternative is an idea here
+[01:15:03.420 --> 01:15:05.320] that is called a partition B-tree.
+[01:15:05.960 --> 01:15:12.100] so basically what you do is you create an artificial column in front of your key
+[01:15:12.100 --> 01:15:18.020] so usually we have we have something like key one key two and so these are my keys
+[01:15:20.120 --> 01:15:25.360] and now the partition feature says in front of all this you put an artificial number for example zero
+[01:15:25.360 --> 01:15:32.660] this is position zero okay now all your data have an additional partition key in front
+[01:15:34.260 --> 01:15:39.740] And we didn't talk about storage of B-trees yet, but I mean if you have a B-tree that
+[01:15:39.740 --> 01:15:44.540] supports prefix compression, then this zero is only implicit, it's not really stored.
+[01:15:44.740 --> 01:15:47.840] So you know that's a zero, but it doesn't cost you space.
+[01:15:48.000 --> 01:15:51.040] So it's more or less for free, this prefix here.
+[01:15:53.020 --> 01:15:55.280] So this is your initial import.
+[01:15:55.440 --> 01:16:00.820] Now if you do another import, so if you byteload more data, then you create a new partition
+[01:16:02.660 --> 01:16:10.800] here the next bioglutier take one in front then you have here key three then another one key four
+[01:16:13.200 --> 01:16:17.400] and what happens because of this is this artificial column key here of course is that
+[01:16:17.400 --> 01:16:22.260] the new values will all be larger than existing values so it will be appended at the right so
+[01:16:22.260 --> 01:16:26.560] basically if you draw a picture here my patient partition by partition zero might be the left
+[01:16:26.560 --> 01:16:30.620] part this picture here partition three might be that part and partition four is that part
+[01:16:32.000 --> 01:16:33.920] And because of this construction mechanism,
+[01:16:34.080 --> 01:16:36.580] we know that new partitions are always constructed
+[01:16:36.580 --> 01:16:37.260] on the right.
+[01:16:37.900 --> 01:16:40.640] This means that we don't have this complicated merge logic
+[01:16:40.640 --> 01:16:43.020] because appending something on the right is easy.
+[01:16:43.360 --> 01:16:45.580] We can do this without taking the B-tree offline.
+[01:16:46.200 --> 01:16:47.040] Appending on the right is easy.
+[01:16:47.260 --> 01:16:48.940] Just appending in the middle is not so easy.
+[01:16:49.160 --> 01:16:51.280] Okay, so we partition the B-tree
+[01:16:51.800 --> 01:16:54.460] with an efficient column, and then we create data,
+[01:16:54.580 --> 01:16:56.280] we create a new partition, we append it on the right.
+[01:16:59.280 --> 01:17:02.900] The benefit is the partitions are largely independent, at least logically.
+[01:17:03.200 --> 01:17:10.520] So we can append to the rightmost partitions with the highest partitions on the right hand
+[01:17:10.520 --> 01:17:10.760] side.
+[01:17:10.900 --> 01:17:12.260] So indexes are always online.
+[01:17:13.380 --> 01:17:18.520] And now make no illusion here, so we want to get rid of those partitions because when
+[01:17:18.520 --> 01:17:21.920] you see this in the moment when we come back to the drawbacks, the partitions also have
+[01:17:21.920 --> 01:17:25.220] disadvantages when we are searching because we must look in all partitions.
+[01:17:26.280 --> 01:17:31.740] to have that many partitions, I mean one, two is okay, one is best, two is okay, but much more than
+[01:17:31.740 --> 01:17:35.640] two we don't want, don't like to have for three perhaps, we don't want to have more than this.
+[01:17:37.400 --> 01:17:42.220] And so, but what we can do is we merge the partitions and we do merge them lazily.
+[01:17:42.720 --> 01:17:47.840] So, which means that we don't take the index offline, we create the index as it is, and then
+[01:17:47.840 --> 01:17:52.200] we take a few tuples here from, from in the background, we have background jobs, it takes
+[01:17:52.200 --> 01:17:55.360] a bit of data from here and merges it into this partition.
+[01:17:55.500 --> 01:17:57.780] Then we then partition 3 became a bit smaller.
+[01:17:57.960 --> 01:17:59.920] Then we take that slice, merge it.
+[01:17:59.980 --> 01:18:02.100] We take that slice, merge it.
+[01:18:02.440 --> 01:18:07.240] And we can do this as a background job without taking the Btree offline.
+[01:18:07.360 --> 01:18:09.580] If you always rewrite small parts of the Btree.
+[01:18:09.700 --> 01:18:14.320] And if you wait long enough, then partition 3 is vanished and everything is moved into
+[01:18:14.320 --> 01:18:14.960] partition 0.
+[01:18:15.120 --> 01:18:19.200] Then we still have partition 4, but this will also vanish over time.
+[01:18:19.500 --> 01:18:20.840] So over time we do this.
+[01:18:22.200 --> 01:18:24.740] We can even do this only when beneficial,
+[01:18:24.900 --> 01:18:26.560] which means we can do this, for example,
+[01:18:26.680 --> 01:18:27.580] only when there are queries.
+[01:18:27.780 --> 01:18:30.320] If nobody queries, then we can just add partitions,
+[01:18:30.460 --> 01:18:33.280] and if nobody cares, we just leave it as this.
+[01:18:33.640 --> 01:18:35.700] But the moment that somebody does run a query,
+[01:18:36.160 --> 01:18:37.580] then we start merging,
+[01:18:37.820 --> 01:18:39.860] or we trigger background jobs that doesn't merge.
+[01:18:42.920 --> 01:18:45.160] Now, there are also some drawbacks, of course.
+[01:18:45.380 --> 01:18:46.500] If you have multi-partitions,
+[01:18:46.540 --> 01:18:48.080] there's no global order anymore,
+[01:18:48.160 --> 01:18:50.620] which basically means we have to look in all partitions.
+[01:18:52.200 --> 01:18:54.040] x, we don't know which partition x is.
+[01:18:54.260 --> 01:18:56.400] Therefore we must query all partitions.
+[01:18:56.540 --> 01:18:59.740] And this only makes sense if the number of partitions is not that high.
+[01:18:59.960 --> 01:19:03.840] As this is what I said, at some point we must start merging partitions.
+[01:19:06.160 --> 01:19:10.840] And another drawback is, so far everything looked easy.
+[01:19:12.380 --> 01:19:13.720] What about deletion?
+[01:19:14.320 --> 01:19:19.580] Because when we say bulk update, usually we mean inserts, so copy is an insert statement.
+[01:19:19.580 --> 01:19:24.880] But we can also do have bulk deletions or bulk updates and this means we must remove data and
+[01:19:25.820 --> 01:19:29.400] Of course we do again. We don't want to take the index offline. So it means we must
+[01:19:31.200 --> 01:19:37.840] Store the updated or the deletion information somewhere in the new partition like if you do a bulk delete you might in partition 3 say
+[01:19:37.840 --> 01:19:40.700] I want to delete all these records here and
+[01:19:41.640 --> 01:19:48.400] They are still in partition 0 which means that in partition 3 is where we store something that is the literature really calls anti-mata
+[01:19:49.580 --> 01:19:54.300] Because during a query we will merge, so if you search for x, you will search for x in
+[01:19:54.300 --> 01:19:58.680] this partition and we search for x in that partition and we will merge these two results.
+[01:19:59.340 --> 01:20:03.740] Because it could be that partition 3 contains an update for x or contains a deletion flag
+[01:20:03.740 --> 01:20:09.420] for x and therefore it's the name antimatter because if you get an x from here and we get
+[01:20:09.420 --> 01:20:15.360] an x deleted from here then they annihilate each other like antimatter so then in the
+[01:20:15.360 --> 01:20:16.260] The result says no X.
+[01:20:17.480 --> 01:20:21.260] So we must merge this update information across partitions.
+[01:20:21.420 --> 01:20:23.440] And this is not trivial to implement.
+[01:20:23.720 --> 01:20:27.500] Pretty tricky to implement and also cost you a bit of performance in the queries.
+[01:20:28.200 --> 01:20:29.460] So this is the downside.
+[01:20:30.440 --> 01:20:34.520] Great advantages that you can do back operation in this tree here without taking it offline.
+[01:20:34.720 --> 01:20:35.880] This is a great benefit.
+[01:20:36.580 --> 01:20:41.780] And I think they are, I'm not 100% sure of SQL Server really did implement this.
+[01:20:41.780 --> 01:20:45.660] At least I've wrote papers on board this house how to do partitioned B-trees
+[01:20:46.260 --> 01:20:51.200] I'm not sure if it's a commercial product perhaps it is but at least a big commercial vendors have looked at this
+[01:20:52.100 --> 01:20:54.460] architecture to to offer
+[01:20:55.120 --> 01:20:58.920] B-trees that don't have to be taken offline during a back operations
+[01:21:00.420 --> 01:21:01.580] Okay, so far
+[01:21:02.500 --> 01:21:04.380] so we have seen all kind of
+[01:21:04.960 --> 01:21:06.700] fine things about B-trees
+[01:21:07.260 --> 01:21:11.620] Now there's one dark secret that we didn't talk so much about
+[01:21:11.780 --> 01:21:17.140] namely that B-trees are much more complicated than you think in the moment that you have
+[01:21:17.140 --> 01:21:18.120] variable sized keys.
+[01:21:18.860 --> 01:21:22.460] If you have fixed sized keys like only integers or so, then life is easy.
+[01:21:22.580 --> 01:21:27.880] Because the definition says each B-tree node, except the root, contains between k and 2k
+[01:21:27.880 --> 01:21:31.540] entries, which means every node is at least half full.
+[01:21:31.700 --> 01:21:33.840] And this makes your life easy.
+[01:21:34.000 --> 01:21:39.340] So we know when a node is full, we can merge nodes easy and so on.
+[01:21:39.900 --> 01:21:42.520] Because we can just count and then decide
+[01:21:42.520 --> 01:21:43.860] if emerging is possible.
+[01:21:44.380 --> 01:21:48.020] But in reality, many elements are not fixed size,
+[01:21:48.140 --> 01:21:48.820] but are variable size.
+[01:21:49.000 --> 01:21:50.460] Means the obvious example are strings.
+[01:21:50.840 --> 01:21:52.100] Mean strings can be long or short,
+[01:21:52.940 --> 01:21:54.600] but there are also other reasons why
+[01:21:55.180 --> 01:21:56.460] tuples might be variable size.
+[01:21:56.620 --> 01:21:57.800] Like you have variable length encoding,
+[01:21:58.020 --> 01:22:00.340] you might have nile compression or other kinds of things,
+[01:22:00.460 --> 01:22:02.680] or combination of these, you know, you have compounds.
+[01:22:04.140 --> 01:22:06.400] And then we no longer know in advance
+[01:22:06.400 --> 01:22:08.580] how large a key will be.
+[01:22:09.340 --> 01:22:12.360] for example, not easily decided if an inner page is full.
+[01:22:12.540 --> 01:22:14.740] Just because we don't know how long
+[01:22:14.740 --> 01:22:16.240] the next separator will be.
+[01:22:18.800 --> 01:22:21.620] And another assumption that we make in my Btree
+[01:22:21.620 --> 01:22:23.420] is usually that the key is opaque,
+[01:22:23.660 --> 01:22:25.880] which means that the Btree does not understand
+[01:22:25.880 --> 01:22:27.040] the content of the key.
+[01:22:28.120 --> 01:22:31.060] Now there are special Btrees that work particularly well
+[01:22:31.060 --> 01:22:32.920] if we know that we have exactly one string.
+[01:22:33.100 --> 01:22:33.920] Because if we have one string,
+[01:22:34.080 --> 01:22:35.600] we have some games we can play.
+[01:22:35.740 --> 01:22:37.500] But in the general case,
+[01:22:40.120 --> 01:22:45.840] So this is my key, so I have a blob of certain lengths and this is the key and I don't know
+[01:22:45.840 --> 01:22:46.640] what the content is.
+[01:22:47.600 --> 01:22:48.600] So this is my key.
+[01:22:48.780 --> 01:22:49.920] And the B3 must store this.
+[01:22:50.020 --> 01:22:53.140] Of course there is a comparison function, so we can compare two keys with each other,
+[01:22:53.300 --> 01:22:54.660] depends on the semantic of this.
+[01:22:55.120 --> 01:22:59.820] But otherwise you have a byte range of variable size and you must store it and you must do
+[01:22:59.820 --> 01:23:00.500] this properly.
+[01:23:00.720 --> 01:23:02.100] So this is the problem that we have.
+[01:23:03.940 --> 01:23:07.960] Of course what you can do is you can ignore this problem and just say, so what?
+[01:23:09.340 --> 01:23:15.160] pages for my leaf nodes and my inner nodes because slotted pages can store just this kind of data
+[01:23:15.160 --> 01:23:23.140] just fine, so no issue here. But if this will be correct, this will run into problems.
+[01:23:23.200 --> 01:23:27.340] And this is what we see here. So this is now of course a constructed example to illustrate this.
+[01:23:28.480 --> 01:23:36.160] Assume that we want to store the following entries. So we have keys, a short A string,
+[01:23:36.160 --> 01:23:39.000] then a long B string and short C string, a long D string and so on.
+[01:23:39.140 --> 01:23:40.760] So alternating long and short strings.
+[01:23:41.980 --> 01:23:46.440] And so each entry here has either the length one or the length eight.
+[01:23:46.780 --> 01:23:48.080] This is by construction.
+[01:23:49.560 --> 01:23:59.080] And now assume that my key, my nodes here can hold only, for example, 10 or so.
+[01:23:59.280 --> 01:24:05.560] So a bit higher, which means we can, oh no, sorry, to make it correctly, it must hold 9.
+[01:24:06.780 --> 01:24:07.660] we can hold nine.
+[01:24:07.800 --> 01:24:09.320] My node here can hold nine,
+[01:24:09.680 --> 01:24:11.940] which means if I construct my P3
+[01:24:11.940 --> 01:24:14.100] with the bulk loading algorithm that I saw,
+[01:24:14.320 --> 01:24:16.820] I put A and B on a node, then the node is full.
+[01:24:17.100 --> 01:24:19.260] Then I put C and D on a node, then the node is full.
+[01:24:19.340 --> 01:24:21.180] Then I put E and F on a node, then the node is full,
+[01:24:21.300 --> 01:24:21.560] and so on.
+[01:24:21.620 --> 01:24:22.640] And I do this for all the nodes,
+[01:24:22.760 --> 01:24:24.320] and this is the leaf node that I get.
+[01:24:24.620 --> 01:24:25.980] Okay, so this is the leaf layer.
+[01:24:26.680 --> 01:24:28.300] Then I always take the largest value
+[01:24:28.300 --> 01:24:32.900] that I had on each page here, in this case B,
+[01:24:33.860 --> 01:24:35.480] and then we form the inner nodes.
+[01:24:36.160 --> 01:24:46.720] quit a B in a node, then I take the highest level, the highest value here is a D and this
+[01:24:46.720 --> 01:24:50.580] would be, I mean if we really build this page by page, then this would be a separate in
+[01:24:50.580 --> 01:24:51.300] the next high level.
+[01:24:52.680 --> 01:24:55.240] And so then I have the Ds and then I have the Fs and so on.
+[01:24:55.280 --> 01:25:01.200] So it takes always the largest value on each leaf node as separator and moves this higher
+[01:25:01.200 --> 01:25:01.460] up.
+[01:25:03.400 --> 01:25:09.580] And this means of course that because unfortunately the long keys are my separators, I can only
+[01:25:09.580 --> 01:25:13.120] fit one key on the inner node, which means I have a very deep tree.
+[01:25:13.480 --> 01:25:20.800] So this tree here has depths one, two, three, four, depths four, which is pretty deep for
+[01:25:20.800 --> 01:25:21.320] a B tree.
+[01:25:21.600 --> 01:25:29.320] And it has very poor fan out in the inner nodes because this inner node only has two
+[01:25:29.320 --> 01:25:29.860] child pointers.
+[01:25:31.760 --> 01:25:36.060] hypothetically I would have constructed the leaf node slightly differently, namely like this.
+[01:25:36.460 --> 01:25:41.660] I would put an A on the first leaf node, okay, it's not very full, but I do this regardless.
+[01:25:42.180 --> 01:25:46.620] And then I put the B and C on the second node, and then D and E on the third node,
+[01:25:46.780 --> 01:25:51.720] F and G on the next node, and so on. So if I do this very small change here, then suddenly
+[01:25:51.720 --> 01:25:58.160] my B tree has only depth two, instead of depth four. Of course, this ignores a bit that we need
+[01:25:58.160 --> 01:26:04.960] space for pointers, but this to just to illustrate this huge difference.
+[01:26:06.180 --> 01:26:13.000] By using a different separator value, we could shrink the Btree depth dramatically from 4
+[01:26:13.000 --> 01:26:13.880] to 2.
+[01:26:14.120 --> 01:26:15.480] This is much, much better.
+[01:26:16.460 --> 01:26:21.260] And this happens because lengths have different size.
+[01:26:21.540 --> 01:26:27.620] So we want to have separators that are short because then I can fit more on a page.
+[01:26:28.940 --> 01:26:30.900] Okay, so this is basically the observation.
+[01:26:31.060 --> 01:26:31.980] Now how do we get there?
+[01:26:32.220 --> 01:26:37.140] So first of all, what we see here, separator choice is crucial because this affects the
+[01:26:37.140 --> 01:26:38.160] fanat and space consumption.
+[01:26:38.620 --> 01:26:45.940] And if we just use the standard B-tree algorithm that we had and use it with verbal length
+[01:26:45.940 --> 01:26:49.560] keys and just do it best effort, so the moment that the base is fully, we just split it,
+[01:26:50.140 --> 01:26:53.460] then we can, all the traditional guarantees are off.
+[01:26:53.540 --> 01:26:56.940] In particular, we lose the logarithmic depth guarantee.
+[01:26:58.160 --> 01:27:05.840] that we are logarithmic, at least not with a reasonable base, if we implement the B tree naively.
+[01:27:07.980 --> 01:27:13.060] And solving this is a non-trivial problem.
+[01:27:13.660 --> 01:27:18.540] For the bike loading case, there do exist algorithms that solves this, and even greedy
+[01:27:18.540 --> 01:27:26.040] algorithms. So the idea is that if you do bike loading and you want to form a separator,
+[01:27:26.040 --> 01:27:27.660] So you want to stop a page at some point.
+[01:27:28.000 --> 01:27:33.320] Then you pick the smallest value separator such that the residing group size varies within
+[01:27:33.320 --> 01:27:37.560] a constant factor, which means we don't make the page totally full, but we say we make
+[01:27:37.560 --> 01:27:40.280] it between 90 and 100% full, for example.
+[01:27:40.420 --> 01:27:45.360] So we give some leeway and then we pick the shortest separator such that we achieve this.
+[01:27:45.460 --> 01:27:50.700] We can do this in a greedy manner.
+[01:27:52.420 --> 01:27:56.820] Now, there's a pretty interesting plots paper that talks about this problem.
+[01:27:56.920 --> 01:27:59.220] It shows that you can even do this in the dynamic case.
+[01:27:59.360 --> 01:28:03.360] So not only backloading, but in the dynamic inserts.
+[01:28:03.720 --> 01:28:09.360] But this is totally non-trivial and in worst case even forces us to rebuild parts of the index
+[01:28:10.420 --> 01:28:11.380] during processing.
+[01:28:11.560 --> 01:28:14.880] So this is highly unattractive.
+[01:28:14.960 --> 01:28:19.740] It means it gets good theoretical bounds, we get good amatized bounds, but nevertheless
+[01:28:20.700 --> 01:28:24.380] difficult to implement and also can have spiky,
+[01:28:24.580 --> 01:28:25.380] expensive performance.
+[01:28:25.560 --> 01:28:28.160] Because it could be that we have to rebuild something.
+[01:28:28.540 --> 01:28:30.780] Therefore, this is also not so super attractive.
+[01:28:31.300 --> 01:28:33.960] Therefore, I now show you the pragmatic solutions.
+[01:28:34.040 --> 01:28:36.280] Now, if you talk to somebody
+[01:28:36.280 --> 01:28:37.940] in more form a theoretical computer scientist,
+[01:28:38.240 --> 01:28:40.180] a theoretical computer science,
+[01:28:40.340 --> 01:28:42.160] of course, it will be unhappy because this,
+[01:28:42.980 --> 01:28:44.860] strictly speaking, this is only heuristics,
+[01:28:45.000 --> 01:28:46.560] not a conducting URT solution.
+[01:28:46.760 --> 01:28:47.980] But the advantage is,
+[01:28:49.100 --> 01:28:53.860] This is pretty easy to implement and gives you a 90% solution.
+[01:28:54.080 --> 01:28:57.120] So most problems are fixed if you do this.
+[01:28:57.620 --> 01:29:01.660] So basically what we do is, so the minimum what we have to do is to handle variable SAS
+[01:29:01.660 --> 01:29:04.340] records as well is we modify the split logic.
+[01:29:04.860 --> 01:29:12.400] So what we do is when a page overflows, so we look at all my values and of course a traditional
+[01:29:12.400 --> 01:29:14.960] solution would say, this is all my values in sorted order.
+[01:29:15.360 --> 01:29:18.280] traditional way solution would say you pick the median as separator.
+[01:29:18.940 --> 01:29:19.820] Okay, median.
+[01:29:21.000 --> 01:29:22.900] Now for fixed size records, that's fine.
+[01:29:23.460 --> 01:29:25.560] If you have variable size records, then we don't do this.
+[01:29:25.660 --> 01:29:30.120] Instead, we look at, for example, 20% around the median.
+[01:29:30.360 --> 01:29:31.440] So we go to the left and the right.
+[01:29:31.920 --> 01:29:36.680] And within this range, we pick the smallest in the sense of the shortest.
+[01:29:37.040 --> 01:29:39.580] So not smallest in the short order, but the shortest value.
+[01:29:39.760 --> 01:29:43.600] We pick the shortest value in this range and that we propagate as separator.
+[01:29:44.960 --> 01:29:46.880] Now if you have ties, so if there are multiple values
+[01:29:46.880 --> 01:29:49.780] that are as short, then of course we prefer the value
+[01:29:49.780 --> 01:29:51.000] that is closest to the median.
+[01:29:52.640 --> 01:29:54.400] Okay, so this is a pragmatic solution,
+[01:29:54.520 --> 01:29:55.300] pretty easy to implement.
+[01:29:56.580 --> 01:29:58.220] Now strictly speaking, it's not optimal.
+[01:29:58.400 --> 01:30:02.060] You can construct inputs where this still behaves poorly,
+[01:30:02.580 --> 01:30:04.600] but is unlikely that you encounter this.
+[01:30:04.780 --> 01:30:07.400] Yeah, so the worst terrible things that can happen
+[01:30:07.400 --> 01:30:08.680] can be taken with this.
+[01:30:08.760 --> 01:30:10.460] And you can do something similar for bike loading.
+[01:30:10.680 --> 01:30:12.860] So when you bike loading, you ought to look at, okay,
+[01:30:12.860 --> 01:30:17.060] If I would take one value more, a few values more or less,
+[01:30:17.560 --> 01:30:18.720] do I get better separators?
+[01:30:18.820 --> 01:30:23.360] And if yes, you prefer the shortest separators you can get
+[01:30:23.360 --> 01:30:28.880] while still keeping the fill degree of a page within a certain percentage.
+[01:30:31.760 --> 01:30:35.340] And by doing this, you get much better separators than before.
+[01:30:35.820 --> 01:30:40.580] Okay, now I see that if I check the clock, I'm running out of time now.
+[01:30:40.580 --> 01:30:48.540] Yeah, so let's stop here and we look at last few more B3 tricks in the next lecture and
+[01:30:48.540 --> 01:30:50.180] then we will look at other index structures too.
+[01:30:50.480 --> 01:30:51.500] Okay, thank you.

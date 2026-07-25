@@ -1,0 +1,4193 @@
+WEBVTT
+
+1
+00:00:00.820 --> 00:00:08.960
+Welcome to the lecture on database implementation. I'm Thomas Neumann. I'm a professor for database system here at the Technical University of Munich.
+
+2
+00:00:09.860 --> 00:00:25.980
+And as you all know, this semester, unfortunately, we have a very difficult time teaching. Namely, we will, at least in the beginning, and potentially for the whole semester, be able to do live presentation in a lecture with an audience, which is very unfortunate.
+
+3
+00:00:25.980 --> 00:00:32.620
+Which means that I will record the lectures, at least in the beginning and potentially the whole semester.
+
+4
+00:00:33.080 --> 00:00:36.340
+And you will have to watch a recording of this.
+
+5
+00:00:37.060 --> 00:00:46.460
+This is of course due to the difficulties, but for the teaching experience it is not ideal of course.
+
+6
+00:00:47.220 --> 00:00:53.720
+Therefore this semester it is more important than usual that you do the exercises.
+
+7
+00:00:53.720 --> 00:00:56.600
+because of course prepare exercises for you.
+
+8
+00:00:56.760 --> 00:01:00.360
+We also plan to have the submission of the exercises.
+
+9
+00:01:00.960 --> 00:01:04.000
+We plan to have interactive sessions and exercises
+
+10
+00:01:04.000 --> 00:01:06.900
+so you can ask questions if something is not clear.
+
+11
+00:01:07.540 --> 00:01:13.080
+So please engage in the exercise part
+
+12
+00:01:13.080 --> 00:01:15.240
+if you have questions, if you have difficulties
+
+13
+00:01:15.240 --> 00:01:17.060
+with the material that we cover.
+
+14
+00:01:18.380 --> 00:01:21.900
+So in this recording I will just talk about
+
+15
+00:01:23.720 --> 00:01:30.540
+and the question answering and training part is more done in the exercise.
+
+16
+00:01:31.300 --> 00:01:37.420
+Okay, so let's start with the lecture itself. So what are we talking about in the lecture?
+
+17
+00:01:39.040 --> 00:01:46.140
+So we are talking about the implementation of database systems. Now why do we care about this?
+
+18
+00:01:46.460 --> 00:01:53.160
+First, we see that database systems are extremely important. So they are used in nearly all cases
+
+19
+00:01:53.720 --> 00:01:59.220
+to manage very large quantities of data or where the data is particularly valuable.
+
+20
+00:01:59.720 --> 00:02:05.340
+So either if you have a lot of this or potentially both of course, or if you care about the value of
+
+21
+00:02:05.340 --> 00:02:11.680
+this, then database systems are probably over-hand for data solutions in most cases.
+
+22
+00:02:12.560 --> 00:02:18.900
+Of course we will see why this is the case and now we are ready to point on some key challenges
+
+23
+00:02:18.900 --> 00:02:24.920
+that we have. The first challenge is that we want to be able to scale to huge amounts of data. So it
+
+24
+00:02:24.920 --> 00:02:29.880
+should be easily possible to of course process gigabytes of data, no question about this. Terabytes
+
+25
+00:02:29.880 --> 00:02:34.560
+of data should also be feasible, perhaps even more than this. We want to support very, very large
+
+26
+00:02:34.560 --> 00:02:39.780
+volumes of data and we want to do this efficiently and we want to scale to large machines if we have
+
+27
+00:02:39.780 --> 00:02:44.400
+them available. This is one aspect. Another aspect that we care about is reliability,
+
+28
+00:02:45.780 --> 00:02:51.940
+which means that even if bad things happen like a power failure or your other
+
+29
+00:02:51.940 --> 00:02:56.400
+hand-file failure in your system or just a software failure, so a braking system
+
+30
+00:02:56.400 --> 00:03:01.880
+crashes or a data system crashes, all these kind of situations do occur and we
+
+31
+00:03:01.880 --> 00:03:06.200
+want to handle them various in the sense that we don't want to lose the data.
+
+32
+00:03:06.400 --> 00:03:11.780
+So we want everything works after the crash as it was before the crash.
+
+33
+00:03:11.780 --> 00:03:16.780
+So we are not supposed to lose data, in particular, we are not supposed to corrupt data.
+
+34
+00:03:17.000 --> 00:03:23.440
+So our database system must be consistent, even though it's had this catastrophic events.
+
+35
+00:03:24.480 --> 00:03:29.640
+And again, this is pretty difficult to guarantee, and most database systems do not offer this
+
+36
+00:03:29.640 --> 00:03:30.300
+kind of functionality.
+
+37
+00:03:31.280 --> 00:03:34.680
+And a third aspect that I want to highlight is concurrency.
+
+38
+00:03:35.120 --> 00:03:39.960
+So we want to allow that many people use our system concurrently, not only one user, but
+
+39
+00:03:39.960 --> 00:03:40.480
+many of these.
+
+40
+00:03:41.780 --> 00:03:46.940
+Everything should work, should scale, should give correct results, even with a large number
+
+41
+00:03:46.940 --> 00:03:47.460
+of users.
+
+42
+00:03:47.680 --> 00:03:49.580
+This is also a pretty difficult problem.
+
+43
+00:03:49.860 --> 00:03:56.940
+All this intelligence leads to a very complex software, a very complex infrastructure that
+
+44
+00:03:56.940 --> 00:03:57.560
+we must build.
+
+45
+00:03:58.120 --> 00:04:05.060
+Now, the challenge here is to build the system that even though it's complex, it's manageable,
+
+46
+00:04:05.400 --> 00:04:08.640
+we can understand how it works and we can evolve it over time.
+
+47
+00:04:08.640 --> 00:04:12.100
+This is also aspects that we want to look at in the lecture.
+
+48
+00:04:14.920 --> 00:04:20.200
+The goals of this lecture are first, we should learn how to build a modern database system.
+
+49
+00:04:20.460 --> 00:04:22.660
+So you look at many techniques that we can use on this.
+
+50
+00:04:25.280 --> 00:04:29.600
+Another goal is that we want to understand the internal of existing database systems.
+
+51
+00:04:29.920 --> 00:04:36.720
+Because even if you are not building a new database system, you might have to use an existing database
+
+52
+00:04:38.640 --> 00:04:45.280
+to understand how this works because often you can help the system and
+
+53
+00:04:47.060 --> 00:04:51.840
+configure the system in a way that it works better if you understand how the internals work.
+
+54
+00:04:53.840 --> 00:04:58.200
+The third goal of course is to understand the effects of hardware behavior,
+
+55
+00:04:58.500 --> 00:05:02.700
+particularly in the later part of the lecture. We will look at many things that
+
+56
+00:05:02.700 --> 00:05:09.120
+are affected by hardware. This is important for all kinds of high-performance processing.
+
+57
+00:05:09.440 --> 00:05:13.840
+Data systems, of course, want to take later. But even if later you are not working on data systems,
+
+58
+00:05:13.920 --> 00:05:19.720
+you might be working on similar problems where you have to process large amounts of data at
+
+59
+00:05:19.720 --> 00:05:27.480
+high speed. Therefore, this knowledge is also useful. The lecture is very roughly structured
+
+60
+00:05:27.480 --> 00:05:29.660
+in three large parts.
+
+61
+00:05:29.820 --> 00:05:33.620
+So we start with a classical database architecture.
+
+62
+00:05:33.900 --> 00:05:35.740
+So like if you look at the commercial systems
+
+63
+00:05:35.740 --> 00:05:38.380
+like Oracle SQL Server or this kind of beasts,
+
+64
+00:05:38.680 --> 00:05:40.340
+how are the architectures?
+
+65
+00:05:40.480 --> 00:05:43.000
+So we look at the traditional way
+
+66
+00:05:43.000 --> 00:05:45.200
+to architecture database system.
+
+67
+00:05:45.800 --> 00:05:46.940
+Then we will look at,
+
+68
+00:05:49.360 --> 00:05:51.380
+second part we will look at techniques
+
+69
+00:05:51.380 --> 00:05:54.280
+how to process queries or should say
+
+70
+00:05:54.280 --> 00:05:56.840
+how to process large volumes of data efficiently.
+
+71
+00:05:58.420 --> 00:06:02.800
+This, of course, is connected to the classical database architecture, but it already deviates
+
+72
+00:06:02.800 --> 00:06:03.500
+from this a bit.
+
+73
+00:06:03.680 --> 00:06:08.640
+We will see how we can do this particularly efficiently, how we can get fast.
+
+74
+00:06:09.720 --> 00:06:14.420
+And in the last part, we want to look at how we have to adapt the architecture to hardware
+
+75
+00:06:14.420 --> 00:06:14.800
+trends.
+
+76
+00:06:15.240 --> 00:06:17.280
+We see that the hardware is changing.
+
+77
+00:06:17.560 --> 00:06:22.120
+For example, one prominent trend is that we have much larger memory than we had in the
+
+78
+00:06:22.120 --> 00:06:22.520
+past.
+
+79
+00:06:23.600 --> 00:06:25.900
+We can't have machines with many gigabytes,
+
+80
+00:06:26.180 --> 00:06:27.460
+if perhaps even terabytes of memory.
+
+81
+00:06:27.820 --> 00:06:29.680
+This has some effect on the architecture.
+
+82
+00:06:29.940 --> 00:06:31.980
+We see that we have a large number of cores.
+
+83
+00:06:32.660 --> 00:06:39.140
+We can now buy processors that have 32 cores, 64 cores even.
+
+84
+00:06:39.440 --> 00:06:41.980
+If you look at recent processors by AMD.
+
+85
+00:06:42.920 --> 00:06:45.380
+And so this means that we have a very high degree
+
+86
+00:06:45.380 --> 00:06:47.560
+of parallelism in our system.
+
+87
+00:06:48.620 --> 00:06:51.580
+And again, this has some effect on the architecture
+
+88
+00:06:52.520 --> 00:06:55.120
+when we want to look at all of these aspects.
+
+89
+00:06:56.680 --> 00:07:01.180
+Now, which kind of literature can you use?
+
+90
+00:07:01.480 --> 00:07:07.000
+So, of course, we will cover all the material that you read.
+
+91
+00:07:07.140 --> 00:07:10.420
+If you're just interested in doing this course,
+
+92
+00:07:10.660 --> 00:07:14.000
+all materials that you need to be covered in the slides and in the exercises,
+
+93
+00:07:14.100 --> 00:07:16.120
+you don't have to read additional literature.
+
+94
+00:07:16.560 --> 00:07:18.880
+But if you want more details,
+
+95
+00:07:18.880 --> 00:07:22.960
+or if you want to just are interested in this topic
+
+96
+00:07:22.960 --> 00:07:25.060
+and just want to read more about this,
+
+97
+00:07:25.300 --> 00:07:27.840
+then we have three suggestions for you
+
+98
+00:07:29.020 --> 00:07:30.500
+about the database implementation.
+
+99
+00:07:30.860 --> 00:07:33.020
+The first one actually I considered the best
+
+100
+00:07:33.020 --> 00:07:35.120
+is a very nice and readable book.
+
+101
+00:07:35.640 --> 00:07:36.940
+Unfortunately, it's in German.
+
+102
+00:07:37.580 --> 00:07:38.880
+So this is coincidence.
+
+103
+00:07:39.780 --> 00:07:41.320
+And so it's the author,
+
+104
+00:07:42.340 --> 00:07:44.740
+as primarily the first author comes from Germany
+
+105
+00:07:44.740 --> 00:07:47.580
+and has written the book in German.
+
+106
+00:07:48.880 --> 00:07:51.160
+for a wider audience if we choose English instead.
+
+107
+00:07:51.680 --> 00:07:54.240
+So this one is TOH, Ehad Rahm,
+
+108
+00:07:54.280 --> 00:07:56.100
+Datemark Systeme, Konzepte and Techniken
+
+109
+00:07:56.100 --> 00:07:56.880
+der Implementierung.
+
+110
+00:07:57.000 --> 00:07:58.440
+It's a very nice book.
+
+111
+00:08:00.520 --> 00:08:02.580
+But of course, yeah, also other books
+
+112
+00:08:02.580 --> 00:08:04.740
+that talk about database implementation,
+
+113
+00:08:04.940 --> 00:08:06.380
+for example, the second one here,
+
+114
+00:08:07.200 --> 00:08:08.740
+Garcia Molina, Ullmann, Widem,
+
+115
+00:08:08.880 --> 00:08:10.180
+Database Systems, the complete book.
+
+116
+00:08:10.320 --> 00:08:12.080
+This also covers at least some aspects
+
+117
+00:08:12.080 --> 00:08:15.440
+of database implementation less than the first book,
+
+118
+00:08:15.520 --> 00:08:16.680
+but it does cover some.
+
+119
+00:08:16.680 --> 00:08:26.220
+And then there are of course more specialized books like the third one, Ray Reuter, Transaction Processing, a pretty well known one.
+
+120
+00:08:26.980 --> 00:08:29.240
+Particularly the aspect of transaction processing.
+
+121
+00:08:29.420 --> 00:08:31.340
+So this is already quite specialized.
+
+122
+00:08:31.620 --> 00:08:34.820
+So this is more if you are really interested in transaction systems.
+
+123
+00:08:35.800 --> 00:08:39.640
+Therefore this is also a widely known and useful book.
+
+124
+00:08:39.640 --> 00:08:45.400
+Now, the later parts of what we do in the lecture are unfortunately not covered by textbooks
+
+125
+00:08:45.400 --> 00:08:46.760
+yet most of the time.
+
+126
+00:08:47.020 --> 00:08:53.620
+These books mainly cover the classical architecture, so again, how the big players like Oracle
+
+127
+00:08:54.140 --> 00:08:54.540
+look like.
+
+128
+00:08:56.080 --> 00:09:01.340
+If you are interested in the later parts of the lecture and more details, you must unfortunately
+
+129
+00:09:01.340 --> 00:09:02.180
+read papers.
+
+130
+00:09:02.380 --> 00:09:04.520
+They are not all well-known textbooks yet.
+
+131
+00:09:08.880 --> 00:09:13.220
+Now, just to give you an idea why we are looking at an interesting problem.
+
+132
+00:09:13.660 --> 00:09:17.340
+So, why are database systems different than other programs?
+
+133
+00:09:18.520 --> 00:09:20.480
+Of course, there are many aspects to this.
+
+134
+00:09:20.620 --> 00:09:22.520
+We mentioned some already in the introduction.
+
+135
+00:09:22.820 --> 00:09:30.180
+So, there are many aspects like reliability, concurrency, and so on.
+
+136
+00:09:30.180 --> 00:09:34.220
+But one aspect I want to concentrate on in particular here is scalability.
+
+137
+00:09:34.640 --> 00:09:39.240
+So this is something that is really different between a database system and
+
+138
+00:09:39.240 --> 00:09:42.960
+at least the traditional way how people write small programs.
+
+139
+00:09:43.580 --> 00:09:49.540
+And just to make this easy to understand, we've looked at a very, very simple problem.
+
+140
+00:09:49.860 --> 00:09:55.340
+So we are giving two lists L1 and L2 and I want to find all entries that
+
+141
+00:09:55.340 --> 00:10:01.060
+occurs on both lists. So, it's a very simple problem. So, just to draw here an example instance
+
+142
+00:10:01.060 --> 00:10:06.880
+on the screen, I hope this is readable in the recording. So, let's say we have a list L1.
+
+143
+00:10:09.100 --> 00:10:20.380
+L1, and this contains A, X, B, Z. And then we have a list L2, and this contains perhaps A, B,
+
+144
+00:10:22.220 --> 00:10:26.880
+then we immediately see, okay, this element here occurs in both lists,
+
+145
+00:10:26.940 --> 00:10:29.560
+this element occurs in both lists, the other elements do not.
+
+146
+00:10:30.160 --> 00:10:36.160
+So a very simple problem. Now two lists, and you can probably, if you would ask you to
+
+147
+00:10:36.160 --> 00:10:40.420
+implement this in a programming language of your choice, you could probably need no more than
+
+148
+00:10:40.420 --> 00:10:47.360
+four lines of code or so to answer this. This is a very, very simple problem, at least in the
+
+149
+00:10:47.360 --> 00:10:51.340
+beginning. You will see in a moment that it's perhaps not as simple as you.
+
+150
+00:10:51.960 --> 00:11:00.500
+But the way I've written here, it's really simple. Now as I said, we are given
+
+151
+00:11:00.500 --> 00:11:04.860
+to lists, we want to find entries that occur on both lists. And this problem is
+
+152
+00:11:04.860 --> 00:11:09.700
+simple if both lists fit in my memory. So if the lists are small, then this is a
+
+153
+00:11:09.700 --> 00:11:14.140
+very simple problem. Now there's not only one solution to this, there are many ways.
+
+154
+00:11:14.140 --> 00:11:18.620
+So, many ways we could answer this.
+
+155
+00:11:20.840 --> 00:11:23.120
+Perhaps the most simple one is the following.
+
+156
+00:11:25.880 --> 00:11:28.100
+The most easy way to implement this,
+
+157
+00:11:28.240 --> 00:11:29.400
+I said I take my two lists.
+
+158
+00:11:30.460 --> 00:11:33.440
+So I said, the example I did previously was,
+
+159
+00:11:33.780 --> 00:11:38.820
+you had, I said, A, X, sorry, B, C,
+
+160
+00:11:39.140 --> 00:11:42.520
+and then this was L1, and then this was L2.
+
+161
+00:11:45.900 --> 00:11:50.180
+And this hits A, B, C, D, E.
+
+162
+00:11:50.660 --> 00:11:52.560
+Okay, now what I could do to answer this problem
+
+163
+00:11:52.560 --> 00:11:54.440
+is I could sort both lists.
+
+164
+00:11:54.700 --> 00:11:57.380
+Now this because I have written it this way,
+
+165
+00:11:57.500 --> 00:11:59.820
+A2 is already sorted, so I don't have to do anything.
+
+166
+00:12:00.260 --> 00:12:03.340
+A1 is not sorted, but I can sort it easily.
+
+167
+00:12:04.720 --> 00:12:08.260
+Sorry, it should go to C should be Y, I think.
+
+168
+00:12:08.700 --> 00:12:12.860
+So we say A, B, X, Y.
+
+169
+00:12:14.140 --> 00:12:15.240
+I had previously.
+
+170
+00:12:16.660 --> 00:12:18.840
+And so now I have two sorted lists
+
+171
+00:12:18.840 --> 00:12:21.720
+and now finding all elements that occur on both lists
+
+172
+00:12:21.720 --> 00:12:23.080
+is a very, very simple problem.
+
+173
+00:12:23.280 --> 00:12:24.680
+So now this is pretty easy.
+
+174
+00:12:24.900 --> 00:12:27.340
+So I just scan both lists here sequentially.
+
+175
+00:12:27.580 --> 00:12:29.960
+So I look at the first element on both lists.
+
+176
+00:12:30.100 --> 00:12:32.560
+This is either the same as in this case is yes.
+
+177
+00:12:32.860 --> 00:12:34.660
+So I'll put an A, say A is a match.
+
+178
+00:12:35.020 --> 00:12:36.760
+Then I go to the next element here.
+
+179
+00:12:37.440 --> 00:12:38.880
+B, B, is this the same?
+
+180
+00:12:39.080 --> 00:12:39.260
+Yes.
+
+181
+00:12:40.160 --> 00:12:43.820
+Now it goes to the next element as the same no.
+
+182
+00:12:44.220 --> 00:12:45.340
+Okay, now we have a difference.
+
+183
+00:12:45.640 --> 00:12:47.580
+So let's skip the smaller of the toes.
+
+184
+00:12:47.820 --> 00:12:50.240
+So we skip the C, then we come to D.
+
+185
+00:12:50.800 --> 00:12:51.920
+DX is the same no.
+
+186
+00:12:52.180 --> 00:12:55.940
+We skip the smaller one, so we skip the D, we come to E.
+
+187
+00:12:56.140 --> 00:12:57.360
+X equals E, no.
+
+188
+00:12:57.840 --> 00:12:59.900
+Then we skip the E and then we reach the end of the list.
+
+189
+00:12:59.980 --> 00:13:01.100
+Then we know that we have no.
+
+190
+00:13:01.320 --> 00:13:05.340
+So we know that we have exactly two common entries.
+
+191
+00:13:06.040 --> 00:13:08.900
+and we did this with one linear scan over both lists.
+
+192
+00:13:09.540 --> 00:13:13.200
+Now this was easy to implement and it's very fast.
+
+193
+00:13:14.260 --> 00:13:20.020
+Okay, but so intersecting two sorted lists is cheap and easy.
+
+194
+00:13:20.660 --> 00:13:23.380
+The main difficulty here is we have to sort the list.
+
+195
+00:13:23.600 --> 00:13:25.820
+So I had an example here with four elements,
+
+196
+00:13:26.440 --> 00:13:27.940
+but sorting four elements is trivial.
+
+197
+00:13:28.380 --> 00:13:30.360
+Now if you have a few million elements,
+
+198
+00:13:30.600 --> 00:13:32.600
+then it's still not very difficult,
+
+199
+00:13:32.760 --> 00:13:34.280
+but this costs you some time at least.
+
+200
+00:13:35.360 --> 00:13:39.500
+that sorting lists, and you have to realize
+
+201
+00:13:39.500 --> 00:13:41.320
+that I use the term list here loosely,
+
+202
+00:13:41.580 --> 00:13:43.780
+you don't want to implement this as a linked list.
+
+203
+00:13:43.920 --> 00:13:44.980
+Yeah, this would be terrible.
+
+204
+00:13:45.220 --> 00:13:49.180
+But let's say you implement it in some nice compact representation,
+
+205
+00:13:49.560 --> 00:13:54.300
+like a vector, and then we can sort this in n log n.
+
+206
+00:13:54.660 --> 00:13:59.080
+So this is not super expensive, but costs us something.
+
+207
+00:13:59.300 --> 00:14:01.360
+So we have more than linear runtime.
+
+208
+00:14:02.940 --> 00:14:05.480
+Now, the question is, how can we do better than this?
+
+209
+00:14:05.640 --> 00:14:08.700
+So how can we be faster than n log n?
+
+210
+00:14:08.800 --> 00:14:09.740
+And of course we can.
+
+211
+00:14:10.100 --> 00:14:14.620
+We can, for example, take the left side, build a hash table from this.
+
+212
+00:14:14.880 --> 00:14:22.600
+So again, I take my elements here, then I, let's just make something up.
+
+213
+00:14:22.600 --> 00:14:30.720
+So let's say this is my hash table and some more.
+
+214
+00:14:30.920 --> 00:14:36.020
+Then I take, for example, my a, this might add up here, hashed here.
+
+215
+00:14:36.440 --> 00:14:40.300
+So I take my a, then I hash my b, b adds up here.
+
+216
+00:14:43.220 --> 00:14:43.660
+Yeah.
+
+217
+00:14:44.260 --> 00:14:49.240
+And then I have my x, which I should have seen the other way around because I originally
+
+218
+00:14:49.240 --> 00:14:54.400
+list had the order A, X, B, Y, but nevertheless, so then I have an X, let's say this is here.
+
+219
+00:14:55.420 --> 00:14:59.300
+Then I have perhaps my Y is a collision, then I have another one here.
+
+220
+00:15:00.940 --> 00:15:09.140
+That's it. Okay, so I have a hash table. And then I take my other list. So that was the one
+
+221
+00:15:09.140 --> 00:15:19.820
+that I had here with which had A, B, C, sorry, supposed to be B, A, B, C, D, E. Then I take
+
+222
+00:15:19.820 --> 00:15:26.820
+my A, I hash it, I hash my A, I go to this list, find a hit. I take my B, hash it, go
+
+223
+00:15:26.820 --> 00:15:32.680
+to that list, find a hit. Take my C, hash it, go to, for example, this list because then I have a
+
+224
+00:15:33.160 --> 00:15:34.060
+So no hit.
+
+225
+00:15:34.360 --> 00:15:37.880
+Then I take my D, hash it, again have no hit and so on.
+
+226
+00:15:38.600 --> 00:15:43.380
+Now the example before is the way we first sorted
+
+227
+00:15:43.380 --> 00:15:44.400
+then it did intersection.
+
+228
+00:15:44.720 --> 00:15:47.860
+We had a runtime of N log N
+
+229
+00:15:47.860 --> 00:15:49.800
+because we dominated by sorting.
+
+230
+00:15:50.080 --> 00:15:50.880
+So sorting is expensive.
+
+231
+00:15:51.300 --> 00:15:53.700
+The intersection itself is then cheap afterwards.
+
+232
+00:15:53.920 --> 00:15:56.740
+So we do a linear scan, this is pretty cheap.
+
+233
+00:15:58.460 --> 00:16:03.740
+While here, our runtime is, question what our runtime is.
+
+234
+00:16:03.940 --> 00:16:08.800
+Now, we expect our runtime to be in O .
+
+235
+00:16:11.980 --> 00:16:20.000
+So because when I built my hash table, I look at every element, find the slot, put it in
+
+236
+00:16:20.000 --> 00:16:21.300
+there, takes constant time.
+
+237
+00:16:24.960 --> 00:16:29.360
+If I say it takes constant time, if I'm pedantic, I should modify my hash table.
+
+238
+00:16:31.580 --> 00:16:36.660
+Of course, it's likely to look like this.
+
+239
+00:16:36.920 --> 00:16:40.060
+It depends on how you implement it, of course, but most likely it will look like this.
+
+240
+00:16:40.820 --> 00:16:44.000
+But it doesn't matter, so we can read the hash table in constant time.
+
+241
+00:16:46.100 --> 00:16:49.600
+And then when we probe the hash table,
+
+242
+00:16:49.700 --> 00:16:50.780
+so maybe we read the other side,
+
+243
+00:16:51.200 --> 00:16:52.780
+for each element we compute a hash value,
+
+244
+00:16:52.820 --> 00:16:53.600
+takes constant time.
+
+245
+00:16:53.780 --> 00:16:57.500
+We go to an element in the hash table,
+
+246
+00:16:57.520 --> 00:16:58.340
+takes constant time.
+
+247
+00:16:58.660 --> 00:17:00.200
+Then we check if it's equal,
+
+248
+00:17:00.360 --> 00:17:01.880
+and now if this takes constant time or not,
+
+249
+00:17:01.940 --> 00:17:04.980
+depends on how much faith you have in statistics
+
+250
+00:17:04.980 --> 00:17:06.380
+and how good your hash function is.
+
+251
+00:17:06.900 --> 00:17:08.460
+And so if you have a good hash function
+
+252
+00:17:09.140 --> 00:17:10.660
+and you don't have a lot of collisions,
+
+253
+00:17:10.820 --> 00:17:12.960
+hopefully no collisions or very few collisions,
+
+254
+00:17:14.000 --> 00:17:16.080
+it takes constant time, then we get end up
+
+255
+00:17:16.080 --> 00:17:17.060
+with linear runtime.
+
+256
+00:17:17.680 --> 00:17:21.760
+Okay, so, hash tables are usually better than sorting
+
+257
+00:17:22.580 --> 00:17:23.840
+if the data fits in memory.
+
+258
+00:17:24.260 --> 00:17:27.840
+Okay, so then we can get nice linear access time.
+
+259
+00:17:29.440 --> 00:17:31.720
+And so these are just two options.
+
+260
+00:17:31.900 --> 00:17:33.880
+Of course, there are many, many, many other ways.
+
+261
+00:17:34.220 --> 00:17:36.160
+You could use some other data structures
+
+262
+00:17:36.160 --> 00:17:38.700
+to search it instead of sorting.
+
+263
+00:17:38.880 --> 00:17:41.500
+We could use search trees,
+
+264
+00:17:41.500 --> 00:17:45.860
+So red-black trees also, usually you don't want to do this by the way.
+
+265
+00:17:46.060 --> 00:17:51.720
+Red-black trees are pretty slow, but we could, and some other mechanisms.
+
+266
+00:17:51.840 --> 00:17:52.900
+So we have many choices here.
+
+267
+00:17:53.080 --> 00:17:57.700
+And of course we will look at some details later in the lecture when we come to index
+
+268
+00:17:57.700 --> 00:17:58.040
+structures.
+
+269
+00:17:59.720 --> 00:18:03.840
+So this is already mentioned, so we could sort both lists and intersect, or build a
+
+270
+00:18:03.840 --> 00:18:08.040
+hash table, or build index structure, or many other alternatives.
+
+271
+00:18:08.040 --> 00:18:11.260
+Now note what is not an option.
+
+272
+00:18:12.380 --> 00:18:17.720
+So I will now write down some code that you will hopefully not use.
+
+273
+00:18:17.940 --> 00:18:19.860
+I just include it for completeness.
+
+274
+00:18:20.420 --> 00:18:27.540
+So if I would have asked an arbitrary programmer to say, please you have two lists, find all
+
+275
+00:18:27.540 --> 00:18:32.020
+entries that are current in both lists, you could be tempted to do the following.
+
+276
+00:18:32.020 --> 00:18:52.680
+I would say I do a for loop for x in L1, for y in L2, if x equals y is x.
+
+277
+00:18:52.900 --> 00:18:55.040
+So you could be tempted to do this.
+
+278
+00:18:55.700 --> 00:18:56.680
+Don't do this.
+
+279
+00:18:56.840 --> 00:18:58.240
+So don't do this.
+
+280
+00:18:58.720 --> 00:19:02.360
+even though it's just four lines of code, it of course has terrible runtime.
+
+281
+00:19:03.480 --> 00:19:12.420
+Because the runtime of this year is in the order of size of L1 times size of L2,
+
+282
+00:19:13.180 --> 00:19:18.420
+and this means, asymptotically, we have this word here, we have an n-square runtime.
+
+283
+00:19:18.640 --> 00:19:20.940
+where n is the size of the smaller list.
+
+284
+00:19:23.740 --> 00:19:27.640
+So, n is the list size,
+
+285
+00:19:28.240 --> 00:19:30.620
+And then we get n2 runtime.
+
+286
+00:19:31.220 --> 00:19:31.780
+Don't do this.
+
+287
+00:19:32.480 --> 00:19:37.500
+So n2 algorithms are usually a different system.
+
+288
+00:19:39.440 --> 00:19:42.440
+So we cannot use n2 algorithms.
+
+289
+00:19:42.980 --> 00:19:48.180
+So our algorithm have to be better than n2 usually.
+
+290
+00:19:48.700 --> 00:19:50.920
+Now why is this the case?
+
+291
+00:19:52.360 --> 00:19:54.360
+Because our n tends to be huge.
+
+292
+00:19:55.020 --> 00:19:56.500
+So if you have a database system,
+
+293
+00:19:56.900 --> 00:20:01.840
+then your n tends to be in the order of a few million,
+
+294
+00:20:02.420 --> 00:20:04.540
+perhaps even many million.
+
+295
+00:20:04.860 --> 00:20:10.000
+And clearly, if you say n is 1 million,
+
+296
+00:20:10.300 --> 00:20:13.240
+so then n squared is a really unpleasant number.
+
+297
+00:20:14.280 --> 00:20:18.040
+Because this here is 10 to the power of 6,
+
+298
+00:20:18.320 --> 00:20:20.960
+and then n squared here is 10 to the power of 12.
+
+299
+00:20:20.960 --> 00:20:22.960
+and 10 to the power of 12 is definitely a number
+
+300
+00:20:22.960 --> 00:20:24.660
+that you don't want to see in your execution time.
+
+301
+00:20:26.760 --> 00:20:28.500
+So, therefore, don't do this.
+
+302
+00:20:28.780 --> 00:20:30.420
+n square is not good.
+
+303
+00:20:31.120 --> 00:20:33.560
+As a rough rule of thumb, you can say,
+
+304
+00:20:33.760 --> 00:20:36.420
+in a database system, you only want to use algorithms
+
+305
+00:20:36.420 --> 00:20:39.280
+that have a runtime of n log n or better.
+
+306
+00:20:41.580 --> 00:20:44.160
+Now, admittedly, it's not always possible to get this,
+
+307
+00:20:44.300 --> 00:20:46.520
+but we want that everything that we do
+
+308
+00:20:46.520 --> 00:20:48.020
+is n log n or faster,
+
+309
+00:20:48.020 --> 00:20:50.980
+just because our n is so incredibly huge.
+
+310
+00:20:51.600 --> 00:20:52.820
+And if you have a huge n,
+
+311
+00:20:52.880 --> 00:20:54.720
+you cannot afford to do an n-square algorithm.
+
+312
+00:20:55.620 --> 00:20:58.680
+So this is one of the challenges
+
+313
+00:20:58.680 --> 00:21:01.660
+that we have when building a large scalable system.
+
+314
+00:21:03.980 --> 00:21:07.520
+Okay, now, again, I said the problem is,
+
+315
+00:21:07.620 --> 00:21:09.300
+simply if the data fits in memory,
+
+316
+00:21:09.520 --> 00:21:11.580
+what do we do if the data does not fit in memory?
+
+317
+00:21:11.900 --> 00:21:14.220
+So it could be that we have so many elements
+
+318
+00:21:14.220 --> 00:21:17.140
+in my database system that I cannot store all of them.
+
+319
+00:21:19.120 --> 00:21:20.120
+So what should we do?
+
+320
+00:21:20.280 --> 00:21:23.340
+Now there are good and not so good cases.
+
+321
+00:21:23.860 --> 00:21:27.060
+So the good case is, let's assume, remember we have two lists.
+
+322
+00:21:28.220 --> 00:21:31.640
+Let's assume one of the two lists does fit in memory.
+
+323
+00:21:32.340 --> 00:21:33.780
+Then everything is still okay.
+
+324
+00:21:34.540 --> 00:21:40.280
+So if one fits, let's say L1 is a smaller one, if L1 fits in memory but L2 does not,
+
+325
+00:21:40.420 --> 00:21:45.760
+that's okay, because the only thing I have to do is I take my L1, again I build a large
+
+326
+00:21:45.760 --> 00:21:50.060
+hash table here. So this is the hash table for L1.
+
+327
+00:21:51.260 --> 00:21:53.840
+So hash table for L1.
+
+328
+00:21:54.020 --> 00:21:57.960
+And then I take my L2. Now this L2 is huge,
+
+329
+00:21:58.020 --> 00:22:00.400
+but this doesn't matter. So even if it's really, really huge.
+
+330
+00:22:01.720 --> 00:22:06.140
+L1 I can't load in my memory. Then I read a part of L2 that fits
+
+331
+00:22:06.140 --> 00:22:10.040
+for example this one here. Then I probe the part that I've read
+
+332
+00:22:10.040 --> 00:22:13.520
+from here to my hash table and find all the matches.
+
+333
+00:22:13.520 --> 00:22:16.080
+Then I forget the part of L2 that I've read.
+
+334
+00:22:16.180 --> 00:22:17.140
+I read the next part.
+
+335
+00:22:17.640 --> 00:22:20.500
+Again, perform a lookup, find all the matches and so on.
+
+336
+00:22:20.840 --> 00:22:24.040
+So we just process L2 piece by piece
+
+337
+00:22:24.040 --> 00:22:25.780
+and we keep L1 in memory all the time.
+
+338
+00:22:26.360 --> 00:22:30.400
+This is nearly as simple as in memory case.
+
+339
+00:22:30.520 --> 00:22:32.620
+It's slightly more complicated, but it's not much.
+
+340
+00:22:32.820 --> 00:22:33.540
+So that's okay.
+
+341
+00:22:34.380 --> 00:22:36.520
+L2 just loads a smaller list into memory,
+
+342
+00:22:37.020 --> 00:22:38.960
+build some index structure or hash table or something.
+
+343
+00:22:39.300 --> 00:22:41.680
+We scan the large list and then we find all matches.
+
+344
+00:22:43.520 --> 00:22:44.880
+Really no big deal.
+
+345
+00:22:46.180 --> 00:22:49.500
+Now, of course, you probably see what's coming now.
+
+346
+00:22:50.200 --> 00:22:52.640
+Yeah, so the interesting case, of course,
+
+347
+00:22:52.660 --> 00:22:56.740
+is what happens if both lists are so large
+
+348
+00:22:56.740 --> 00:22:58.260
+that they do not fit in memory.
+
+349
+00:22:58.620 --> 00:23:00.700
+So we have a really, really large input.
+
+350
+00:23:00.860 --> 00:23:02.880
+If you wanted to intersect two lists
+
+351
+00:23:02.880 --> 00:23:05.480
+that are simply too large for my memory.
+
+352
+00:23:06.200 --> 00:23:09.140
+So for example, it could be that I have a memory
+
+353
+00:23:09.140 --> 00:23:13.240
+of 64 gigabytes, but my input is a terabyte.
+
+354
+00:23:13.980 --> 00:23:19.920
+So then I cannot keep it, so I must do something to still find the matches.
+
+355
+00:23:20.120 --> 00:23:25.680
+Now we come to external memory algorithms, and these tend to be much more nasty and difficult
+
+356
+00:23:25.680 --> 00:23:27.260
+than the in-memory case.
+
+357
+00:23:29.900 --> 00:23:34.080
+So first thing that you see is no direct interaction is possible.
+
+358
+00:23:34.260 --> 00:23:39.560
+So it's simply not tractable to compare elements from one list to the other, like in a loop
+
+359
+00:23:39.560 --> 00:23:40.500
+or anything like this.
+
+360
+00:23:40.640 --> 00:23:42.260
+This is infeasible.
+
+361
+00:23:43.820 --> 00:23:46.500
+Because accessing something from external memory,
+
+362
+00:23:46.720 --> 00:23:48.900
+so worst case, a rotating disk,
+
+363
+00:23:49.280 --> 00:23:50.940
+but even if it's not a rotating disk,
+
+364
+00:23:51.020 --> 00:23:52.940
+but an SSD, which is much faster,
+
+365
+00:23:53.240 --> 00:23:54.620
+even then accessing the SSD,
+
+366
+00:23:54.860 --> 00:23:57.020
+it's much, much, much, much slower than memory.
+
+367
+00:23:57.880 --> 00:24:00.980
+So we cannot just go to the disk and read something.
+
+368
+00:24:01.180 --> 00:24:03.000
+This is not too expensive.
+
+369
+00:24:03.320 --> 00:24:03.940
+We cannot do this.
+
+370
+00:24:04.540 --> 00:24:06.400
+Now, what we could do,
+
+371
+00:24:07.400 --> 00:24:09.340
+we could use sorting.
+
+372
+00:24:10.000 --> 00:24:12.380
+We could take the two lists,
+
+373
+00:24:12.620 --> 00:24:14.220
+then sort the two lists,
+
+374
+00:24:14.520 --> 00:24:15.900
+and then the intersection.
+
+375
+00:24:16.020 --> 00:24:17.540
+Because after sorting,
+
+376
+00:24:17.700 --> 00:24:18.480
+the problem is easy.
+
+377
+00:24:18.740 --> 00:24:20.040
+Remember how the intersection
+
+378
+00:24:20.040 --> 00:24:21.300
+of two sorted lists worked.
+
+379
+00:24:21.480 --> 00:24:23.940
+So we just take two by two sorted lists here.
+
+380
+00:24:25.680 --> 00:24:28.400
+And I start reading in the beginning,
+
+381
+00:24:28.740 --> 00:24:31.720
+and I always skip the smallest element
+
+382
+00:24:31.720 --> 00:24:33.480
+until I have a match.
+
+383
+00:24:33.840 --> 00:24:35.940
+So this is the strategy, basically.
+
+384
+00:24:36.600 --> 00:24:38.420
+And this works, of course, beautifully,
+
+385
+00:24:39.460 --> 00:24:41.040
+lists are too large.
+
+386
+00:24:41.420 --> 00:24:43.160
+Because I just read the next element
+
+387
+00:24:43.160 --> 00:24:45.120
+and of course I have to go to disk
+
+388
+00:24:45.120 --> 00:24:47.100
+from time to time to fetch the next
+
+389
+00:24:47.100 --> 00:24:49.140
+block of data from
+
+390
+00:24:49.140 --> 00:24:51.100
+disk, but that's okay, because in memory
+
+391
+00:24:51.100 --> 00:24:52.520
+I only have to keep one element.
+
+392
+00:24:52.980 --> 00:24:54.680
+So I can easily keep this
+
+393
+00:24:54.680 --> 00:24:56.740
+and I can do this kind of processing for
+
+394
+00:24:56.740 --> 00:24:58.880
+arbitrary large lists. This works beautifully.
+
+395
+00:24:59.620 --> 00:25:00.980
+The main problem here
+
+396
+00:25:00.980 --> 00:25:01.760
+is sorting.
+
+397
+00:25:05.960 --> 00:25:06.880
+How do I sort
+
+398
+00:25:06.880 --> 00:25:08.240
+a list that does not fit in memory?
+
+399
+00:25:09.340 --> 00:25:11.920
+cover this as a lecture, so you might know this,
+
+400
+00:25:12.220 --> 00:25:16.080
+or if you encountered in a lecture on algorithms
+
+401
+00:25:16.080 --> 00:25:18.000
+and data structures, you might have heard about
+
+402
+00:25:18.000 --> 00:25:21.200
+n-way sorting, for example, this is one technique
+
+403
+00:25:21.200 --> 00:25:21.820
+to do this.
+
+404
+00:25:22.060 --> 00:25:24.680
+There are algorithms to sort data that is larger
+
+405
+00:25:24.680 --> 00:25:25.200
+in memory.
+
+406
+00:25:26.380 --> 00:25:28.620
+For now we ignore this, we're just saying, okay,
+
+407
+00:25:29.000 --> 00:25:30.840
+this is one approach, but this is difficult.
+
+408
+00:25:31.720 --> 00:25:34.840
+Or the alternative is, you use a kind of partitioning
+
+409
+00:25:34.840 --> 00:25:36.980
+scheme, which means you break your problem
+
+410
+00:25:36.980 --> 00:25:40.720
+into smaller problems until the smaller problems fit in memory.
+
+411
+00:25:41.800 --> 00:25:49.540
+And this is usually an attractive solution, but this is again much more difficult than what we
+
+412
+00:25:49.540 --> 00:25:57.920
+did before. So for example, what we can do is, I take here, this is my, again, I have a very large
+
+413
+00:25:57.920 --> 00:26:05.600
+input here, this is a very large input, and now I read my input. For example, this I can fit in
+
+414
+00:26:06.980 --> 00:26:12.160
+the parts that I can fit in memory, and then I partition it, which means I split this into
+
+415
+00:26:14.640 --> 00:26:15.680
+multiple groups.
+
+416
+00:26:15.760 --> 00:26:21.300
+For example, I say every value between 0 and 100 comes here, this bucket.
+
+417
+00:26:21.600 --> 00:26:28.400
+Then everything between 100 and 1000 or so comes here, and so on.
+
+418
+00:26:28.640 --> 00:26:34.480
+So I have many, many buckets, and I organize all my elements in buckets.
+
+419
+00:26:34.480 --> 00:26:39.920
+So I do this for the first chunk, then I do this for the next chunk, again, distributing
+
+420
+00:26:39.920 --> 00:26:43.360
+it in different buckets and so on.
+
+421
+00:26:43.400 --> 00:26:44.440
+I do this for all my input.
+
+422
+00:26:45.040 --> 00:26:52.320
+And afterwards I know that the first bucket contains always between 0 and 100, the second
+
+423
+00:26:52.320 --> 00:26:54.000
+one between 100 and 1000 and so on.
+
+424
+00:26:54.140 --> 00:26:58.180
+And I did this hopefully in a way such that each bucket fits in my memory.
+
+425
+00:26:59.660 --> 00:27:03.740
+So that I can keep it in my memory.
+
+426
+00:27:04.480 --> 00:27:06.380
+If it does not fit, I must use more buckets.
+
+427
+00:27:06.720 --> 00:27:08.740
+So I just must use more partitions.
+
+428
+00:27:08.900 --> 00:27:11.660
+Use as many partitions as I need
+
+429
+00:27:11.660 --> 00:27:13.280
+until the result fits in memory.
+
+430
+00:27:14.200 --> 00:27:15.900
+And once I have done this,
+
+431
+00:27:16.040 --> 00:27:18.180
+then we come back to the example we had before,
+
+432
+00:27:18.340 --> 00:27:20.920
+namely data fits in memory.
+
+433
+00:27:21.840 --> 00:27:23.320
+Now again, we have two choices.
+
+434
+00:27:23.480 --> 00:27:25.420
+Either we partition both sides,
+
+435
+00:27:25.740 --> 00:27:29.420
+so then we can fall back to the real in-memory case,
+
+436
+00:27:29.540 --> 00:27:31.360
+or we just partition one side,
+
+437
+00:27:31.520 --> 00:27:33.080
+then we come back to the case
+
+438
+00:27:36.740 --> 00:27:41.200
+advantage is we need less partitioning, disadvantage is we read the other side
+
+439
+00:27:41.200 --> 00:27:45.780
+multiple times, also not super attractive. Usually we want to partition both sides.
+
+440
+00:27:47.520 --> 00:27:53.720
+I just sketched a solution here, we will look at more examples how this
+
+441
+00:27:53.720 --> 00:27:58.280
+recursive partitioning works in the lecture when we come to external memory
+
+442
+00:27:58.280 --> 00:28:02.900
+hashing because, sorry, external memory joints because this is exactly what's the
+
+443
+00:28:04.480 --> 00:28:07.240
+And I'm just saying this is already much, much more complex.
+
+444
+00:28:07.480 --> 00:28:10.100
+So we must read my input, I must partition it,
+
+445
+00:28:10.240 --> 00:28:12.380
+I must make sure my partitions are not too large,
+
+446
+00:28:12.740 --> 00:28:14.620
+and all kinds of special cases that can occur.
+
+447
+00:28:15.240 --> 00:28:18.800
+So external memory is much more difficult.
+
+448
+00:28:22.080 --> 00:28:24.300
+Now this is particularly hard,
+
+449
+00:28:24.420 --> 00:28:28.080
+it's not if the input is not only large,
+
+450
+00:28:28.300 --> 00:28:31.240
+but if you make no assumptions about L1 and L2.
+
+451
+00:28:31.960 --> 00:28:35.920
+Okay, so if my algorithm must work for arbitrary L1 and L2,
+
+452
+00:28:36.140 --> 00:28:38.380
+this is a really, really difficult problem
+
+453
+00:28:38.380 --> 00:28:42.820
+because arbitrary, unfortunately, includes many corner cases
+
+454
+00:28:42.820 --> 00:28:45.480
+that you would think, oh, this will never occur in practice,
+
+455
+00:28:45.820 --> 00:28:47.400
+but it can occur.
+
+456
+00:28:47.600 --> 00:28:48.740
+Yeah, so we don't know this.
+
+457
+00:28:49.680 --> 00:28:53.200
+And so, yeah, so there are many, many corner cases
+
+458
+00:28:53.200 --> 00:28:55.320
+that we perhaps have to cover.
+
+459
+00:28:55.700 --> 00:28:59.100
+Yeah, so for example, what never was the case
+
+460
+00:28:59.100 --> 00:29:01.120
+for my example here,
+
+461
+00:29:01.240 --> 00:29:03.340
+The list might contain duplicates.
+
+462
+00:29:04.040 --> 00:29:08.080
+Now if it's a true duplicate in the sense that the elements are really identical, then
+
+463
+00:29:08.080 --> 00:29:09.900
+it doesn't matter because we can just collapse them.
+
+464
+00:29:10.460 --> 00:29:16.180
+But it could be that, or often will be the case, that it's a duplicate with attached additional
+
+465
+00:29:16.180 --> 00:29:19.600
+information, which means you have a certain value and this has additional information
+
+466
+00:29:19.600 --> 00:29:24.760
+that we must preserve, which means we cannot just remove duplicates, but we must keep them
+
+467
+00:29:24.760 --> 00:29:26.460
+and we must output the duplicates correctly.
+
+468
+00:29:26.760 --> 00:29:28.620
+So this occurs quite frequently.
+
+469
+00:29:29.580 --> 00:29:31.180
+and then the duplicates
+
+470
+00:29:31.180 --> 00:29:31.800
+create
+
+471
+00:29:34.120 --> 00:29:35.060
+problems for us.
+
+472
+00:29:35.240 --> 00:29:36.920
+So we must cope with this problem
+
+473
+00:29:36.920 --> 00:29:38.480
+that we have duplicates and we must
+
+474
+00:29:38.480 --> 00:29:39.900
+preserve them in the output.
+
+475
+00:29:40.500 --> 00:29:42.960
+And now it could be very unlucky
+
+476
+00:29:42.960 --> 00:29:44.480
+that we have so many duplicates
+
+477
+00:29:44.480 --> 00:29:46.860
+that even a single duplicate exceeds my memory
+
+478
+00:29:46.860 --> 00:29:48.660
+size. So I have this one
+
+479
+00:29:48.660 --> 00:29:50.780
+value with attached extra
+
+480
+00:29:50.780 --> 00:29:52.680
+information that is so
+
+481
+00:29:53.360 --> 00:29:54.480
+frequent that
+
+482
+00:29:55.100 --> 00:29:56.520
+I cannot store even
+
+483
+00:29:56.520 --> 00:29:58.540
+all instances of this single value
+
+484
+00:29:58.620 --> 00:30:04.300
+in memory. Now this breaks my simple external memory logics that just say,
+
+485
+00:30:04.440 --> 00:30:09.160
+hey choose smaller partitionings and everything fits, because this never happens.
+
+486
+00:30:09.520 --> 00:30:13.640
+So it's just impossible to partition the data so that it fits because of this
+
+487
+00:30:13.640 --> 00:30:19.840
+duplicate problem. Now there are many ways to solve this. For example, you could
+
+488
+00:30:19.840 --> 00:30:24.460
+recognize this. You could say, I know this is one value that occurs very very often.
+
+489
+00:30:24.460 --> 00:30:26.200
+So just store separately.
+
+490
+00:30:26.460 --> 00:30:28.180
+So store the extra information somewhere else,
+
+491
+00:30:28.780 --> 00:30:29.980
+the key only once,
+
+492
+00:30:30.200 --> 00:30:33.940
+and then when we do find a match on the other list,
+
+493
+00:30:34.100 --> 00:30:37.240
+then we reconstruct all my pairs and outputs.
+
+494
+00:30:37.460 --> 00:30:40.380
+So we can't special cases, but again, this needs code.
+
+495
+00:30:40.700 --> 00:30:42.580
+So we must write this.
+
+496
+00:30:43.260 --> 00:30:45.520
+Or there are other ways to tackle this,
+
+497
+00:30:45.640 --> 00:30:49.040
+but all of them require us to write something.
+
+498
+00:30:49.680 --> 00:30:53.500
+And database systems have the particular problem
+
+499
+00:30:54.460 --> 00:30:58.360
+implement them you don't know what the user will do with them later.
+
+500
+00:30:59.040 --> 00:31:02.940
+Basically implement them once, then you give them to somebody else and this
+
+501
+00:31:02.940 --> 00:31:06.360
+somebody else will store data inside that you have no idea about
+
+502
+00:31:06.360 --> 00:31:12.940
+beforehand what this data will be. So you can insert everything and if your
+
+503
+00:31:12.940 --> 00:31:19.440
+system is supposed to handle everything reasonably well, so gracefully, then we
+
+504
+00:31:19.440 --> 00:31:24.300
+must code for all the special cases that can occur. This means of course
+
+505
+00:31:24.460 --> 00:31:26.060
+that the code complexity is very high.
+
+506
+00:31:26.240 --> 00:31:28.940
+It can be very high because of all the things
+
+507
+00:31:28.940 --> 00:31:29.740
+that we must cover.
+
+508
+00:31:31.040 --> 00:31:34.380
+And so to handle all this here correctly,
+
+509
+00:31:34.640 --> 00:31:39.120
+we will definitely meet many hundred lines of code,
+
+510
+00:31:39.260 --> 00:31:40.700
+potentially thousands of lines of code.
+
+511
+00:31:41.060 --> 00:31:44.460
+And this in contrast to this trivial four line,
+
+512
+00:31:44.680 --> 00:31:46.960
+trivial four loops that we did in the beginning.
+
+513
+00:31:47.240 --> 00:31:49.320
+And so if you use an E4 loop,
+
+514
+00:31:49.500 --> 00:31:51.020
+we need four lines of code.
+
+515
+00:31:51.140 --> 00:31:53.000
+If you want to do this in a scalable way
+
+516
+00:31:54.460 --> 00:31:57.500
+memory size, we will need probably thousands of lines of code.
+
+517
+00:31:57.900 --> 00:32:01.320
+So code complexity is definitely an issue.
+
+518
+00:32:02.160 --> 00:32:05.140
+Now, so this highlights the problems.
+
+519
+00:32:05.380 --> 00:32:07.720
+Of course, we are more interested in solutions.
+
+520
+00:32:08.040 --> 00:32:13.920
+Therefore, we will in the lecture see how we can design a system that is such that we can
+
+521
+00:32:13.920 --> 00:32:18.120
+implement all this reasonably easy, so that we don't have to write this thousand lines of code
+
+522
+00:32:18.120 --> 00:32:24.160
+every time, but we just build infrastructure so that we can rely upon the infrastructure and then
+
+523
+00:32:24.460 --> 00:32:28.700
+for example, is simply intersect reasonably easy. So it's not that bad.
+
+524
+00:32:30.620 --> 00:32:39.480
+Okay, so in general, coming back from the list intersection example, if you want to
+
+525
+00:32:39.480 --> 00:32:45.620
+design scalable algorithms for different kinds of problems, then this is very hard.
+
+526
+00:32:45.840 --> 00:32:51.440
+Well, this is very difficult to do this, because you must cope with very large instances.
+
+527
+00:32:51.440 --> 00:32:53.160
+You could get very large input.
+
+528
+00:32:53.720 --> 00:32:56.480
+This is difficult even in memory.
+
+529
+00:32:57.200 --> 00:32:59.620
+So there is a pretty nice book
+
+530
+00:33:00.200 --> 00:33:02.920
+that's actually talking about more information retrieval problems
+
+531
+00:33:02.920 --> 00:33:04.220
+than about database problems.
+
+532
+00:33:04.420 --> 00:33:07.620
+But this has a funny, very nice book title.
+
+533
+00:33:07.800 --> 00:33:09.860
+And this is called Managing Gigabytes.
+
+534
+00:33:11.440 --> 00:33:13.760
+Now, what's particularly interesting about this book
+
+535
+00:33:13.760 --> 00:33:15.700
+is that the book is already quite a few years old.
+
+536
+00:33:15.820 --> 00:33:18.080
+It's not new, it's probably at least 20 years old.
+
+537
+00:33:19.480 --> 00:33:20.800
+and of course in this time
+
+538
+00:33:20.800 --> 00:33:23.220
+a gigabyte was more than it is today
+
+539
+00:33:23.220 --> 00:33:24.960
+because for us a gigabyte
+
+540
+00:33:24.960 --> 00:33:27.180
+you have memory that's larger
+
+541
+00:33:27.180 --> 00:33:29.180
+than this but the interesting thing is
+
+542
+00:33:29.180 --> 00:33:30.280
+that even today
+
+543
+00:33:31.040 --> 00:33:32.800
+doing non-trivial processing
+
+544
+00:33:32.800 --> 00:33:34.900
+in a few gigabytes of data is difficult
+
+545
+00:33:35.480 --> 00:33:36.980
+even though it easily
+
+546
+00:33:36.980 --> 00:33:38.420
+fits in memory but
+
+547
+00:33:39.040 --> 00:33:40.880
+if the number of elements that you have
+
+548
+00:33:40.880 --> 00:33:43.060
+is large enough or if you have millions
+
+549
+00:33:43.060 --> 00:33:45.100
+of elements, tens or hundreds
+
+550
+00:33:45.100 --> 00:33:46.980
+of millions of elements or in
+
+551
+00:33:48.280 --> 00:33:52.740
+elements, then algorithmic complexity becomes an issue.
+
+552
+00:33:54.700 --> 00:33:58.040
+Clearly, we cannot do anything that has an n-square runtime.
+
+553
+00:33:59.300 --> 00:34:02.320
+n-square runtime just doesn't scale if n is large.
+
+554
+00:34:02.840 --> 00:34:04.120
+So we must be better.
+
+555
+00:34:05.300 --> 00:34:10.820
+And if we have to do this in external memory, which means we cannot just load everything
+
+556
+00:34:10.820 --> 00:34:15.700
+in memory, but we must handle disks, then everything becomes even worse, of course.
+
+557
+00:34:16.860 --> 00:34:28.360
+And this requires us to build systems very carefully, such that we have building blocks available to implement all the algorithms that we need efficiently and scalable.
+
+558
+00:34:28.780 --> 00:34:31.640
+And this is basically what we want to look at in the lecture.
+
+559
+00:34:33.220 --> 00:34:42.400
+Now, one particular technique that we use to get scalable performance is something that we call set-oriented processing.
+
+560
+00:34:42.720 --> 00:34:44.720
+Now, what is set-oriented processing?
+
+561
+00:34:46.580 --> 00:34:52.420
+Before we come to that, perhaps we look at how typical small applications look like.
+
+562
+00:34:52.520 --> 00:34:58.300
+If you write some of Python code or any other programming language, it's very easy and very
+
+563
+00:34:58.300 --> 00:35:03.120
+natural to say, hey, I have this collection of elements, I just loop over all elements
+
+564
+00:35:03.120 --> 00:35:04.520
+and then I do some operation.
+
+565
+00:35:04.520 --> 00:35:17.960
+So this is, remember the example that I did in the beginning, where we say, hey, for x in L1, for y in L2.
+
+566
+00:35:18.260 --> 00:35:21.300
+So this is something that I would consider loop-oriented programming here.
+
+567
+00:35:21.400 --> 00:35:28.460
+So then we say, if, doesn't matter, I say it's x equals y or something else, then we do some something.
+
+568
+00:35:28.620 --> 00:35:32.100
+So this is a very natural way to code this.
+
+569
+00:35:32.860 --> 00:35:34.520
+Unfortunately, natural is bad.
+
+570
+00:35:35.300 --> 00:35:40.400
+So, it looks easy and nice, but we don't want this.
+
+571
+00:35:40.620 --> 00:35:44.080
+Because this is inherently n-square runtime.
+
+572
+00:35:44.400 --> 00:35:49.460
+You multiply the number of elements in L1 with the number of elements in L2, and this doesn't scale.
+
+573
+00:35:49.960 --> 00:35:52.440
+So we are not supposed to do this.
+
+574
+00:35:52.860 --> 00:35:56.080
+So looping of elements is bad.
+
+575
+00:35:57.200 --> 00:36:00.720
+What we want instead is, we want set-oriented processing.
+
+576
+00:36:02.520 --> 00:36:08.140
+we don't look at one element and another element, but we look at large groups of elements, for
+
+577
+00:36:08.140 --> 00:36:12.720
+example all the input elements or potentially not all, but at least large sets of them.
+
+578
+00:36:13.020 --> 00:36:17.980
+So we look at large batches of data and then we do something with a large batch of data and another
+
+579
+00:36:17.980 --> 00:36:23.580
+large batch of data. And this gives me much better, or can at least give me much better runtime.
+
+580
+00:36:26.500 --> 00:36:31.000
+Now concrete algorithms to process these sets, we'll look at later.
+
+581
+00:36:31.240 --> 00:36:38.300
+But first, what are the high level primitives that we want to process on sets of input elements?
+
+582
+00:36:38.640 --> 00:36:43.600
+We start with something that you hopefully all remember very well from your introduction to database lecture.
+
+583
+00:36:43.980 --> 00:36:45.860
+And this is a relational algebra.
+
+584
+00:36:45.860 --> 00:36:54.320
+So these are the basic primitives that we can perform on relations and these are of course
+
+585
+00:36:54.320 --> 00:36:55.900
+by definition set oriented.
+
+586
+00:36:56.200 --> 00:37:00.900
+So we don't look at individual elements, but we take one set, another set and then we combine
+
+587
+00:37:00.900 --> 00:37:03.380
+them in a certain way and then we get an output.
+
+588
+00:37:04.760 --> 00:37:11.580
+So now first some notation to mean you hopefully all remember this from the introductory course,
+
+589
+00:37:11.700 --> 00:37:13.620
+but just for completeness some notation.
+
+590
+00:37:14.240 --> 00:37:21.300
+So we say we denote with AE the attributes of tuples produced by E, so E is an arbitrary expression.
+
+591
+00:37:22.160 --> 00:37:25.880
+Another way, instead of A of E, what you could say, this is a schema.
+
+592
+00:37:26.220 --> 00:37:29.440
+So A of E is a schema of the elements.
+
+593
+00:37:29.680 --> 00:37:34.980
+If I produce columns ABC, then A of my expression is ABC.
+
+594
+00:37:35.480 --> 00:37:36.860
+So this is a schema, the attributes.
+
+595
+00:37:38.520 --> 00:37:44.380
+Now, f are the three variables. I'm not sure if you need this in the beginning here.
+
+596
+00:37:44.520 --> 00:37:51.400
+So this matters if you have variables that come from the outside, for example,
+
+597
+00:37:51.580 --> 00:37:58.360
+for correlated subqueries, then my f contains entries here. I will cover this again. We
+
+598
+00:37:58.360 --> 00:38:02.360
+come to this later in the lecture. Just for reference, f are the three variables.
+
+599
+00:38:04.040 --> 00:38:06.340
+Now, if we perform a binary operation,
+
+600
+00:38:06.940 --> 00:38:08.700
+like union intersect a difference,
+
+601
+00:38:08.900 --> 00:38:11.740
+then we usually require that the schema of the one side
+
+602
+00:38:11.740 --> 00:38:13.220
+and the schema of the other side is the same.
+
+603
+00:38:13.700 --> 00:38:18.780
+Now for completeness, if you do a join or a cross product,
+
+604
+00:38:19.020 --> 00:38:20.840
+then of course we require something else.
+
+605
+00:38:20.940 --> 00:38:22.880
+Namely, that we require that.
+
+606
+00:38:22.880 --> 00:38:28.600
+So for example, if we have E1 cross E2 requires,
+
+607
+00:38:33.560 --> 00:38:44.000
+that the schema of E1 and the schema of E2 is destroyed.
+
+608
+00:38:44.640 --> 00:38:47.060
+Because the same attribute must not occur on both sides.
+
+609
+00:38:47.680 --> 00:38:51.820
+So this is the same for cross products, for set operations
+
+610
+00:38:51.820 --> 00:38:53.040
+because it is the same.
+
+611
+00:38:54.380 --> 00:38:56.400
+Now, which operations can we perform?
+
+612
+00:38:56.400 --> 00:38:59.980
+So, of course, these are the standard operations that we know.
+
+613
+00:39:00.200 --> 00:39:02.400
+So, we have a union.
+
+614
+00:39:02.700 --> 00:39:06.600
+We just take two sets of elements and we just combine them.
+
+615
+00:39:07.020 --> 00:39:09.940
+Intersection, find all elements that occur on both sides.
+
+616
+00:39:10.060 --> 00:39:12.160
+This is basically the introductory example that we did.
+
+617
+00:39:12.480 --> 00:39:14.600
+We find everything that occurs on both sides.
+
+618
+00:39:15.360 --> 00:39:20.240
+Then, set difference, find everything on the left side that does not occur on the right
+
+619
+00:39:20.240 --> 00:39:20.520
+side.
+
+620
+00:39:22.080 --> 00:39:24.180
+Then, here we have a rename operator.
+
+621
+00:39:24.600 --> 00:39:30.520
+And so we just want to figure out, sorry, we don't, we just want to rename one column.
+
+622
+00:39:30.680 --> 00:39:35.900
+So let's say if we had a column that was previously named A, we now want to name it B.
+
+623
+00:39:36.100 --> 00:39:42.480
+So in construction, if we do this, we take my X, we add a new column B, this has a value
+
+624
+00:39:42.480 --> 00:39:45.900
+X of A, and we remove the column A with a value X of A.
+
+625
+00:39:45.900 --> 00:39:49.900
+So then we rename a column.
+
+626
+00:39:50.440 --> 00:39:56.840
+Then projection, we just retain a set of attributes here.
+
+627
+00:39:57.060 --> 00:40:01.740
+We keep all attributes A in by subscript A.
+
+628
+00:40:01.980 --> 00:40:03.400
+Otherwise we discard them.
+
+629
+00:40:03.680 --> 00:40:06.300
+So we just project to these elements.
+
+630
+00:40:07.720 --> 00:40:09.460
+The next one, cross product.
+
+631
+00:40:09.760 --> 00:40:13.220
+We take all elements from E1, all elements from E2,
+
+632
+00:40:13.320 --> 00:40:14.420
+and we combine them into one.
+
+633
+00:40:15.900 --> 00:40:20.980
+Here, of course, remember I said we don't want to use an n-square operation, n-square is evil.
+
+634
+00:40:21.260 --> 00:40:27.060
+If you look at the cross-product, then clearly this here has a runtime of n-square.
+
+635
+00:40:27.380 --> 00:40:33.440
+Because my output is n-square, and of course I cannot be faster than my output.
+
+636
+00:40:34.080 --> 00:40:36.460
+So no algorithm can be faster than its output.
+
+637
+00:40:37.520 --> 00:40:40.660
+Therefore, cross-products are an n-square operation.
+
+638
+00:40:41.080 --> 00:40:45.420
+And coming back to what I said in the beginning, we do not want to do cross-products.
+
+639
+00:40:45.900 --> 00:40:46.680
+Cross products are bad.
+
+640
+00:40:47.340 --> 00:40:48.640
+If you can avoid it,
+
+641
+00:40:48.680 --> 00:40:50.060
+we never want to use a cross product.
+
+642
+00:40:51.320 --> 00:40:53.280
+Sometimes, rarely, they are unavoidable.
+
+643
+00:40:53.480 --> 00:40:54.620
+Then we have to do this, of course,
+
+644
+00:40:55.020 --> 00:40:56.760
+but we don't want to do this.
+
+645
+00:40:56.920 --> 00:40:58.220
+Cross products are really, really bad.
+
+646
+00:40:59.860 --> 00:41:02.380
+Okay, so next selection.
+
+647
+00:41:02.720 --> 00:41:06.100
+So we just keep all tuples where a certain predicate is true.
+
+648
+00:41:06.760 --> 00:41:08.020
+Everything else is discarded.
+
+649
+00:41:08.920 --> 00:41:12.380
+And then the join, conceptually, the join is, of course,
+
+650
+00:41:13.120 --> 00:41:27.380
+So we could say that R1 join R2 is equivalent to R1 cross R2, followed by a predicate P,
+
+651
+00:41:27.640 --> 00:41:35.040
+a theta predicate P. This is true concerning the result, but of course this is not true concerning
+
+652
+00:41:35.040 --> 00:41:40.920
+the implementation. A join we can implement efficiently, so we can find algorithms that
+
+653
+00:41:42.460 --> 00:41:44.380
+So this can be implemented in...
+
+654
+00:41:46.720 --> 00:41:49.000
+It is dangerous to say something here.
+
+655
+00:41:50.780 --> 00:41:53.200
+So let's say this can be implemented efficiently,
+
+656
+00:41:53.980 --> 00:41:55.420
+whatever efficiently is,
+
+657
+00:41:56.040 --> 00:41:58.040
+while this one here is inherently bad.
+
+658
+00:41:58.520 --> 00:42:04.440
+So this here is in n-square runtime.
+
+659
+00:42:04.760 --> 00:42:05.860
+Now is this here better?
+
+660
+00:42:08.700 --> 00:42:10.880
+Let's say this can be implemented,
+
+661
+00:42:15.340 --> 00:42:28.100
+In O of size of R1 plus size of R2 plus result size of R1 join R2.
+
+662
+00:42:34.700 --> 00:42:38.200
+This is not always true unfortunately. Let's say in many cases.
+
+663
+00:42:43.000 --> 00:42:44.940
+cases in this class.
+
+664
+00:42:45.720 --> 00:42:51.820
+Not always, but in many cases, particularly the frequently used cases, we can implement
+
+665
+00:42:51.820 --> 00:42:52.760
+it in this runtime.
+
+666
+00:42:53.660 --> 00:42:56.180
+And then this is of course passed.
+
+667
+00:42:56.700 --> 00:43:01.340
+I must read my input, so this is okay, I must read my input, I must read my other input,
+
+668
+00:43:01.460 --> 00:43:02.880
+and I must produce my output.
+
+669
+00:43:04.260 --> 00:43:09.220
+And therefore this here has an ideal runtime, in many cases, not in all cases.
+
+670
+00:43:10.080 --> 00:43:12.080
+We will look at the implementation of joints later.
+
+671
+00:43:12.540 --> 00:43:15.360
+Here I just want to list the definition.
+
+672
+00:43:15.880 --> 00:43:21.600
+So joint combines two lists, two relations, and finds all pairs where certain conditions
+
+673
+00:43:21.600 --> 00:43:21.920
+are true.
+
+674
+00:43:22.740 --> 00:43:27.380
+Now all these operations are inherently set-oriented because we have defined them on sets.
+
+675
+00:43:27.560 --> 00:43:29.140
+So clearly we are set-oriented.
+
+676
+00:43:29.960 --> 00:43:35.080
+If you are really pedantic, we must say that in the database system, strictly speaking,
+
+677
+00:43:35.280 --> 00:43:37.880
+we will not use sets, but we will use backs.
+
+678
+00:43:38.760 --> 00:43:42.600
+A back means a multi-set, so a set that can contain duplicates.
+
+679
+00:43:43.480 --> 00:43:49.740
+If you remember back about SQL, SQL allows you to output a value that occurs multiple times.
+
+680
+00:43:50.400 --> 00:43:56.780
+We can have a relation that contains column X, then has a value 1, 2, 2.
+
+681
+00:43:58.080 --> 00:44:06.100
+In a mathematical relation this would not be possible because in a set this would not be possible because this value occurs two times.
+
+682
+00:44:06.520 --> 00:44:09.960
+So in a set this cannot be the case because a set can only contain one and two.
+
+683
+00:44:10.660 --> 00:44:16.680
+But in the real implementation we have multi-sets which means we are allowed to produce duplicates.
+
+684
+00:44:17.440 --> 00:44:23.080
+So this requires some extra care but at least for now we can ignore this and just say hey we operate on sets.
+
+685
+00:44:23.080 --> 00:44:30.780
+everything is duplicate free. When we deviate from this we mentioned this in the lecture.
+
+686
+00:44:32.560 --> 00:44:36.480
+These were the basic operations you know from your introductory lectures. These are
+
+687
+00:44:37.260 --> 00:44:42.440
+some derived operators that you can express them using the already existing ones,
+
+688
+00:44:42.620 --> 00:44:49.060
+but they are also useful, at least some of them. The first two here I just included for completeness
+
+689
+00:44:49.060 --> 00:44:52.560
+a so-called natural join, so a join without explicit join predicates.
+
+690
+00:44:53.140 --> 00:44:59.580
+So this is, we join two sides here, a1 and a2, and then my, if you look at this one here,
+
+691
+00:45:00.040 --> 00:45:01.200
+it's an equality condition.
+
+692
+00:45:02.420 --> 00:45:09.580
+Find all elements from e1, all x from e1 and all y from e2, which are the same concerning
+
+693
+00:45:09.580 --> 00:45:11.420
+the attributes that occurs on both sides.
+
+694
+00:45:11.880 --> 00:45:17.540
+So here we take the schema of e1, the schema of e2, intersect it, and this gives me all
+
+695
+00:45:19.220 --> 00:45:22.920
+and then I restrict my equality predicate to these attributes.
+
+696
+00:45:23.220 --> 00:45:25.200
+So I want that these attributes are the same.
+
+697
+00:45:26.420 --> 00:45:28.040
+The so-called natural join.
+
+698
+00:45:28.280 --> 00:45:34.300
+So we include everything, we join on the commonly-equal predicate.
+
+699
+00:45:34.480 --> 00:45:36.200
+And also you see in the result construction,
+
+700
+00:45:36.480 --> 00:45:40.760
+we restrict y to the attributes that occur only on the right-hand side.
+
+701
+00:45:40.860 --> 00:45:41.980
+The common attributes are removed,
+
+702
+00:45:42.260 --> 00:45:45.300
+because they are the same of course,
+
+703
+00:45:45.640 --> 00:45:47.280
+due to this equality condition.
+
+704
+00:45:49.060 --> 00:45:50.540
+is what you find in textbooks.
+
+705
+00:45:50.920 --> 00:45:53.580
+If you ask me, nobody ever uses natural joins.
+
+706
+00:45:53.840 --> 00:45:55.300
+I mean, at least no system.
+
+707
+00:45:55.880 --> 00:45:59.040
+So humans like natural joins because they're easy to write.
+
+708
+00:45:59.180 --> 00:46:02.580
+So you can make nice textbook examples for natural joins.
+
+709
+00:46:02.860 --> 00:46:05.680
+But no database system uses natural joins
+
+710
+00:46:05.680 --> 00:46:09.800
+because internally, every column will get a unique name
+
+711
+00:46:09.800 --> 00:46:10.200
+anyway.
+
+712
+00:46:10.980 --> 00:46:14.320
+So what your query compiler will do from your SQL query,
+
+713
+00:46:14.660 --> 00:46:17.360
+it will most likely assign a unique name to each column.
+
+714
+00:46:19.060 --> 00:46:22.720
+never occurs because we have no column that occurs on both sides.
+
+715
+00:46:23.220 --> 00:46:24.680
+That's just a no issue.
+
+716
+00:46:24.900 --> 00:46:27.720
+But I include it nevertheless because you find it in textbooks.
+
+717
+00:46:28.520 --> 00:46:29.940
+Same with relational division.
+
+718
+00:46:31.040 --> 00:46:34.960
+As we find all elements from the left side
+
+719
+00:46:34.960 --> 00:46:38.700
+that can be combined with all values from the right side.
+
+720
+00:46:39.260 --> 00:46:42.700
+In a way, this is the inverse of a cross product.
+
+721
+00:46:43.280 --> 00:46:44.780
+Therefore, this is the name division.
+
+722
+00:46:45.580 --> 00:46:48.700
+you can use this to implement all quantifiers in SQL.
+
+723
+00:46:49.140 --> 00:46:50.560
+Again, nobody uses this.
+
+724
+00:46:51.240 --> 00:46:52.420
+Okay, a few people.
+
+725
+00:46:52.660 --> 00:46:55.380
+But I'm not aware of any systems that would make use of this.
+
+726
+00:46:55.560 --> 00:46:57.080
+So these are here, textbook.
+
+727
+00:46:57.400 --> 00:46:59.000
+So these are textbook examples.
+
+728
+00:46:59.100 --> 00:47:01.080
+You find them in books, but not in systems.
+
+729
+00:47:03.360 --> 00:47:06.920
+The entries below this line, these are not textbooks, these are real.
+
+730
+00:47:07.160 --> 00:47:10.060
+So these are used for implementing database systems.
+
+731
+00:47:12.140 --> 00:47:18.620
+So semi-joints, we want to find all elements from the left side that do have a joint partner
+
+732
+00:47:18.620 --> 00:47:19.480
+on the right hand side.
+
+733
+00:47:19.680 --> 00:47:23.000
+So we look at elements from the left, all x from the left, and then we check if there
+
+734
+00:47:23.000 --> 00:47:25.120
+exists an element on the right where the predicate is true.
+
+735
+00:47:25.520 --> 00:47:29.660
+It doesn't matter if it is 1 or 20,000, we just care yes or no.
+
+736
+00:47:29.800 --> 00:47:31.020
+Is there a joint partner, yes or no?
+
+737
+00:47:31.120 --> 00:47:33.500
+And if yes, we output it, if no, we discard x.
+
+738
+00:47:34.480 --> 00:47:37.620
+And then the anti-joint, this is a complement of the semi-joint.
+
+739
+00:47:37.620 --> 00:47:40.660
+So we output everything where there is not a joint partner.
+
+740
+00:47:42.420 --> 00:47:44.920
+Now you could ask yourself why do we need this.
+
+741
+00:47:45.380 --> 00:47:49.080
+I can already tell you this year corresponds roughly to
+
+742
+00:47:49.080 --> 00:47:56.860
+this year corresponds roughly to exists in SQL.
+
+743
+00:48:00.000 --> 00:48:09.100
+exists as an existential quantifier and this here corresponds roughly to the price not exists.
+
+744
+00:48:12.060 --> 00:48:17.780
+Okay, so we can use this to translate quantifier expression and sequel with semijoints and antitrions.
+
+745
+00:48:18.200 --> 00:48:21.460
+And there are also some other use cases. And in fact life is difficult,
+
+746
+00:48:22.680 --> 00:48:31.020
+For example, not exist with anti-joins works unless you can, for some strange reason, have
+
+747
+00:48:31.020 --> 00:48:33.220
+null results, which unfortunately sometimes occur.
+
+748
+00:48:33.640 --> 00:48:39.120
+But if you ignore this, then exist maps to semi-joins, not exist maps to anti-joins, except
+
+749
+00:48:39.120 --> 00:48:40.520
+for some special cases.
+
+750
+00:48:42.980 --> 00:48:45.260
+And then the next one here, outer-joins.
+
+751
+00:48:46.940 --> 00:48:59.060
+So we output everything from, so this is basically a regular join followed by, so this here is a regular join followed by, we find all elements that did not find a joint partner.
+
+752
+00:48:59.140 --> 00:49:02.440
+For this here we use anti-joint, we find all elements that do not have a joint partner.
+
+753
+00:49:02.680 --> 00:49:07.800
+And then we output them regardless and we pad the missing values here with nulls.
+
+754
+00:49:07.800 --> 00:49:14.380
+So we take a look at all the values from E2 which were missing, we had a null there and
+
+755
+00:49:14.380 --> 00:49:16.380
+then we add them anyway.
+
+756
+00:49:17.380 --> 00:49:19.100
+So this here is a left outer join.
+
+757
+00:49:19.640 --> 00:49:28.180
+We output everything that either has a join partner or does not have a join partner and
+
+758
+00:49:28.180 --> 00:49:28.940
+pad it with nulls.
+
+759
+00:49:29.760 --> 00:49:31.700
+You get this for two reasons.
+
+760
+00:49:31.700 --> 00:49:46.600
+either if the user asks for it, because in SQL you can write, so you can say table 1 or some other subquery here, then left autojoin
+
+761
+00:49:53.440 --> 00:49:59.060
+table 2 on x equals y.
+
+762
+00:49:59.160 --> 00:50:00.980
+This corresponds directly to an autogoint.
+
+763
+00:50:01.260 --> 00:50:03.820
+So this is an explicit autogoint in the query.
+
+764
+00:50:04.080 --> 00:50:06.180
+There are other ways you can get autogoints.
+
+765
+00:50:06.220 --> 00:50:08.140
+For example, if somebody does, see this here,
+
+766
+00:50:08.560 --> 00:50:14.060
+you say select, select, then some stuff,
+
+767
+00:50:14.240 --> 00:50:16.680
+and then you do inside the select, you do another select here.
+
+768
+00:50:20.720 --> 00:50:26.000
+select y from and some other.
+
+769
+00:50:27.240 --> 00:50:29.840
+So this implicitly also creates an auto join.
+
+770
+00:50:30.060 --> 00:50:32.560
+Because if this inner result here is empty,
+
+771
+00:50:32.760 --> 00:50:36.280
+so if you do not find a y, then we get a null.
+
+772
+00:50:37.220 --> 00:50:39.880
+And if you get more than one y, you get an error message.
+
+773
+00:50:40.040 --> 00:50:42.820
+But nevertheless, this corresponds to a special kind of auto joins.
+
+774
+00:50:43.360 --> 00:50:52.740
+So that we call them single join because you're only allowed to have one joint partner.
+
+775
+00:50:52.920 --> 00:50:54.800
+But this corresponds roughly to an auto join.
+
+776
+00:50:56.060 --> 00:51:01.660
+And finally, we have a full auto join that is in a way the combination of left and right
+
+777
+00:51:01.660 --> 00:51:02.200
+auto join.
+
+778
+00:51:02.320 --> 00:51:06.860
+Which means we take the regular join and then output everything from the left that does
+
+779
+00:51:06.860 --> 00:51:07.720
+not have a joint partner.
+
+780
+00:51:07.900 --> 00:51:10.140
+Then everything from the right that does not have a joint partner.
+
+781
+00:51:10.640 --> 00:51:15.900
+Note that this here only holds the simple union because we use set semantics.
+
+782
+00:51:16.240 --> 00:51:21.240
+With back semantics this does not work because we would include the regular join result twice.
+
+783
+00:51:21.780 --> 00:51:25.120
+So this is a combination of left and right join only with sets.
+
+784
+00:51:25.280 --> 00:51:30.080
+If you have duplicates, we must be more careful than we just take the regular join
+
+785
+00:51:30.080 --> 00:51:32.500
+and add everything padded from left and from the right.
+
+786
+00:51:32.800 --> 00:51:36.360
+Again, you can ask for this in SQL using full outer join.
+
+787
+00:51:39.320 --> 00:51:44.480
+Now, up to now this part you have probably already seen in your introductory lecture.
+
+788
+00:51:44.740 --> 00:51:48.440
+These are some operators that you might not have seen in introductory lecture, but we
+
+789
+00:51:48.440 --> 00:51:49.540
+nevertheless need.
+
+790
+00:51:50.340 --> 00:51:54.180
+So for real SQL support we need some more constructs.
+
+791
+00:51:54.340 --> 00:51:56.440
+The first one here is a map operator.
+
+792
+00:51:57.180 --> 00:51:59.060
+Basically we construct a new column.
+
+793
+00:51:59.220 --> 00:52:05.240
+So we say we want to output the new column A and we want that for we construct the new
+
+794
+00:52:06.360 --> 00:52:08.580
+by evaluating a function f on my input attributes.
+
+795
+00:52:09.520 --> 00:52:13.240
+Now why do we need this? For example, it's very simple reasons.
+
+796
+00:52:13.680 --> 00:52:15.120
+Somebody says, select
+
+797
+00:52:18.740 --> 00:52:23.120
+x plus y as z.
+
+798
+00:52:23.340 --> 00:52:24.540
+Okay? From r.
+
+799
+00:52:27.020 --> 00:52:30.700
+So if you do this in SQL, if you translate this in relation algebra like this,
+
+800
+00:52:30.700 --> 00:52:41.040
+I take my relation R, then I do a map and I say the column Z has the value X plus Y.
+
+801
+00:52:41.800 --> 00:52:48.400
+So this is a way to compute a new column by evaluating a function.
+
+802
+00:52:48.540 --> 00:52:55.340
+So this is a map function. Then we have a group by an aggregate. So I take my input,
+
+803
+00:52:55.340 --> 00:52:57.960
+group it by a certain number of attributes,
+
+804
+00:52:58.160 --> 00:52:59.940
+then evaluate a function f.
+
+805
+00:53:00.220 --> 00:53:02.000
+This again corresponds to,
+
+806
+00:53:02.160 --> 00:53:04.840
+so if I in SQL would do,
+
+807
+00:53:05.060 --> 00:53:05.900
+select
+
+808
+00:53:11.160 --> 00:53:11.840
+some
+
+809
+00:53:14.780 --> 00:53:15.460
+x
+
+810
+00:53:16.180 --> 00:53:16.860
+s
+
+811
+00:53:16.860 --> 00:53:17.480
+s
+
+812
+00:53:18.260 --> 00:53:18.940
+from
+
+813
+00:53:20.920 --> 00:53:21.600
+r
+
+814
+00:53:22.500 --> 00:53:23.280
+group by
+
+815
+00:53:26.980 --> 00:53:49.260
+by ABC. This corresponds to the relation algebra construct. Take my relation R, then I add, on top of this, I add a group by. I group by ABC and then evaluate the aggregation function.
+
+816
+00:53:50.120 --> 00:53:58.280
+So this is how we can translate group by and SQL into algebra using a group by operator.
+
+817
+00:53:59.660 --> 00:54:05.600
+And finally dependent join, here we come back to the three variables that we had before.
+
+818
+00:54:06.040 --> 00:54:08.700
+So this looks like a join but behaves slightly differently.
+
+819
+00:54:08.900 --> 00:54:14.340
+Namely, what we do here is we have two expressions e1 and e2 and we evaluate the expression e1
+
+820
+00:54:14.340 --> 00:54:17.620
+for the values from e2.
+
+821
+00:54:19.280 --> 00:54:26.060
+We take an x from e1 and then we take a y from e2 evaluated for x.
+
+822
+00:54:27.320 --> 00:54:39.580
+That works. To make an algebra example, we say I want to output, I have R1, then I do here a dependent join.
+
+823
+00:54:40.400 --> 00:54:52.840
+and the dependent join says say r1.x equals r2.y then i have here in r2.
+
+824
+00:54:53.480 --> 00:55:01.100
+Note that this part here is problematic because we try to evaluate predicate
+
+825
+00:55:01.100 --> 00:55:06.900
+but using the values from r1 and r2 but at this point i do not have r1 available.
+
+826
+00:55:06.900 --> 00:55:10.620
+So if you look at this part, so we ignore the rest.
+
+827
+00:55:10.800 --> 00:55:11.880
+Let's look at this box.
+
+828
+00:55:12.460 --> 00:55:13.640
+Just look at the box.
+
+829
+00:55:14.860 --> 00:55:17.260
+This relational attribute operator is not well formed.
+
+830
+00:55:17.500 --> 00:55:19.860
+Why? Because we are accessing attributes that does not exist.
+
+831
+00:55:20.600 --> 00:55:23.400
+R1 doesn't exist, because within the box I only have R2,
+
+832
+00:55:23.620 --> 00:55:26.180
+and I can evaluate R2.y, no problem,
+
+833
+00:55:26.300 --> 00:55:29.240
+but I cannot evaluate R1.x,
+
+834
+00:55:29.900 --> 00:55:30.780
+whereas this doesn't exist.
+
+835
+00:55:31.600 --> 00:55:44.840
+So therefore we call r1.x, so the f of my box here is r1.x.
+
+836
+00:55:44.900 --> 00:55:47.940
+So this is a free variable, which means I don't know it.
+
+837
+00:55:48.100 --> 00:55:49.380
+So I have to bind it.
+
+838
+00:55:49.960 --> 00:55:52.020
+And this is exactly what the dependent join does.
+
+839
+00:55:52.260 --> 00:55:56.480
+The dependent join says within the right hand side,
+
+840
+00:55:56.620 --> 00:55:58.500
+you please use the following value.
+
+841
+00:55:58.500 --> 00:56:03.360
+namely we use my x, pass it into the right hand side and then we can evaluate this.
+
+842
+00:56:03.900 --> 00:56:07.060
+So regular joint wouldn't work, but dependent joint does work.
+
+843
+00:56:08.000 --> 00:56:11.860
+I just evaluate this box for the template from the left side.
+
+844
+00:56:12.500 --> 00:56:17.920
+Now clearly this here has again n2 runtime.
+
+845
+00:56:18.480 --> 00:56:23.660
+Why? Because I take a element from the left and then evaluate the right hand side for each element from the left.
+
+846
+00:56:23.780 --> 00:56:24.400
+This is bad.
+
+847
+00:56:24.400 --> 00:56:28.820
+Therefore, what the system will try to do is, it will try to remove all dependent joins.
+
+848
+00:56:29.140 --> 00:56:32.660
+Dependent joins are performance-wise very, very bad. We don't want to do this.
+
+849
+00:56:32.980 --> 00:56:35.820
+But there are SQL constructs that force us to do this.
+
+850
+00:56:36.280 --> 00:56:38.880
+The most trivial example you can construct is this one here.
+
+851
+00:56:40.640 --> 00:56:47.760
+You say select star from 1.
+
+852
+00:56:47.760 --> 00:57:06.020
+Now we start a subquery, select star from R2 where R1.x equals R2.y.
+
+853
+00:57:06.900 --> 00:57:09.640
+And if you have this, then you get exactly this construct.
+
+854
+00:57:10.140 --> 00:57:15.000
+And you get exactly dependent join. Now the dependent join again are terrible,
+
+855
+00:57:15.000 --> 00:57:18.200
+Therefore the first thing the system will do is to try to remove the dependent join.
+
+856
+00:57:18.760 --> 00:57:24.260
+And you can hopefully easily see that you can transform this one here into
+
+857
+00:57:27.900 --> 00:57:28.860
+1.join2
+
+858
+00:57:28.860 --> 00:57:29.980
+on the attribute
+
+859
+00:57:30.660 --> 00:57:33.900
+y.x equals 2.y.
+
+860
+00:57:34.600 --> 00:57:39.800
+Okay, you can rewrite this so that the predicate moves up to the join, then it's no longer dependent
+
+861
+00:57:39.800 --> 00:57:42.380
+and then we can use regular joins and everything is good.
+
+862
+00:57:42.960 --> 00:57:48.480
+Okay, so in this simple case it's easy to do, but I can write much more complicated SQL statements.
+
+863
+00:57:48.560 --> 00:57:50.920
+It's not that easy to remove the correlation.
+
+864
+00:57:51.200 --> 00:57:54.100
+Therefore, systems do support dependent join.
+
+865
+00:57:56.460 --> 00:58:00.560
+Now just for nomenclation, if you look at for example SQL server,
+
+866
+00:58:00.760 --> 00:58:05.740
+SQL server doesn't call this dependent join, they call this I think cross apply.
+
+867
+00:58:13.720 --> 00:58:17.500
+So cross apply, but nevertheless, this is the same as the dependent join.
+
+868
+00:58:17.700 --> 00:58:21.680
+We evaluate the right-hand join side for the left-hand side.
+
+869
+00:58:24.400 --> 00:58:28.060
+Now, why are we interested in set-oriented processing?
+
+870
+00:58:28.340 --> 00:58:30.280
+Because we can implement this much more efficiently.
+
+871
+00:58:30.280 --> 00:58:36.800
+So if you are processing not one value and one value, but if you are processing the million values and the million values,
+
+872
+00:58:36.940 --> 00:58:42.900
+then we can perform operations that make the whole process more efficient.
+
+873
+00:58:43.000 --> 00:58:44.840
+For example, we can build an index structure.
+
+874
+00:58:45.580 --> 00:58:48.160
+Or we can reorganize the data like partitioning.
+
+875
+00:58:48.360 --> 00:58:50.340
+Or we can use sorting or hashing.
+
+876
+00:58:50.520 --> 00:58:55.820
+So we can do something with our data that we could not do if we just look at individual values.
+
+877
+00:58:56.000 --> 00:58:59.400
+And this preprocessing makes the whole process more efficient.
+
+878
+00:59:01.740 --> 00:59:08.500
+In the end, we want that all algorithms have a runtime of n log n or better, ideally.
+
+879
+00:59:09.740 --> 00:59:11.740
+To be fair, this is not always possible.
+
+880
+00:59:12.040 --> 00:59:16.640
+If the user asks me to produce an n-square output, I cannot be faster than n-square.
+
+881
+00:59:17.960 --> 00:59:22.980
+But if the user does not force me to produce an n-square output, then I want to be faster
+
+882
+00:59:22.980 --> 00:59:23.560
+than n-square.
+
+883
+00:59:23.800 --> 00:59:26.100
+So n log n is what we want to have.
+
+884
+00:59:27.380 --> 00:59:31.720
+And now there are many ways to achieve this, many algorithms we can use.
+
+885
+00:59:31.940 --> 00:59:35.080
+We look at them much later in the lecture, we're still in the introductory chapter here.
+
+886
+00:59:35.220 --> 00:59:41.580
+I just want to highlight to you what are the challenges, what are the techniques that we want to use.
+
+887
+00:59:43.800 --> 00:59:49.380
+Okay, now traditionally when we build database systems, we make a number of assumptions.
+
+888
+00:59:51.720 --> 00:59:55.040
+So traditionally in the sense that if you built a system 20 or 30 years ago,
+
+889
+00:59:55.840 --> 01:00:03.180
+assumptions. First we assume that data is much larger than my memory. So not only a bit larger,
+
+890
+01:00:03.300 --> 01:00:09.940
+it's much larger. And therefore my whole processing is dominated by I.O. So by input output.
+
+891
+01:00:10.540 --> 01:00:15.660
+So reading data from disk or writing data to disk dominates everything. It's much more important
+
+892
+01:00:15.660 --> 01:00:23.060
+than what I do in memory. And a corollary of this is, again giving the hardware that I had 20 or 30
+
+893
+01:00:23.060 --> 01:00:25.220
+years ago that random
+
+894
+01:00:25.220 --> 01:00:27.020
+access to my data
+
+895
+01:00:27.020 --> 01:00:29.080
+is very very expensive because I would
+
+896
+01:00:29.080 --> 01:00:30.960
+have to do this as random IO so
+
+897
+01:00:30.960 --> 01:00:33.120
+which means I would have to move
+
+898
+01:00:33.120 --> 01:00:34.640
+ahead on a rotating disk
+
+899
+01:00:34.640 --> 01:00:37.080
+and this takes very long time
+
+900
+01:00:37.080 --> 01:00:38.720
+so just to give you an idea
+
+901
+01:00:38.720 --> 01:00:41.040
+doing a random access on a
+
+902
+01:00:41.040 --> 01:00:41.800
+rotating disk
+
+903
+01:00:42.640 --> 01:00:44.320
+costs you something like
+
+904
+01:00:44.320 --> 01:00:46.900
+in the ballpark of let's say
+
+905
+01:00:46.900 --> 01:00:49.080
+4 milliseconds if you're
+
+906
+01:00:49.080 --> 01:00:50.560
+lucky it's just 3 or so
+
+907
+01:00:50.560 --> 01:00:55.720
+but random access on a rotating disk is in the ballpark of 4 milliseconds.
+
+908
+01:00:56.720 --> 01:01:07.580
+This means that we can only do roughly 250 random accesses per second.
+
+909
+01:01:11.600 --> 01:01:12.260
+Roughly.
+
+910
+01:01:12.840 --> 01:01:15.080
+250 is not a very impressive number.
+
+911
+01:01:15.500 --> 01:01:16.900
+250 is a very low number.
+
+912
+01:01:16.900 --> 01:01:22.880
+So which means that if you want to access 1000 data elements and you do this at random,
+
+913
+01:01:23.660 --> 01:01:26.420
+we need 4 seconds for this.
+
+914
+01:01:27.140 --> 01:01:28.180
+And this is forever.
+
+915
+01:01:28.700 --> 01:01:29.920
+So we cannot do this.
+
+916
+01:01:30.440 --> 01:01:33.960
+So random access on a rotating disk is terribly expensive.
+
+917
+01:01:34.760 --> 01:01:39.200
+And therefore, systems said we must never do this or extremely rarely do this.
+
+918
+01:01:39.380 --> 01:01:42.240
+So we try to avoid random I.O. whenever we can.
+
+919
+01:01:42.760 --> 01:01:44.300
+So this was the traditional model.
+
+920
+01:01:44.300 --> 01:01:46.800
+we were dominated by disk excess,
+
+921
+01:01:47.100 --> 01:01:48.260
+disk excess is slow,
+
+922
+01:01:48.840 --> 01:01:50.660
+and random disk excess is even more slow.
+
+923
+01:01:51.520 --> 01:01:54.000
+This was the assumption that we made.
+
+924
+01:01:55.620 --> 01:01:57.360
+And when you build a database system
+
+925
+01:01:57.360 --> 01:01:58.580
+using these assumptions,
+
+926
+01:01:59.260 --> 01:02:00.840
+you get two things.
+
+927
+01:02:00.980 --> 01:02:03.680
+You get a very conservative model,
+
+928
+01:02:03.880 --> 01:02:07.180
+because you never want to do random excess and so on,
+
+929
+01:02:07.880 --> 01:02:09.880
+but you also get a very scalable model.
+
+930
+01:02:10.060 --> 01:02:10.920
+So this is a good part.
+
+931
+01:02:11.080 --> 01:02:13.580
+So if you look at the systems that are built at this time,
+
+932
+01:02:14.440 --> 01:02:16.540
+they did scale pretty well.
+
+933
+01:02:16.760 --> 01:02:19.100
+So even to very large amounts of data.
+
+934
+01:02:19.520 --> 01:02:22.820
+So they work fine, but they are very conservative.
+
+935
+01:02:24.720 --> 01:02:27.320
+Now, if you look at how the hardware looks today,
+
+936
+01:02:27.560 --> 01:02:28.980
+and not 20 or 30 years ago,
+
+937
+01:02:29.180 --> 01:02:31.500
+we see that many things have changed.
+
+938
+01:02:31.820 --> 01:02:34.980
+In particular, we see that memory has increased dramatically.
+
+939
+01:02:35.560 --> 01:02:40.340
+So you can easily buy a machine that has a terabyte of memory.
+
+940
+01:02:40.340 --> 01:02:41.500
+It's not very expensive.
+
+941
+01:02:41.940 --> 01:02:44.200
+I mean, it's not exactly cheap either.
+
+942
+01:02:45.080 --> 01:02:48.660
+but you pay for this a bit more than 10,000 euro probably.
+
+943
+01:02:48.860 --> 01:02:49.840
+So it's not super expensive.
+
+944
+01:02:50.480 --> 01:02:52.060
+Compared to the cost of a programmer,
+
+945
+01:02:52.100 --> 01:02:53.080
+this is actually quite cheap.
+
+946
+01:02:53.880 --> 01:02:57.640
+So a company can easily buy a machine with terrible memory.
+
+947
+01:02:57.860 --> 01:02:59.460
+You probably don't want to do this at home,
+
+948
+01:02:59.600 --> 01:03:01.280
+unless your budget is a bit higher
+
+949
+01:03:01.280 --> 01:03:02.220
+than I would have expected.
+
+950
+01:03:02.520 --> 01:03:04.160
+But for companies, it's not a big deal.
+
+951
+01:03:04.320 --> 01:03:05.760
+So you can easily do this.
+
+952
+01:03:07.080 --> 01:03:10.020
+And if you have such a large amount of memory,
+
+953
+01:03:10.500 --> 01:03:12.960
+then of course, this success gets much more rare.
+
+954
+01:03:14.300 --> 01:03:18.000
+access is much more infrequent and therefore we are no longer dominated by
+
+955
+01:03:18.000 --> 01:03:24.820
+the disk I.O. but perhaps by in-memory processing. Another thing that we see is
+
+956
+01:03:24.820 --> 01:03:30.560
+that people are moving away from rotating disks and we tend to use
+
+957
+01:03:30.560 --> 01:03:36.140
+solid-state drives or flash storage and these allow much faster random I.O.
+
+958
+01:03:37.440 --> 01:03:42.480
+Even in these beasts it's cheaper to read large blocks of data than
+
+959
+01:03:44.300 --> 01:03:49.440
+effect of random access. So you can only do a finite number of random accesses per second on
+
+960
+01:03:49.440 --> 01:03:54.460
+these machines. But this finite number is much, much, much, much higher than a rotating disk.
+
+961
+01:03:54.660 --> 01:04:00.140
+Yes, you can easily do thousands of random access per second, many thousands of random
+
+962
+01:04:00.140 --> 01:04:05.680
+access per second, which you could never do on a rotating disk. So hardware has changed,
+
+963
+01:04:05.780 --> 01:04:12.060
+therefore the old assumptions are not necessarily true. This has some consequences for the design
+
+964
+01:04:12.060 --> 01:04:18.160
+of a database system. First, what we see is CPU costs suddenly become much more expensive,
+
+965
+01:04:18.320 --> 01:04:23.860
+much more important. In the past, while we are waiting on disk, disk is so incredibly slow,
+
+966
+01:04:24.040 --> 01:04:28.780
+that it doesn't matter that much what we do with the CPU. It does matter when we start burning
+
+967
+01:04:28.780 --> 01:04:33.500
+CPU massively, but as long as we were reasonably with our CPU, then disk error was everything.
+
+968
+01:04:33.800 --> 01:04:38.220
+This is no longer the case, because data is in memory to begin with, at least often,
+
+969
+01:04:38.220 --> 01:04:40.560
+and then disk I.O. doesn't matter at all.
+
+970
+01:04:40.640 --> 01:04:42.020
+We only look at CPU processing.
+
+971
+01:04:42.400 --> 01:04:43.620
+So CPU becomes important.
+
+972
+01:04:44.440 --> 01:04:48.660
+Because we often have no I.O. at all, or only very little.
+
+973
+01:04:49.140 --> 01:04:54.420
+And then if you do I.O., we could potentially afford to do a bit more random I.O. than we did in the past.
+
+974
+01:04:54.540 --> 01:04:59.480
+Because my I.O. device is much faster and it does allow for random access.
+
+975
+01:05:00.060 --> 01:05:04.700
+And this means that the old architecture that people have used in the past has become suboptimal.
+
+976
+01:05:04.700 --> 01:05:10.380
+So, you can run a traditional database architecture on a modern system.
+
+977
+01:05:10.480 --> 01:05:13.980
+It will work, no problem, but it will not give you an ideal performance.
+
+978
+01:05:15.540 --> 01:05:18.260
+Of course, we will look at the aspect of this in the lecture.
+
+979
+01:05:19.000 --> 01:05:22.160
+But on the other hand, this is more an evolution than a revolution.
+
+980
+01:05:22.580 --> 01:05:26.060
+So this doesn't mean you have to throw away all your database systems.
+
+981
+01:05:26.320 --> 01:05:28.240
+It just means that you have to change something.
+
+982
+01:05:28.500 --> 01:05:33.400
+You must change some of the techniques, but some of the things that we used in the past
+
+983
+01:05:34.760 --> 01:05:40.580
+And therefore, we start by looking at the traditional architecture also because this
+
+984
+01:05:40.580 --> 01:05:44.220
+is what you will mostly encounter if you look at the big commercial vendors.
+
+985
+01:05:44.380 --> 01:05:48.480
+They still tend to be more designed like a traditional database system.
+
+986
+01:05:48.560 --> 01:05:49.480
+Therefore, we start with this.
+
+987
+01:05:49.660 --> 01:05:57.100
+And then we look at how we can adapt this to scale better to modern hardware design.
+
+988
+01:06:00.580 --> 01:06:05.620
+The goals that you have in the database system is ideally we want the following.
+
+989
+01:06:05.800 --> 01:06:09.680
+First we want to be able to handle arbitrary large amounts of data.
+
+990
+01:06:09.960 --> 01:06:11.700
+If we want to do this efficiently.
+
+991
+01:06:12.000 --> 01:06:14.600
+It doesn't matter if you have a gigabyte or if you have many terabytes.
+
+992
+01:06:15.460 --> 01:06:19.260
+Everything should work smoothly and efficiently for arbitrary sizes.
+
+993
+01:06:20.880 --> 01:06:23.780
+Now another goal is we never want to lose data.
+
+994
+01:06:23.780 --> 01:06:28.640
+It doesn't matter what happens if we have a crash, software crash, power failure, whatever.
+
+995
+01:06:28.880 --> 01:06:29.920
+We never want to lose data.
+
+996
+01:06:30.440 --> 01:06:32.460
+This, of course, also requires care.
+
+997
+01:06:32.980 --> 01:06:37.280
+Then we want to offer a high-level interface to manipulate and retrieve data.
+
+998
+01:06:37.480 --> 01:06:40.480
+Usually, in our case, it's a SQL, but could also be something else.
+
+999
+01:06:40.660 --> 01:06:42.240
+We also have some high-level API.
+
+1000
+01:06:42.920 --> 01:06:46.240
+We want to shield the application from the complexity of data management,
+
+1001
+01:06:46.400 --> 01:06:48.980
+which means that this application just says,
+
+1002
+01:06:49.080 --> 01:06:52.100
+hey, here's my data, please store it, please retrieve it for me.
+
+1003
+01:06:53.780 --> 01:06:59.360
+do this internally. Store it and prostrate it as it works best for my use case.
+
+1004
+01:06:59.720 --> 01:07:04.380
+This is what we want, that the system does it automatically or at least mostly
+
+1005
+01:07:04.380 --> 01:07:09.220
+automatically. And of course we want to get excellent performance for all kinds
+
+1006
+01:07:09.220 --> 01:07:13.340
+of queries and all kinds of data. No assumptions about the data. Do you have
+
+1007
+01:07:13.340 --> 01:07:16.580
+skew in the data, so uneven distribution? Do you have duplicates? Doesn't matter.
+
+1008
+01:07:16.720 --> 01:07:22.220
+It should work in all cases. This is our goal and this is of course a very
+
+1009
+01:07:24.060 --> 01:07:27.600
+satisfy all these goals. On the other hand, we usually can do this
+
+1010
+01:07:27.600 --> 01:07:32.060
+just with added complexity in the software. But that's okay, because this is a deal
+
+1011
+01:07:32.060 --> 01:07:35.520
+that we made when we built a database system. Database systems are
+
+1012
+01:07:36.100 --> 01:07:39.000
+pretty difficult to build, but you build them only once
+
+1013
+01:07:39.000 --> 01:07:42.900
+or a few times. There are not that many database systems
+
+1014
+01:07:42.900 --> 01:07:46.680
+out there. Actually, there are many database systems, if you are honest.
+
+1015
+01:07:47.320 --> 01:07:51.100
+But nevertheless, there are even more applications out there
+
+1016
+01:07:51.100 --> 01:07:51.960
+than database systems.
+
+1017
+01:07:52.260 --> 01:07:56.360
+So usually one database system can be used by many different kinds of applications.
+
+1018
+01:07:56.840 --> 01:08:02.260
+Therefore, it's just worthwhile to spend the implementation effort and do it once, and then
+
+1019
+01:08:02.260 --> 01:08:03.540
+everybody can profit from this.
+
+1020
+01:08:06.420 --> 01:08:11.780
+So then this here is a rough overview of what we want to do in the lecture.
+
+1021
+01:08:12.720 --> 01:08:16.840
+So we start with the classic architecture, which means we look at how traditional database
+
+1022
+01:08:16.840 --> 01:08:18.340
+systems are organized.
+
+1023
+01:08:19.340 --> 01:08:26.000
+We start with storage. So how do we store data on disk or on a physical medium?
+
+1024
+01:08:26.560 --> 01:08:32.220
+Then we look at access paths. If you don't know what access paths means, first
+
+1025
+01:08:32.220 --> 01:08:36.660
+approximation, an access path is an index structure. So how can we access my data
+
+1026
+01:08:36.660 --> 01:08:40.260
+efficiently? How can we find my data efficiently? Then we look at transactions
+
+1027
+01:08:40.260 --> 01:08:44.220
+and recovery. So how can we cope with concurrent users and how can we cope with
+
+1028
+01:08:44.220 --> 01:08:50.660
+crashes. This covers the first big part of the lecture. Next big part is
+
+1029
+01:08:50.660 --> 01:08:57.880
+efficient query processing. So how do we set oriented processing? How do we
+
+1030
+01:08:57.880 --> 01:09:01.820
+implement this efficiently? How can we pass data around and so on? Then we look at
+
+1031
+01:09:01.820 --> 01:09:05.860
+the algebraic operators. How can we implement all of them efficiently? So
+
+1032
+01:09:05.860 --> 01:09:10.980
+that we can get fast answers for all these primitives. And third part here is
+
+1033
+01:09:10.980 --> 01:09:14.680
+code generation. If we have a query, how do we translate this into something
+
+1034
+01:09:14.680 --> 01:09:19.200
+executable? Because ultimately we must execute a query. Because we want to get
+
+1035
+01:09:19.200 --> 01:09:25.800
+results, we must execute the query. How do we do this? And in the third part,
+
+1036
+01:09:26.020 --> 01:09:31.060
+designing a database system for the modern hardware. So what do we
+
+1037
+01:09:31.060 --> 01:09:34.600
+have to change in the storage architectures to cope with, for example,
+
+1038
+01:09:34.600 --> 01:09:42.880
+large main memory. Then how do you optimize cache locality and finally if you are building a main
+
+1039
+01:09:42.880 --> 01:09:47.580
+memory database system so that assumes that all my data is memory nearly all the time what we have
+
+1040
+01:09:47.580 --> 01:09:52.260
+to do there because this affects not just storage but many other parts like transaction processing
+
+1041
+01:09:52.260 --> 01:09:59.180
+and recovery and so on. And this is a brief overview over the lecture. Okay so I will stop here with
+
+1042
+01:09:59.840 --> 01:10:05.320
+recording for the first part, I will record the subsequent part as we go
+
+1043
+01:10:05.320 --> 01:10:10.980
+through the semester. And remember, please look at the exercise sites at
+
+1044
+01:10:10.980 --> 01:10:16.420
+Moodle and everything that we provide here for you. This semester will be more
+
+1045
+01:10:16.420 --> 01:10:19.980
+difficult than usual because of the lack of interactive teaching, unfortunately.
+
+1046
+01:10:20.380 --> 01:10:24.120
+But we do our best to try to cover this in the exams.
+
+1047
+01:10:24.120 --> 01:10:25.700
+Sorry, it's exercise.
+
+1048
+01:10:26.060 --> 01:10:27.040
+Okay, thank you.

@@ -1,0 +1,1331 @@
+[00:00:00.540 --> 00:00:02.920] Welcome to the lecture on database implementation.
+[00:00:03.560 --> 00:00:07.500] So in the last lecture, we have looked at transaction concepts.
+[00:00:07.660 --> 00:00:13.840] Today, we want to look at the second component here that we need, namely, it's a recovery component.
+[00:00:15.540 --> 00:00:22.200] So basically, the recovery component is responsible for dealing with errors or in particular with crashes.
+[00:00:22.420 --> 00:00:29.480] I mean, also with most of the errors, not only with crashes, but in particular, we have to make sure that everything survives after a crash.
+[00:00:30.000 --> 00:00:31.360] This is the hardest case.
+[00:00:32.960 --> 00:00:35.920] And for this, we basically use two kinds of mechanisms.
+[00:00:36.580 --> 00:00:40.140] On the one hand, we make snapshots of the database,
+[00:00:40.280 --> 00:00:41.260] which basically means backups.
+[00:00:41.500 --> 00:00:43.000] As we take the database and we make a backup
+[00:00:43.000 --> 00:00:43.680] from time to time.
+[00:00:44.560 --> 00:00:48.240] And then we use log files to record all changes
+[00:00:48.240 --> 00:00:51.220] that have occurred since a given point in time.
+[00:00:51.480 --> 00:00:53.260] And so these are the two key components.
+[00:00:53.460 --> 00:00:56.720] We now want to look at how this can be utilized
+[00:00:57.980 --> 00:01:00.660] to guarantee crash recovery.
+[00:01:02.420 --> 00:01:05.160] So a database snapshot is a copy of the database
+[00:01:05.160 --> 00:01:06.000] in certain part of time.
+[00:01:06.180 --> 00:01:09.180] So we basically just store it as it is.
+[00:01:09.800 --> 00:01:15.360] And so the log file is a sequential list of all changes
+[00:01:15.360 --> 00:01:18.420] that have been performed in the database instance.
+[00:01:18.900 --> 00:01:23.580] And if we combine this to a copy from certain point of time
+[00:01:23.580 --> 00:01:24.980] and all changes that occurred later,
+[00:01:26.720 --> 00:01:28.860] database as it was at a later point in time.
+[00:01:28.960 --> 00:01:32.600] So this is in a one slide summary, how we do recovery.
+[00:01:33.320 --> 00:01:35.140] As now, as you would see in a moment,
+[00:01:35.260 --> 00:01:37.560] the technical details are a bit more complicated than this,
+[00:01:37.680 --> 00:01:39.100] but so it's a very high level.
+[00:01:39.200 --> 00:01:39.860] This is the idea.
+[00:01:40.140 --> 00:01:42.540] So we use a copy plus list of all changes,
+[00:01:42.560 --> 00:01:45.300] and then we can reconstruct as it was.
+[00:01:46.420 --> 00:01:50.840] Now, the third point here is obviously the main database,
+[00:01:51.040 --> 00:01:53.020] the database snapshots on the log files should not be kept
+[00:01:53.020 --> 00:01:53.820] on the same machine.
+[00:01:54.000 --> 00:01:55.080] Yeah, this is obviously true.
+[00:01:56.800 --> 00:01:59.420] the machine that contains your main data,
+[00:02:00.780 --> 00:02:02.960] and you know that this can die in different ways,
+[00:02:03.160 --> 00:02:05.040] so like your hard disk might break now,
+[00:02:05.280 --> 00:02:07.200] hopefully you have a RAID system or so,
+[00:02:07.340 --> 00:02:08.740] but nonetheless this can die too,
+[00:02:09.000 --> 00:02:10.920] or even worse, you might have a fire
+[00:02:10.920 --> 00:02:12.360] in your server room or something,
+[00:02:12.540 --> 00:02:15.200] so then physically your machine is destroyed,
+[00:02:15.680 --> 00:02:17.420] and of course you want to survive this,
+[00:02:17.840 --> 00:02:19.260] and the trick to survive this
+[00:02:19.260 --> 00:02:23.080] is to store these components here on a different machine,
+[00:02:23.220 --> 00:02:26.220] ideally in a different building.
+[00:02:26.720 --> 00:02:31.960] So that's a part a bit, so that if a fire occurs,
+[00:02:32.120 --> 00:02:34.120] not both machines are destroyed.
+[00:02:34.380 --> 00:02:36.340] So a separate machine is a minimum,
+[00:02:37.060 --> 00:02:38.100] different building is better.
+[00:02:38.320 --> 00:02:39.820] That is just to be more robust
+[00:02:39.820 --> 00:02:41.720] concerning error scenarios that can occur.
+[00:02:42.360 --> 00:02:44.220] And if this is the case,
+[00:02:44.760 --> 00:02:48.680] then we can survive even pretty drastic error situations.
+[00:02:50.420 --> 00:02:54.300] Okay, now, so how do we cope with system failure?
+[00:02:54.300 --> 00:02:57.960] So this is now the simple case, so to say,
+[00:02:58.060 --> 00:02:59.420] as we would see, this is not,
+[00:03:00.740 --> 00:03:02.540] sometimes not as straightforward as written here,
+[00:03:02.640 --> 00:03:04.120] but so in the simple case, it works like this.
+[00:03:04.340 --> 00:03:06.620] So if a database is initially some state one,
+[00:03:07.120 --> 00:03:09.200] then over time we apply a number of transactions.
+[00:03:10.220 --> 00:03:13.160] So then this creates a state two here.
+[00:03:13.760 --> 00:03:15.520] And now this state two is lost because,
+[00:03:15.700 --> 00:03:17.300] you know, machine breaks.
+[00:03:18.280 --> 00:03:20.440] And of course we want to reconstruct this state two.
+[00:03:20.540 --> 00:03:21.380] Now, how do we do this?
+[00:03:21.840 --> 00:03:23.040] We use two components.
+[00:03:24.340 --> 00:03:28.620] So this means this backup here gives me a snapshot as it was in state 1.
+[00:03:28.700 --> 00:03:30.300] So we assume we have a copy of state 1.
+[00:03:31.720 --> 00:03:34.600] Then all the transactions are stored in the log file.
+[00:03:35.420 --> 00:03:40.940] And now when we want to reconstruct my database, then I first restore my snapshot.
+[00:03:41.140 --> 00:03:42.320] This again gives me state 1.
+[00:03:42.500 --> 00:03:48.620] Then I look at my log file and I do a roll forward, which means I execute the transactions again.
+[00:03:49.860 --> 00:03:56.020] Strictly speaking, we only execute the writes because transactions could in principle be
+[00:03:56.020 --> 00:03:59.620] non-deterministic, therefore it is a bit dangerous to really execute the transactions.
+[00:03:59.900 --> 00:04:02.220] So we redo the changes of the transactions.
+[00:04:03.280 --> 00:04:08.000] This means that we do the same as the transactions did on the first execution.
+[00:04:08.580 --> 00:04:12.860] This then brings me from state 1 to state 2 and then I have again my database state.
+[00:04:12.860 --> 00:04:15.680] And that's why even though my hard disk here,
+[00:04:15.780 --> 00:04:17.240] so this is the hard disk here was destroyed
+[00:04:17.240 --> 00:04:20.000] for by some external event or so hardware failure.
+[00:04:21.460 --> 00:04:24.520] Nevertheless, I can bring back my, all my data
+[00:04:24.520 --> 00:04:27.000] by using the snapshot on the log file.
+[00:04:27.120 --> 00:04:30.320] So this is a very high level overview of recovery.
+[00:04:30.680 --> 00:04:35.000] Now, in a way this is an idealized view
+[00:04:35.000 --> 00:04:38.420] because we believe that we have just some start state
+[00:04:38.420 --> 00:04:40.160] and then some transactions in a log file
+[00:04:40.160 --> 00:04:42.360] and then some, then at some point we realize,
+[00:04:42.860 --> 00:04:54.160] is gone and then we have to reconstruct it as we will see there can be some more complex scenarios
+[00:04:54.700 --> 00:05:03.360] like what we see here so we have again we have state one so then we so this is scenario here
+[00:05:03.360 --> 00:05:08.740] where we assume you have memory loss also which means not just the system goes down in a clean way
+[00:05:08.740 --> 00:05:13.520] But you know at some point we have a power failure or so the system goes away and you have no idea
+[00:05:14.280 --> 00:05:18.100] So this is the following so we have again state 1 with initial state
+[00:05:18.100 --> 00:05:23.620] Then I apply in the mob transactions here. This gives me state 2 and of course I've writes this to a log file
+[00:05:25.140 --> 00:05:31.000] And then I have some more transactions TJ and you know, they are still running
+[00:05:31.000 --> 00:05:37.600] Some of them might have been committed some of them might be active. Yeah, and then suddenly comes the power failure
+[00:05:38.740 --> 00:05:40.060] The only pleasant thing is that, you know,
+[00:05:40.740 --> 00:05:44.540] I don't really know what my state here on this box is.
+[00:05:44.640 --> 00:05:46.140] So what is my state on disk?
+[00:05:46.380 --> 00:05:47.220] I don't know.
+[00:05:47.440 --> 00:05:49.160] Because it could be that some transactions
+[00:05:49.160 --> 00:05:51.700] have already tried to write to disk
+[00:05:51.700 --> 00:05:53.300] or are currently writing to disk.
+[00:05:53.580 --> 00:05:56.020] So I said, I want to change these pages.
+[00:05:56.260 --> 00:05:58.160] These pages are now written to disk.
+[00:05:58.460 --> 00:05:59.960] Now the power failure comes,
+[00:06:00.440 --> 00:06:02.100] was this page written or not?
+[00:06:02.780 --> 00:06:05.040] So I cannot know this because I mean,
+[00:06:05.040 --> 00:06:12.660] I mean, I might have submitted my change to the disk controller,
+[00:06:12.860 --> 00:06:16.320] but I don't know if the disk controller performed right already.
+[00:06:16.800 --> 00:06:19.780] And so therefore the state of my database is uncertain.
+[00:06:20.120 --> 00:06:22.340] And this makes your recovery of course much more difficult.
+[00:06:22.660 --> 00:06:27.540] Now because how should I roll forward my log file?
+[00:06:28.880 --> 00:06:31.680] Because I don't know what is my state of disk.
+[00:06:31.800 --> 00:06:34.360] So when power comes back again, I restart my machine.
+[00:06:35.040 --> 00:06:40.200] Now I have a database file, sure, but I don't know, at least a priori I don't know, which
+[00:06:40.200 --> 00:06:42.200] changes are in the file and which are not.
+[00:06:44.820 --> 00:06:50.680] So what I want to do at the end is I want to take my database, I want to bring it into
+[00:06:50.680 --> 00:06:57.000] some clean state and then use a log file to reconstruct first state 2, so this one that
+[00:06:57.000 --> 00:07:02.120] is already finished and committed, and then the state 2 plus and 2 plus means I want to
+[00:07:02.120 --> 00:07:07.480] reconstruct all changes by committed transactions, because they should be in there, and all changes
+[00:07:07.480 --> 00:07:13.660] that were not committed must not be in there. So this is a challenge that we have. So everything
+[00:07:13.660 --> 00:07:19.580] that was committed must be in the system again after we come back to power. Everything that was
+[00:07:19.580 --> 00:07:23.480] not committed must not be in the system, even though it might be on disk already.
+[00:07:24.300 --> 00:07:27.740] Now you know there could be a large transaction that writes a lot of records,
+[00:07:27.740 --> 00:07:30.360] not committed yet, you run out of memory,
+[00:07:30.480 --> 00:07:32.080] therefore the system writes it to disk,
+[00:07:32.300 --> 00:07:34.300] just to get to free memory.
+[00:07:34.520 --> 00:07:35.820] And then a power failure comes.
+[00:07:36.000 --> 00:07:37.940] Then of course you must get rid of those changes.
+[00:07:38.560 --> 00:07:41.740] And this is of course a more challenging case.
+[00:07:41.980 --> 00:07:44.780] So how do we deal with restart
+[00:07:45.860 --> 00:07:48.320] when my state on disk is uncertain?
+[00:07:48.620 --> 00:07:51.100] So I don't know what has been written to disk
+[00:07:51.100 --> 00:07:52.800] and what has not been written to disk.
+[00:07:53.820 --> 00:07:54.260] Okay.
+[00:07:56.960 --> 00:08:03.800] And last feature that we will also use from our transaction, from our recovery log here,
+[00:08:04.020 --> 00:08:10.560] is we want to use a log file to abort a transaction. So to undo all the changes by a transaction.
+[00:08:10.720 --> 00:08:14.760] And this of course can happen even without errors. So it can happen because the user,
+[00:08:14.860 --> 00:08:22.020] for example, just types in SQL. So you just type rollback. Or of course there are many other ways
+[00:08:22.020 --> 00:08:22.680] to trigger this.
+[00:08:23.580 --> 00:08:27.260] And so this of course causes the transaction to abort.
+[00:08:27.420 --> 00:08:30.160] Now we must remove all the changes by transaction.
+[00:08:32.440 --> 00:08:37.340] And note that we need this functionality anyway, because if the system crashes, we must also
+[00:08:37.340 --> 00:08:39.240] undo all uncommitted transactions.
+[00:08:39.420 --> 00:08:42.820] Therefore, these aborting transactions, nothing really special.
+[00:08:43.800 --> 00:08:48.820] So this functionality is needed for crash recovery.
+[00:08:48.820 --> 00:08:52.180] Therefore, we can use the same mechanism for regular rollbacks too.
+[00:08:52.620 --> 00:08:55.180] So, okay, this is just a special case.
+[00:08:56.680 --> 00:09:00.320] Okay, now we want to look at more closely, like how can we implement this?
+[00:09:00.420 --> 00:09:04.500] So these were more abstract descriptions, how does the real implementation work?
+[00:09:05.220 --> 00:09:10.380] So first, we can look at the different kind of failure scenarios that occur.
+[00:09:10.620 --> 00:09:13.320] And this, this differ in how much effort you have to spend.
+[00:09:13.460 --> 00:09:14.880] So how easy are they to fix?
+[00:09:14.880 --> 00:09:18.780] So the first error scenario, this is the most simple scenario,
+[00:09:18.960 --> 00:09:20.100] it's not really a problem.
+[00:09:20.440 --> 00:09:23.180] So this is here classified as local failure
+[00:09:23.180 --> 00:09:24.420] with non-committed transactions,
+[00:09:24.600 --> 00:09:28.100] like user issues a rollback or users are something invalid,
+[00:09:28.300 --> 00:09:30.280] like compute one divided by zero or something.
+[00:09:30.440 --> 00:09:31.960] And this is also a board of transaction.
+[00:09:32.560 --> 00:09:35.780] So this means transaction has to be undone.
+[00:09:37.000 --> 00:09:40.240] And the only thing we must do here is we must undo all changes
+[00:09:40.240 --> 00:09:42.600] by that transaction, everything else is unaffected.
+[00:09:42.680 --> 00:09:44.560] This is called R1 recovery.
+[00:09:44.880 --> 00:09:46.680] the most simple kind of recovery.
+[00:09:46.880 --> 00:09:48.940] We just undo what a single transaction did.
+[00:09:50.540 --> 00:09:55.000] Now, the much harder scenario is this one.
+[00:09:55.580 --> 00:09:57.840] Failure with loss of memory, second one.
+[00:09:58.000 --> 00:10:01.480] So which means we crashed in a hard way
+[00:10:01.480 --> 00:10:03.420] and we lost my memory content
+[00:10:03.420 --> 00:10:04.960] and I don't know what is on disk.
+[00:10:05.260 --> 00:10:07.140] Yeah, so now I must do two things.
+[00:10:07.520 --> 00:10:09.640] These are called here R2 and R3 recovery.
+[00:10:10.100 --> 00:10:12.340] First, I must make sure that everything
+[00:10:12.340 --> 00:10:16.880] that has been committed is preserved, this is called R2 recovery.
+[00:10:17.800 --> 00:10:23.040] And second thing, all non-committed transactions must be rollbacked.
+[00:10:23.320 --> 00:10:27.000] So all changes that were not committed must be removed from the database system.
+[00:10:27.100 --> 00:10:28.180] This is called R3 recovery.
+[00:10:28.760 --> 00:10:33.280] Now depending how you implement your system, some of these steps might be a no-op.
+[00:10:33.440 --> 00:10:38.500] For example, sometimes you can go away without R3 recovery, depending on how you have implemented
+[00:10:38.500 --> 00:10:38.780] this.
+[00:10:39.300 --> 00:10:41.540] But so these are basically the features we have to do.
+[00:10:42.340 --> 00:10:50.340] local undo r2 redo all committed r3 undo all uncommitted and also the worst scenario of
+[00:10:50.340 --> 00:10:56.380] course is this one here failure was loss of external memory so this is for recovery this
+[00:10:56.380 --> 00:11:03.460] means really my server died in a brutal way so everything is gone and this now uh this is also
+[00:11:03.460 --> 00:11:08.560] called media recovery so we really must reconstruct everything and this is of course the most
+[00:11:08.560 --> 00:11:12.740] expensive and we hope that this never happens. I mean it can happen and of course we should be able
+[00:11:12.740 --> 00:11:21.980] to cope with this, but media recovery is luckily not needed as usually as the other ones.
+[00:11:22.620 --> 00:11:26.240] And so this here, the first one, this is very frequent, it occurs all the time.
+[00:11:26.740 --> 00:11:32.320] And so this occurs all the time. This occurs from time to time, this we hope it never occurs,
+[00:11:32.400 --> 00:11:38.100] but of course it can happen. Okay, now we have already talked of course about
+[00:11:38.560 --> 00:11:41.220] a storage hierarchy, so we have external memory,
+[00:11:41.340 --> 00:11:42.060] it's my database buffer.
+[00:11:42.420 --> 00:11:44.700] Now as a tricky thing is that we don't,
+[00:11:44.780 --> 00:11:46.420] in particular after we have crashed,
+[00:11:46.640 --> 00:11:50.200] we don't really know how these two interact.
+[00:11:50.440 --> 00:11:53.360] Now because I have some changes in my buffer,
+[00:11:53.660 --> 00:11:55.080] some changes are on disk,
+[00:11:56.020 --> 00:11:59.280] and I don't know what has been in my buffer
+[00:11:59.280 --> 00:12:00.840] and what has been written to disk already.
+[00:12:01.120 --> 00:12:03.040] And sometimes I really cannot know this
+[00:12:03.040 --> 00:12:04.620] because this happens asynchronously.
+[00:12:05.280 --> 00:12:07.160] Now like you have this page,
+[00:12:08.560 --> 00:12:15.000] of course then at some point we write back, let's say here we have this page with C' and so then we
+[00:12:15.000 --> 00:12:21.240] send to the disk, please write C'. Now so the page with C', please write this. We send this request
+[00:12:21.240 --> 00:12:26.900] to the disk controller and say please perform the write, then we crash and when we come back again,
+[00:12:27.200 --> 00:12:34.820] we cannot know, at least usually we cannot know, has the page C already been updated to C'? Yes or no?
+[00:12:34.820 --> 00:12:37.580] So this is something that we cannot predict.
+[00:12:38.700 --> 00:12:41.540] Therefore, we must somehow cope with this problem.
+[00:12:43.680 --> 00:12:46.620] And so how difficult this problem is,
+[00:12:46.620 --> 00:12:48.880] depends on how we implement our buffer manager.
+[00:12:49.340 --> 00:12:53.640] So we have looked at this dimension previously in the lecture.
+[00:12:53.960 --> 00:12:57.280] So basically we talk about steel and no steel.
+[00:12:58.060 --> 00:13:00.580] So steel, no steel, and we look at force and no force.
+[00:13:01.020 --> 00:13:02.840] So first steel and no steel.
+[00:13:04.820 --> 00:13:07.600] which means a page that are modified by active transactions
+[00:13:07.600 --> 00:13:09.060] must not be written back to disk.
+[00:13:09.260 --> 00:13:11.460] So we only write back pages to disk
+[00:13:11.460 --> 00:13:14.700] after everything has been committed on this page.
+[00:13:14.880 --> 00:13:20.280] This of course means that the R3 recovery is not needed.
+[00:13:20.660 --> 00:13:21.860] And so if I don't steal,
+[00:13:22.300 --> 00:13:25.260] so then I know that only committed changes
+[00:13:25.260 --> 00:13:26.220] are written to disk.
+[00:13:26.600 --> 00:13:29.660] Therefore I don't have to worry that some parts
+[00:13:30.320 --> 00:13:32.540] are written even though the transaction
+[00:13:32.540 --> 00:13:33.560] has not been committed yet.
+[00:13:34.820 --> 00:13:40.660] And you usually want to use a steel strategy because a steel strategy allows you to modify
+[00:13:40.660 --> 00:13:42.280] data that is larger than your memory.
+[00:13:42.860 --> 00:13:47.780] So if you run no steel, you cannot update something that is larger than memory because
+[00:13:47.780 --> 00:13:49.260] otherwise you run out of pages.
+[00:13:50.660 --> 00:13:54.860] So therefore usually we look at the more complex strategy here.
+[00:13:55.320 --> 00:13:57.360] The same with force versus no force.
+[00:13:57.840 --> 00:14:02.940] So force means when we commit, then we flush all changes to disk immediately.
+[00:14:04.820 --> 00:14:08.520] your recovery easier because you know after I've committed my changes on disk.
+[00:14:09.000 --> 00:14:12.400] Downside is we write to disk all the time and this is quite expensive.
+[00:14:12.780 --> 00:14:16.980] Therefore for performance reasons we usually want to use a no-for strategy,
+[00:14:17.340 --> 00:14:23.560] which means that if somebody commits we just say yes it's fine and we do not write it to disk
+[00:14:23.560 --> 00:14:28.620] immediately. Of course later we will write it but not immediately. But of course this means
+[00:14:28.620 --> 00:14:32.820] that when we crash we don't know if my transaction has been written to disk already or not.
+[00:14:34.820 --> 00:14:39.900] Okay, as you see here the effects on recovery. So if I use the most simple variant, namely
+[00:14:40.460 --> 00:14:45.620] force no steal, so this is the most simple box this means and I don't have to do redo because
+[00:14:45.620 --> 00:14:50.360] the force strategy forced all my changes to disk. So I know if it's committed it's on disk.
+[00:14:51.480 --> 00:14:58.660] And because I don't steal I don't have to do undo, because I only write things to disk if
+[00:14:58.660 --> 00:15:04.200] they have been committed. On the other extreme if we look at the most generic one here, namely this
+[00:15:04.960 --> 00:15:06.400] no force and steel.
+[00:15:06.600 --> 00:15:09.340] This means I have to do redo because could be that my change
+[00:15:09.340 --> 00:15:11.020] has not been written to disk already.
+[00:15:11.060 --> 00:15:13.900] So I must reconstruct it and also must do undo
+[00:15:13.900 --> 00:15:15.820] because I might have written something to disk
+[00:15:15.820 --> 00:15:16.960] that was not committed yet.
+[00:15:17.500 --> 00:15:20.480] And this of course requires me to undo the change.
+[00:15:20.600 --> 00:15:23.000] And now usually we want to be in this box.
+[00:15:23.220 --> 00:15:25.620] Now for performance reasons, this is the best box.
+[00:15:25.800 --> 00:15:27.440] Of course also the most difficult box,
+[00:15:27.540 --> 00:15:29.440] but nevertheless, it's the best.
+[00:15:31.280 --> 00:15:34.140] Okay, now there are some more variations
+[00:15:34.820 --> 00:15:39.420] So the effect recovery, like first question is how do you actually implement your update
+[00:15:39.420 --> 00:15:39.940] strategy?
+[00:15:40.860 --> 00:15:44.800] And also there are multiple ways to do this.
+[00:15:47.540 --> 00:15:52.420] Perhaps most straightforward strategy here is update in place.
+[00:15:52.960 --> 00:15:58.920] And also which means each page sits on disk and then when we do a modification we just
+[00:15:58.920 --> 00:16:01.720] overwrite it and then provide the page back to disk later.
+[00:16:02.800 --> 00:16:08.680] This is of course the best from a space perspective, because we just write it as it is, but it
+[00:16:08.680 --> 00:16:14.400] has some compli- this requires some complicated recovery, potentially at least, because this
+[00:16:14.400 --> 00:16:19.600] means that I might have data on disk that is not committed yet.
+[00:16:21.380 --> 00:16:24.740] Now, the other two strategies we see here avoid this.
+[00:16:24.900 --> 00:16:28.860] The first one, the most simple one, the so-called twin block approach.
+[00:16:29.080 --> 00:16:31.160] Twin block means each page exists twice.
+[00:16:31.720 --> 00:16:35.520] So we see a page a and 0 and 1, page p and 0 and 1 and so
+[00:16:35.520 --> 00:16:39.240] So this is always a twin and now let's say this is my
+[00:16:40.140 --> 00:16:44.200] My old database state then when you do an update you transform this into a prime
+[00:16:44.760 --> 00:16:47.880] Now you have both and now when when you commit
+[00:16:47.880 --> 00:16:52.640] Then you just remember that you switch all the 0 pages to all the 1 pages
+[00:16:53.380 --> 00:16:54.920] Yeah, so then that's it
+[00:16:54.920 --> 00:17:02.640] And if you crash, you just continue using the zero pages and don't worry about the one pages.
+[00:17:03.120 --> 00:17:08.360] So we basically always have a committed state, either zero or one.
+[00:17:08.540 --> 00:17:12.220] We update the other one and once we commit, we swap the role of both.
+[00:17:13.420 --> 00:17:16.460] So this is pretty robust concerning crashes.
+[00:17:16.880 --> 00:17:21.820] Downside is first you store everything twice, because we have double the space consumption.
+[00:17:23.100 --> 00:17:26.880] Also, this switching here is not as simple as you might think.
+[00:17:27.020 --> 00:17:32.760] Because you must be sure that all your pages are in the correct state.
+[00:17:33.420 --> 00:17:40.740] So basically, because after you flip, you must be sure that both pages are in the correct
+[00:17:40.740 --> 00:17:43.880] state because otherwise you have a problem when you continue running.
+[00:17:44.400 --> 00:17:47.200] So it's not so super cheap.
+[00:17:48.660 --> 00:17:50.700] Easy to implement but not very cheap.
+[00:17:51.820 --> 00:17:56.460] The third variant here that we already talked about in the lecture here is shadow pages.
+[00:17:57.040 --> 00:18:01.400] So we don't replicate everything as in the TwinBlock, but we only replicate the change
+[00:18:01.400 --> 00:18:01.940] pages.
+[00:18:02.340 --> 00:18:07.020] It gives you less redundancy, but it's even more complicated and you lose clustering.
+[00:18:07.240 --> 00:18:10.000] And so it is all kind of difficult things.
+[00:18:11.480 --> 00:18:16.080] Now by the way, there is one interesting problem here that we don't talk a lot about in the
+[00:18:16.080 --> 00:18:16.240] lecture.
+[00:18:16.360 --> 00:18:18.140] I think there is no other slide that talks about this.
+[00:18:18.140 --> 00:18:21.520] But I want to mention here that in particular
+[00:18:21.520 --> 00:18:22.580] was updated in place.
+[00:18:23.300 --> 00:18:26.180] And this is a problem of so-called torn writes.
+[00:18:26.900 --> 00:18:28.600] Torn writes are an absolute nightmare.
+[00:18:29.360 --> 00:18:30.680] So what is a torn write?
+[00:18:30.840 --> 00:18:32.920] Let's assume here, this is page A.
+[00:18:35.840 --> 00:18:38.600] Now I want to write a new version of page A
+[00:18:38.600 --> 00:18:40.900] and let's call this page A prime.
+[00:18:42.140 --> 00:18:44.580] Now what could, it's not very likely of course,
+[00:18:44.720 --> 00:18:46.000] but what could happen is,
+[00:18:46.000 --> 00:18:54.140] but this is also a page and let's say for simplicity the old state contained a lot of ones
+[00:18:55.340 --> 00:19:02.540] all of ones the new state contains a lot of twos yeah and what could conceivably happen is
+[00:19:03.740 --> 00:19:09.100] then you you start to write then a power failure happens in a very inconvenient moment
+[00:19:09.100 --> 00:19:15.400] and then the beginning of this page was updated already like you have a lot of twos here
+[00:19:16.200 --> 00:19:18.220] but the end was not.
+[00:19:20.520 --> 00:19:23.420] And this is a so-called torn write, a partial write.
+[00:19:23.600 --> 00:19:25.120] So you try to write the whole page,
+[00:19:25.240 --> 00:19:27.520] but in reality, you only wrote the half of the page.
+[00:19:28.380 --> 00:19:32.580] And this is super, super difficult to prevent and to handle.
+[00:19:32.800 --> 00:19:34.400] So this is an absolute nightmare.
+[00:19:35.660 --> 00:19:40.640] So there are basically three approaches to take out this problem.
+[00:19:42.000 --> 00:19:44.920] First approach, you use battery buffer disks.
+[00:19:46.000 --> 00:19:46.420] the best.
+[00:19:46.900 --> 00:19:52.260] So you have your disk control, you can buy disks that have a small battery in them that
+[00:19:52.260 --> 00:19:57.300] guarantees that you can still flush out the write buffer.
+[00:19:57.720 --> 00:20:03.440] So therefore the disk guarantees you that if you issue a write, this write will be done
+[00:20:03.440 --> 00:20:04.980] either completely or not at all.
+[00:20:05.060 --> 00:20:08.360] So you get a kind of atomicity on a write basis.
+[00:20:09.220 --> 00:20:13.360] So this is, if you ask me, the best solution, because this solves this problem.
+[00:20:13.360 --> 00:20:16.840] one that's for oil cost you a few euro and the problem is gone.
+[00:20:16.960 --> 00:20:19.660] The unfortunate thing is most people don't have battery buffer disks.
+[00:20:19.920 --> 00:20:22.120] You can buy them, but most people don't have them.
+[00:20:22.660 --> 00:20:24.100] So now what do you do then?
+[00:20:25.120 --> 00:20:30.300] So I think IBM had a solution where they first detected this problem.
+[00:20:30.800 --> 00:20:38.300] And they detected this in a way like you have beginning of and end of your page,
+[00:20:38.300 --> 00:20:42.540] you have a marker, a bit, a single bit that you use.
+[00:20:43.360 --> 00:20:49.200] both is zero and whenever you write to the page you flip this so which means after the next update
+[00:20:49.200 --> 00:20:59.480] both should be one yeah one and one and then when you do the next write you flip it again so which
+[00:20:59.480 --> 00:21:05.300] both should be zero and so on yes you always alternate between this and now when you read
+[00:21:05.300 --> 00:21:11.320] back a page you check if these two bits are consistent so if the bit at the beginning and
+[00:21:11.320 --> 00:21:12.940] the bit at the end, it'll have the same value.
+[00:21:13.160 --> 00:21:14.540] If yes, everything is good.
+[00:21:14.900 --> 00:21:18.040] If not, we have encountered a tone right,
+[00:21:18.280 --> 00:21:21.500] which means that my page here is damaged.
+[00:21:21.840 --> 00:21:24.160] And if you do this, you start a full recovery.
+[00:21:24.900 --> 00:21:27.000] Now, so you notify the user, say,
+[00:21:27.160 --> 00:21:29.880] oh, I noticed that your media is corrupted.
+[00:21:30.840 --> 00:21:32.080] Please do media recovery.
+[00:21:32.320 --> 00:21:33.720] And then you do a full recovery.
+[00:21:33.940 --> 00:21:35.660] And this is super invasive and expensive
+[00:21:35.660 --> 00:21:37.360] and absolutely terrible.
+[00:21:37.960 --> 00:21:41.180] Okay, so this is the second alternative to deal with this.
+[00:21:41.380 --> 00:21:48.340] The third alternative is also somewhat expensive, but a bit more user friendly, because for
+[00:21:48.340 --> 00:21:52.920] media recovery this requires that the user has a backup of your database.
+[00:21:53.200 --> 00:21:56.880] Now of course we have previously said you should have a backup of your database in your
+[00:21:56.880 --> 00:22:01.700] log file and you should store it in a different disk, but experience tells us should does not
+[00:22:01.700 --> 00:22:02.660] mean you have.
+[00:22:02.880 --> 00:22:06.640] Now so sometimes people simply don't have this, and then of course you have a problem.
+[00:22:07.360 --> 00:22:09.880] When you turn right, of course your data is really damaged.
+[00:22:10.560 --> 00:22:17.820] And therefore what other systems do, like for example, SQLite does it by default, Postgres
+[00:22:17.820 --> 00:22:19.420] I'm not sure it does it by default.
+[00:22:19.580 --> 00:22:20.880] At least you can enable it.
+[00:22:21.020 --> 00:22:23.340] I'm not 100% sure if they do it by default.
+[00:22:23.660 --> 00:22:26.040] But what they do is, they write twice.
+[00:22:27.340 --> 00:22:32.940] Which means you have this page A that you want to update to page A'.
+[00:22:32.940 --> 00:22:38.440] And therefore before you do this you store on a different place on disk you write as you
+[00:22:38.980 --> 00:22:44.780] Remember that I want to update page as well as remember page a and I want to write a lot of tools
+[00:22:45.760 --> 00:22:52.000] Okay, this you write to disk then you force it to disk which means you you make sure that it's really physically on disk and
+[00:22:52.000 --> 00:22:54.480] Then you perform the update of page a
+[00:22:54.480 --> 00:22:59.280] Okay, and now if you have crash happens value update performance is right
+[00:22:59.280 --> 00:23:06.200] So if you get a partial write here, so 2 in the beginning, 1 at the end, no problem because my second place here still knows,
+[00:23:06.400 --> 00:23:12.340] so this place here still tells me that I have to do this write. So when I come back again, I see, oh, there was a pending write,
+[00:23:12.360 --> 00:23:17.980] and then I redo the write. Okay, so then ultimately this page will be in the correct state.
+[00:23:18.160 --> 00:23:24.340] Now it could be of course that this write here fails, but that's okay, because then we can use this marker trick from IBM
+[00:23:24.340 --> 00:23:31.220] So to realize if my write here was complete and if it's incomplete, I just discard it because I know that my original page was not modified
+[00:23:31.860 --> 00:23:35.180] Okay, so with this thing you can cope with partial writes
+[00:23:35.180 --> 00:23:39.960] But this is quite expensive because we write everything twice. So it's complicated to implement
+[00:23:40.500 --> 00:23:46.840] This is an absolute nightmare. It would be much better if the hard disk itself would guarantee atomicity in writing
+[00:23:48.260 --> 00:23:52.680] Unfortunately, the usual interfaces we have from operating systems does not offer this
+[00:23:54.340 --> 00:23:57.760] to tell the operating system please write this here in an atomic fashion
+[00:23:58.500 --> 00:24:08.400] so at least regular systems like windows and linux don't don't offer this okay um now um
+[00:24:10.140 --> 00:24:15.140] in the following we will assume the following namely the most generic setup namely that my
+[00:24:15.140 --> 00:24:22.080] system runs in steel no false update in place and fine-grained locking this is the most difficult
+[00:24:22.900 --> 00:24:28.840] setup but also the most performant. So this is usually what we assume a database to have.
+[00:24:29.500 --> 00:24:33.360] Which means we have to cope with all these problems that we have mentioned before.
+[00:24:35.380 --> 00:24:41.460] And the standard, in a way, you could say the most popular strategy to deal with this is
+[00:24:41.460 --> 00:24:47.260] actually quite a good one. So this is a so-called ARIES protocol. So this is a recovery protocol
+[00:24:47.260 --> 00:24:54.060] invented by Mohan while he was at IBM. Funny coincidence is I think yesterday,
+[00:24:54.280 --> 00:25:00.920] yeah, yesterday Mohan actually had a retirement party at SIGMOD. SIGMOD is the largest database
+[00:25:00.920 --> 00:25:05.660] conference that is just taking place this week. And oh, when you hear this, of course it has
+[00:25:05.660 --> 00:25:10.880] already happened. But when I recorded it was yesterday. So he had a retirement party, so
+[00:25:10.880 --> 00:25:16.660] it has been at IBM for I believe 36 years or so, a long time. But nevertheless he invented this
+[00:25:17.260 --> 00:25:21.680] And this became the standard for database recovery.
+[00:25:21.840 --> 00:25:23.920] So all big database companies implement this.
+[00:25:24.060 --> 00:25:25.760] And this is indeed a good protocol.
+[00:25:25.960 --> 00:25:28.140] It has some quite good strategies.
+[00:25:29.520 --> 00:25:31.940] And I will discuss them when we come
+[00:25:31.940 --> 00:25:33.260] to the technical details.
+[00:25:33.480 --> 00:25:36.400] But basically what the ARIS protocol does,
+[00:25:36.640 --> 00:25:38.960] it records all changes that you perform
+[00:25:38.960 --> 00:25:42.680] in a database, in a sequential file,
+[00:25:42.820 --> 00:25:46.240] and does it in a clever way so that we can handle
+[00:25:47.260 --> 00:25:54.780] crushing restarting and so on and in this log file we store redo and undo information so read
+[00:25:54.780 --> 00:26:00.360] information that means what do we have to do to do this change again and under information says
+[00:26:00.360 --> 00:26:07.360] i remember what do you have to do to restore the system as it was before now so redo how to
+[00:26:08.160 --> 00:26:17.100] repeat my execution and undo how to remove the state now interestingly um aries does something
+[00:26:17.260 --> 00:26:19.340] that's called physiological logging,
+[00:26:20.440 --> 00:26:23.720] which means that the redo information is physical,
+[00:26:24.140 --> 00:26:26.260] while the undo information is logical.
+[00:26:26.660 --> 00:26:29.660] So I will explain the exact details,
+[00:26:29.680 --> 00:26:32.300] what this means when we come to the redo and undo phases.
+[00:26:32.500 --> 00:26:34.400] But I say, so this is slightly asymmetric.
+[00:26:34.740 --> 00:26:37.360] So redo and undo is not stored in the same way.
+[00:26:37.780 --> 00:26:40.100] So conceptually these are different.
+[00:26:41.380 --> 00:26:45.860] Okay, now, so when we run the database systems,
+[00:26:47.260 --> 00:26:48.240] and I have my database.
+[00:26:48.580 --> 00:26:50.160] So here this is my database box.
+[00:26:50.460 --> 00:26:52.560] I get from application, I get transactions.
+[00:26:53.060 --> 00:26:55.680] And of course they update my database buffer.
+[00:26:56.060 --> 00:26:57.580] So as this all the data is a change
+[00:26:58.100 --> 00:27:00.420] and the database buffer is then synchronized
+[00:27:00.420 --> 00:27:01.920] with my physical medium on disk.
+[00:27:02.500 --> 00:27:04.320] Okay, so this is my regular processing.
+[00:27:04.560 --> 00:27:07.040] And parallel to this, I have my logging here.
+[00:27:07.240 --> 00:27:08.480] So all changes that I perform,
+[00:27:08.540 --> 00:27:09.560] I've written to the log buffer.
+[00:27:10.040 --> 00:27:12.100] So log buffer is then written to a log file.
+[00:27:12.960 --> 00:27:16.480] And for this, with this log file and my database state,
+[00:27:17.260 --> 00:27:20.000] I can do R1, R2 and R3 recovery.
+[00:27:20.240 --> 00:27:25.740] So if my transaction rolls back, I can use my log file to undo my changes.
+[00:27:26.480 --> 00:27:33.960] If my system crashes, I can use the log for the database state plus the log file to
+[00:27:35.400 --> 00:27:38.540] bring the database in the state as it was in the moment of the crash.
+[00:27:39.160 --> 00:27:43.280] Now you see two more outputs here, namely the database archive,
+[00:27:43.280 --> 00:27:46.640] This means backups basically and the log archives.
+[00:27:47.020 --> 00:27:51.760] So this means you write your log files somewhere safe on a different machine, hopefully.
+[00:27:52.540 --> 00:27:56.720] So somewhere where it's, so the log file itself is kept in your own machine for performance
+[00:27:56.720 --> 00:28:00.900] reasons, but for safety reasons, you also want to write it somewhere else in the log
+[00:28:00.900 --> 00:28:04.740] archive and this archive medium we need for R4 recovery.
+[00:28:05.020 --> 00:28:11.880] So if my own machine goes down in a really bad event, so I lose my medium, then we use
+[00:28:13.280 --> 00:28:17.980] the database archive and the log archive to reconstruct the database state even in this
+[00:28:17.980 --> 00:28:22.440] catastrophic event. Of course this is expensive and slow, so therefore we hope that our full recovery
+[00:28:22.440 --> 00:28:30.300] never happens. Okay now what about the log buffer, so the things that we use in memory to
+[00:28:30.880 --> 00:28:38.340] record all changes. So basically what this means here, we have a certain change and then when the
+[00:28:38.340 --> 00:28:42.140] next change comes we add it to my buffer and add it to my buffer and add it to my buffer
+[00:28:42.140 --> 00:28:48.520] so i always write here new records whenever a change occurs and of course at some point my buffer
+[00:28:48.520 --> 00:28:54.780] is full and so here we here we see my my insert so this is my current insert point and the insert
+[00:28:54.780 --> 00:28:59.320] point here moves to the right and of course at some point my buffer is full and then this happens
+[00:28:59.320 --> 00:29:06.140] or a bit earlier hopefully i start writing out these entries here to disk so i write them to disk
+[00:29:07.040 --> 00:29:09.020] And then of course I get new space.
+[00:29:09.300 --> 00:29:11.500] So everything that has been written is free again.
+[00:29:11.780 --> 00:29:13.500] So then I continue inserting.
+[00:29:13.640 --> 00:29:14.880] This is the concept of a ring buffer.
+[00:29:15.600 --> 00:29:19.540] So I insert at one end and I take out at the other end.
+[00:29:20.600 --> 00:29:23.040] When the two ends meet, then the ring buffer is full.
+[00:29:23.140 --> 00:29:25.480] And then I'm forced to write something to a file
+[00:29:25.480 --> 00:29:26.800] to get more free memory.
+[00:29:29.900 --> 00:29:33.100] Now on a slide, this looks like an easy thing.
+[00:29:33.200 --> 00:29:34.040] You just have a ring.
+[00:29:34.040 --> 00:29:37.180] So you have basically here you have a reader.
+[00:29:37.340 --> 00:29:38.660] So this is how far you have read.
+[00:29:38.780 --> 00:29:40.440] So this is a reader walks in this direction.
+[00:29:40.740 --> 00:29:42.360] The writer walks in this direction.
+[00:29:42.580 --> 00:29:43.700] And of course they must not meet
+[00:29:43.700 --> 00:29:45.760] because when they meet it's full.
+[00:29:48.860 --> 00:29:51.120] And now interesting question is how do you implement this?
+[00:29:52.180 --> 00:29:54.300] I mean, I can draw you a nice picture of such a ring,
+[00:29:54.380 --> 00:29:55.360] but how do you implement this?
+[00:29:56.360 --> 00:29:59.200] Now the obvious way to implement this, of course,
+[00:29:59.240 --> 00:30:00.400] is to just use an array.
+[00:30:00.780 --> 00:30:02.340] So you just, this is all your content.
+[00:30:04.040 --> 00:30:08.860] So and then of course you have a writer that moves to the right and then if you read it that follows the writer
+[00:30:08.860 --> 00:30:11.800] So no problem problem is what happens if my buffer is full?
+[00:30:12.900 --> 00:30:17.200] So then could be that I want to write a log record that starts here
+[00:30:17.680 --> 00:30:19.840] Then it doesn't fit because my array is full
+[00:30:19.840 --> 00:30:23.920] So I must write the rest of my log record here at the beginning
+[00:30:25.340 --> 00:30:28.660] You can do this of course you just build use one array and
+[00:30:29.660 --> 00:30:32.660] Write the first part of the log and the rest at the end
+[00:30:34.040 --> 00:30:38.540] is quite complicated to implement because your log record usually consists of multiple entries.
+[00:30:38.700 --> 00:30:43.860] For each entry you must check, oh do I still fit or does part of me fit? And so this is
+[00:30:43.860 --> 00:30:50.420] meets the logic for writing is not as easy as you might think. Because you have to serialize
+[00:30:50.420 --> 00:30:58.580] out something in an array that potentially wraps around. Actually, a particular elegant way to
+[00:30:58.580 --> 00:31:08.200] implement this is it's admittedly a bit it's sneaky you have an array as before
+[00:31:08.200 --> 00:31:13.720] yeah but now you use your virtual memory management to map this array twice so
+[00:31:13.720 --> 00:31:20.320] this is my my physical array let's call this physical array this of course
+[00:31:20.320 --> 00:31:25.380] hits my memory and then we map this into my logical address space here
+[00:31:29.200 --> 00:31:30.640] So log buffer.
+[00:31:31.000 --> 00:31:33.920] And then I map the same, so this is mapped here.
+[00:31:35.880 --> 00:31:39.040] And then I map the very same array again, behind.
+[00:31:43.980 --> 00:31:47.820] And you might be surprised that this is possible, but indeed it is.
+[00:31:48.140 --> 00:31:53.240] Because we have a logical address, we have logical memory, therefore it is possible to
+[00:31:53.240 --> 00:31:56.700] map the same physical address twice in the logical address space.
+[00:31:58.620 --> 00:32:00.200] and then forcing the address.
+[00:32:00.320 --> 00:32:02.300] Oh, then Windows can also do this with,
+[00:32:02.500 --> 00:32:04.880] I think it's called create your file or something.
+[00:32:05.080 --> 00:32:08.620] You can map the same physical memory twice
+[00:32:08.620 --> 00:32:11.780] and you can map it so that it's immediately next to each other.
+[00:32:12.320 --> 00:32:15.060] And this has some very unfortunate consequences.
+[00:32:15.060 --> 00:32:17.200] Namely, when you write something here,
+[00:32:17.300 --> 00:32:20.260] like you think you're writing here
+[00:32:20.260 --> 00:32:23.240] and the second part of course crosses behind
+[00:32:23.240 --> 00:32:25.560] the end of your log bar file here
+[00:32:25.560 --> 00:32:28.680] because this part here is beyond your log buffer.
+[00:32:28.980 --> 00:32:32.840] But what happens is that because these two errors
+[00:32:32.840 --> 00:32:34.560] are in reality the same, physically the same,
+[00:32:34.980 --> 00:32:38.180] your right to this place in reality writes to that place.
+[00:32:39.360 --> 00:32:41.960] Or in a physical sense, these two places are just the same.
+[00:32:42.400 --> 00:32:43.620] And so we have two memory addresses
+[00:32:43.620 --> 00:32:45.640] that represent the same memory location.
+[00:32:45.840 --> 00:32:48.500] Therefore we can brutally write behind
+[00:32:48.500 --> 00:32:50.660] the end of the log buffer.
+[00:32:52.380 --> 00:32:59.940] And so if we then just, after my log record is done, I just have to make sure of course
+[00:32:59.940 --> 00:33:01.360] that my writer must continue here.
+[00:33:01.540 --> 00:33:05.420] So I write over the end afterwards, I put my position to the correct end position.
+[00:33:05.760 --> 00:33:09.700] This is a particular sneaky way to implement a ring buffer and I strongly encourage this.
+[00:33:10.120 --> 00:33:14.480] Much easier, of course setting up this double mapping once is a bit tricky, but once you
+[00:33:14.480 --> 00:33:19.140] did this, much easier to use because you can just blindly write and pretend that this wrap
+[00:33:20.660 --> 00:33:22.240] Only when you advance your pointer,
+[00:33:22.360 --> 00:33:23.200] you must check once,
+[00:33:23.520 --> 00:33:25.180] okay, where do you have to continue writing?
+[00:33:25.440 --> 00:33:27.700] Yeah, so very performant
+[00:33:27.700 --> 00:33:29.320] and not that difficult to implement.
+[00:33:31.040 --> 00:33:36.580] Okay, now once we have our log buffer of all changes,
+[00:33:36.800 --> 00:33:39.640] now an important concept we have to follow
+[00:33:39.640 --> 00:33:41.580] is the so-called write-ahead log principle.
+[00:33:41.580 --> 00:33:46.020] Also sometimes you just use acronym WAL,
+[00:33:46.320 --> 00:33:47.200] so write-ahead log.
+[00:33:48.020 --> 00:33:50.060] And the write-ahead log principle says,
+[00:33:50.720 --> 00:33:55.320] Before a transaction is committed, all corresponding log entries must be written to disk.
+[00:33:55.920 --> 00:33:58.880] And the same before a modified page is written to disk,
+[00:33:59.140 --> 00:34:02.940] all log entries that involve that particular page must be written to disk.
+[00:34:03.720 --> 00:34:06.220] This is called forcing the log.
+[00:34:07.120 --> 00:34:11.640] Which means you must not update a page and you must not acknowledge a commit
+[00:34:12.240 --> 00:34:16.260] before the corresponding log entries have been written to disk.
+[00:34:17.740 --> 00:34:22.840] And you know that written to disk is a pretty strong requirement.
+[00:34:23.020 --> 00:34:27.100] So this does not mean you have to have to issue a write call to a file, but you must
+[00:34:27.100 --> 00:34:29.580] be sure that it is really on disk.
+[00:34:30.060 --> 00:34:41.920] And this means you issue, usually this involves something like for example, write plus fsync.
+[00:34:43.880 --> 00:34:49.220] which means you tell the operating system please write this and afterwards you do an
+[00:34:49.220 --> 00:34:54.240] fsync call fsync tells operating system please make sure that my changes are really on disk
+[00:34:55.380 --> 00:35:01.320] which means that if i lose power so if i have power failure and i come back my changes will
+[00:35:01.320 --> 00:35:06.060] be there for sure this is not the case for a regular write because if you just do a simple
+[00:35:06.060 --> 00:35:13.120] write then the operating system says yes i got your write and usually everything works fine but
+[00:35:13.120 --> 00:35:19.200] if power goes away could be that the write does not does not hit the disk as it's still in flight
+[00:35:19.200 --> 00:35:24.660] and you don't know when it will be done but if you use um write followed by an fsync
+[00:35:26.240 --> 00:35:26.980] excuse me
+[00:35:33.260 --> 00:35:38.900] If you use write followed by an f-sync, then you can be sure that your write has hit disk.
+[00:35:39.180 --> 00:35:44.720] And therefore we can rely upon the fact that we can read it again, once we come back again
+[00:35:44.720 --> 00:35:46.120] with new power.
+[00:35:48.880 --> 00:35:52.140] So this write-adlock principle is required for durability.
+[00:35:52.140 --> 00:35:58.020] Because this means that once we have acknowledged the commit, we are absolutely sure that we
+[00:35:58.020 --> 00:36:02.580] can preserve this data even if my database crashes, if power goes away, whatever.
+[00:36:03.020 --> 00:36:08.120] And because I know that all changes by this transaction have been stored in the log and
+[00:36:08.120 --> 00:36:13.600] they have been stored in a secure way so that if power goes away, I will not lose my content.
+[00:36:15.560 --> 00:36:23.840] Okay, now, even if you do this, you have to be a bit careful, because when you write the
+[00:36:23.840 --> 00:36:28.900] log, you have to realize that disks, the disks that they are using are not byte addressable,
+[00:36:29.120 --> 00:36:31.200] which means you cannot write arbitrary small things.
+[00:36:33.880 --> 00:36:36.900] Instead what we can store are larger chunks.
+[00:36:37.340 --> 00:36:39.580] Unfortunately we don't really know how large the chunks are.
+[00:36:39.580 --> 00:36:42.220] Traditionally, the size was 512 bytes.
+[00:36:43.440 --> 00:36:45.420] Now, nowadays you have sometimes disks
+[00:36:45.420 --> 00:36:46.300] that have larger blocks.
+[00:36:46.420 --> 00:36:48.280] For example, I believe some of them are two kilobytes.
+[00:36:48.920 --> 00:36:51.860] I believe 2KB is a pretty normal block size
+[00:36:51.860 --> 00:36:53.060] on a modern disk.
+[00:36:53.360 --> 00:36:55.500] Yeah, so, but one of these two you usually have.
+[00:36:57.360 --> 00:37:04.160] And so what could happen is that you perform,
+[00:37:05.340 --> 00:37:07.220] first you cannot write something smaller
+[00:37:07.220 --> 00:37:13.780] than this block, two kilobytes or half a kilobytes as well. And what happens is, if you crash,
+[00:37:13.960 --> 00:37:20.780] you might perform a partial write. Because look at this picture here, assume we ignore this problem.
+[00:37:20.880 --> 00:37:26.500] So we just write a log file, this is the end of my log. And by unfortunate circumstances,
+[00:37:26.600 --> 00:37:32.520] this ends at position 300 or so, which is not a multiple of 500 triff and also not a multiple of
+[00:37:32.520 --> 00:37:37.800] to clear it and then you want to write a new log record so you want to write new
+[00:37:37.800 --> 00:37:44.980] entries here and so you issue a write in reality you cannot write this new
+[00:37:44.980 --> 00:37:49.360] content is impossible what you do instead is you look at the beginning here so you
+[00:37:49.360 --> 00:37:54.540] look at this block and rewrite the whole block because this is the smallest thing
+[00:37:54.540 --> 00:37:58.960] you can write and you cannot write this is few bytes instead the operating
+[00:37:58.960 --> 00:38:05.400] system for you will read the previous entry at your new data and write back back again yeah and
+[00:38:05.920 --> 00:38:10.240] this is somewhat dangerous because it could be that your system crashes in the moment that you
+[00:38:10.240 --> 00:38:15.200] perform the last write okay we know this and we usually we cope with this but yeah but this means
+[00:38:15.200 --> 00:38:20.640] you can't destroy your previous content because what some disks do is if they crash during a write
+[00:38:20.640 --> 00:38:26.180] they have filled your disk with zeros so therefore it could be that the whole block here will be
+[00:38:26.180 --> 00:38:33.440] zeroed because we did crash, but note that this block contained data that was already
+[00:38:33.440 --> 00:38:34.980] committed, namely this one here.
+[00:38:36.060 --> 00:38:40.440] So I destroy my lock entry by writing something at the end.
+[00:38:41.380 --> 00:38:43.140] This is of course very, very nasty.
+[00:38:43.580 --> 00:38:45.880] So we must not do this.
+[00:38:46.080 --> 00:38:51.160] Therefore, what you should do instead is when we flush the disk, when we write the lock
+[00:38:51.160 --> 00:38:55.240] record, so my lock record was only to 300, but I pad it.
+[00:38:56.180 --> 00:38:59.480] means I add data that I don't really need just to make the size right.
+[00:38:59.760 --> 00:39:02.260] So I pad it with zeros.
+[00:39:05.700 --> 00:39:12.200] And then I'm sure that the size small log is always a multiple of 512 and then this
+[00:39:12.200 --> 00:39:13.080] problem cannot happen.
+[00:39:13.360 --> 00:39:15.780] And so then I'm sure that I'm always writing full blocks.
+[00:39:16.820 --> 00:39:20.940] Of course you have to figure out well how large the blocks are this, but if you use a
+[00:39:20.940 --> 00:39:25.160] power of 2 that is reasonably large enough, like 4 kilobytes or so, then you are on the safe side.
+[00:39:26.180 --> 00:39:27.760] or actually you can ask your disk.
+[00:39:28.240 --> 00:39:31.680] So you can use operating system interfaces
+[00:39:31.680 --> 00:39:34.340] to figure out how large the block size is of your disk.
+[00:39:34.500 --> 00:39:36.920] And then you can make sure that you are always
+[00:39:36.920 --> 00:39:38.080] a multiple of your block size.
+[00:39:38.840 --> 00:39:41.860] But definitely this is something you have to take in mind.
+[00:39:42.560 --> 00:39:44.660] So because partial writes are dangerous.
+[00:39:45.060 --> 00:39:47.880] Yes, the related problem is partial write of pages.
+[00:39:48.020 --> 00:39:49.160] I've already talked about this.
+[00:39:49.380 --> 00:39:51.160] And there's also written on this page,
+[00:39:51.280 --> 00:39:52.960] some of these issues can be solved by hardware.
+[00:39:53.240 --> 00:39:54.980] And this is of course the best way to solve this,
+[00:39:56.180 --> 00:39:57.160] solve this problem easily.
+[00:39:57.460 --> 00:40:01.100] Just use a small battery and then it can guarantee you
+[00:40:01.100 --> 00:40:03.440] that you will never get a partial write to a block.
+[00:40:03.620 --> 00:40:06.040] So we can tackle this,
+[00:40:06.680 --> 00:40:08.520] but unfortunately most people don't have
+[00:40:08.520 --> 00:40:09.240] this kind of hardware.
+[00:40:09.740 --> 00:40:10.520] Now, so for most people,
+[00:40:10.700 --> 00:40:12.620] the disc is a bit unreliable,
+[00:40:12.820 --> 00:40:14.780] at least if you're in the presence of crashes.
+[00:40:16.040 --> 00:40:17.800] Therefore we have to think about this.
+[00:40:18.340 --> 00:40:23.160] So recovery is unfortunately full of nasty little details
+[00:40:23.160 --> 00:40:26.020] You have to all make right to guarantee
+[00:40:26.020 --> 00:40:27.320] that we survive crashes.
+[00:40:27.860 --> 00:40:29.860] And of course, another bad thing about recovery
+[00:40:29.860 --> 00:40:31.800] is that usually it doesn't occur.
+[00:40:32.240 --> 00:40:34.140] And so really hard crashes,
+[00:40:34.580 --> 00:40:37.340] like you go down in an inconvenient moment
+[00:40:37.900 --> 00:40:39.500] and you have a partial right to it.
+[00:40:39.680 --> 00:40:41.020] This is super unlikely.
+[00:40:41.560 --> 00:40:44.560] Most of the time it never happens, but it can happen.
+[00:40:44.840 --> 00:40:48.260] Yeah, and this also means that you must expect this
+[00:40:48.860 --> 00:40:50.560] and you must also test this code,
+[00:40:50.580 --> 00:40:52.020] even though it's unlikely to happen,
+[00:40:53.160 --> 00:40:57.380] does the right thing in the presence of this unfortunate circumstances.
+[00:40:59.720 --> 00:41:04.980] And now when such a situation occurs we must do a restart.
+[00:41:05.620 --> 00:41:08.980] So we have my system here, you see the x-axis here is time.
+[00:41:09.900 --> 00:41:15.560] So time progresses at some point here transaction 1 begins, sometimes later transaction 2 begins,
+[00:41:16.180 --> 00:41:18.060] even later transaction 1 commits.
+[00:41:18.320 --> 00:41:21.740] So at this point now of course the changes of T1 must never be lost.
+[00:41:23.160 --> 00:41:26.040] at some point T3 here we have a crash
+[00:41:26.040 --> 00:41:28.080] and transaction two was still in flight.
+[00:41:28.460 --> 00:41:30.740] Transaction two did not commit yet.
+[00:41:32.080 --> 00:41:34.400] And therefore we call transactions like T1
+[00:41:34.400 --> 00:41:35.340] a winner transactions.
+[00:41:35.900 --> 00:41:37.760] So they are winner because they have committed
+[00:41:37.760 --> 00:41:38.540] before the crash.
+[00:41:39.240 --> 00:41:42.220] And we say transaction two is a loser transaction,
+[00:41:42.660 --> 00:41:44.340] a loser because they did not commit yet.
+[00:41:44.500 --> 00:41:47.120] And then we come back, they must be removed.
+[00:41:47.360 --> 00:41:50.280] Now so when we come back, we must replay the winners
+[00:41:51.000 --> 00:41:57.400] and we must undo the losers. Also that afterwards the system behaves as if T1 has committed and T2
+[00:41:57.400 --> 00:42:03.480] never occurred. So this is how the system must be after successful restart. And because T2 didn't
+[00:42:03.480 --> 00:42:11.140] quit, therefore it must be vanished from our system. And in the ARIES protocol we achieve this
+[00:42:11.140 --> 00:42:17.300] by using three phases. So first the analysis phase, in the analysis phase I look at my log file,
+[00:42:17.300 --> 00:42:18.940] So this is this here is my log.
+[00:42:19.860 --> 00:42:21.800] This is my log with all my changes.
+[00:42:21.880 --> 00:42:30.640] So I read the log file from front to back and and analyze this analysis.
+[00:42:31.800 --> 00:42:35.800] And during the analysis I figure out what are the winner transactions who have committed
+[00:42:35.800 --> 00:42:37.860] and what are the loser transactions who have not committed.
+[00:42:38.640 --> 00:42:39.120] Okay.
+[00:42:39.720 --> 00:42:43.620] Then I, the second phase is the so-called redo phase.
+[00:42:44.700 --> 00:42:45.740] Again, read my log.
+[00:42:47.940 --> 00:42:56.880] And during that phase, I repeat all operations such that the database was in the same state
+[00:42:56.880 --> 00:42:58.540] as it was in the moment that it crashed.
+[00:42:58.780 --> 00:43:02.120] Note that we also redo loser transactions.
+[00:43:02.920 --> 00:43:08.300] So even though you could say, who cares about the losers, you nevertheless have to do this.
+[00:43:08.420 --> 00:43:14.980] And I will explain to you why when we talk about implementation of undo.
+[00:43:14.980 --> 00:43:19.440] But you redo also the losers, you redo winner and loser.
+[00:43:21.140 --> 00:43:26.300] And this means that you bring your database in exactly the same state as it was when the
+[00:43:26.300 --> 00:43:26.900] system crashed.
+[00:43:28.140 --> 00:43:30.840] Because the losers were there, they were just in flight.
+[00:43:31.620 --> 00:43:38.280] And afterwards we undo, and this video by the way we do backwards, we do a backwards
+[00:43:38.280 --> 00:43:40.760] pass over the log and we undo the losers.
+[00:43:42.060 --> 00:43:47.180] So which means we remove all the changes that were performed by loser transactions.
+[00:43:49.240 --> 00:43:55.040] And now you could think, okay, why redo the losers if you undo them anyway?
+[00:43:55.580 --> 00:43:57.220] The problem is they can affect each other.
+[00:43:58.860 --> 00:44:01.320] Perhaps the most obvious example is think about a B-tree.
+[00:44:02.900 --> 00:44:06.460] When a B-tree page is full, the page is split of course.
+[00:44:06.460 --> 00:44:12.300] So it could be that here, there are some transaction 1 that performs an insert in this page.
+[00:44:12.460 --> 00:44:14.720] Page is full, let's say here there was ABC.
+[00:44:15.580 --> 00:44:21.580] Now transaction 2 wants to insert value D, is full, therefore we split this here,
+[00:44:21.700 --> 00:44:27.880] and now we have AB and now empty space, and now we have CD.
+[00:44:29.200 --> 00:44:30.580] This here was uncommitted.
+[00:44:30.580 --> 00:44:34.120] Now, another transaction comes and inserts a new value B2.
+[00:44:34.440 --> 00:44:36.480] And this can do this here.
+[00:44:37.360 --> 00:44:42.920] And now, or perhaps they make it, make it even more drastic.
+[00:44:43.060 --> 00:44:47.660] Let's not insert B2, but insert value E here.
+[00:44:48.160 --> 00:44:50.060] And now this one is committed,
+[00:44:50.300 --> 00:44:51.700] while the previous one is not.
+[00:44:52.140 --> 00:44:55.660] Now, if he only redo the winner,
+[00:44:56.360 --> 00:44:58.760] so then, and the split, of course,
+[00:44:58.820 --> 00:45:00.180] here was performed by a loser transaction.
+[00:45:00.580 --> 00:45:06.100] So the split of this page here into, let's call this page P1, and this is a new split
+[00:45:06.100 --> 00:45:08.360] and we get a new page P1 and the new page P2.
+[00:45:08.700 --> 00:45:11.840] The split of P1 into P1 and P2 was performed by a loser.
+[00:45:13.380 --> 00:45:20.520] Therefore if I in the redo phase, I would not redo the split, then the database system
+[00:45:20.520 --> 00:45:24.220] would not know that the new value e must occur on the page two.
+[00:45:25.140 --> 00:45:34.660] So therefore to correctly place all the changes by the winner transactions, I must also repeat
+[00:45:34.660 --> 00:45:37.120] the loser transactions because the losers affect the winners.
+[00:45:37.920 --> 00:45:43.120] Of course, afterwards we undo the losers, so afterwards we undo what the transaction
+[00:45:43.120 --> 00:45:47.740] did, but nevertheless we have to do it in this way because otherwise we cannot safely
+[00:45:47.740 --> 00:45:50.160] reapply the changes by the winners.
+[00:45:50.640 --> 00:45:52.940] Okay, and therefore in the final step we undo the losers.
+[00:45:54.740 --> 00:45:59.800] So this is just a picture that I draw. First phase, forward pass over the log.
+[00:45:59.960 --> 00:46:06.480] We figure out who is winner to loser. Then second phase redo, again forward pass over the log.
+[00:46:06.660 --> 00:46:08.840] We apply all changes by winners and losers.
+[00:46:11.380 --> 00:46:16.080] Third phase undo, we go backwards and we undo all changes by losers transactions.
+[00:46:18.160 --> 00:46:20.860] Now, what do we actually write into this log record?
+[00:46:21.040 --> 00:46:23.760] I say in the log we record all the changes that are performed.
+[00:46:23.980 --> 00:46:24.400] Yeah.
+[00:46:24.420 --> 00:46:25.760] So what we do actually write.
+[00:46:26.080 --> 00:46:26.520] Yeah.
+[00:46:26.640 --> 00:46:31.040] So, um, we store a number of elements here.
+[00:46:31.300 --> 00:46:32.800] First one, log sequence number.
+[00:46:33.340 --> 00:46:39.780] This is just conceptually just a monotonic increasing number of, for each of those of
+[00:46:39.780 --> 00:46:43.060] manage mains, first record, second record, third record, and so on.
+[00:46:43.120 --> 00:46:45.220] So the log sequence number, monotonic increasing number.
+[00:46:46.820 --> 00:46:50.220] Now, in most implementations, this number does not really exist.
+[00:46:52.000 --> 00:46:53.320] Conceptually these numbers are in the log.
+[00:46:53.440 --> 00:46:58.560] In reality, what you will often use is, you will use the byte offset in the log file as
+[00:46:58.560 --> 00:46:59.300] log sequence number.
+[00:46:59.640 --> 00:47:02.080] Because clearly the byte offset is monotronically growing.
+[00:47:02.300 --> 00:47:10.320] So as you add new values, say we get larger offsets, therefore we will use the byte offset
+[00:47:10.320 --> 00:47:11.960] in the log file as log sequence number.
+[00:47:11.960 --> 00:47:15.220] And now on the slides and also in most textbooks,
+[00:47:15.480 --> 00:47:18.460] we claim that we really write a number
+[00:47:18.460 --> 00:47:20.180] in the log record, like one, two, three, four.
+[00:47:20.840 --> 00:47:23.200] As I said, usually don't do this in the implementation.
+[00:47:23.440 --> 00:47:24.820] And of course you can, you could,
+[00:47:24.980 --> 00:47:27.020] but there's no strong reason to do this
+[00:47:27.020 --> 00:47:30.040] because we can just figure this,
+[00:47:30.340 --> 00:47:32.880] we can just use my position as implicit number.
+[00:47:34.320 --> 00:47:36.080] Now our second entry here,
+[00:47:36.100 --> 00:47:37.820] we record which transaction this is.
+[00:47:38.060 --> 00:47:40.320] We need this information to figure out,
+[00:47:41.960 --> 00:47:42.640] yes or no.
+[00:47:43.320 --> 00:47:45.220] So therefore we must later figure out
+[00:47:45.220 --> 00:47:46.580] if it was a winner or loser.
+[00:47:46.880 --> 00:47:49.700] So for each change we record which transaction did it,
+[00:47:50.020 --> 00:47:52.940] then which page was affected.
+[00:47:55.100 --> 00:47:58.820] And then how can we redo this change?
+[00:47:59.000 --> 00:48:00.360] We'll talk about this in a moment.
+[00:48:00.480 --> 00:48:03.280] So we record, what do you have to do to redo this change?
+[00:48:04.840 --> 00:48:07.500] Then what do you have to do is undo this change.
+[00:48:07.820 --> 00:48:08.960] So redo and undo information.
+[00:48:09.800 --> 00:48:12.100] And finally, previous log sequence number.
+[00:48:12.240 --> 00:48:15.080] So what was the previous change by that transaction?
+[00:48:16.800 --> 00:48:19.280] And we need this to undo the transactions.
+[00:48:19.600 --> 00:48:23.360] Because remember we start at the end, if you look at the last change of a transaction,
+[00:48:23.560 --> 00:48:27.640] we undo this one, and then we use this previous LSN to figure out what was the previous change
+[00:48:27.640 --> 00:48:28.360] of this transaction.
+[00:48:28.540 --> 00:48:30.440] And then we also undo this one and so on.
+[00:48:30.560 --> 00:48:34.480] So we use this chaining here to undo all changes by a given transaction.
+[00:48:34.480 --> 00:48:38.560] Now, what about the content of this undo and redo entries here?
+[00:48:42.220 --> 00:48:50.480] So in the redo entry, the easiest case to store the redo information is so-called physical
+[00:48:50.480 --> 00:48:52.420] lodging, which means the after image.
+[00:48:53.100 --> 00:48:58.420] For example, you could just say, hey, this is page one and this is a new content of page
+[00:48:58.420 --> 00:48:58.680] one.
+[00:48:58.960 --> 00:49:02.560] So this is the most invasive form of redo logging.
+[00:49:04.480 --> 00:49:09.960] the after image. Now, practice is a bit large. You don't want to write the whole page even if
+[00:49:09.960 --> 00:49:13.400] something is more or less changed. Therefore, what you could, for example, store instead is,
+[00:49:15.440 --> 00:49:27.780] you could say, okay, on this page one, go to byte offset 50 and then write the following 20 bytes.
+[00:49:29.860 --> 00:49:32.600] So this is a kind of data encoding.
+[00:49:33.080 --> 00:49:35.960] And you could code write even more complicated information
+[00:49:35.960 --> 00:49:38.780] like insert it and shift everything to the right as well.
+[00:49:38.880 --> 00:49:38.960] Yeah.
+[00:49:39.040 --> 00:49:40.920] So this brings you then from physical logging
+[00:49:40.920 --> 00:49:41.780] to logic logging.
+[00:49:42.020 --> 00:49:44.340] So logic logging says, okay, what do you have to do
+[00:49:44.340 --> 00:49:46.280] on this page to bring it to the same state
+[00:49:46.280 --> 00:49:47.740] as the after image is?
+[00:49:48.740 --> 00:49:52.440] Yeah, and how exactly you implement this is up to you.
+[00:49:52.580 --> 00:49:54.440] It depends on also what kind of changes you want to do.
+[00:49:55.460 --> 00:50:01.940] Nevertheless, even if you do something about to consider here logical lodging, Ares requires
+[00:50:01.940 --> 00:50:06.900] that this change is physical in the sense that it affects only a single page.
+[00:50:07.500 --> 00:50:11.920] So you can encode the change on this single page in an efficient manner.
+[00:50:12.080 --> 00:50:15.940] So something that is more small than just a copy of the whole page, but nevertheless,
+[00:50:16.020 --> 00:50:20.360] it must affect the page and must allow you to reconstruct the page from its previous
+[00:50:20.360 --> 00:50:20.760] state.
+[00:50:22.980 --> 00:50:25.900] And you will see in a moment why this is so.
+[00:50:26.140 --> 00:50:30.340] Then the undo information, now the easiest implementation again is physical logic.
+[00:50:30.440 --> 00:50:33.220] So the before image we just say, okay, well, how was before?
+[00:50:33.660 --> 00:50:36.460] But this is often not enough.
+[00:50:37.300 --> 00:50:43.180] Yeah, like think back again about your B tree example.
+[00:50:43.200 --> 00:50:50.180] So when record splits, so it could be you have a page here and let's call this page one.
+[00:50:50.760 --> 00:50:52.540] the value A and somebody inserts the value B
+[00:50:52.540 --> 00:50:53.520] is not committed yet.
+[00:50:53.680 --> 00:50:54.820] So when the transaction rolls back,
+[00:50:54.940 --> 00:50:55.820] B must be removed.
+[00:50:56.300 --> 00:50:59.480] But now somebody else splits the page for some reason.
+[00:50:59.620 --> 00:51:01.120] So we again have A and some other stuff here.
+[00:51:01.640 --> 00:51:05.440] And then B has been moved to another page, page two.
+[00:51:08.100 --> 00:51:10.160] But still when the transaction rolls back,
+[00:51:10.200 --> 00:51:12.080] I must undo this, so I must still remove B.
+[00:51:12.860 --> 00:51:14.880] And so somehow I must have now a mechanism
+[00:51:15.480 --> 00:51:17.680] to find the B on the new place and remove it,
+[00:51:17.780 --> 00:51:18.640] even though there's some different,
+[00:51:18.640 --> 00:51:20.440] if it has been moved to a different page.
+[00:51:21.160 --> 00:51:25.000] Now, therefore, ARIES uses physiological logging,
+[00:51:25.160 --> 00:51:26.880] which means the redo is physical.
+[00:51:27.160 --> 00:51:28.480] It means talks about a given page.
+[00:51:28.960 --> 00:51:29.620] So undo is logical.
+[00:51:29.800 --> 00:51:31.680] Undo would say, to undo this, please remove B,
+[00:51:32.280 --> 00:51:33.140] wherever B is.
+[00:51:33.600 --> 00:51:35.480] So then we can re-traverse my B tree
+[00:51:35.480 --> 00:51:37.000] and find my B and then I can remove it.
+[00:51:37.720 --> 00:51:39.840] Yeah, while the redo is physical.
+[00:51:41.000 --> 00:51:44.460] Also, the big difference between the redo
+[00:51:44.460 --> 00:51:47.560] and the other phase is, while I'm in the redo phase,
+[00:51:49.920 --> 00:51:54.140] inconsistence. Remember we don't know what has been written or not. Therefore in the redo phase
+[00:51:54.140 --> 00:52:00.020] I cannot safely rely upon the fact that for example my index pages are valid. Could be that
+[00:52:00.020 --> 00:52:06.580] my index has not been repaired yet. I could have damaged pages. Well after the redo phase is done
+[00:52:07.120 --> 00:52:11.980] my database is again in a consistent state. I still might have uncommitted transactions but all
+[00:52:11.980 --> 00:52:14.320] All data structures are valid.
+[00:52:14.480 --> 00:52:16.660] So all my indexes work and everything.
+[00:52:16.980 --> 00:52:23.980] So after redo, my physical storage structures are repaired and therefore I can safely perform
+[00:52:23.980 --> 00:52:24.620] logical undo.
+[00:52:25.160 --> 00:52:29.860] While during the redo phase I cannot safely perform logical operations that go beyond
+[00:52:29.860 --> 00:52:30.580] a single page.
+[00:52:30.720 --> 00:52:35.780] Within a single page I can do this, but beyond a page I cannot because I don't know if this
+[00:52:35.780 --> 00:52:37.400] other page has been repaired already.
+[00:52:38.780 --> 00:52:44.140] Therefore, in the reader phase, we must be more conservative than we can be in the undo phase.
+[00:52:45.620 --> 00:52:50.060] Okay, and so this again talks about this components here.
+[00:52:50.680 --> 00:52:54.980] Log sequence number, I have already said, monotonic number that uniquely identifies
+[00:52:56.040 --> 00:53:01.180] the log record and a typical choice is we use the offset within the log file,
+[00:53:01.220 --> 00:53:02.800] which means the log sequence number is implicit.
+[00:53:02.800 --> 00:53:08.480] And the transaction is just the transaction ID of the transaction that did perform the change.
+[00:53:10.000 --> 00:53:13.960] Page ID is the number of the page that was updated.
+[00:53:14.800 --> 00:53:20.720] Note that if we have a change that affects multiple pages, like the split of a Btree page,
+[00:53:21.100 --> 00:53:23.500] then we must write multiple log records.
+[00:53:24.140 --> 00:53:26.800] Now, so each log record is only allowed to affect one page.
+[00:53:27.920 --> 00:53:34.600] So one log record per page and the previous lsn this tells me what was the last change
+[00:53:34.600 --> 00:53:35.660] by the same transaction.
+[00:53:37.820 --> 00:53:40.980] We need this for undo and here it says we need this for performance reasons.
+[00:53:41.080 --> 00:53:45.860] Of course in an abstract sense this is redundant because we could just scan my log file backwards
+[00:53:45.860 --> 00:53:50.780] and so we could just move over my log file and then I will find my previous log record
+[00:53:50.780 --> 00:53:51.360] at some point.
+[00:53:51.540 --> 00:53:56.160] But it could be that this previous log record is far away and I want that my rollbacks don't
+[00:53:57.260 --> 00:54:02.040] therefore I use this extra entry here to quickly find my previous log record.
+[00:54:02.780 --> 00:54:07.720] Okay, yeah, and then here, note there's a certain asymmetry, we have physical redo,
+[00:54:08.460 --> 00:54:12.060] which means my redo affects one page and only one page, and I have logical undo,
+[00:54:12.280 --> 00:54:15.640] which means my undo can potentially affect multiple pages.
+[00:54:17.600 --> 00:54:21.220] Okay, now here's an example how a log record could look like.
+[00:54:21.460 --> 00:54:26.260] So I have two transactions, T1 and T2, and what they do here, you see on the left and on the right,
+[00:54:26.800 --> 00:54:31.580] So left of here you see the operations, right of this line you see what is written to the log.
+[00:54:33.540 --> 00:54:39.840] First both transactions begin and the right log record begins transactions. Note that usually we
+[00:54:39.840 --> 00:54:45.820] don't do this. So usually my first log record is implicitly this is the beginning of transactions
+[00:54:45.820 --> 00:54:51.560] because I see this. But now this here is a textbook solution therefore we explicitly write a beginner
+[00:54:51.560 --> 00:54:52.560] of transactions into my log.
+[00:54:52.680 --> 00:54:57.380] So I say here first log record transaction one did begin and had no previous change.
+[00:54:57.760 --> 00:54:58.140] Okay.
+[00:54:58.400 --> 00:55:01.140] Then transaction two does begin had no previous change.
+[00:55:01.320 --> 00:55:07.100] For the reads, we don't perform any logging because reads don't modify my database.
+[00:55:08.140 --> 00:55:09.820] So I don't write anything.
+[00:55:10.060 --> 00:55:11.480] Then comes the write here.
+[00:55:11.660 --> 00:55:20.480] Time point six transaction one writes a and is a new value of a is 50 smaller than previously.
+[00:55:21.560 --> 00:55:29.060] log record, log record 3, says transaction 1 modified page A and the effect was that the value A on that page was reduced by 50.
+[00:55:29.240 --> 00:55:32.600] And if you want to undo this you must increase A by 50.
+[00:55:33.120 --> 00:55:35.960] Okay and the last change position transaction was record 1.
+[00:55:36.580 --> 00:55:45.680] Then transaction 2 performs a write to C and again we write a log record saying page C was updated, we increased C by 100.
+[00:55:45.680 --> 00:55:48.580] If you want to undo this, decrease C by 100.
+[00:55:48.840 --> 00:55:52.660] And the last record of this transaction was two.
+[00:55:54.620 --> 00:55:57.360] Then transaction one does another write to B.
+[00:55:57.960 --> 00:56:00.760] Again, we write a log record here, page B was affected.
+[00:56:01.040 --> 00:56:04.300] We increase B by 50, last record was 30.
+[00:56:04.620 --> 00:56:07.020] Then we write transaction one commits
+[00:56:07.020 --> 00:56:08.700] and the last change was five.
+[00:56:08.980 --> 00:56:11.080] This of course is important because this record here
+[00:56:11.080 --> 00:56:12.900] allows us to figure out that T1 is a winner.
+[00:56:12.900 --> 00:56:18.540] And so when we restart and we see that T1 is, we see this commit message, we know that
+[00:56:18.540 --> 00:56:21.960] T1 is the winner, therefore we must preserve all changes by T1.
+[00:56:22.140 --> 00:56:28.040] If instead we scan the file and we do not find a commit entry, then we know that transaction
+[00:56:28.040 --> 00:56:31.280] is a loser, it is still in flight, then we must undo the changes.
+[00:56:31.680 --> 00:56:38.600] Okay, and last year transaction two continues, writes page A, and then here we see, okay,
+[00:56:38.600 --> 00:56:46.180] somebody decreased a by 100 if you want to undo this increase a by 100 last entry was four
+[00:56:46.180 --> 00:56:50.300] and then transaction two commits so this is how the log looks like
+[00:56:52.100 --> 00:56:59.220] and so in the analysis phase we read the log and so log contains begins to commit and abort entries
+[00:56:59.800 --> 00:57:04.440] and this allows us to figure out who is the winner and who's the loser now so i scan my log
+[00:57:04.440 --> 00:57:06.220] Whenever I see a beginner of transactions,
+[00:57:06.300 --> 00:57:08.280] I know a new transaction starts.
+[00:57:08.500 --> 00:57:10.160] So I know this transaction exists.
+[00:57:11.000 --> 00:57:12.820] Then when we see a commit of that transaction,
+[00:57:12.900 --> 00:57:14.380] we know that it's a winner.
+[00:57:14.760 --> 00:57:16.320] If you do not see a commit,
+[00:57:16.360 --> 00:57:17.820] or if you see an explicit abort,
+[00:57:18.140 --> 00:57:20.340] then we see that the transaction is a loser.
+[00:57:22.260 --> 00:57:24.160] And if you see an easier commit abort,
+[00:57:24.300 --> 00:57:25.740] then it takes an implicitly loser.
+[00:57:26.440 --> 00:57:28.240] And the winners have to be preserved
+[00:57:28.240 --> 00:57:30.500] and the losers are removed from the system afterwards.
+[00:57:31.800 --> 00:57:33.920] Okay, in the redo phase,
+[00:57:34.440 --> 00:57:39.420] database into a consistent state remember that we are running a no force
+[00:57:39.420 --> 00:57:43.340] strategies this means that some changes might have been only on in memory or not
+[00:57:43.340 --> 00:57:48.920] on disk yeah and could be that some changes are incomplete like a bt split
+[00:57:48.920 --> 00:57:53.260] also only one could be that one page has been written the other one has not but
+[00:57:53.260 --> 00:57:55.020] the lock nevertheless contains everything
+[00:57:57.420 --> 00:58:03.800] and um for the uh to bring the database in the same state we
+[00:58:04.440 --> 00:58:05.840] as it was in the moment of the crash,
+[00:58:05.920 --> 00:58:07.180] we do a forward pass over the log.
+[00:58:08.140 --> 00:58:11.240] Remember each log entry affects a single page by design.
+[00:58:11.560 --> 00:58:13.660] And the page contains a log sequence number.
+[00:58:13.660 --> 00:58:15.860] If you remember back when you talk about the buffer manager.
+[00:58:16.160 --> 00:58:18.240] So we have the log sequence number of the change.
+[00:58:18.640 --> 00:58:21.580] So therefore what you do is we load the page from disk.
+[00:58:21.800 --> 00:58:23.920] We check if the log sequence number of the page
+[00:58:23.920 --> 00:58:25.840] is less than the log sequence number of the entry.
+[00:58:26.160 --> 00:58:30.700] If yes, the change in my log has not been applied yet.
+[00:58:31.320 --> 00:58:35.680] Therefore, I do apply the log entry and update the log sequence number.
+[00:58:35.700 --> 00:58:37.900] So I remember what was the last change on disk.
+[00:58:39.260 --> 00:58:41.680] And then I continue processing my log.
+[00:58:41.900 --> 00:58:47.120] This mechanism here, so comparing the log sequence number on disk to my log sequence
+[00:58:47.120 --> 00:58:52.420] number on my page allows me to figure out if a log entry has been applied already or
+[00:58:52.420 --> 00:58:52.680] not.
+[00:58:53.060 --> 00:58:57.380] And this is important because otherwise I might apply this same log entry twice and of
+[00:58:57.380 --> 00:58:58.060] course it's unsafe.
+[00:58:58.060 --> 00:58:59.680] Think about this example here.
+[00:58:59.800 --> 00:59:01.660] We said, if you want to apply the change,
+[00:59:02.860 --> 00:59:04.440] in decrease a by 50,
+[00:59:04.640 --> 00:59:06.680] you are not allowed to do this multiple times.
+[00:59:07.000 --> 00:59:10.180] Because every time you do this, a goes down.
+[00:59:10.680 --> 00:59:13.000] Therefore I must know if my page
+[00:59:13.000 --> 00:59:14.440] already contains this change or not.
+[00:59:14.700 --> 00:59:16.180] And I can figure this out by comparing
+[00:59:16.180 --> 00:59:17.140] the log sequence number.
+[00:59:17.300 --> 00:59:19.140] If the log sequence number is less than three,
+[00:59:19.280 --> 00:59:20.540] then the change is not included.
+[00:59:20.540 --> 00:59:21.500] So I must do it.
+[00:59:21.580 --> 00:59:24.320] If it's three or more, then it is included.
+[00:59:24.340 --> 00:59:25.660] So I must not do this.
+[00:59:26.260 --> 00:59:30.180] So this is a trick to handle the state.
+[00:59:30.700 --> 00:59:32.960] And you know, afterwards, after my reader phase,
+[00:59:33.100 --> 00:59:34.360] my database is a known state,
+[00:59:34.480 --> 00:59:36.940] and it was the state that it was in the moment of the crash.
+[00:59:37.380 --> 00:59:38.680] Everything has been repaired.
+[00:59:38.940 --> 00:59:40.500] All data structures are valid.
+[00:59:40.700 --> 00:59:42.540] So now I can continue processing.
+[00:59:42.800 --> 00:59:44.340] And of course, what I will do next is,
+[00:59:45.680 --> 00:59:48.580] so undo phase, undo all loser transactions.
+[00:59:48.960 --> 00:59:50.640] So during the analysis,
+[00:59:50.840 --> 00:59:54.540] I remember the last sequence of each transaction
+[00:59:59.540 --> 01:00:01.200] Transactions that have already been aborted,
+[01:00:01.980 --> 01:00:05.360] they can be ignored because they have already been removed.
+[01:00:05.840 --> 01:00:08.420] So in fact, they will have no last operation,
+[01:00:08.700 --> 01:00:10.180] but active transactions,
+[01:00:10.300 --> 01:00:11.000] which are not extensibly,
+[01:00:11.140 --> 01:00:15.740] that have a last operation that have not been removed already
+[01:00:15.740 --> 01:00:16.880] must be rolled back now.
+[01:00:17.500 --> 01:00:19.320] And we read this log backwards.
+[01:00:19.500 --> 01:00:21.040] We always follow the last sequence number
+[01:00:21.040 --> 01:00:23.160] to jump from log entry to log entry.
+[01:00:23.280 --> 01:00:24.200] So this was the last one.
+[01:00:25.660 --> 01:00:27.880] point as the previous one, the point as the previous one.
+[01:00:28.000 --> 01:00:28.140] And so on.
+[01:00:28.220 --> 01:00:29.520] So we move it up backwards to the lock.
+[01:00:29.700 --> 01:00:31.120] We undo all the changes.
+[01:00:32.680 --> 01:00:36.160] And then the database is, the transaction is gone.
+[01:00:36.640 --> 01:00:39.540] Note that this undoing of the transaction produces
+[01:00:39.540 --> 01:00:42.460] new lock records because we, of course,
+[01:00:42.600 --> 01:00:44.380] we must redo the undo later.
+[01:00:45.300 --> 01:00:49.260] And so undo means we must remove the transaction
+[01:00:49.260 --> 01:00:49.940] from the system.
+[01:00:50.040 --> 01:00:52.780] And if you should crash later, then of course
+[01:00:52.780 --> 01:00:53.760] we must do this again.
+[01:00:56.000 --> 01:01:01.320] the undo of a log record creates new log records and we will talk about this in a moment when
+[01:01:01.320 --> 01:01:09.380] we talk about compensation log records okay and one very important concept here for restarting
+[01:01:09.380 --> 01:01:15.980] is that the restart must be idempotent idempotent means you must it must be possible to do this
+[01:01:15.980 --> 01:01:23.780] as often as you want and you still get the same database date you know so here you written
+[01:01:25.660 --> 01:01:26.880] of A is the same as undo A.
+[01:01:27.020 --> 01:01:29.220] You can undo as often as you want.
+[01:01:29.380 --> 01:01:32.280] The same as redo, we can do the redo as often as you want.
+[01:01:32.620 --> 01:01:35.080] This is pretty important because otherwise it could be
+[01:01:35.080 --> 01:01:37.100] that your restart destroys your database.
+[01:01:38.040 --> 01:01:40.880] Because what I mean, you could think,
+[01:01:40.960 --> 01:01:43.300] okay, why should I ever crash repeatedly?
+[01:01:43.560 --> 01:01:46.280] But I was told this is actually quite a common occurrence.
+[01:01:46.860 --> 01:01:48.940] Think for example, your hardware is 40,
+[01:01:49.480 --> 01:01:51.600] like your power supply is unreliable or so.
+[01:01:52.020 --> 01:01:53.300] Therefore your system crashes
+[01:01:53.300 --> 01:01:55.080] because your power supply is unreliable.
+[01:01:55.620 --> 01:01:56.920] Then it comes back again,
+[01:01:58.240 --> 01:01:59.200] the database has started again,
+[01:01:59.340 --> 01:02:01.640] it says, oh, I crashed, so let's do restart.
+[01:02:02.120 --> 01:02:06.700] So I again do the three phases, analysis redo undo,
+[01:02:06.960 --> 01:02:09.140] and while happily doing the restart,
+[01:02:09.300 --> 01:02:11.060] the system crashes again,
+[01:02:11.320 --> 01:02:13.600] because power supply was unreliable,
+[01:02:13.800 --> 01:02:14.700] it's still unreliable,
+[01:02:14.820 --> 01:02:15.880] and it takes a moment
+[01:02:15.880 --> 01:02:17.960] until a human recognizes this problem.
+[01:02:18.140 --> 01:02:20.180] So the system crashes and comes back again,
+[01:02:20.340 --> 01:02:21.820] does restart, and crashes,
+[01:02:22.020 --> 01:02:22.680] and comes back again.
+[01:02:23.300 --> 01:02:24.820] we can have repeated restarts.
+[01:02:25.800 --> 01:02:28.200] And so system must cope with this.
+[01:02:28.380 --> 01:02:29.620] First, it must be correct.
+[01:02:30.160 --> 01:02:32.980] And second, another important property
+[01:02:32.980 --> 01:02:38.040] is that differs between areas and older systems.
+[01:02:38.800 --> 01:02:40.860] What ARIES promises,
+[01:02:41.060 --> 01:02:43.040] I didn't explain you yet how it achieves this,
+[01:02:43.160 --> 01:02:46.820] but promises that even if you fail repeatedly,
+[01:02:47.120 --> 01:02:49.760] the number of log records that you will write are bounded.
+[01:02:50.280 --> 01:02:51.600] And so there's not an unbounded,
+[01:02:53.840 --> 01:02:56.360] the log record volume that you write is bounded.
+[01:02:56.880 --> 01:03:00.000] And this is again important for repeated failures
+[01:03:00.000 --> 01:03:03.440] because otherwise you make things worse
+[01:03:03.440 --> 01:03:04.740] by filling up your hard disk
+[01:03:04.740 --> 01:03:06.300] and at some point your hard disk is full
+[01:03:06.300 --> 01:03:07.540] then you have a real problem.
+[01:03:08.440 --> 01:03:13.160] And also the other mechanism will allow us to do this safely.
+[01:03:13.500 --> 01:03:16.320] So, and here you see an example picture
+[01:03:16.320 --> 01:03:18.420] as you will say we have a number of operations
+[01:03:18.420 --> 01:03:21.640] that we perform and we, so one to six
+[01:03:23.300 --> 01:03:28.920] operation with double borders here so operation one and three and five and six are done by
+[01:03:28.920 --> 01:03:33.560] transaction one and the other one are by transaction two okay so this is my model so i execute this
+[01:03:33.560 --> 01:03:40.680] and at some point in time i crash and now what i want is an edempotent restart and we get this
+[01:03:40.680 --> 01:03:47.940] by writing compensation log records okay so basically we remember what we have done so first
+[01:03:47.940 --> 01:03:51.080] First we, of course, when we restart, we redo everything.
+[01:03:51.980 --> 01:03:54.700] Now, so we redo all lock records, all seven.
+[01:03:55.580 --> 01:03:57.020] Then my data is in a consistent state.
+[01:03:57.220 --> 01:03:59.220] Now I must undo transaction two.
+[01:03:59.360 --> 01:04:05.740] So I must remove all changes, but of transaction two, which is this one and this one and this
+[01:04:05.740 --> 01:04:05.940] one.
+[01:04:06.040 --> 01:04:09.140] And I do this backwards, which means first I undo change seven.
+[01:04:09.320 --> 01:04:17.920] And for this I write a new record, namely, this record says, please undo the effect of
+[01:04:17.940 --> 01:04:19.860] seven or if you formulated positively.
+[01:04:20.460 --> 01:04:22.420] So do the change that will undo seven.
+[01:04:23.620 --> 01:04:27.640] And now you set the undo next LSN.
+[01:04:27.820 --> 01:04:29.660] So what was the last change by this transaction?
+[01:04:29.980 --> 01:04:33.120] And this one points now not to seven, but to four.
+[01:04:35.540 --> 01:04:37.740] Remember we can crash in any point in time.
+[01:04:37.840 --> 01:04:39.520] So it could be that after I have undo seven,
+[01:04:39.560 --> 01:04:40.220] I crash again.
+[01:04:40.540 --> 01:04:42.060] So then I restart.
+[01:04:42.360 --> 01:04:43.320] And then in this case,
+[01:04:43.360 --> 01:04:46.160] I would redo everything, including seven prime.
+[01:04:48.120 --> 01:04:52.160] seven I would reduce this two and then I would continue undoing and the next
+[01:04:52.160 --> 01:04:58.140] one to undo is four and again I said the next thing to undo is two and then I
+[01:04:58.140 --> 01:05:02.640] undo two and then I said the next one does nothing because then I'm done okay
+[01:05:02.640 --> 01:05:06.980] and after this so I write three new entries here namely
+[01:05:08.120 --> 01:05:11.620] conversational record seven prime four prime and two prime after this I'm done
+[01:05:11.620 --> 01:05:16.220] never write more than three it doesn't matter if I have a crash repeatedly if
+[01:05:17.940 --> 01:05:19.680] I always write three records and nothing more.
+[01:05:20.160 --> 01:05:20.600] Okay.
+[01:05:20.820 --> 01:05:23.040] And this gives me an EDM potent restart.
+[01:05:26.320 --> 01:05:28.680] Because I can figure, when I restart,
+[01:05:28.920 --> 01:05:31.940] I can figure out if this change was already in my database,
+[01:05:32.200 --> 01:05:35.260] just by comparing the log sequence number with this number.
+[01:05:35.600 --> 01:05:39.460] And if the number on the page is higher or equal,
+[01:05:39.600 --> 01:05:41.460] then I don't do anything otherwise I redo it again.
+[01:05:41.620 --> 01:05:43.480] And I can do this as often as needed.
+[01:05:43.700 --> 01:05:44.580] Now so the same here.
+[01:05:44.780 --> 01:05:46.060] This also gets a new number.
+[01:05:47.940 --> 01:05:52.260] book and the book calls this s prime. In reality, of course, we would have to call this 8.
+[01:05:53.060 --> 01:05:58.660] Remember, we need monotronic numbers. So this would be 8, 9, 10. Conceptually, of course,
+[01:05:58.780 --> 01:06:02.720] it's the inverse of 7, the inverse of 4, the inverse of 2. But in relative, of course,
+[01:06:02.740 --> 01:06:08.740] we give some increasing numbers. So then we can figure out if my number is included on a page or
+[01:06:08.740 --> 01:06:17.480] not, just by doing a simple integer comparison. So then, yeah, this is my log record after restart.
+[01:06:18.620 --> 01:06:25.040] So this was my original log and now I have three more entries, namely undo the seven
+[01:06:25.040 --> 01:06:30.940] and you note that we only formulate this positively because we might have to redo this undo.
+[01:06:31.120 --> 01:06:36.280] So then if we write a compensation log record that says, okay, compensate seven, this means
+[01:06:36.280 --> 01:06:42.400] transaction two modifies page A and we do increase A by a hundred and note that we never
+[01:06:42.400 --> 01:06:43.840] undo a compensation log record.
+[01:06:43.840 --> 01:06:48.600] So a compensation record only contains redo information. No undo information. Okay?
+[01:06:49.320 --> 01:06:53.200] And we say redo increase page by by a by
+[01:06:53.960 --> 01:06:57.360] 100 we remember this was my
+[01:06:58.120 --> 01:07:02.420] My previous entry for my page and the next entry to undo is 4
+[01:07:03.880 --> 01:07:07.100] Okay, and then we write the next a composition record
+[01:07:07.840 --> 01:07:13.400] 4 prime again transaction 2 modifies page C C is decreased by 100
+[01:07:14.400 --> 01:07:19.200] This previous entry was seven prime and the next entry to undo is two.
+[01:07:19.700 --> 01:07:20.120] Okay.
+[01:07:20.340 --> 01:07:28.300] And then here we say, okay, two prime transaction two, no pages, two pages affected because we
+[01:07:28.300 --> 01:07:28.840] are just done.
+[01:07:29.040 --> 01:07:34.780] It says the last entry was four prime and then we are, we are, we don't have to do anything
+[01:07:34.780 --> 01:07:35.040] more.
+[01:07:35.240 --> 01:07:40.540] So this, when we reach this point here, transaction two has been eliminated from our system.
+[01:07:41.040 --> 01:07:42.460] So then we are done.
+[01:07:43.840 --> 01:07:44.800] redo this if needed.
+[01:07:46.560 --> 01:07:51.340] Okay, so for a compensation log record, it looks more or less like a regular log record
+[01:07:51.340 --> 01:07:53.180] with some small differences here.
+[01:07:53.440 --> 01:07:54.320] The wheeling is the same.
+[01:07:54.980 --> 01:07:58.620] So log sequence number, transaction page and redo, this is the same.
+[01:08:02.220 --> 01:08:09.580] But then we store the undo next LSN to the pointer, to the next operation to undo.
+[01:08:10.220 --> 01:08:14.180] so first we have no undo information so we only redo a conversational record
+[01:08:14.900 --> 01:08:22.320] and then we remember what is the next entry to do yeah so now uh you could ask yourself why
+[01:08:22.320 --> 01:08:27.760] stores is twice in relatively only interested in one point and so we could just say the previous
+[01:08:27.760 --> 01:08:32.820] lsn is undo next lsn no it's another other way around so we could store the next lsn in the
+[01:08:32.820 --> 01:08:38.460] previous lsn strictly speaking is not necessary now the original implementation of arias did this
+[01:08:39.840 --> 01:08:45.040] values for debugging reasons because if you have it like this or with both you
+[01:08:45.040 --> 01:08:48.340] can quickly figure out if your log entries are correct and you can traverse
+[01:08:48.340 --> 01:08:52.120] them quickly and check if everything is right strictly speaking you don't need
+[01:08:52.120 --> 01:08:58.200] both it would be sufficient to store the undo entry in the previous LSN
+[01:08:59.840 --> 01:09:06.800] okay and now this is of course the hard case namely there when we have a
+[01:09:06.800 --> 01:09:08.140] full crash and then continue.
+[01:09:08.380 --> 01:09:10.580] We can all use this for partial rollbacks,
+[01:09:11.200 --> 01:09:16.820] like transaction can do operation one, two, three, four,
+[01:09:17.040 --> 01:09:19.380] and then says, oh no, no, I did a mistake.
+[01:09:19.580 --> 01:09:21.640] So I roll back part of my transaction,
+[01:09:21.780 --> 01:09:25.180] not everything, but just undo four, undo three, undo two,
+[01:09:25.320 --> 01:09:27.380] and then I continue with new operation five.
+[01:09:27.880 --> 01:09:30.600] Okay, and this is supported by this mechanism here,
+[01:09:31.060 --> 01:09:34.140] because we first start writing one, two, three, four,
+[01:09:34.140 --> 01:09:40.200] Then we realize oh no I want to undo something then undo four undo three and then I
+[01:09:40.200 --> 01:09:45.980] Oh sorry I misinterpreted my own arrows I don't undo two I only undo three and four
+[01:09:45.980 --> 01:09:50.300] two keeps alive and therefore afterwards I write record five
+[01:09:50.920 --> 01:09:56.260] continuing with this logically we only do one two five the effect of three and
+[01:09:56.260 --> 01:10:01.440] four is removed from a system and these partial rollbacks are necessary to
+[01:10:01.440 --> 01:10:04.720] implement save points i'm not sure if you're familiar with this in secret and
+[01:10:04.720 --> 01:10:07.600] secret you can define within a transaction save point and then you can
+[01:10:07.600 --> 01:10:12.180] say so you say okay i'm here and after later some later point you can say roll
+[01:10:12.180 --> 01:10:16.480] back to save point and then you forget everything that happened since that
+[01:10:16.480 --> 01:10:19.700] save point but then you can still continue after the save point so you
+[01:10:19.700 --> 01:10:22.980] don't kill the whole transaction but only some part of the transaction but
+[01:10:22.980 --> 01:10:26.160] this doesn't require any special magic because our mechanism already exists
+[01:10:26.160 --> 01:10:31.100] anyway we just use a regular mechanism here with compensation lock records
+[01:10:31.440 --> 01:10:32.600] to handle this.
+[01:10:34.500 --> 01:10:34.900] Okay.
+[01:10:35.120 --> 01:10:39.520] And now, one problem of course that we have in our
+[01:10:40.780 --> 01:10:45.160] redo and restart mechanism is that we have to read a quite large file.
+[01:10:45.340 --> 01:10:45.500] Yeah.
+[01:10:45.540 --> 01:10:49.260] So we first, we read the log file once to figure out who is the winner and the loser.
+[01:10:49.520 --> 01:10:53.780] Then we read the log file again to figure out if a page contains a change, yes or no.
+[01:10:54.120 --> 01:10:58.500] And this of course means that not only reads the page as a log, but also reads the corresponding
+[01:10:58.500 --> 01:10:58.920] page.
+[01:10:58.920 --> 01:11:03.680] And this is of course a bit expensive and I would like to not do this.
+[01:11:04.180 --> 01:11:10.380] And the mechanism to avoid reading that large part of the data is for checkpoints.
+[01:11:12.620 --> 01:11:18.020] Basically what you do is at some point in time you write in your log, okay, currently
+[01:11:18.020 --> 01:11:26.280] for example here we could say this is my point in time and I say at this point in time transaction
+[01:11:26.280 --> 01:11:28.720] Transaction one was active and transaction two was active.
+[01:11:29.560 --> 01:11:31.940] And you will see, we also write something more about
+[01:11:31.940 --> 01:11:33.800] the pages that are modified,
+[01:11:34.020 --> 01:11:35.460] but in particular, we can remember
+[01:11:35.460 --> 01:11:39.240] what was the transaction that they're running.
+[01:11:39.540 --> 01:11:42.360] Now you see already we have this checkpoint here twice
+[01:11:42.360 --> 01:11:43.760] and this dotted line, this end line.
+[01:11:45.320 --> 01:11:47.420] When we say checkpoint in reality,
+[01:11:47.600 --> 01:11:49.900] this is like a checkpoint span
+[01:11:49.900 --> 01:11:53.260] because we need some time to write my checkpoint.
+[01:11:53.480 --> 01:11:54.520] So therefore we say here,
+[01:11:56.500 --> 01:12:02.280] This is the end of my checkpoint and we say it's begin of course t1 and t2 were active at the end
+[01:12:03.240 --> 01:12:07.300] T1 has committed already t2 has committed and t3 is running
+[01:12:07.300 --> 01:12:12.620] But nevertheless, we take a slice of my time and then we record who was currently running
+[01:12:12.620 --> 01:12:15.220] And of course if I have this information this means
+[01:12:17.000 --> 01:12:17.960] Everybody who
+[01:12:18.840 --> 01:12:23.100] Comes before I don't even have to I know for sure that they are committed yet
+[01:12:23.100 --> 01:12:27.160] Everybody who comes after, I know for sure that they are not committed yet.
+[01:12:27.540 --> 01:12:32.380] Only the people who are within my checkpoint, who are active within my checkpoint, then
+[01:12:32.380 --> 01:12:34.960] I have to see if they are still alive.
+[01:12:37.660 --> 01:12:42.240] Now how you create your checkpoint and also how complicated your handling is, depends
+[01:12:42.240 --> 01:12:43.360] on how you build it.
+[01:12:43.780 --> 01:12:45.420] So one is transaction consistent.
+[01:12:45.580 --> 01:12:49.940] Transaction consistent checkpoint means I only do a checkpoint when there is currently
+[01:12:49.940 --> 01:12:51.020] no running transaction.
+[01:12:51.020 --> 01:12:57.540] Now, so this is the most invasive, but also the easiest to implement this checkpoint.
+[01:12:57.760 --> 01:13:02.200] So you say, okay, I have transactions in the beginning, transactions later, but this point
+[01:13:02.200 --> 01:13:03.780] in time, no transaction was running.
+[01:13:04.240 --> 01:13:07.240] If you have this, this means, this is your point in the log.
+[01:13:07.560 --> 01:13:13.120] If you have this, this means analysis only has to start after this log, this checkpoint,
+[01:13:13.620 --> 01:13:17.540] because I know that only later entries are running transactions.
+[01:13:17.540 --> 01:13:19.820] Also, I only have to redo afterwards,
+[01:13:19.940 --> 01:13:22.380] at least if in the moment that I do my checkpoint,
+[01:13:23.040 --> 01:13:26.160] I flush, so I force all my dirty pages to disk.
+[01:13:26.200 --> 01:13:29.000] If I do this, then my redo can continue
+[01:13:29.000 --> 01:13:30.180] with from this point in time,
+[01:13:30.300 --> 01:13:32.600] because I know everything was before my checkpoint
+[01:13:33.420 --> 01:13:34.700] is already flushed to disk.
+[01:13:35.200 --> 01:13:36.180] Okay, and the same with undo,
+[01:13:36.420 --> 01:13:38.700] my undo also never goes beyond this checkpoint.
+[01:13:39.480 --> 01:13:42.200] And also transaction consistent checkpoints
+[01:13:42.200 --> 01:13:44.980] are nice to have, make your research cheap.
+[01:13:44.980 --> 01:13:47.140] The problem of course is how do I get this?
+[01:13:47.600 --> 01:13:50.860] Because I would have to have a moment in time when there is no running transaction.
+[01:13:51.400 --> 01:13:55.400] Sometimes this is not easy to get because there are always some transactions in your system.
+[01:13:57.340 --> 01:14:02.280] Now the next weaker form is an action consistent checkpoint,
+[01:14:02.520 --> 01:14:08.180] which means you do have transactions but you stop them for a moment.
+[01:14:08.360 --> 01:14:13.080] So you mean you don't abort them but you say please stop processing like using a mutex or something.
+[01:14:15.200 --> 01:14:19.440] Then you do your checkpoint, you write all your dirty pages to disk and you write to
+[01:14:19.440 --> 01:14:21.280] disk which transactions are running.
+[01:14:21.780 --> 01:14:25.620] And then when you have an action consistent checkpoint, you have to analysis only from
+[01:14:25.620 --> 01:14:26.860] the latest checkpoint to the end.
+[01:14:27.000 --> 01:14:29.400] You have to redo only from the latest checkpoint to the end.
+[01:14:29.540 --> 01:14:35.240] Of course the undo potentially has to go beyond because you still must undo all changes of
+[01:14:35.240 --> 01:14:36.040] running transactions.
+[01:14:36.300 --> 01:14:39.240] So how far you have to go depends on the min lsn.
+[01:14:39.420 --> 01:14:43.320] So what is the minimum sequence number written by any active transaction.
+[01:14:44.980 --> 01:14:46.800] So the undo goes beyond my checkpoint,
+[01:14:47.260 --> 01:14:48.920] but analysis and redo goes,
+[01:14:50.380 --> 01:14:51.440] only starts there.
+[01:14:52.860 --> 01:14:53.980] Downs it again, of course,
+[01:14:54.120 --> 01:14:55.200] is I must stop processing,
+[01:14:55.340 --> 01:14:57.360] which also might not be easy to implement.
+[01:14:59.020 --> 01:15:01.820] Therefore the most generic one here is that one here,
+[01:15:02.280 --> 01:15:02.940] fuzzy checkpoint.
+[01:15:03.380 --> 01:15:04.640] So what you see here,
+[01:15:04.820 --> 01:15:06.840] so at some point in time I start,
+[01:15:07.040 --> 01:15:09.340] I say, okay, I want to do a checkpoint
+[01:15:09.340 --> 01:15:11.160] and you remember who's currently active.
+[01:15:11.960 --> 01:15:15.740] and then you start writing out all dirty pages to disks.
+[01:15:15.780 --> 01:15:16.680] And at this point in time,
+[01:15:16.780 --> 01:15:18.840] we have we write all dirty pages to disk
+[01:15:19.400 --> 01:15:20.140] and then we are done.
+[01:15:21.480 --> 01:15:23.580] But of course the system can at least potentially
+[01:15:23.580 --> 01:15:25.340] continue running while you're doing this.
+[01:15:26.080 --> 01:15:28.680] So therefore my check restart here
+[01:15:28.680 --> 01:15:29.820] becomes more complicated.
+[01:15:31.340 --> 01:15:32.620] So from my check point,
+[01:15:32.700 --> 01:15:35.200] I have to do analysis only from the check point afterwards
+[01:15:35.200 --> 01:15:38.200] because I know my check point contains the list
+[01:15:38.200 --> 01:15:39.200] of all active transactions.
+[01:15:41.160 --> 01:15:48.660] more transactions later so i have to scan this now my redo can start when where i am plus the
+[01:15:48.660 --> 01:15:54.780] minimum dirty page lsn so what what is the log sequence number the smallest log sequence number
+[01:15:54.780 --> 01:16:01.460] of dirty pages that are still in the system after the end of my checkpoint because there could be
+[01:16:01.460 --> 01:16:07.380] new new dirtiness introduced in my checkpoint so this i must record i must do some more redo
+[01:16:07.380 --> 01:16:12.100] And of course with undo, again, min is n, what is the minimum LSF, n, of any active
+[01:16:12.100 --> 01:16:12.520] transactions.
+[01:16:12.640 --> 01:16:15.100] So this is the most F to do in the undo phase.
+[01:16:17.420 --> 01:16:22.220] Restart becomes more complicated if you use fuzzy checkpoints, but the big advantage of
+[01:16:22.220 --> 01:16:24.580] fuzzy checkpoints is you don't have to stop your system.
+[01:16:24.720 --> 01:16:27.420] You can do a checkpoint while your system is running.
+[01:16:27.720 --> 01:16:32.380] Therefore all commercial database systems in practice use fuzzy checkpoints because these
+[01:16:32.380 --> 01:16:33.940] are the least invasive.
+[01:16:38.060 --> 01:16:43.700] So in a fuzzy checkpoint you don't have to force modified pages to disk.
+[01:16:43.880 --> 01:16:46.880] I mean you can, or at least some of them, but you don't have to.
+[01:16:47.160 --> 01:16:54.120] But what you definitely do is you store the page IDs of dirty pages and then here is a
+[01:16:54.600 --> 01:16:59.380] set of dirty pages is all modified pages and the min dirty page ID is a minimum log sequence
+[01:16:59.380 --> 01:17:01.380] number that has not been written to disk.
+[01:17:01.380 --> 01:17:08.020] Now I said pages are not forced to disk usually what you will want to do is you look at this mean page
+[01:17:08.020 --> 01:17:11.320] Dirty page lsn and if this is a very low number
+[01:17:11.320 --> 01:17:17.360] Then you want to force two pages on disk because it could be that you have a page that is very hot
+[01:17:17.360 --> 01:17:22.140] So that is modified all the time and then the min dirty page lsn is a very small number
+[01:17:22.140 --> 01:17:24.660] Where of course the oldest change to this page
+[01:17:25.420 --> 01:17:27.940] Has not been written to disk can be quite long ago
+[01:17:27.940 --> 01:17:32.340] And if you see that this is long ago, then you write this page to disk
+[01:17:33.400 --> 01:17:35.620] And then of course you get a higher much higher
+[01:17:36.520 --> 01:17:42.460] LSN on that page and this brings your min 30 page LSN high. So therefore when we say
+[01:17:43.180 --> 01:17:48.440] When we are not forced to disk it might be a bit too strong. We say are not necessarily
+[01:17:50.020 --> 01:17:50.820] This is
+[01:17:54.020 --> 01:17:58.360] You don't have to force them to disk, but sometimes you want, if they have very old
+[01:17:58.360 --> 01:18:02.360] changes on them, then you want to force them to disk to make your restart faster.
+[01:18:04.140 --> 01:18:13.880] But you definitely collect all dirty pages and what was the log sequence on this page.
+[01:18:16.300 --> 01:18:19.360] So this brings me to the end of my recovery chapter.
+[01:18:20.820 --> 01:18:21.460] Check my timing.
+[01:18:21.740 --> 01:18:24.460] Oh, I have 10 minutes left.
+[01:18:24.640 --> 01:18:34.240] Yeah, so I can start with already with the next big part, namely, so far we talked about
+[01:18:34.240 --> 01:18:38.740] a lot of problems that we have in like how do we store, how we run a transaction, how
+[01:18:38.740 --> 01:18:39.820] we run concurrency and so on.
+[01:18:40.060 --> 01:18:44.840] But what we did not talk about yet is how do we do efficient query processing.
+[01:18:45.100 --> 01:18:47.400] But of course this is what we are particularly interested in.
+[01:18:47.400 --> 01:18:50.400] most of the time is spent on running complicated queries,
+[01:18:50.620 --> 01:18:52.740] at least in analytical databases.
+[01:18:53.260 --> 01:18:55.740] Therefore we want to do this as quickly as possible.
+[01:18:56.300 --> 01:18:58.920] Okay, and this is the next large part of the lecture.
+[01:18:59.060 --> 01:19:00.440] And I just want to start with this.
+[01:19:00.560 --> 01:19:02.080] I will not go very far.
+[01:19:05.180 --> 01:19:06.540] So motivation is,
+[01:19:06.940 --> 01:19:09.240] so why is this thing called set-oriented processing?
+[01:19:11.280 --> 01:19:14.360] So usually what the system wants to do is
+[01:19:14.360 --> 01:19:16.220] you want to process large parts,
+[01:19:17.400 --> 01:19:19.040] instead of individual data items.
+[01:19:19.280 --> 01:19:22.560] So this is contrary to what you usually will do
+[01:19:22.560 --> 01:19:24.160] if you just write to some small programs
+[01:19:24.160 --> 01:19:24.960] that does some operation.
+[01:19:25.260 --> 01:19:27.580] So the most, I think the most common construct
+[01:19:28.160 --> 01:19:30.500] as it people use to operate a data,
+[01:19:30.580 --> 01:19:31.640] something like a for loop.
+[01:19:32.040 --> 01:19:33.300] I like you take a data item,
+[01:19:33.440 --> 01:19:35.640] you loop over a list, compares this data item
+[01:19:35.640 --> 01:19:36.700] with all the entries on a list.
+[01:19:37.180 --> 01:19:38.980] Now this is extremely common pattern.
+[01:19:40.040 --> 01:19:42.900] And so, which means you have,
+[01:19:42.920 --> 01:19:44.140] we are basically record oriented.
+[01:19:44.260 --> 01:19:45.180] So we take one record,
+[01:19:45.400 --> 01:19:46.740] we look at some other records
+[01:19:47.400 --> 01:19:52.480] some operations I mean good thing about this kind of program is that it's very
+[01:19:52.480 --> 01:19:56.740] easy to understand very simple code betting is this doesn't scale yeah
+[01:19:56.740 --> 01:20:00.860] because this kind of operation like you look at all correct pairs of records or
+[01:20:00.860 --> 01:20:05.400] so tends to lead to n square behavior so we here the example given on the
+[01:20:05.400 --> 01:20:10.840] site is consider two lists now so if you want to figure out what elements occur
+[01:20:10.840 --> 01:20:15.400] on to both lists of course we can implement this easily using just two
+[01:20:17.400 --> 01:20:21.300] on the first list, we loop over all entries on the second list, we compare them, works
+[01:20:21.300 --> 01:20:25.100] three lines of code but is n squared in runtime.
+[01:20:25.420 --> 01:20:28.980] Because we look at all pairs.
+[01:20:30.540 --> 01:20:32.740] And usually n squared is unacceptable.
+[01:20:33.080 --> 01:20:36.080] In database systems n tend to be in the millions or billions.
+[01:20:36.440 --> 01:20:40.100] A million squared is a really unpleasant number, you don't want to do this.
+[01:20:40.760 --> 01:20:42.620] So n squared algorithm we usually cannot do.
+[01:20:42.920 --> 01:20:46.280] The most expensive we usually allow is n log n.
+[01:20:47.400 --> 01:20:49.880] So therefore we want to have operations that do this quicker.
+[01:20:50.080 --> 01:20:51.640] And of course we can do this quicker.
+[01:20:52.020 --> 01:20:58.320] Like if we, instead of looking at individual elements, we look at the whole lists, then
+[01:20:58.320 --> 01:21:03.360] we can do this, for example, in N log N, because what we can do is we can sort both lists and
+[01:21:03.360 --> 01:21:05.880] then we do a list intersection in linear time.
+[01:21:06.040 --> 01:21:11.320] So the expensive part here is sorting, intersections then is cheap.
+[01:21:11.640 --> 01:21:16.440] Sorting we can do in N log N and therefore we can handle even very large lists efficiently.
+[01:21:17.400 --> 01:21:22.480] do this because we see the whole list as input and therefore the name set oriented processing,
+[01:21:22.480 --> 01:21:28.120] we take the whole set and do something with the set. Okay, so set oriented processing has
+[01:21:28.860 --> 01:21:34.820] many advantages over looking at individual records, like we can pre-process before we can
+[01:21:34.820 --> 01:21:39.920] processing, we can sort, we can hash, we can build index structures also. For individual elements,
+[01:21:40.000 --> 01:21:44.220] this would never pay off building a complicated data structure, but for a large set of elements
+[01:21:44.220 --> 01:21:45.320] then it pays off to do this.
+[01:21:45.440 --> 01:21:47.680] So we amortize the cost over the set.
+[01:21:48.140 --> 01:21:50.840] This brings me to a more efficient algorithm.
+[01:21:51.720 --> 01:21:55.120] Also this allows me to cope with memory limitations.
+[01:21:55.240 --> 01:21:56.800] Like if I realize, oh, my set is too large,
+[01:21:57.040 --> 01:21:58.360] I cannot fit it into memory,
+[01:21:58.520 --> 01:22:00.860] then I can handle this.
+[01:22:02.140 --> 01:22:03.600] Also if you have a large set,
+[01:22:03.700 --> 01:22:05.000] we can parallelize this easily.
+[01:22:05.200 --> 01:22:06.420] So this is all good.
+[01:22:06.680 --> 01:22:08.840] So in the end, set-oriented processing is much better,
+[01:22:09.040 --> 01:22:09.880] much more scalable.
+[01:22:11.200 --> 01:22:13.100] Downside, of course, it's more complicated.
+[01:22:14.560 --> 01:22:21.760] the think about the list intersection example a trivial list intersection is three lines of code
+[01:22:23.100 --> 01:22:29.640] and this dog's low an efficient list intersection is fast but this is not three lines but you know
+[01:22:29.640 --> 01:22:35.980] depending on what kind of tooling you have probably at least say six or seven lines if you have to do
+[01:22:35.980 --> 01:22:40.200] everything yourself including sorting then probably more than 50 or 100 lines of code
+[01:22:40.200 --> 01:22:48.180] also depending on what kind of tooling you have okay so accelerated is more complex but more scalable
+[01:22:49.720 --> 01:22:58.040] okay and now when we are inside and in a relational database system all operations
+[01:22:58.040 --> 01:23:05.260] that we want to perform are expressed using relational algebra and so therefore by so
+[01:23:05.260 --> 01:23:10.780] So everything I do here is modeled as an operator, for example a join or scan.
+[01:23:11.660 --> 01:23:14.760] And so we have here we have three kinds of operators.
+[01:23:14.960 --> 01:23:15.880] So this is called a scan.
+[01:23:16.040 --> 01:23:19.100] So we just read an input, read an input, also scan and scan.
+[01:23:19.300 --> 01:23:21.380] Here we have a filter, also called select.
+[01:23:21.600 --> 01:23:24.340] So we filter my input and here we have a join.
+[01:23:24.580 --> 01:23:26.360] We take two inputs and we combine them.
+[01:23:26.480 --> 01:23:32.020] And each operator consumes zero or more input relation and produces one output relation.
+[01:23:32.140 --> 01:23:32.940] So this is a model.
+[01:23:33.440 --> 01:23:39.280] and these operators are inherently set oriented. Now if I am a pendantic,
+[01:23:39.940 --> 01:23:45.360] strictly speaking they are not set oriented, they are back oriented. So back means multi-set,
+[01:23:45.500 --> 01:23:49.640] because my relation of course can contain duplicates, at least in the general case.
+[01:23:50.360 --> 01:23:54.880] If I have a primary key, my input is duplicate free, but if I have no primary key, then I can
+[01:23:54.880 --> 01:24:00.000] have duplicates and therefore of course operators must cope with duplicates. But this is basically
+[01:24:00.000 --> 01:24:07.380] my model and the question is now of course how to kind of implement this efficiently okay and
+[01:24:08.120 --> 01:24:14.740] so now just looking at my time now only five minutes left so i think i will stop here now
+[01:24:15.860 --> 01:24:21.140] before the next lecture i would recommend you please again look at the algebraic operators
+[01:24:21.140 --> 01:24:26.620] because we can now come back to this and i assume that you all know how this work and we will now
+[01:24:26.620 --> 01:24:31.320] look at what they do and how we can implement them efficiently.
+[01:24:31.820 --> 01:24:35.340] Okay, but this I will want to continue in the next lecture.
+[01:24:36.120 --> 01:24:37.400] Okay, thank you.

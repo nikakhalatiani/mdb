@@ -1,0 +1,6037 @@
+WEBVTT
+
+1
+00:00:00.660 --> 00:00:02.740
+Welcome to this lecture on database implementation.
+
+2
+00:00:03.260 --> 00:00:08.000
+So in the last lecture, we have looked at how records are stored in database system.
+
+3
+00:00:08.160 --> 00:00:18.360
+We say we store records basically as bytes streams, but in a way such that we can access every attribute, preferably in constant time.
+
+4
+00:00:18.580 --> 00:00:26.380
+Like we split it into a, you would see in this example, a fixed sized part and a variable sized part.
+
+5
+00:00:27.200 --> 00:00:32.240
+and then we store this on a page.
+
+6
+00:00:32.380 --> 00:00:37.880
+So each slotted page contains multiple tuples, we just store them and the slots allow us to find this.
+
+7
+00:00:37.980 --> 00:00:43.780
+So this is a standard layout that many database systems use to store their data.
+
+8
+00:00:45.540 --> 00:00:50.440
+And so this works quite well, we can make it even better by using compression and so on if you want.
+
+9
+00:00:50.760 --> 00:00:54.780
+It's a trade-off of course with CPU time versus space consumption, but we can do this.
+
+10
+00:00:56.820 --> 00:01:02.640
+So now the interesting question is, what do we do if we cannot do this?
+
+11
+00:01:03.080 --> 00:01:05.240
+So now why should we ever not be able to do this?
+
+12
+00:01:06.620 --> 00:01:12.680
+Remember when we talk about slotted pages, we talk about, in most systems, in 99.9% of
+
+13
+00:01:12.680 --> 00:01:18.220
+the systems, we talk about systems with a fixed size database page, for example of 16
+
+14
+00:01:18.220 --> 00:01:20.580
+kilobytes or 32 kilobytes, something like this.
+
+15
+00:01:21.920 --> 00:01:27.080
+and systems will want to use fixed size pages for a number of reasons.
+
+16
+00:01:27.260 --> 00:01:32.500
+For example, if you know that all your physical pages are, let's say 16 kilobytes,
+
+17
+00:01:32.840 --> 00:01:36.940
+then buffer management is easy because you know that you have all this size units that
+
+18
+00:01:36.940 --> 00:01:37.880
+you can swap in and out.
+
+19
+00:01:38.240 --> 00:01:43.540
+Recovery is easier because we know that we can, this is the smallest units that we can
+
+20
+00:01:43.540 --> 00:01:44.560
+recover and so on.
+
+21
+00:01:45.460 --> 00:01:49.680
+So, your life is much easier if everything is squeezed into pages.
+
+22
+00:01:50.680 --> 00:01:56.080
+The problem of course is that if you do this, then a tuple must fit in a single page.
+
+23
+00:01:56.320 --> 00:02:01.960
+So like if you have 16, for example, if my whole page is, this is my whole page, if my
+
+24
+00:02:01.960 --> 00:02:07.620
+whole page is 16 kilobytes, then obviously I have elusive it because of header and slot
+
+25
+00:02:07.620 --> 00:02:08.220
+and so on.
+
+26
+00:02:09.940 --> 00:02:17.740
+Then here I have data and clearly my data D has to be less than 16 kilobytes because
+
+27
+00:02:17.740 --> 00:02:19.660
+I have some other overheads.
+
+28
+00:02:19.780 --> 00:02:23.680
+So I kind of make the page completely, it is nearly 16 kilobytes but it is a bit smaller.
+
+29
+00:02:25.440 --> 00:02:30.520
+And so the interesting question is now what do we do if my data is larger?
+
+30
+00:02:31.160 --> 00:02:34.240
+And by the way what systems do if the data is larger differs?
+
+31
+00:02:34.940 --> 00:02:39.040
+So the easiest thing is you give an error message.
+
+32
+00:02:39.440 --> 00:02:46.740
+This is what for example, Oracle does, or at least does in the default, Oracle can handle
+
+33
+00:02:46.740 --> 00:02:48.440
+this, but by default you get an error message.
+
+34
+00:02:49.020 --> 00:02:53.180
+So if you just store something as large as a page, the system says, no, I cannot do this.
+
+35
+00:02:53.440 --> 00:02:58.020
+But sometimes the user absolutely wants to do this and he tells the database system that
+
+36
+00:02:58.020 --> 00:02:58.980
+he wants to do this.
+
+37
+00:02:58.980 --> 00:03:03.780
+For example, he wants to embed a document somewhere in the database system.
+
+38
+00:03:04.620 --> 00:03:06.140
+So something that is large.
+
+39
+00:03:06.320 --> 00:03:13.320
+And SQL has explicit support for this using two data types here, BLOP and CLOP.
+
+40
+00:03:13.560 --> 00:03:16.040
+So BLOP means binary large objects.
+
+41
+00:03:16.180 --> 00:03:18.420
+So this is basically like a file.
+
+42
+00:03:18.840 --> 00:03:22.780
+So this is a binary sequence, just as stored as it is.
+
+43
+00:03:23.000 --> 00:03:25.100
+And this can be large.
+
+44
+00:03:25.100 --> 00:03:29.900
+As you hear this, you can use for example to store an embedded document in your database
+
+45
+00:03:29.900 --> 00:03:31.960
+or versus you can store a movie.
+
+46
+00:03:32.180 --> 00:03:33.400
+Of course you should not do this.
+
+47
+00:03:33.520 --> 00:03:39.740
+So the system can handle large blobs, but if it's really large, you should not store
+
+48
+00:03:39.740 --> 00:03:41.380
+it as a blob, but store it in the file system.
+
+49
+00:03:42.520 --> 00:03:45.940
+So if you talk about multiple gigabytes, you don't want to do this as a blob.
+
+50
+00:03:46.120 --> 00:03:46.960
+But in principle you could.
+
+51
+00:03:47.440 --> 00:03:51.880
+So you can use a blob attribute and store very large data elements in there.
+
+52
+00:03:52.360 --> 00:03:54.360
+And crop is a character large object.
+
+53
+00:03:56.160 --> 00:03:59.280
+So like a block basically, also very large differences,
+
+54
+00:04:00.340 --> 00:04:02.160
+with a block it's really a byte range.
+
+55
+00:04:02.320 --> 00:04:04.020
+So the system does not interpret this at all.
+
+56
+00:04:04.200 --> 00:04:05.220
+It just stores it as it is.
+
+57
+00:04:05.600 --> 00:04:07.320
+With a clock range you say,
+
+58
+00:04:07.580 --> 00:04:09.520
+oh, this is a string, a very long string.
+
+59
+00:04:09.800 --> 00:04:11.860
+And then some systems support some,
+
+60
+00:04:12.020 --> 00:04:13.560
+at least some limited functionality.
+
+61
+00:04:13.760 --> 00:04:15.820
+You can look into the clock a bit.
+
+62
+00:04:15.980 --> 00:04:17.940
+Well, into the block usually cannot look at all.
+
+63
+00:04:18.120 --> 00:04:20.160
+Now while in the clock you sometimes can perform
+
+64
+00:04:20.160 --> 00:04:22.060
+some operations on them if you want to.
+
+65
+00:04:22.440 --> 00:04:24.480
+Okay, so what is the user asks for it?
+
+66
+00:04:25.100 --> 00:04:30.320
+If like you could have, for example, making a more realistic example here, we have a table
+
+67
+00:04:30.320 --> 00:04:37.660
+that's called user and then of course we have a name and this here might be for example,
+
+68
+00:04:41.140 --> 00:04:47.600
+we have a name that's 60 or so, then we have a mother fields and then at the end here we have
+
+69
+00:04:47.600 --> 00:04:53.300
+a photo and this we don't want to store as a string, yeah so therefore you say you have a blob.
+
+70
+00:04:55.100 --> 00:04:56.040
+of a blob field.
+
+71
+00:04:57.620 --> 00:05:03.220
+Now inside this photo attribute, you can now store a picture of your user if you want to.
+
+72
+00:05:03.700 --> 00:05:08.340
+Okay, this picture can be larger than a page, or larger than for example 16 kilobytes.
+
+73
+00:05:09.380 --> 00:05:12.920
+And now the system must be able to handle this.
+
+74
+00:05:13.120 --> 00:05:19.580
+Now note that in this use case here, this photo might be in the ballpark of a few hundred kilobytes.
+
+75
+00:05:19.580 --> 00:05:22.760
+I mean, it could be a few,
+
+76
+00:05:23.400 --> 00:05:25.020
+well, if you have a very high resolution,
+
+77
+00:05:25.160 --> 00:05:26.060
+it helps a few megabyte.
+
+78
+00:05:27.040 --> 00:05:30.600
+You probably do not want to store gigabytes,
+
+79
+00:05:31.020 --> 00:05:31.860
+although you can.
+
+80
+00:05:33.060 --> 00:05:36.380
+So if you declare a field as a blob,
+
+81
+00:05:36.540 --> 00:05:38.280
+you can store really large stuff in there.
+
+82
+00:05:38.660 --> 00:05:40.920
+But I'm just telling you beforehand,
+
+83
+00:05:41.780 --> 00:05:45.200
+systems are not optimized for storing really large blobs.
+
+84
+00:05:45.400 --> 00:05:46.560
+They support this,
+
+85
+00:05:46.620 --> 00:05:48.380
+but performance might not be optimal.
+
+86
+00:05:49.740 --> 00:05:53.100
+but definitely many kilobytes, megabytes,
+
+87
+00:05:53.240 --> 00:05:54.900
+this is definitely supportable props,
+
+88
+00:05:55.400 --> 00:05:57.260
+potentially up to gigabytes.
+
+89
+00:05:58.880 --> 00:06:00.100
+Okay, so nevertheless,
+
+90
+00:06:00.560 --> 00:06:02.160
+much of this is whatever we put there,
+
+91
+00:06:02.260 --> 00:06:03.260
+it's much larger than the page.
+
+92
+00:06:03.340 --> 00:06:05.240
+Now we need a way to cope this.
+
+93
+00:06:05.840 --> 00:06:10.160
+Now what we could naively do is the following.
+
+94
+00:06:10.440 --> 00:06:12.640
+So I take my, this is my page for my user.
+
+95
+00:06:12.760 --> 00:06:13.640
+Here's my user page.
+
+96
+00:06:16.560 --> 00:06:19.120
+So then I have here my user record,
+
+97
+00:06:19.580 --> 00:06:21.420
+And so initially here we have,
+
+98
+00:06:22.360 --> 00:06:23.940
+we have the name of course,
+
+99
+00:06:25.260 --> 00:06:26.860
+then some other stuff and so on.
+
+100
+00:06:27.080 --> 00:06:28.560
+So up to here.
+
+101
+00:06:29.060 --> 00:06:31.480
+Now comes, at some point here my photo starts
+
+102
+00:06:33.100 --> 00:06:35.400
+and the photo is so large that it doesn't fit on the page.
+
+103
+00:06:35.520 --> 00:06:37.180
+So what we could, what you don't want to do,
+
+104
+00:06:37.240 --> 00:06:38.820
+what we could do is of course the following.
+
+105
+00:06:41.360 --> 00:06:43.740
+So we take from my photo here,
+
+106
+00:06:43.840 --> 00:06:45.360
+I point to another record.
+
+107
+00:06:46.460 --> 00:06:53.940
+And this then again has photo, and actually I didn't draw it correct because it's not
+
+108
+00:06:53.940 --> 00:06:54.560
+done yet.
+
+109
+00:06:55.020 --> 00:07:00.540
+So the attribute continues and continues and continues, it also doesn't fit on a page.
+
+110
+00:07:01.480 --> 00:07:03.720
+So then we get another pointer here.
+
+111
+00:07:05.840 --> 00:07:07.680
+So we get a long chain.
+
+112
+00:07:12.940 --> 00:07:17.300
+So then we continue here with the photo and so on.
+
+113
+00:07:19.160 --> 00:07:19.780
+And so on.
+
+114
+00:07:20.400 --> 00:07:24.540
+We use as many pages as we need and we always point to the next page, to the next tab that
+
+115
+00:07:24.540 --> 00:07:26.020
+contains the next piece of data.
+
+116
+00:07:26.320 --> 00:07:29.660
+I mean we could implement it like this, but we don't want to implement it like this.
+
+117
+00:07:29.780 --> 00:07:30.920
+So this is not a good design.
+
+118
+00:07:31.060 --> 00:07:36.680
+I mean purely from a search perspective, of course it works because you just see my very
+
+119
+00:07:37.680 --> 00:07:44.300
+multiple pages, so this works, but this is very problematic for a number of reasons.
+
+120
+00:07:44.840 --> 00:07:52.640
+First, it means that if you access this attribute again, so if you touch it, then you can at
+
+121
+00:07:52.640 --> 00:07:56.860
+least potentially read an unbounded number of pages, because we don't know how large
+
+122
+00:07:56.860 --> 00:07:58.220
+my fold attribute is.
+
+123
+00:07:58.720 --> 00:08:04.400
+So because it could be very large, at least in theory, I've got some blob, has nearly
+
+124
+00:08:04.400 --> 00:08:05.100
+no space limit.
+
+125
+00:08:05.100 --> 00:08:09.420
+So if you want to reconstruct my tuple, I need to have an unbounded number of pages
+
+126
+00:08:09.420 --> 00:08:11.080
+And this is a nightmare for buffering.
+
+127
+00:08:11.400 --> 00:08:16.800
+It could be that your buffer manager doesn't have enough pages for example.
+
+128
+00:08:17.160 --> 00:08:19.980
+Or you get locking issues or all kinds of problems.
+
+129
+00:08:20.420 --> 00:08:23.360
+So you do not want to reach an unbounded number of pages.
+
+130
+00:08:23.520 --> 00:08:26.420
+If you know I read at most two pages or three pages, that's okay.
+
+131
+00:08:26.880 --> 00:08:32.620
+But if you say I have to read arbitrary many pages, and of course you need them because
+
+132
+00:08:32.620 --> 00:08:37.840
+Because your tuple is really split, meaning reading just this page is not enough, or this
+
+133
+00:08:37.840 --> 00:08:39.020
+and that page is not enough.
+
+134
+00:08:39.180 --> 00:08:40.220
+This is also not enough.
+
+135
+00:08:40.260 --> 00:08:46.220
+You must have all of them in memory at the same time to be able to process this photo.
+
+136
+00:08:47.500 --> 00:08:49.600
+That's very bad for buffering.
+
+137
+00:08:49.700 --> 00:08:50.480
+You don't want this.
+
+138
+00:08:50.780 --> 00:08:55.060
+I mean, in worst case, of course, your tuple, so your single attribute might be larger than
+
+139
+00:08:55.060 --> 00:08:55.520
+your memory.
+
+140
+00:08:55.980 --> 00:09:02.360
+Like if somebody has a blob attribute, stores a 4 GB blob, but you have only 2 GB memory,
+
+141
+00:09:02.620 --> 00:09:03.280
+the new problem.
+
+142
+00:09:03.640 --> 00:09:07.100
+So this is clearly problematic.
+
+143
+00:09:07.940 --> 00:09:12.000
+Other things that are very unpleasant is what happens if somebody doesn't update.
+
+144
+00:09:12.360 --> 00:09:18.720
+So you have a property and somebody doesn't update and the size changes.
+
+145
+00:09:18.900 --> 00:09:24.340
+If the size remains the same, I can just copy the data in, but if the size changes, so suddenly
+
+146
+00:09:24.340 --> 00:09:27.420
+I have to allocate new pages or release pages.
+
+147
+00:09:28.760 --> 00:09:29.800
+Very complicated.
+
+148
+00:09:29.800 --> 00:09:33.820
+So this is also not very attractive.
+
+149
+00:09:34.760 --> 00:09:40.120
+And also, I mean if you run a query now, how do you pass this, because after all, somebody
+
+150
+00:09:40.120 --> 00:09:44.140
+can query for this for the attribute, how you pass this through your query processing
+
+151
+00:09:44.140 --> 00:09:45.940
+is also very complicated.
+
+152
+00:09:46.260 --> 00:09:47.380
+Now, therefore, we don't want this.
+
+153
+00:09:48.960 --> 00:09:55.680
+What we do instead is we store the tuple and store the blob value separately.
+
+154
+00:09:56.200 --> 00:09:58.000
+So this is what most systems do.
+
+155
+00:09:59.800 --> 00:10:01.160
+Let's say here, this is my user now.
+
+156
+00:10:03.160 --> 00:10:06.480
+So this is my user tupper and the user of course has a name and so on.
+
+157
+00:10:07.740 --> 00:10:09.420
+And then we have all other attributes that we have.
+
+158
+00:10:09.620 --> 00:10:15.160
+And then we have, strictly speaking, just to be pedantic, of course the name is not written
+
+159
+00:10:15.160 --> 00:10:15.520
+like this.
+
+160
+00:10:15.540 --> 00:10:16.960
+I do it because it's easier to write.
+
+161
+00:10:17.560 --> 00:10:20.360
+Strictly speaking, we have only the fixed part of the name.
+
+162
+00:10:20.440 --> 00:10:24.940
+Here the variable part of the name comes at the end, just to write it correctly.
+
+163
+00:10:24.940 --> 00:10:27.860
+I also have a name variable part,
+
+164
+00:10:27.860 --> 00:10:29.940
+but I don't want to make it so complicated.
+
+165
+00:10:30.540 --> 00:10:31.980
+Okay, so I have my tuple here
+
+166
+00:10:31.980 --> 00:10:33.780
+and in my tuple somewhere there's my photo.
+
+167
+00:10:35.500 --> 00:10:37.900
+And this photo now points to somewhere else,
+
+168
+00:10:38.420 --> 00:10:42.140
+which has advantage that the user tuple itself
+
+169
+00:10:43.400 --> 00:10:44.700
+is reasonably small.
+
+170
+00:10:45.840 --> 00:10:47.820
+And for the block, we just store a pointer,
+
+171
+00:10:47.960 --> 00:10:49.220
+so add an ID basically.
+
+172
+00:10:49.440 --> 00:10:50.800
+So we could, for example, store a tuple ID
+
+173
+00:10:50.800 --> 00:10:52.900
+or something like this, which is more or less a pointer.
+
+174
+00:10:52.900 --> 00:10:57.900
+So tupple ID or pointer or something else, some mechanism.
+
+175
+00:10:58.540 --> 00:11:00.560
+And this points to the real blob.
+
+176
+00:11:01.280 --> 00:11:02.760
+And then during field processing,
+
+177
+00:11:02.920 --> 00:11:04.720
+we just pass along this tupple ID.
+
+178
+00:11:04.800 --> 00:11:05.440
+We don't do anything.
+
+179
+00:11:05.620 --> 00:11:07.800
+And only in the moment that we give it to the user,
+
+180
+00:11:07.980 --> 00:11:09.180
+so in the last possible moment,
+
+181
+00:11:09.300 --> 00:11:11.620
+somebody retrieves the photo,
+
+182
+00:11:11.820 --> 00:11:14.820
+then we retrieve the associated data,
+
+183
+00:11:15.260 --> 00:11:16.320
+load the photo in there,
+
+184
+00:11:16.480 --> 00:11:17.480
+or they give it to the user.
+
+185
+00:11:17.660 --> 00:11:19.560
+Or perhaps we don't even do this
+
+186
+00:11:19.560 --> 00:11:21.600
+because it depends on which API you use,
+
+187
+00:11:22.900 --> 00:11:28.900
+It could be that you really get the ID and then you have a special coil that says, okay,
+
+188
+00:11:29.020 --> 00:11:32.840
+I have this blob ID now, please give me the content of the blob and only in this moment
+
+189
+00:11:32.840 --> 00:11:36.460
+then it's retrieved. So the blob is stored really separately.
+
+190
+00:11:37.900 --> 00:11:43.060
+Good thing about the separation is that now the complexity of this large object is
+
+191
+00:11:43.540 --> 00:11:48.920
+hidden in only one place, namely the one that is responsible for storing and retrieving the
+
+192
+00:11:49.360 --> 00:11:52.740
+the blob, everybody else just passes the handle around.
+
+193
+00:11:53.120 --> 00:11:53.800
+So this is good.
+
+194
+00:11:53.980 --> 00:11:58.360
+Bad thing is, by design, you cannot do a lot with your blob.
+
+195
+00:11:58.760 --> 00:12:01.500
+You can pass it along, you can give it to the user.
+
+196
+00:12:01.680 --> 00:12:05.680
+But for example, in most systems, you cannot perform operations.
+
+197
+00:12:05.880 --> 00:12:08.280
+Like you cannot look at the content of the blob, at least not easily.
+
+198
+00:12:08.940 --> 00:12:09.960
+Same with clops.
+
+199
+00:12:10.240 --> 00:12:13.420
+Or perhaps with clops, they have some limited support, what you can do.
+
+200
+00:12:13.580 --> 00:12:15.700
+You can, for example, probably compare clops.
+
+201
+00:12:16.080 --> 00:12:17.260
+This is then implemented.
+
+202
+00:12:18.920 --> 00:12:24.400
+do this, then they must look at the real content of this elements, which is slower.
+
+203
+00:12:24.640 --> 00:12:28.980
+So blobs and clops are slower than regular variables because this data stored somewhere
+
+204
+00:12:28.980 --> 00:12:29.180
+else.
+
+205
+00:12:30.420 --> 00:12:36.040
+But at least the complexity of the immensely large values is removed from the tupper.
+
+206
+00:12:36.160 --> 00:12:41.920
+So the tupper itself now is again small, because the large part starts somewhere else.
+
+207
+00:12:42.460 --> 00:12:45.020
+Okay, so this design perspective makes sense.
+
+208
+00:12:45.140 --> 00:12:48.900
+And as I said, many systems do this, but this does not answer the question is, okay, I'm
+
+209
+00:12:48.920 --> 00:12:49.620
+What about here?
+
+210
+00:12:49.840 --> 00:12:54.400
+I said my blob is here and this can be now enlarged like megabytes.
+
+211
+00:12:56.140 --> 00:12:57.700
+Okay, how do I store this?
+
+212
+00:12:58.360 --> 00:13:02.520
+Because this has also listed somewhere and usually we assume everything is
+
+213
+00:13:04.220 --> 00:13:05.960
+stored in a page in database system.
+
+214
+00:13:06.080 --> 00:13:08.520
+So the page is the smallest unit we can have.
+
+215
+00:13:08.640 --> 00:13:13.300
+So we must somehow now map this megabyte range of data to pages.
+
+216
+00:13:14.120 --> 00:13:17.860
+We don't have to worry about this for during template processing,
+
+217
+00:13:18.920 --> 00:13:21.420
+you must do this mapping.
+
+218
+00:13:22.320 --> 00:13:26.200
+Okay, now here's a particular elegant way to implement this.
+
+219
+00:13:26.360 --> 00:13:29.500
+Namely, you take a large binary object, so your blob,
+
+220
+00:13:29.620 --> 00:13:32.360
+and then store it in a bee tree-like fashion like this.
+
+221
+00:13:33.380 --> 00:13:35.060
+Okay, now this needs some explanation.
+
+222
+00:13:35.960 --> 00:13:39.060
+So perhaps we start bottom up.
+
+223
+00:13:39.220 --> 00:13:42.140
+So we look at the leaf element, so this as the leaves.
+
+224
+00:13:42.340 --> 00:13:44.720
+So this contains the real data here.
+
+225
+00:13:48.140 --> 00:13:54.100
+So this is my real data.
+
+226
+00:13:56.440 --> 00:14:02.580
+And then here comes the first part of my blob, for example, the first 40,000 elements here,
+
+227
+00:14:03.840 --> 00:14:10.840
+40,000 and then comes the next 60,000 and each of them fit on a page.
+
+228
+00:14:10.840 --> 00:14:14.200
+If in this case, I assume I have 64 kilobyte pages.
+
+229
+00:14:14.760 --> 00:14:14.840
+Okay.
+
+230
+00:14:15.380 --> 00:14:16.440
+So then each of them fits.
+
+231
+00:14:16.820 --> 00:14:19.020
+This is the first page is not full completely.
+
+232
+00:14:19.220 --> 00:14:20.820
+There's some empty space for some reason,
+
+233
+00:14:20.980 --> 00:14:22.880
+but second next page is full.
+
+234
+00:14:23.020 --> 00:14:24.180
+And then comes T as the next,
+
+235
+00:14:24.980 --> 00:14:30.780
+then comes the next 50 K and then comes the next 60 K
+
+236
+00:14:31.540 --> 00:14:34.560
+and then comes the next 40 K for example.
+
+237
+00:14:34.740 --> 00:14:35.900
+And that's why I have split my,
+
+238
+00:14:36.040 --> 00:14:39.540
+so my total blob here has a size of total is
+
+239
+00:14:40.840 --> 00:14:42.940
+My total is 250K.
+
+240
+00:14:43.780 --> 00:14:45.780
+If you compute the sum here, this should be,
+
+241
+00:14:45.860 --> 00:14:46.800
+I believe it's right.
+
+242
+00:14:47.020 --> 00:14:47.100
+Yes.
+
+243
+00:14:47.540 --> 00:14:48.660
+So this is a sum here, 250.
+
+244
+00:14:49.560 --> 00:14:50.900
+250K is my blob on total.
+
+245
+00:14:52.820 --> 00:14:55.340
+And this is split over,
+
+246
+00:14:56.680 --> 00:14:57.640
+split over,
+
+247
+00:15:01.340 --> 00:15:04.120
+over five leaf pages.
+
+248
+00:15:06.040 --> 00:15:08.660
+Okay, so this is my storage here.
+
+249
+00:15:08.660 --> 00:15:13.100
+Now you could ask, was this any better than the chaining that we had mentioned before?
+
+250
+00:15:13.240 --> 00:15:19.200
+Yes, it is, because here in this case we don't do chaining, instead we index the content.
+
+251
+00:15:19.420 --> 00:15:22.420
+So here we do this in a B-tree like fashion.
+
+252
+00:15:22.660 --> 00:15:26.680
+Now you should realize of course that this is an illustrative sketch.
+
+253
+00:15:26.860 --> 00:15:31.660
+In reality if you have only 5 pages, you need only one B-tree node and this can happily
+
+254
+00:15:31.660 --> 00:15:36.320
+handle 5, it can handle thousands of pages, at least definitely more than 5.
+
+255
+00:15:37.040 --> 00:15:42.180
+Here we pretend as if you would need more inner nodes just because, you know, to make the picture
+
+256
+00:15:42.180 --> 00:15:52.740
+more meaningful. So, therefore on the inner nodes, we reference the leaf nodes and we reference them
+
+257
+00:15:52.740 --> 00:16:01.120
+by file offset. So like this page says, okay, everything in the file offset from 0 to 40,000
+
+258
+00:16:01.120 --> 00:16:06.080
+goes here and then everything between 40,000 and 100,000 goes here.
+
+259
+00:16:07.020 --> 00:16:07.600
+Okay.
+
+260
+00:16:09.020 --> 00:16:12.780
+So this is the index by offset.
+
+261
+00:16:18.020 --> 00:16:18.700
+Okay.
+
+262
+00:16:19.700 --> 00:16:27.500
+Same in the root node here, the first 100,000 entries are here, the next 150,000 entries
+
+263
+00:16:27.500 --> 00:16:27.900
+are here.
+
+264
+00:16:28.840 --> 00:16:29.400
+Okay.
+
+265
+00:16:31.940 --> 00:16:38.120
+This should be intuitive because this indexing allows you to find an arbitrary position in
+
+266
+00:16:38.120 --> 00:16:40.180
+your blob in logarithmic time.
+
+267
+00:16:40.300 --> 00:16:43.800
+Because we can just search for more offset and then I find the page that contains it.
+
+268
+00:16:43.980 --> 00:16:48.620
+And I can also do a range queries like if you don't want to read the whole blob, but
+
+269
+00:16:48.620 --> 00:16:52.780
+just care for the header, for example, you can go to the beginning of the page where
+
+270
+00:16:52.780 --> 00:16:56.960
+can you read any sequence, any part of the data that you want, because we can just go
+
+271
+00:16:56.960 --> 00:17:00.540
+down in the B tree to whatever data range we need and then we get all the content.
+
+272
+00:17:01.120 --> 00:17:03.860
+This we can use to retrieve arbitrary parts of data.
+
+273
+00:17:04.100 --> 00:17:11.460
+Now if you look closely at this node here, you see that we do not just index the offsets,
+
+274
+00:17:11.700 --> 00:17:18.240
+but we index, so here we say index by, here we have written index by offset, but if we
+
+275
+00:17:18.240 --> 00:17:24.520
+are more precise, we say we don't index by offset, and that we do here is we index by
+
+276
+00:17:25.300 --> 00:17:26.220
+relative offset.
+
+277
+00:17:31.800 --> 00:17:33.280
+Now relative is important.
+
+278
+00:17:33.500 --> 00:17:36.820
+Now for the first inner node, it makes no difference because my relative offset here
+
+279
+00:17:36.820 --> 00:17:37.160
+is zero.
+
+280
+00:17:37.360 --> 00:17:42.240
+So this here is an implicit zero at the beginning, of course the zero is not stored here, but
+
+281
+00:17:42.240 --> 00:17:45.540
+this is an implicit offset of zero, therefore in the first page it makes no difference.
+
+282
+00:17:45.880 --> 00:17:54.400
+But in the second page, here we say, we see that this here, this third bucket here contains
+
+283
+00:17:54.520 --> 00:17:59.940
+the next 50,000 entries between as a position 100,000 and 150,000.
+
+284
+00:18:00.160 --> 00:18:07.940
+In the entry here, in the inner node on the right, this, let's give you the number, let's
+
+285
+00:18:07.940 --> 00:18:15.920
+call this here page 0, 1, 2, 3, 4, 5, 6, 7.
+
+286
+00:18:15.920 --> 00:18:23.940
+So in the index in the page 2, we now say everything less than my own base offset plus
+
+287
+00:18:23.940 --> 00:18:25.180
+50,000 is here.
+
+288
+00:18:25.480 --> 00:18:33.160
+So here we write 50,000 and not, so we do not write here not 150,000, even though a traditional
+
+289
+00:18:33.160 --> 00:18:34.240
+B3 would do this.
+
+290
+00:18:34.500 --> 00:18:41.820
+So we don't do this, instead we say 50,000 plus this one.
+
+291
+00:18:41.940 --> 00:18:43.280
+So plus my previous separator.
+
+292
+00:18:43.440 --> 00:18:44.780
+So this is a plus basically.
+
+293
+00:18:45.920 --> 00:18:47.840
+You also see that the next boundary here is,
+
+294
+00:18:49.860 --> 00:18:53.320
+sorry, the next boundary here in the inner node,
+
+295
+00:18:53.460 --> 00:18:56.760
+we write 110,000, but of course the real value is 210,000.
+
+296
+00:19:00.600 --> 00:19:01.880
+Now, why do we do this?
+
+297
+00:19:02.000 --> 00:19:06.360
+So why do we use relative offset instead of absolute offsets?
+
+298
+00:19:06.580 --> 00:19:08.060
+Because this has a great advantage.
+
+299
+00:19:08.680 --> 00:19:12.980
+Assume for example, that we would hypothetically go here
+
+300
+00:19:12.980 --> 00:19:17.260
+And then we would delete, let's say 20,000.
+
+301
+00:19:17.620 --> 00:19:25.280
+So we say, here we say delete 20k.
+
+302
+00:19:25.420 --> 00:19:29.660
+So we want to remove 20k from my file.
+
+303
+00:19:29.820 --> 00:19:31.260
+So I cut a piece from a file.
+
+304
+00:19:31.440 --> 00:19:36.300
+So this, then here, what we would have to do is, we, of course, we clear this data because
+
+305
+00:19:36.300 --> 00:19:36.760
+it's gone.
+
+306
+00:19:36.760 --> 00:19:45.880
+So this is gone and then we update this value here from 100,000 to 80,000 and we update
+
+307
+00:19:45.880 --> 00:19:54.580
+this here from to 80,000 and you must also update this here to 230,000 and that's it.
+
+308
+00:19:55.840 --> 00:20:00.620
+That's it, the rest of the file we do not have to touch, in particular the right most
+
+309
+00:20:00.620 --> 00:20:04.920
+entry is, so this one here is the page 2, we do not have to touch.
+
+310
+00:20:06.760 --> 00:20:09.820
+is relative to my separator above me.
+
+311
+00:20:10.040 --> 00:20:11.760
+Yeah, so several to the 80,000.
+
+312
+00:20:11.920 --> 00:20:12.800
+Same for inserts.
+
+313
+00:20:13.040 --> 00:20:15.180
+So if you would, for example, insert here 20,
+
+314
+00:20:15.260 --> 00:20:20.020
+so if you would then insert 20k in here,
+
+315
+00:20:21.820 --> 00:20:23.080
+then my page is full.
+
+316
+00:20:24.360 --> 00:20:25.680
+So I insert 20k,
+
+317
+00:20:25.940 --> 00:20:29.500
+then I would update this here from 40 to 60,
+
+318
+00:20:29.800 --> 00:20:32.380
+I would update this here to 120,
+
+319
+00:20:32.720 --> 00:20:34.020
+and would update this to 120,
+
+320
+00:20:34.160 --> 00:20:35.260
+and this here to 270,
+
+321
+00:20:36.800 --> 00:20:39.740
+Yes, again, the right part is not affected.
+
+322
+00:20:39.960 --> 00:20:42.580
+So it means using this relative addressing,
+
+323
+00:20:42.840 --> 00:20:46.960
+we can insert and delete arbitrary ranges of data
+
+324
+00:20:46.960 --> 00:20:48.440
+in my blob.
+
+325
+00:20:48.700 --> 00:20:51.520
+And if you only have to touch a logarithmic number of entries,
+
+326
+00:20:51.700 --> 00:20:53.240
+this is a pretty cool feature.
+
+327
+00:20:53.360 --> 00:20:57.580
+So we can now manipulate very large data structures
+
+328
+00:20:58.160 --> 00:20:59.700
+without rewriting everything.
+
+329
+00:21:00.280 --> 00:21:02.600
+Because if you would have used absolute offsets
+
+330
+00:21:02.600 --> 00:21:03.620
+instead of relative offsets,
+
+331
+00:21:03.800 --> 00:21:05.260
+we would have to touch all this.
+
+332
+00:21:06.760 --> 00:21:12.860
+Now I just, you know, perhaps I can do this with a different color.
+
+333
+00:21:13.060 --> 00:21:13.100
+Yeah.
+
+334
+00:21:13.460 --> 00:21:19.840
+So if we would have done this, we would have updated this year to 70,000, this year to 130,
+
+335
+00:21:19.840 --> 00:21:20.660
+and so on.
+
+336
+00:21:20.860 --> 00:21:24.000
+So we would have updated everything, but we don't want to do this.
+
+337
+00:21:24.160 --> 00:21:24.360
+Yeah.
+
+338
+00:21:24.360 --> 00:21:29.400
+So we want that we don't have to touch all my data.
+
+339
+00:21:30.560 --> 00:21:30.960
+Yeah.
+
+340
+00:21:31.060 --> 00:21:36.600
+So by relative addressing, oh, by the way, of course, the number was wrong.
+
+341
+00:21:36.760 --> 00:21:38.340
+If I use absolute addressing, then of course,
+
+342
+00:21:38.460 --> 00:21:39.720
+I would not have to do an S70,
+
+343
+00:21:39.840 --> 00:21:43.720
+I would have to do 170, just to make it precise.
+
+344
+00:21:44.160 --> 00:21:48.460
+230 and then here we would have to do 270.
+
+345
+00:21:49.140 --> 00:21:51.000
+Okay, so, but we don't want to do this
+
+346
+00:21:51.540 --> 00:21:53.720
+because this means whenever we insert a delete,
+
+347
+00:21:53.840 --> 00:21:55.200
+we must rewrite all the offsets.
+
+348
+00:21:55.420 --> 00:21:57.720
+We don't want this, therefore we use relative offsets
+
+349
+00:21:57.720 --> 00:22:00.300
+and then we can only touch a logarithmic number of entries.
+
+350
+00:22:00.860 --> 00:22:02.960
+So this is a very nice and elegant way
+
+351
+00:22:02.960 --> 00:22:04.820
+to cope with large data.
+
+352
+00:22:06.760 --> 00:22:07.800
+It's very powerful.
+
+353
+00:22:08.200 --> 00:22:09.460
+Again, we can read everything.
+
+354
+00:22:09.580 --> 00:22:10.740
+We can update everything.
+
+355
+00:22:11.880 --> 00:22:14.820
+Only downside is perhaps if you're honest,
+
+356
+00:22:15.840 --> 00:22:18.740
+this is a very beautiful B2L-like structure
+
+357
+00:22:18.740 --> 00:22:20.180
+might be a bit over sophisticated.
+
+358
+00:22:20.640 --> 00:22:22.360
+So it's might be more powerful
+
+359
+00:22:22.360 --> 00:22:23.640
+than what your interface offers.
+
+360
+00:22:23.880 --> 00:22:25.560
+Because at least in SQL,
+
+361
+00:22:26.020 --> 00:22:27.880
+means it's not true for all database systems,
+
+362
+00:22:28.000 --> 00:22:28.940
+but at least in SQL,
+
+363
+00:22:29.140 --> 00:22:33.220
+you can only read and write a blob as it is.
+
+364
+00:22:33.300 --> 00:22:34.440
+Yes, you can rewrite a blob.
+
+365
+00:22:34.560 --> 00:22:35.320
+So you can delete a blob.
+
+366
+00:22:36.760 --> 00:22:39.360
+but you cannot grow a blob or shrink a blob,
+
+367
+00:22:39.440 --> 00:22:42.940
+at least not with simple statements.
+
+368
+00:22:43.220 --> 00:22:45.440
+Now, this is not true for all database systems.
+
+369
+00:22:45.580 --> 00:22:46.600
+Some database systems, for example,
+
+370
+00:22:46.740 --> 00:22:49.180
+are optimized for multimedia usage
+
+371
+00:22:49.180 --> 00:22:51.240
+and they support more powerful interfaces.
+
+372
+00:22:51.500 --> 00:22:54.580
+But if you have a simple SQL interface,
+
+373
+00:22:55.720 --> 00:22:57.580
+this using such a Btree thing here
+
+374
+00:22:57.580 --> 00:22:59.900
+might be too complicated.
+
+375
+00:23:00.580 --> 00:23:02.040
+No, it's very beautiful,
+
+376
+00:23:02.320 --> 00:23:03.680
+but nevertheless might be too complicated.
+
+377
+00:23:04.940 --> 00:23:10.740
+So if you have only a simple interface then you could perhaps live with something like
+
+378
+00:23:10.740 --> 00:23:11.040
+this.
+
+379
+00:23:11.660 --> 00:23:12.920
+And also we use an extent list.
+
+380
+00:23:13.940 --> 00:23:22.780
+So instead of having this ptree we just have one node here that contains, that describes
+
+381
+00:23:22.780 --> 00:23:24.540
+the elements here.
+
+382
+00:23:24.640 --> 00:23:27.740
+For example we say okay this is my block record here.
+
+383
+00:23:31.700 --> 00:23:38.000
+And then this says, okay, my blog consists of three pages starting at position 13.
+
+384
+00:23:38.180 --> 00:23:40.100
+So then comes here the data, data, data.
+
+385
+00:23:40.400 --> 00:23:45.220
+Then we say two pages starting at page 19, data, data, then the blog is done.
+
+386
+00:23:45.420 --> 00:23:46.800
+Now, so we just write it out.
+
+387
+00:23:47.320 --> 00:23:53.380
+And in the blog record itself, we have the number of pages and so the start positions,
+
+388
+00:23:53.380 --> 00:23:58.020
+number of pages and then the total length in bytes and also have a hash value.
+
+389
+00:23:58.040 --> 00:24:00.560
+Hash value is useful, so then we can speed up comparisons.
+
+390
+00:24:01.420 --> 00:24:08.020
+Okay, and now in worst case, of course, we could be that my extent list itself is so large that
+
+391
+00:24:08.020 --> 00:24:11.220
+it doesn't fit on a page, then we would have to resort to chaining.
+
+392
+00:24:11.680 --> 00:24:16.400
+Right, this is unlike this happens in particular, if you do our standard trick
+
+393
+00:24:16.400 --> 00:24:19.660
+of increasing the number of pages that we store and extend.
+
+394
+00:24:19.660 --> 00:24:23.620
+So if you here at some point don't store two pages, but we try to get larger
+
+395
+00:24:25.080 --> 00:24:30.020
+runs of pages. Remember when we talked about the allocation interface, we asked the data system,
+
+396
+00:24:30.160 --> 00:24:34.620
+okay, I need two pages or at least, at least one page, but I could have made use of five.
+
+397
+00:24:35.120 --> 00:24:40.500
+Then the system will give you more pages as it has space. And this we do here,
+
+398
+00:24:40.600 --> 00:24:44.880
+then we could, at some point we start asking for more pages. Okay. Then if you, if you do this,
+
+399
+00:24:45.160 --> 00:24:48.840
+then you can bounce the number of entries you do from your extent list. So then you don't have the
+
+400
+00:24:49.880 --> 00:24:51.460
+that we don't fit on a page.
+
+401
+00:24:52.160 --> 00:24:56.860
+Okay, so not as elegant.
+
+402
+00:24:57.060 --> 00:24:59.360
+Yeah, also the problem is now we can only manipulate
+
+403
+00:24:59.360 --> 00:25:02.340
+the blob in one piece so we can delete all pages.
+
+404
+00:25:02.480 --> 00:25:04.460
+So we can delete the blob or we can read the blob,
+
+405
+00:25:04.560 --> 00:25:06.240
+but we cannot easily, for example,
+
+406
+00:25:06.360 --> 00:25:08.800
+if you want to delete something in here in the middle,
+
+407
+00:25:08.980 --> 00:25:10.040
+it's not possible.
+
+408
+00:25:10.220 --> 00:25:12.440
+Maybe because I would have to touch all the other pages.
+
+409
+00:25:12.820 --> 00:25:14.600
+And also we cannot manipulate the blob easily.
+
+410
+00:25:15.100 --> 00:25:17.660
+On the other hand, if your query interface is so simple
+
+411
+00:25:19.720 --> 00:25:22.180
+then such an easier, so simpler,
+
+412
+00:25:22.180 --> 00:25:24.980
+block list extent list here is probably good enough.
+
+413
+00:25:25.280 --> 00:25:27.800
+Okay, so this is a simple alternative
+
+414
+00:25:28.800 --> 00:25:32.560
+to the sophisticated block tree.
+
+415
+00:25:33.320 --> 00:25:36.380
+Okay, so much for storing large record.
+
+416
+00:25:36.680 --> 00:25:41.140
+Now, if you look at how people use this,
+
+417
+00:25:41.380 --> 00:25:44.840
+you quickly realize that blocks are not always blocks
+
+418
+00:25:44.840 --> 00:25:46.340
+because when we say block,
+
+419
+00:25:47.420 --> 00:25:57.480
+Then we think like, so what when we say a blob, then we think perhaps a picture, a photo
+
+420
+00:25:57.480 --> 00:25:57.860
+sometimes.
+
+421
+00:25:58.120 --> 00:26:06.700
+Or when we think about a club, then we perhaps think like a document, so text, large text
+
+422
+00:26:06.700 --> 00:26:07.080
+document.
+
+423
+00:26:07.640 --> 00:26:10.440
+So if you want to have books, then you can install this as a club.
+
+424
+00:26:10.900 --> 00:26:15.140
+So this is what we think, however, this is what we think, but this is not necessarily
+
+425
+00:26:16.340 --> 00:26:17.620
+Okay, so why isn't it true?
+
+426
+00:26:17.980 --> 00:26:21.440
+Because users hate a particular feature of SQL.
+
+427
+00:26:22.580 --> 00:26:24.480
+Namely, we think about the example
+
+428
+00:26:24.480 --> 00:26:25.480
+that is in the beginning.
+
+429
+00:26:25.640 --> 00:26:26.620
+I said we have a user,
+
+430
+00:26:27.460 --> 00:26:28.840
+so let's do it in full SQL.
+
+431
+00:26:30.560 --> 00:26:32.020
+So we will create table,
+
+432
+00:26:35.440 --> 00:26:36.480
+create table,
+
+433
+00:26:39.620 --> 00:26:44.020
+user, then we give it, for example, a name,
+
+434
+00:26:44.940 --> 00:26:51.420
+And then perhaps we also give it, let's give it some other stuff here, like phone number
+
+435
+00:26:53.100 --> 00:26:55.100
+and so on, and many other attributes.
+
+436
+00:26:55.480 --> 00:26:58.520
+So an interesting question is, which data type do we give it?
+
+437
+00:26:58.860 --> 00:27:03.620
+So if you remember your introduction to databases, we probably told you, you should use for the
+
+438
+00:27:03.620 --> 00:27:10.200
+name something like, Varchar, yeah, and now what?
+
+439
+00:27:11.200 --> 00:27:15.320
+Let's for the moment, let's write here 20, but then we come back to this in a moment.
+
+440
+00:27:15.840 --> 00:27:16.280
+Okay.
+
+441
+00:27:16.760 --> 00:27:18.280
+So we write VARCHAR something.
+
+442
+00:27:18.480 --> 00:27:21.640
+So this is usually what we tell our students to use.
+
+443
+00:27:22.940 --> 00:27:24.700
+And users don't like this for a number of reasons.
+
+444
+00:27:24.880 --> 00:27:27.420
+First, just to, just to one step back.
+
+445
+00:27:28.600 --> 00:27:34.480
+If you use such a notation here, please do not, I write this in small print and I will
+
+446
+00:27:34.480 --> 00:27:35.680
+remove it in a moment.
+
+447
+00:27:35.680 --> 00:27:41.420
+Please do not use the data type char 20.
+
+448
+00:27:42.380 --> 00:27:43.680
+Don't do this.
+
+449
+00:27:44.300 --> 00:27:45.660
+In first approximation,
+
+450
+00:27:46.060 --> 00:27:48.920
+you should never ever use the data type character.
+
+451
+00:27:49.580 --> 00:27:52.520
+So character 20 looks like a string of length 20,
+
+452
+00:27:52.740 --> 00:27:54.900
+but has super odd behavior.
+
+453
+00:27:55.460 --> 00:27:56.500
+Don't use this data type,
+
+454
+00:27:56.900 --> 00:28:00.800
+except perhaps potentially for the single special case,
+
+455
+00:28:01.100 --> 00:28:02.720
+but even then you should think about this,
+
+456
+00:28:02.820 --> 00:28:04.960
+but there is one case where it might make sense.
+
+457
+00:28:05.680 --> 00:28:07.220
+could use character one.
+
+458
+00:28:07.220 --> 00:28:10.520
+If you want to store one letter, something,
+
+459
+00:28:11.060 --> 00:28:12.160
+character one might be okay.
+
+460
+00:28:12.380 --> 00:28:13.920
+But if you store more than one,
+
+461
+00:28:14.180 --> 00:28:15.840
+please don't use the character data type.
+
+462
+00:28:16.380 --> 00:28:19.060
+Character data type is a totally crazy data type
+
+463
+00:28:19.060 --> 00:28:21.240
+that makes no sense in modern life.
+
+464
+00:28:21.620 --> 00:28:25.620
+Now, so just to come back what this means,
+
+465
+00:28:26.000 --> 00:28:28.340
+character 20 is a string of length 20
+
+466
+00:28:28.340 --> 00:28:30.200
+that is space padded.
+
+467
+00:28:30.540 --> 00:28:32.960
+So if you insert a string that is shorter than 20,
+
+468
+00:28:32.960 --> 00:28:37.500
+the system pads it with spaces until the length of 20.
+
+469
+00:28:38.840 --> 00:28:41.900
+And at this point you can say, okay, a bit odd,
+
+470
+00:28:42.020 --> 00:28:42.560
+but why not?
+
+471
+00:28:42.740 --> 00:28:45.560
+But trust me, this is super odd behavior
+
+472
+00:28:45.560 --> 00:28:47.780
+as the moment you start to compare strings
+
+473
+00:28:47.780 --> 00:28:49.120
+of different lengths,
+
+474
+00:28:49.400 --> 00:28:52.020
+because then suddenly the system starts to patch
+
+475
+00:28:52.020 --> 00:28:54.980
+in unforeseen ways, don't do this.
+
+476
+00:28:55.220 --> 00:28:57.640
+Character data type is evil, don't use this.
+
+477
+00:28:58.480 --> 00:28:59.960
+It might have made sense
+
+478
+00:28:59.960 --> 00:29:01.780
+when people have used punch cards.
+
+479
+00:29:02.960 --> 00:29:08.280
+seen a punch card in a museum, you probably never saw one in your real life. At least I didn't ever
+
+480
+00:29:08.920 --> 00:29:14.660
+saw a punch card outside of a museum, I think. And I'm quite a bit older than you. So don't
+
+481
+00:29:14.660 --> 00:29:21.040
+don't use punch cards, don't use character. Okay, so use character varying, so variable length string.
+
+482
+00:29:22.520 --> 00:29:26.920
+So character varying 20, so this is how length and length that we could teach you,
+
+483
+00:29:26.920 --> 00:29:28.620
+So this is why we can use the user.
+
+484
+00:29:28.880 --> 00:29:31.180
+Problem is, what do we put here?
+
+485
+00:29:33.040 --> 00:29:34.460
+So why 20?
+
+486
+00:29:35.740 --> 00:29:42.100
+I said 20 is okay, but I would guess that even in the audience of this lecture, there is
+
+487
+00:29:42.100 --> 00:29:43.880
+somebody where 20 is not long enough.
+
+488
+00:29:44.480 --> 00:29:49.280
+I'm not absolutely sure, of course, but there are some people who have very long names,
+
+489
+00:29:50.580 --> 00:29:51.760
+surprisingly long names.
+
+490
+00:29:51.760 --> 00:29:58.780
+Yeah, in particular, if you come from other countries, some countries have the customs
+
+491
+00:29:58.780 --> 00:30:02.800
+that for example, you include your name of your mother and your father in your own name,
+
+492
+00:30:02.960 --> 00:30:04.620
+you inherit them, a combination of both.
+
+493
+00:30:04.780 --> 00:30:08.740
+And this invariably leads to the case of having pretty long names.
+
+494
+00:30:09.140 --> 00:30:10.860
+Yeah, so 20 is probably not good enough.
+
+495
+00:30:11.320 --> 00:30:16.920
+Okay, so then we say, okay, let's not use 20, let's use 40.
+
+496
+00:30:16.920 --> 00:30:21.080
+40 is probably good enough for most use cases.
+
+497
+00:30:21.320 --> 00:30:27.960
+But then again, you have some oddball user who has for some reason has a name that is
+
+498
+00:30:28.680 --> 00:30:30.820
+really, really long for whatever reasons.
+
+499
+00:30:31.000 --> 00:30:36.020
+And then you say, okay, you know what, to cope with this, I don't use 40, I use 200.
+
+500
+00:30:36.220 --> 00:30:38.120
+200 really is good enough for everybody.
+
+501
+00:30:39.160 --> 00:30:41.300
+And perhaps this is right.
+
+502
+00:30:41.920 --> 00:30:45.100
+I think 200 is probably indeed long enough for everybody.
+
+503
+00:30:46.920 --> 00:30:48.580
+How long do you make your phone number?
+
+504
+00:30:48.880 --> 00:30:49.560
+Yeah, okay.
+
+505
+00:30:49.640 --> 00:30:55.060
+You don't have to go to 200, but also phone numbers probably also vary and can be longer
+
+506
+00:30:55.060 --> 00:30:55.740
+than you might think.
+
+507
+00:30:57.120 --> 00:30:57.680
+Okay.
+
+508
+00:30:57.920 --> 00:31:06.080
+So, what happens is people enter very long numbers here to be sure that they never encounter
+
+509
+00:31:06.080 --> 00:31:08.260
+strings that is larger than what they need.
+
+510
+00:31:09.680 --> 00:31:12.580
+Looks good until you hit another problem.
+
+511
+00:31:12.580 --> 00:31:27.380
+Namely, what the systems require you is that the sum of all the Varchar lengths,
+
+512
+00:31:33.520 --> 00:31:38.960
+this here, unfortunately, must be less or equal to the page size.
+
+513
+00:31:42.140 --> 00:31:44.640
+Because otherwise we come back to the original problem.
+
+514
+00:31:45.600 --> 00:31:49.120
+By the way, this is also the reason why the system asks you for the length.
+
+515
+00:31:49.900 --> 00:31:54.240
+Because you could say, why does the system even have to know, just say I have a string
+
+516
+00:31:54.240 --> 00:31:54.460
+here.
+
+517
+00:31:54.640 --> 00:31:57.760
+So why does the database system want to know how long my string can be?
+
+518
+00:31:58.160 --> 00:32:02.860
+And the answer is, for multiple reasons.
+
+519
+00:32:02.980 --> 00:32:07.520
+First it wants to make sure that your string fits on a page, and it can do this if it can
+
+520
+00:32:09.180 --> 00:32:11.520
+So if you look at the maximum length of each strings,
+
+521
+00:32:11.780 --> 00:32:13.780
+you can check if the sum of all maximum length
+
+522
+00:32:13.780 --> 00:32:15.160
+plus the other, plus of course,
+
+523
+00:32:15.380 --> 00:32:17.060
+yeah, plus other attributes, of course,
+
+524
+00:32:17.180 --> 00:32:18.640
+not only VATCH, plus other attributes,
+
+525
+00:32:18.800 --> 00:32:24.520
+plus other attributes must fit on a page.
+
+526
+00:32:26.680 --> 00:32:30.280
+And if you make all your string fields very long,
+
+527
+00:32:30.460 --> 00:32:32.140
+so if you give them very long upper bounds,
+
+528
+00:32:32.360 --> 00:32:34.560
+then the sum of all the upper bounds
+
+529
+00:32:34.560 --> 00:32:36.520
+might be beyond the page size,
+
+530
+00:32:36.640 --> 00:32:38.120
+and then the system will complain.
+
+531
+00:32:38.960 --> 00:32:44.180
+Like as I mentioned before, if you do this in Oracle, Oracle says, I cannot do this.
+
+532
+00:32:44.780 --> 00:32:47.840
+Please you have to make sure that your tupper fits on the page.
+
+533
+00:32:48.020 --> 00:32:49.220
+And you get an error message.
+
+534
+00:32:50.520 --> 00:32:55.100
+And other systems are a bit more generous for in declaration, but nevertheless, they
+
+535
+00:32:55.100 --> 00:32:58.040
+have to squeeze the tupper on the page somehow.
+
+536
+00:32:58.560 --> 00:33:01.760
+Also some people use this information for index management, for example.
+
+537
+00:33:01.860 --> 00:33:04.440
+So they want to know how long your data is.
+
+538
+00:33:04.440 --> 00:33:07.560
+And if you put there very long upper bounds, then
+
+539
+00:33:08.280 --> 00:33:13.200
+Yes, this doesn't work. Okay, so declaring your voucher attributes unpleasant
+
+540
+00:33:13.940 --> 00:33:19.700
+Either it's too short very bad and you can enter cannot insert the data or if it's too long and then
+
+541
+00:33:20.520 --> 00:33:22.440
+We get error messages from the system
+
+542
+00:33:22.440 --> 00:33:25.760
+as therefore people hate this and then came for some
+
+543
+00:33:25.760 --> 00:33:29.280
+Brilliant people came up with of course is not so really brilliant by the way
+
+544
+00:33:30.960 --> 00:33:33.580
+Don't do this at home, but nevertheless, I just mentioned it.
+
+545
+00:33:33.860 --> 00:33:35.580
+What some people do is and say, hey, you know what?
+
+546
+00:33:35.740 --> 00:33:37.460
+Forget all these length restrictions.
+
+547
+00:33:37.760 --> 00:33:40.460
+I just declare my name here as clop.
+
+548
+00:33:42.340 --> 00:33:43.860
+Oh, sorry, this is do we know?
+
+549
+00:33:44.080 --> 00:33:48.560
+So I declare everything here, I declare my name as clop, character large objects.
+
+550
+00:33:48.620 --> 00:33:51.480
+And now I can have a name that is in multiple megabytes.
+
+551
+00:33:51.720 --> 00:33:54.100
+So no problems, this length here is good enough.
+
+552
+00:33:54.320 --> 00:33:56.600
+And of course this name, you could say this is ridiculous.
+
+553
+00:33:56.600 --> 00:34:02.400
+But if you look at other examples, for example, URL, then this is indeed the thing, because
+
+554
+00:34:02.400 --> 00:34:08.240
+most URLs are short, but you know, the long tail of URL length is very, very long.
+
+555
+00:34:08.360 --> 00:34:10.060
+So there are some URLs that are very long.
+
+556
+00:34:10.440 --> 00:34:12.860
+And then people say, you know what, I just use a CLOP.
+
+557
+00:34:14.440 --> 00:34:16.340
+And this works, of course.
+
+558
+00:34:16.900 --> 00:34:21.800
+So because, remember the mechanism we just looked at in the lecture, this works.
+
+559
+00:34:21.920 --> 00:34:24.180
+We now have a mechanism that can store multiple megabytes,
+
+560
+00:34:24.180 --> 00:34:26.940
+but this has terrible performance
+
+561
+00:34:26.940 --> 00:34:27.900
+terrible performance
+
+562
+00:34:27.900 --> 00:34:30.620
+because the moment you start
+
+563
+00:34:30.620 --> 00:34:31.760
+operating on your club
+
+564
+00:34:31.760 --> 00:34:34.580
+you must look up this long string and then do something about this
+
+565
+00:34:34.580 --> 00:34:35.860
+by the way some really
+
+566
+00:34:35.860 --> 00:34:38.320
+I once heard this in a talk
+
+567
+00:34:38.320 --> 00:34:39.660
+by some Microsoft people
+
+568
+00:34:39.660 --> 00:34:42.500
+they said they had to support the following
+
+569
+00:34:42.500 --> 00:34:44.280
+which is really insane by the way
+
+570
+00:34:44.280 --> 00:34:45.520
+but they do support this
+
+571
+00:34:45.520 --> 00:34:47.800
+you say a name club
+
+572
+00:34:47.800 --> 00:34:49.320
+and then you say primary key
+
+573
+00:34:50.220 --> 00:34:52.600
+this is really if you think about what's happening here
+
+574
+00:34:54.560 --> 00:35:01.700
+key this is if you think about the implementation of what's going on now you you've now built an
+
+575
+00:35:01.700 --> 00:35:09.640
+index on on a um on a very long object that is stored separately using another lookup data
+
+576
+00:35:09.640 --> 00:35:14.880
+structure this is all super super expensive you know i mean this works but works super expensive
+
+577
+00:35:16.620 --> 00:35:23.080
+and this is this is not good yeah we don't want this and i mean of course this is the real reason
+
+578
+00:35:24.180 --> 00:35:29.200
+happened is because users don't like to specify string lengths and they want to have the flexibility
+
+579
+00:35:29.200 --> 00:35:33.740
+of having long strings. And of course people realize that this is a problem and therefore
+
+580
+00:35:33.740 --> 00:35:41.780
+they say, you know, the solution is differently. Namely, we give the user a mechanism that
+
+581
+00:35:42.900 --> 00:35:47.600
+unfortunately is not standardized. This is bad, unfortunately. Each system does it differently.
+
+582
+00:35:47.800 --> 00:35:52.520
+But for example, Postgres calls this data type that you can use and you probably should use
+
+583
+00:35:55.040 --> 00:35:56.660
+and also URL text.
+
+584
+00:35:57.900 --> 00:36:06.320
+Now, what's happened is, if the system encounters text or if it doesn't encounter text but it's
+
+585
+00:36:06.320 --> 00:36:10.140
+smart and so encounters CLOP, you could do the same with CLOP.
+
+586
+00:36:11.560 --> 00:36:16.120
+The user has declared the name as CLOP, just be on the safe side.
+
+587
+00:36:16.360 --> 00:36:18.960
+But in reality, most names are short.
+
+588
+00:36:19.760 --> 00:36:26.560
+well you could have an oddball user that has a kilobyte name but most users will have a name
+
+589
+00:36:26.560 --> 00:36:32.720
+that is 20 characters or less now so they are not clops they're short same with text so text is a
+
+590
+00:36:32.720 --> 00:36:38.740
+mechanism that tells you user i want to test the system i want to store a very length strings i
+
+591
+00:36:38.740 --> 00:36:43.840
+don't know how long it will be most of the time the string will be short but if it's if it's long
+
+592
+00:36:43.840 --> 00:36:45.240
+Please make it happen.
+
+593
+00:36:46.020 --> 00:36:47.540
+So the system will do it.
+
+594
+00:36:47.680 --> 00:36:49.660
+It will optimize for the short case.
+
+595
+00:36:49.820 --> 00:36:54.740
+And if the text here is long and ready, and of course it sees it, then it maps it silently
+
+596
+00:36:54.740 --> 00:36:57.640
+without telling you to a clop.
+
+597
+00:36:57.960 --> 00:37:00.300
+So the text is stored out of the out of the end.
+
+598
+00:37:00.500 --> 00:37:05.080
+So outside the page, if it's long, if the text is short, then stored inside the page.
+
+599
+00:37:05.460 --> 00:37:07.620
+By the way, Postgres calls this here toast.
+
+600
+00:37:09.840 --> 00:37:12.940
+Toast, this is not the standard name, so Posca's uses.
+
+601
+00:37:14.380 --> 00:37:16.200
+I actually forgot what Toast stands for.
+
+602
+00:37:16.500 --> 00:37:21.740
+Toast at the beginning says, totally automatic, but I just want to look it up to give you
+
+603
+00:37:21.740 --> 00:37:22.560
+the correct acronym.
+
+604
+00:37:25.980 --> 00:37:26.920
+Toast, yeah, yeah.
+
+605
+00:37:28.780 --> 00:37:30.540
+I don't know, I must correct myself.
+
+606
+00:37:30.820 --> 00:37:36.060
+So the name that Posca's uses, Toast is the Oversized Attribute Storage Technique.
+
+607
+00:37:37.620 --> 00:37:42.940
+So this means that if your text is short, then it's stored nicely in the tuple as usual.
+
+608
+00:37:43.160 --> 00:37:48.640
+And if the text is long, then it is stored somewhere else, like what we saw on the previous
+
+609
+00:37:48.640 --> 00:37:48.920
+slides.
+
+610
+00:37:49.460 --> 00:37:51.460
+Okay, and such a mechanism makes sense.
+
+611
+00:37:51.900 --> 00:37:53.680
+You should absolutely do this.
+
+612
+00:37:54.080 --> 00:37:57.240
+Because as we write here, users misuse props and clops.
+
+613
+00:37:57.440 --> 00:38:01.420
+They use a clop to avoid specifying a maximum length because they hate maximum lengths.
+
+614
+00:38:02.640 --> 00:38:06.380
+But nevertheless, these clops are not really large objects.
+
+615
+00:38:07.620 --> 00:38:08.960
+but they're not really large.
+
+616
+00:38:10.120 --> 00:38:12.020
+And so we have to handle them.
+
+617
+00:38:12.360 --> 00:38:14.720
+On the other hand, we cannot know this for sure.
+
+618
+00:38:15.180 --> 00:38:17.440
+I mean, for a name, probably yes, it's relatively short.
+
+619
+00:38:17.620 --> 00:38:19.540
+But if the field is not called name,
+
+620
+00:38:19.720 --> 00:38:24.500
+but it's called like photo or even worse movie,
+
+621
+00:38:24.840 --> 00:38:26.540
+okay, probably nobody would be so crazy
+
+622
+00:38:26.540 --> 00:38:28.200
+to then store the movies in database, hopefully.
+
+623
+00:38:28.560 --> 00:38:31.420
+But you never know, movie file.
+
+624
+00:38:32.000 --> 00:38:33.840
+So if you declare this as a blob,
+
+625
+00:38:33.960 --> 00:38:35.740
+then this will be indeed large.
+
+626
+00:38:37.620 --> 00:38:39.200
+We cannot know beforehand.
+
+627
+00:38:39.420 --> 00:38:41.920
+Now we only see when the user has done it.
+
+628
+00:38:42.900 --> 00:38:45.100
+And therefore what your system should do is,
+
+629
+00:38:45.540 --> 00:38:48.380
+it should implement this whole mechanism here anyway,
+
+630
+00:38:49.040 --> 00:38:50.580
+by the way, and clop and clop,
+
+631
+00:38:50.660 --> 00:38:52.500
+and I will count text as the same.
+
+632
+00:38:53.420 --> 00:38:55.840
+Text is basically a declaration of a string
+
+633
+00:38:55.840 --> 00:38:58.180
+that silently maps to clop.
+
+634
+00:38:58.360 --> 00:38:59.300
+That's what text is there.
+
+635
+00:38:59.720 --> 00:39:02.260
+So text is a better string if your system supports it.
+
+636
+00:39:02.340 --> 00:39:03.340
+Unfortunately not standardized,
+
+637
+00:39:03.580 --> 00:39:04.740
+but if your system supports it,
+
+638
+00:39:05.040 --> 00:39:06.600
+text is probably what you want to use.
+
+639
+00:39:07.620 --> 00:39:12.700
+Now what the system should do is, it should optimize for the common case of being short.
+
+640
+00:39:14.140 --> 00:39:19.020
+And we can use the following three steps here.
+
+641
+00:39:19.220 --> 00:39:28.540
+If my blob is really, really short, for example, my blob is shorter than a tuple ID, then we
+
+642
+00:39:28.540 --> 00:39:31.820
+adjust the text in the tuple ID.
+
+643
+00:39:31.820 --> 00:39:34.120
+So remember that we store a blob.
+
+644
+00:39:34.500 --> 00:39:37.460
+So original picture said, this is my tuple.
+
+645
+00:39:39.000 --> 00:39:40.780
+Then here comes my blob field somewhere.
+
+646
+00:39:42.860 --> 00:39:44.640
+And this is a relative, it's a tuple ID.
+
+647
+00:39:45.840 --> 00:39:47.280
+And this points to somewhere else.
+
+648
+00:39:47.460 --> 00:39:47.540
+Okay.
+
+649
+00:39:47.620 --> 00:39:49.540
+This is one way to implement this.
+
+650
+00:39:49.700 --> 00:39:54.280
+Now if my string is short, so for example, if it's less than eight characters, I just
+
+651
+00:39:54.280 --> 00:39:55.280
+put the string here.
+
+652
+00:39:56.600 --> 00:39:57.840
+Just put it in here.
+
+653
+00:39:58.220 --> 00:40:01.040
+Now if it's larger than it, then it don't cost me anything.
+
+654
+00:40:01.820 --> 00:40:08.100
+If my string is larger than a tuple ID but smaller than a page, then I take a page and
+
+655
+00:40:08.100 --> 00:40:09.740
+then I store my blob here.
+
+656
+00:40:12.720 --> 00:40:17.160
+And only if, so this is case 1, case 1, squeeze it in.
+
+657
+00:40:17.880 --> 00:40:20.440
+Case 2, put it on a separate page but just point here.
+
+658
+00:40:20.700 --> 00:40:25.420
+And only case 3 is really large, so then we do the full blown mechanism, then we have
+
+659
+00:40:25.420 --> 00:40:27.340
+for example a tree or some other mechanism.
+
+660
+00:40:28.160 --> 00:40:29.900
+But this will be rare.
+
+661
+00:40:31.820 --> 00:40:32.300
+one or two.
+
+662
+00:40:32.980 --> 00:40:36.260
+And by the way, there are even some mixed forms mentioned possible.
+
+663
+00:40:36.340 --> 00:40:37.780
+For example, this is what Postgres does.
+
+664
+00:40:37.960 --> 00:40:42.900
+If you declare a string as a text, then it will first store like a regular string.
+
+665
+00:40:43.100 --> 00:40:52.140
+So like this here, so like we have fixed size and then comes my string field here, even
+
+666
+00:40:52.140 --> 00:40:53.020
+for longer strings.
+
+667
+00:40:55.180 --> 00:40:56.660
+So this put it at the end.
+
+668
+00:40:56.660 --> 00:41:00.280
+And only if this part here goes beyond a page,
+
+669
+00:41:00.460 --> 00:41:03.380
+then we put in the tablid here,
+
+670
+00:41:03.620 --> 00:41:04.980
+and then point somewhere else.
+
+671
+00:41:05.300 --> 00:41:05.780
+Okay?
+
+672
+00:41:06.000 --> 00:41:08.180
+If it's short, we put it in the page,
+
+673
+00:41:08.240 --> 00:41:09.500
+if it's long, put it on a separate page.
+
+674
+00:41:09.780 --> 00:41:11.520
+So different ways to implement this,
+
+675
+00:41:11.660 --> 00:41:15.380
+but you definitely want to optimize for short blobs
+
+676
+00:41:15.380 --> 00:41:17.160
+and clops, because in reality,
+
+677
+00:41:17.400 --> 00:41:19.060
+most clops and blobs are short.
+
+678
+00:41:19.340 --> 00:41:22.780
+But upper size, unfortunately, is very large.
+
+679
+00:41:22.820 --> 00:41:24.140
+So we need a full mechanism,
+
+680
+00:41:24.740 --> 00:41:26.720
+But we optimize for the short version.
+
+681
+00:41:28.540 --> 00:41:31.020
+Okay, so this much for tuple storage.
+
+682
+00:41:31.260 --> 00:41:36.320
+So after this slide, you hopefully hope, know how to store tuples.
+
+683
+00:41:36.620 --> 00:41:44.020
+Yeah, so if you have many attributes and fixed size, variable size, how to do this, what
+
+684
+00:41:44.020 --> 00:41:47.420
+to do with compression if you want to do this and what to do with long attributes.
+
+685
+00:41:47.640 --> 00:41:49.000
+So this is what we covered.
+
+686
+00:41:49.000 --> 00:41:53.980
+But now what we would want to look up next are index structures.
+
+687
+00:41:55.200 --> 00:42:01.520
+Because what we can do so far in the lectures only, so we have a familiar relation here
+
+688
+00:42:01.520 --> 00:42:09.900
+is map to a segment, so I have a segment, draw it like this, I have a segment, and then
+
+689
+00:42:09.900 --> 00:42:14.180
+in the segment I have a page, then I have another page and so on.
+
+690
+00:42:14.180 --> 00:42:18.340
+So this is my own whole storage so far, page n.
+
+691
+00:42:18.660 --> 00:42:25.320
+And if I want to read something, if I do a select star from R,
+
+692
+00:42:30.700 --> 00:42:36.080
+where x equals 7, then the only thing, option I have so far is I read the first page,
+
+693
+00:42:36.180 --> 00:42:37.540
+look at all the tablets, check the condition.
+
+694
+00:42:37.760 --> 00:42:40.620
+If it's true somewhere, I output it, read the next page and so on.
+
+695
+00:42:40.620 --> 00:42:43.740
+So this means my query time here is linear
+
+696
+00:42:43.740 --> 00:42:44.780
+as a database size.
+
+697
+00:42:45.540 --> 00:42:48.760
+That's what we call a full table scan.
+
+698
+00:42:49.020 --> 00:42:51.960
+We read everything, full table scan.
+
+699
+00:42:53.340 --> 00:42:56.860
+And of course, full table scan,
+
+700
+00:42:58.260 --> 00:43:00.060
+read all the pages in my relation,
+
+701
+00:43:00.520 --> 00:43:02.460
+look at all the tuples in my pages,
+
+702
+00:43:02.800 --> 00:43:04.300
+check the condition if it's true,
+
+703
+00:43:04.500 --> 00:43:06.320
+I'll put it to the user, full table scan.
+
+704
+00:43:07.260 --> 00:43:09.100
+This works, but it's not so super attractive
+
+705
+00:43:10.620 --> 00:43:16.180
+In particular, there is one case where we frequently have to check if the table exists
+
+706
+00:43:16.180 --> 00:43:18.140
+and these are primary keys.
+
+707
+00:43:19.440 --> 00:43:25.580
+So if somebody says I have an attribute and I declare x integer primary key, then I must
+
+708
+00:43:25.580 --> 00:43:36.080
+make sure that no other x value exists.
+
+709
+00:43:36.760 --> 00:43:40.420
+So I must check my income X against all existing values.
+
+710
+00:43:42.400 --> 00:43:46.360
+And for this, full table scan is not really an option.
+
+711
+00:43:46.840 --> 00:43:52.400
+I mean, I know a few specialized database systems that do check primary keys with full
+
+712
+00:43:52.400 --> 00:43:56.420
+table scans, but these are really specialized systems that are pretty sure that they will
+
+713
+00:43:56.420 --> 00:43:57.660
+have a low number of inserts.
+
+714
+00:43:58.000 --> 00:44:03.300
+Because what happens, I mean, just do the math, for the first tuple, it's okay, no other
+
+715
+00:44:03.300 --> 00:44:03.760
+tuple exist.
+
+716
+00:44:04.000 --> 00:44:06.600
+For the second tuple, I have to check against one other tuple.
+
+717
+00:44:06.680 --> 00:44:11.060
+For the third tuple, I have to check against two previous tuples and so on.
+
+718
+00:44:11.100 --> 00:44:32.920
+So which means for the nth insert, it compares with n-1 tuple, so all previous n tuples
+
+719
+00:44:34.020 --> 00:44:36.800
+And this clearly has a very bad asymptotic here,
+
+720
+00:44:36.860 --> 00:44:38.380
+because if you think about the number of comparisons
+
+721
+00:44:38.380 --> 00:44:40.940
+that you perform, this means that we perform
+
+722
+00:44:40.940 --> 00:44:46.900
+a half
+
+723
+00:44:51.220 --> 00:44:54.460
+n times n-1 comparisons.
+
+724
+00:44:59.580 --> 00:45:01.460
+This is the O of n squared.
+
+725
+00:45:04.160 --> 00:45:07.200
+table scans are not an option for primary keys in practice.
+
+726
+00:45:07.500 --> 00:45:09.380
+Yeah, because if my n here, just think about what happens.
+
+727
+00:45:09.580 --> 00:45:11.140
+If my n is 10, that's okay.
+
+728
+00:45:11.220 --> 00:45:12.600
+But if my n is a million here,
+
+729
+00:45:13.060 --> 00:45:14.980
+and as we do 1 million square comparisons,
+
+730
+00:45:15.140 --> 00:45:16.320
+this is not a good number.
+
+731
+00:45:16.500 --> 00:45:19.820
+So you cannot insert 1 million elements
+
+732
+00:45:19.820 --> 00:45:22.400
+and do a full table scans for each primary key.
+
+733
+00:45:22.760 --> 00:45:24.020
+Now this is just not feasible.
+
+734
+00:45:24.700 --> 00:45:25.980
+Okay, so for primary keys,
+
+735
+00:45:26.080 --> 00:45:28.160
+we need a way to find a tuple quickly.
+
+736
+00:45:28.540 --> 00:45:30.420
+And in general, not only for primary keys,
+
+737
+00:45:30.520 --> 00:45:32.060
+for all kinds of selective queries.
+
+738
+00:45:33.300 --> 00:45:37.020
+give me a student with my trigonome number of 1, 2, 3.
+
+739
+00:45:37.200 --> 00:45:40.280
+So then we have to do this quickly, we don't want to look at all the students.
+
+740
+00:45:41.440 --> 00:45:42.960
+And for this we use index structures.
+
+741
+00:45:45.500 --> 00:45:48.700
+Now we can use index structures in two ways basically.
+
+742
+00:45:49.000 --> 00:45:55.740
+So the first case here is a so called point query, for example x equals 7, so this is
+
+743
+00:45:55.740 --> 00:45:56.460
+just what I said.
+
+744
+00:45:57.360 --> 00:46:02.440
+Or another point query would be to say, because it can be a compound, it doesn't have to be
+
+745
+00:46:03.300 --> 00:46:10.260
+So say a equals 5 and b equals 10.
+
+746
+00:46:10.500 --> 00:46:14.140
+So this is also a point query because we take my attributes and say this has to be have
+
+747
+00:46:14.140 --> 00:46:14.980
+a z value.
+
+748
+00:46:15.240 --> 00:46:16.680
+So this is a point access.
+
+749
+00:46:18.800 --> 00:46:32.420
+Second kind of query here is a range query where we say for example x between 10 and 20
+
+750
+00:46:33.300 --> 00:46:38.520
+Or you could say another kind of range queries, x less or equal to 20 or something like this.
+
+751
+00:46:38.640 --> 00:46:40.280
+So this is now half open interval.
+
+752
+00:46:40.720 --> 00:46:42.200
+So there are different kinds.
+
+753
+00:46:42.440 --> 00:46:46.680
+So the second category here are range queries because they have not the specific values
+
+754
+00:46:46.680 --> 00:46:49.580
+that we are looking for, but a range of possible values.
+
+755
+00:46:49.720 --> 00:46:53.860
+The second category here is point access.
+
+756
+00:46:54.020 --> 00:46:57.920
+We know the value, we just want to find the attributes that have this particular value.
+
+757
+00:46:59.340 --> 00:47:03.240
+Okay, and these are typically the two kinds of queries that we support with index structures.
+
+758
+00:47:03.540 --> 00:47:08.720
+Now there exist some index structures that can do more complicated, complex predicates
+
+759
+00:47:08.720 --> 00:47:11.960
+and we will talk briefly about some also in the lecture, but this is more rare.
+
+760
+00:47:12.200 --> 00:47:16.720
+So the bread and butter point of queries that we want to support is a point query and the
+
+761
+00:47:16.720 --> 00:47:17.140
+range query.
+
+762
+00:47:17.280 --> 00:47:21.960
+And of course a primary key lookup corresponds to a point query, because you must check,
+
+763
+00:47:22.120 --> 00:47:25.320
+does this particular primary key already exist in my database system?
+
+764
+00:47:25.580 --> 00:47:27.460
+If yes, you must output an error message.
+
+765
+00:47:27.920 --> 00:47:29.320
+searching for one specific value,
+
+766
+00:47:30.360 --> 00:47:33.240
+and we have to find the value quickly.
+
+767
+00:47:34.300 --> 00:47:36.680
+And ideally, not only, ideally,
+
+768
+00:47:36.700 --> 00:47:39.480
+necessarily in sub-linear runtime.
+
+769
+00:47:39.660 --> 00:47:41.940
+So we want to be faster than full-tabit scan.
+
+770
+00:47:42.440 --> 00:47:45.160
+And so we want to retrieve this quickly.
+
+771
+00:47:45.880 --> 00:47:48.660
+Now, the most commonly used data structure
+
+772
+00:47:48.660 --> 00:47:51.020
+to do this is of course a B-tree.
+
+773
+00:47:51.400 --> 00:47:53.620
+And I'm pretty confident that all of you
+
+774
+00:47:53.620 --> 00:47:55.220
+have looked already at B-trees
+
+775
+00:47:55.220 --> 00:47:56.780
+in the introduction to the databases,
+
+776
+00:47:57.920 --> 00:47:59.280
+such an important data structure.
+
+777
+00:48:01.220 --> 00:48:03.160
+And really everybody uses this.
+
+778
+00:48:03.180 --> 00:48:04.920
+This is the dominant data structure.
+
+779
+00:48:05.160 --> 00:48:07.340
+In fact, not only database systems use it,
+
+780
+00:48:07.760 --> 00:48:08.960
+file systems, everybody.
+
+781
+00:48:09.080 --> 00:48:11.240
+Everybody who has to store persistent data,
+
+782
+00:48:11.760 --> 00:48:14.000
+B-trees are extremely, extremely popular.
+
+783
+00:48:14.360 --> 00:48:16.080
+They're not the only data structures,
+
+784
+00:48:16.260 --> 00:48:18.340
+they're also alternatives that we could use for some cases,
+
+785
+00:48:18.600 --> 00:48:20.880
+but B-trees are very, very popular.
+
+786
+00:48:21.080 --> 00:48:22.920
+They are the most widely used data structures
+
+787
+00:48:22.920 --> 00:48:25.640
+for external memory, for good reasons by the way.
+
+788
+00:48:25.640 --> 00:48:27.400
+Yeah, so these have many good properties.
+
+789
+00:48:28.820 --> 00:48:33.240
+And also note that here we write here B-trees and variants
+
+790
+00:48:33.240 --> 00:48:38.360
+because very few people implement it as a classical B-tree
+
+791
+00:48:39.020 --> 00:48:41.860
+because people realize that it's better
+
+792
+00:48:41.860 --> 00:48:43.180
+to implement some variants of this
+
+793
+00:48:43.180 --> 00:48:44.940
+and we come to this in a moment.
+
+794
+00:48:45.440 --> 00:48:50.120
+But nevertheless, so these are all variations
+
+795
+00:48:50.120 --> 00:48:50.960
+of the same theme.
+
+796
+00:48:50.960 --> 00:48:54.860
+So they are all multi-way index structures
+
+797
+00:48:54.860 --> 00:48:56.960
+with these properties we see here.
+
+798
+00:48:57.160 --> 00:48:58.220
+So the classical definition says,
+
+799
+00:48:58.680 --> 00:49:01.040
+a B tree has a degree of K.
+
+800
+00:49:01.480 --> 00:49:04.520
+And now my conditions are each node except the root
+
+801
+00:49:04.520 --> 00:49:05.780
+has at least K entries.
+
+802
+00:49:06.380 --> 00:49:10.080
+Each node has at most two K entries.
+
+803
+00:49:10.400 --> 00:49:11.860
+Another way to formulate this is,
+
+804
+00:49:12.320 --> 00:49:14.720
+so instead of having explicit degree K,
+
+805
+00:49:14.860 --> 00:49:19.280
+we say this here corresponds to each node,
+
+806
+00:49:20.960 --> 00:49:30.960
+each node is at least half full.
+
+807
+00:49:32.280 --> 00:49:37.520
+So this is what we want here, not the root, but everybody else is at least half full.
+
+808
+00:49:37.740 --> 00:49:38.700
+This is the first condition.
+
+809
+00:49:38.960 --> 00:49:42.080
+Second condition, all, so this is basically one here.
+
+810
+00:49:43.020 --> 00:49:46.360
+Second condition is all leaf nodes are the same depths.
+
+811
+00:49:46.900 --> 00:49:51.520
+and interestingly if you have these two properties at least half full and
+
+812
+00:49:51.520 --> 00:49:56.500
+everybody's the same depth what happens is you can bounce the depth of the tree
+
+813
+00:49:56.500 --> 00:50:05.380
+because you know that my my the depth of the tree depth of the tree I'm sorry for
+
+814
+00:50:05.380 --> 00:50:12.600
+my handwriting is not as not perfect even without an drawing tablet that I
+
+815
+00:50:12.600 --> 00:50:18.740
+use here and with drawing tablet it's even worse okay so the depth of the tree
+
+816
+00:50:21.860 --> 00:50:38.880
+is now less or equal to the logarithm of the number of entries to the to the
+
+817
+00:50:38.880 --> 00:50:49.000
+depth to the base k. Okay, so this is what we get here. So we are at most logarithmic
+
+818
+00:50:49.820 --> 00:50:56.540
+in the, and of course, the fun thing is that k here tends to be large, like k can be, for example,
+
+819
+00:50:57.760 --> 00:51:00.520
+they are depends a bit on your data types and so not so easy to say, but
+
+820
+00:51:00.520 --> 00:51:03.500
+I'm not sure, not say approximately, let's say, for example,
+
+821
+00:51:06.660 --> 00:51:11.880
+Okay because it depends on what you store but can be for example a thousand
+
+822
+00:51:12.620 --> 00:51:14.620
+This means your tree is
+
+823
+00:51:15.320 --> 00:51:21.840
+Logarithmic to to depth thousands is very very shallow because if we have you have 1000 entries. I need only
+
+824
+00:51:22.660 --> 00:51:26.060
+one node if I have a million entries so I
+
+825
+00:51:27.240 --> 00:51:27.860
+I
+
+826
+00:51:27.860 --> 00:51:32.420
+Can say my tree has steps to if I have a billion entries
+
+827
+00:51:33.680 --> 00:51:39.280
+three and that means that for all practical purposes p trees have a depth of less or equal
+
+828
+00:51:39.280 --> 00:51:44.860
+to four most likely now probably only three three at most four this will be the depth of a b tree
+
+829
+00:51:44.860 --> 00:51:50.060
+so if you compare this to a to a traditional data structure like i mean what you learned in your
+
+830
+00:51:50.060 --> 00:51:55.440
+direction to uh algorithms data structures is probably something like a red black tree
+
+831
+00:51:55.980 --> 00:52:01.220
+yeah don't use this well yeah that's not true there are some corner cases where you want to do
+
+832
+00:52:01.220 --> 00:52:06.900
+But let's say for definitely not for databases and probably not even for most other.
+
+833
+00:52:07.560 --> 00:52:12.760
+I mean, they have some good properties, but in first approximation, you don't want to
+
+834
+00:52:12.760 --> 00:52:16.340
+use red-black trees, even though they are logarithmic, of course.
+
+835
+00:52:16.340 --> 00:52:32.520
+So, lookup in a red-black tree is in O of log n and lookup in a B tree is also in O of log n.
+
+836
+00:52:34.780 --> 00:52:38.220
+So, why do I say red-black trees are bad and B trees are good?
+
+837
+00:52:39.620 --> 00:52:42.360
+The problem is that we hide all the constants here.
+
+838
+00:52:42.360 --> 00:52:53.000
+So we see the depth of a B-tree here is, the depth is log k of n.
+
+839
+00:52:53.640 --> 00:53:01.780
+And this is for example, log 1000 of n.
+
+840
+00:53:02.020 --> 00:53:11.960
+And then this is typically 2 to at most 4.
+
+841
+00:53:12.360 --> 00:53:16.760
+So this is a, let's make perhaps a more concrete example.
+
+842
+00:53:17.620 --> 00:53:22.380
+Let's assume, not typically, let's assume we insert 1 million entries here, 1 million
+
+843
+00:53:22.380 --> 00:53:26.140
+entries, the depths of this year will be 2.
+
+844
+00:53:28.380 --> 00:53:30.940
+For 1 million entries, I need 2 levels.
+
+845
+00:53:31.740 --> 00:53:39.580
+Because if each leaf node contains at least 1000 entries, which means I have at most 1000
+
+846
+00:53:39.580 --> 00:53:40.520
+leaf nodes.
+
+847
+00:53:42.360 --> 00:53:47.540
+can hold this because my node can hold between 1000 and 2000 elements if
+
+848
+00:53:47.540 --> 00:53:52.980
+my case 1000. So I need two levels of my tree for
+
+849
+00:53:52.980 --> 00:53:59.140
+one million entries. While if you look at the depth of the red black tree here,
+
+850
+00:54:00.760 --> 00:54:06.080
+the depth of the red black tree, let's do the separatists, the depth of the
+
+851
+00:54:06.080 --> 00:54:15.260
+So the right black tree is, as you hopefully all know, log 2 to the base n, and in fact
+
+852
+00:54:15.260 --> 00:54:21.000
+it is even worse, it is 2 times log 2 to the base n, in the worst case.
+
+853
+00:54:21.780 --> 00:54:27.180
+So this does not have to be the case, but let's make the depth more precise.
+
+854
+00:54:27.180 --> 00:54:41.200
+In worst case, it is 2 to the log n and in best case, it is log 2 to the base n.
+
+855
+00:54:41.920 --> 00:54:47.080
+Best case is log 2 to the base n, worst case is 2 times log 2 to the base n.
+
+856
+00:54:47.920 --> 00:54:52.260
+This is of course all logarithmic in the complexity, but in absolute numbers, so if
+
+857
+00:54:52.260 --> 00:55:02.460
+If you say this means 1 million entries, we'll have a depth here between 20 and 40.
+
+858
+00:55:04.900 --> 00:55:07.040
+And this is pretty deep.
+
+859
+00:55:07.760 --> 00:55:15.500
+I mean, going 20 steps in a tree or even worse, 40 steps in a tree is very different from going two steps in a tree.
+
+860
+00:55:16.600 --> 00:55:21.020
+Okay, now to be, I mean, this is all hand-waving.
+
+861
+00:55:22.260 --> 00:55:25.260
+a step in a red-black tree is cheaper than a step in a B tree.
+
+862
+00:55:25.460 --> 00:55:27.440
+So therefore you cannot compare this number directly.
+
+863
+00:55:27.880 --> 00:55:29.660
+But trust me, the lookup in a B tree
+
+864
+00:55:29.660 --> 00:55:32.480
+will be much faster than the lookup in a red-black tree in practice.
+
+865
+00:55:34.440 --> 00:55:39.180
+So B trees are nearly always preferable over red-black trees.
+
+866
+00:55:39.320 --> 00:55:42.080
+There are a few special circumstances that are not true,
+
+867
+00:55:42.160 --> 00:55:46.080
+but in first approximation, you prefer a B tree over a red-black tree.
+
+868
+00:55:46.200 --> 00:55:49.600
+And you definitely prefer a few stores on an external medium.
+
+869
+00:55:49.600 --> 00:55:52.880
+So even in memory, P3s are usually better,
+
+870
+00:55:53.680 --> 00:55:55.560
+but on an external medium, they are always better.
+
+871
+00:55:55.600 --> 00:55:57.760
+Because if you would do this on an external medium,
+
+872
+00:55:57.920 --> 00:56:02.180
+and we would do here 20 or 40 seeks on a disk,
+
+873
+00:56:02.600 --> 00:56:04.480
+remember a seek cost me something like three
+
+874
+00:56:04.480 --> 00:56:06.820
+or four milliseconds, you would die.
+
+875
+00:56:07.000 --> 00:56:10.580
+Yeah, so we would spend 80 milliseconds for a lookup,
+
+876
+00:56:10.700 --> 00:56:11.620
+absolute disaster.
+
+877
+00:56:11.880 --> 00:56:14.980
+But if we do this in a P3 here,
+
+878
+00:56:15.120 --> 00:56:17.620
+then we spend perhaps eight milliseconds,
+
+879
+00:56:19.600 --> 00:56:20.900
+if you can perhaps spend 8 milliseconds.
+
+880
+00:56:22.020 --> 00:56:25.380
+Now, so in particular, since the root of the B-tree
+
+881
+00:56:25.380 --> 00:56:27.200
+will virtually always be in your buffer manager,
+
+882
+00:56:27.460 --> 00:56:28.780
+so you have only one page fault.
+
+883
+00:56:28.920 --> 00:56:30.180
+And if you have depth two,
+
+884
+00:56:30.440 --> 00:56:31.960
+you will have only one page fault,
+
+885
+00:56:32.140 --> 00:56:33.380
+cause the root will be cached.
+
+886
+00:56:33.620 --> 00:56:36.200
+So leaf node might not be, so they have one page fault.
+
+887
+00:56:36.440 --> 00:56:38.420
+So this, while the red black tree,
+
+888
+00:56:38.600 --> 00:56:40.820
+this would be a terrible performance.
+
+889
+00:56:41.180 --> 00:56:43.220
+Okay, so B-trees are good.
+
+890
+00:56:44.680 --> 00:56:47.040
+Of course, you can always make things better
+
+891
+00:56:47.040 --> 00:56:49.400
+and we will see, look at ways to improve B-trees.
+
+892
+00:56:49.600 --> 00:56:56.060
+but B-trees have very nice properties. They are shallow trees, so not very deep,
+
+893
+00:56:56.200 --> 00:57:02.220
+and they guarantee me logarithmic lookup. And another plus part, by the way, they are reasonably
+
+894
+00:57:02.220 --> 00:57:08.440
+easy to implement. So if you wake me up in the middle of the night, I'm able to implement a B-tree
+
+895
+00:57:08.440 --> 00:57:12.980
+for you, at least a B-plus tree I can implement by heart, so I don't have to look at any book,
+
+896
+00:57:13.060 --> 00:57:18.760
+I can implement this for you. I would not be able to implement a red-black tree without looking at
+
+897
+00:57:19.600 --> 00:57:20.420
+The same is true for you.
+
+898
+00:57:21.040 --> 00:57:23.440
+I don't know if you have ever implemented a black tree.
+
+899
+00:57:23.620 --> 00:57:29.380
+So you have this balancing criterion like how many reds and how many blacks can follow
+
+900
+00:57:29.380 --> 00:57:29.780
+each other.
+
+901
+00:57:30.340 --> 00:57:35.840
+This you might perhaps remember, but probably you already get this balancing criterion wrong.
+
+902
+00:57:36.400 --> 00:57:40.200
+And then the second thing is if you violate it, you have to start with tree rotation.
+
+903
+00:57:40.400 --> 00:57:46.720
+And I think it unlikely that you can put the correct tree rotation next to the correct
+
+904
+00:57:46.720 --> 00:57:51.600
+balancing criterion without looking it up somewhere. So red and black trees are very complicated.
+
+905
+00:57:52.100 --> 00:57:58.300
+B-trees are pretty elegant structure, which means you can implement it by heart. So you don't have
+
+906
+00:57:58.300 --> 00:58:04.360
+to look it up, at least if you look at B-plus trees. Now for just for at least once here, we
+
+907
+00:58:04.360 --> 00:58:10.620
+look at the real B-tree that you all hopefully remember from your introduction to databases.
+
+908
+00:58:10.620 --> 00:58:11.680
+This looks like this.
+
+909
+00:58:11.880 --> 00:58:16.200
+So here we have my keys and my values.
+
+910
+00:58:16.460 --> 00:58:17.840
+So this is the keys that we store.
+
+911
+00:58:18.280 --> 00:58:19.440
+So this here is a key.
+
+912
+00:58:20.720 --> 00:58:22.780
+And the value will always be,
+
+913
+00:58:22.920 --> 00:58:24.220
+so this here is a tuple ID.
+
+914
+00:58:24.840 --> 00:58:27.200
+Because remember we use an index to find a tuple,
+
+915
+00:58:27.340 --> 00:58:29.920
+which means if an index attribute likes a primary key
+
+916
+00:58:29.920 --> 00:58:31.560
+or whatever we have, so if a key attribute
+
+917
+00:58:32.080 --> 00:58:35.000
+or the name, which doesn't have to be real key.
+
+918
+00:58:35.860 --> 00:58:38.900
+And then the, we associate this key value
+
+919
+00:58:40.620 --> 00:58:44.900
+So if you want to find the other attributes, so if, for example, somebody says, select
+
+920
+00:58:48.760 --> 00:58:56.020
+name from students where
+
+921
+00:59:00.460 --> 00:59:08.500
+id equals 16, what happens is we start, and this we assume this is now a search tree for this id.
+
+922
+00:59:08.500 --> 00:59:14.320
+So we start here in the root, we see I am searching for 16, 16 is less than 47, therefore
+
+923
+00:59:14.320 --> 00:59:22.600
+I go to my left subtree, then we go here, I look at the next node, I say 16 is less
+
+924
+00:59:22.600 --> 00:59:28.360
+than 22, so I follow this edge, then I go to this node and then I look at the elements
+
+925
+00:59:28.360 --> 00:59:30.640
+here and see oh here is 16, then I find it.
+
+926
+00:59:30.740 --> 00:59:36.340
+Now somebody, the query didn't ask me for the tabular ID but asked me for the name, therefore
+
+927
+00:59:36.340 --> 00:59:40.720
+what I do is I take this table ID and I follow it to the page.
+
+928
+00:59:43.060 --> 00:59:47.900
+Follow to the page and then here I will find my student and this now will have the name
+
+929
+00:59:47.900 --> 00:59:48.440
+and everything.
+
+930
+00:59:49.940 --> 00:59:54.340
+So this is how an index lookup works.
+
+931
+00:59:54.720 --> 00:59:58.620
+And we use this value here to separate the space.
+
+932
+00:59:58.880 --> 01:00:01.040
+Here we see the value 47 is stored here.
+
+933
+01:00:01.340 --> 01:00:02.780
+Everything less than 47 is here.
+
+934
+01:00:02.880 --> 01:00:04.660
+Everything larger than 47 is here.
+
+935
+01:00:06.340 --> 01:00:14.140
+this node here. Here we have an anti-88. Everything larger than 88 is in this subtree. Everything
+
+936
+01:00:14.140 --> 01:00:19.480
+between 88 and the previous value, namely 67, everything between 88 and 67 is here.
+
+937
+01:00:20.480 --> 01:00:24.900
+So let's put correct boundaries here. This here is larger than 88.
+
+938
+01:00:26.320 --> 01:00:33.580
+This here is larger than 67 and less than 88. This is here and so on.
+
+939
+01:00:33.580 --> 01:00:37.080
+So here this is everything less than 67.
+
+940
+01:00:37.320 --> 01:00:39.160
+So this is how the separation works.
+
+941
+01:00:39.320 --> 01:00:42.060
+Now the values here splits this,
+
+942
+01:00:42.180 --> 01:00:44.060
+and this has many nice properties.
+
+943
+01:00:45.580 --> 01:00:49.040
+Okay, now I mentioned already before,
+
+944
+01:00:49.340 --> 01:00:51.980
+most people don't implement the classical B tree,
+
+945
+01:00:52.300 --> 01:00:54.260
+but they implement a B plus tree,
+
+946
+01:00:54.380 --> 01:00:58.100
+which as a first glance looks like just a small change.
+
+947
+01:00:58.260 --> 01:01:00.900
+Looks very similar to what we saw before,
+
+948
+01:01:00.900 --> 01:01:04.960
+But in reality, B plus trees are so much better than B trees.
+
+949
+01:01:05.380 --> 01:01:07.340
+In particular, they are so much easier to implement.
+
+950
+01:01:07.840 --> 01:01:10.200
+They also have other properties, other advantages.
+
+951
+01:01:10.700 --> 01:01:15.360
+But main, if you ask me, the main advantage of a B plus tree is that it is super easy
+
+952
+01:01:15.360 --> 01:01:17.540
+to implement while a B tree is not so super easy.
+
+953
+01:01:17.660 --> 01:01:20.180
+There are some complicated things that can happen.
+
+954
+01:01:20.680 --> 01:01:23.340
+Okay, so now how does a B plus tree work?
+
+955
+01:01:24.260 --> 01:01:26.520
+First glance, it looks just like a B tree.
+
+956
+01:01:26.520 --> 01:01:31.140
+The difference is the key value pairs are only in the leaf nodes.
+
+957
+01:01:31.360 --> 01:01:37.200
+So here we see the value 2 and the table ID, so this is one entry, one entry, one entry,
+
+958
+01:01:37.320 --> 01:01:38.480
+these are only in the leaf nodes.
+
+959
+01:01:39.520 --> 01:01:42.840
+And the inner pages only contain the separator values.
+
+960
+01:01:43.000 --> 01:01:44.740
+So the key table ID pairs are only here.
+
+961
+01:01:44.940 --> 01:01:50.100
+So here we say everything less than 49 is in this left subtree.
+
+962
+01:01:50.220 --> 01:01:54.820
+This looks like before, but note that the value that we had before, namely here we had
+
+963
+01:01:56.520 --> 01:01:58.180
+which was stored in itself.
+
+964
+01:01:58.660 --> 01:02:02.600
+So previously my root entry contained 47 at top most entry.
+
+965
+01:02:02.780 --> 01:02:05.760
+And it was in the node.
+
+966
+01:02:08.200 --> 01:02:09.880
+Now, oh, sorry, wrong direction.
+
+967
+01:02:10.360 --> 01:02:15.980
+Now my 47 sits here in a leaf page, instead on the inner page, as I have some separate
+
+968
+01:02:15.980 --> 01:02:19.420
+the value that does not have to be in the, in the values.
+
+969
+01:02:19.580 --> 01:02:25.320
+So here we say everything up to 49 is here in my left part, everything larger than 49
+
+970
+01:02:25.320 --> 01:02:26.160
+is on my right part.
+
+971
+01:02:26.520 --> 01:02:30.380
+go here, then everything larger than 37 is here and then and so on.
+
+972
+01:02:30.620 --> 01:02:36.080
+So the inner values contain separators that might or might not occur in the data.
+
+973
+01:02:36.320 --> 01:02:43.060
+Also note that now I write the balancing conditions here, everything up to 49 and note that this
+
+974
+01:02:43.060 --> 01:02:44.500
+here is less or equal.
+
+975
+01:02:44.840 --> 01:02:49.460
+Well, in the previous example, I have deleted it already, previously I said, here I said
+
+976
+01:02:49.460 --> 01:02:51.880
+everything less than 47 is here.
+
+977
+01:02:52.320 --> 01:02:55.940
+Here I say less or equal to 49 is here.
+
+978
+01:02:56.520 --> 01:02:58.760
+So this is small but important difference.
+
+979
+01:02:59.360 --> 01:03:02.100
+Less or equal to 49 is here, larger than 49 is here.
+
+980
+01:03:03.680 --> 01:03:14.900
+Now see here, less or equal to 25 is here, above 25, 25 and less or equal to 35 is here,
+
+981
+01:03:15.180 --> 01:03:17.400
+above 35 is here and so on.
+
+982
+01:03:17.980 --> 01:03:25.040
+And you see the 25, it does occur here in this, here the 25 does occur, while the 49
+
+983
+01:03:25.040 --> 01:03:25.900
+does not occur.
+
+984
+01:03:26.520 --> 01:03:31.380
+value we have is 47. So the inner node can contain values that do not occur in the data.
+
+985
+01:03:32.540 --> 01:03:40.040
+Okay, now why do we prefer B plus 3 over B3? In the first glance, I have to store the value twice.
+
+986
+01:03:40.280 --> 01:03:46.900
+So if you look at the 45, I store it both here and here. So isn't it bad to mean storing
+
+987
+01:03:46.900 --> 01:03:52.080
+everything twice? It doesn't sound so attractive. Yeah, but the advantages, there are two advantages.
+
+988
+01:03:52.080 --> 01:03:57.500
+First, the inner node now only contains the key value
+
+989
+01:03:57.500 --> 01:03:58.740
+and not the table ID value.
+
+990
+01:03:58.960 --> 01:04:01.760
+So only the key, we save the space for the table ID,
+
+991
+01:04:02.060 --> 01:04:05.280
+which means that my entries on the inner nodes are smaller.
+
+992
+01:04:05.560 --> 01:04:08.440
+And this means I can fit more entries on the page.
+
+993
+01:04:08.540 --> 01:04:09.920
+And this means my fanout is higher.
+
+994
+01:04:10.220 --> 01:04:12.920
+And higher fanout is a super great thing
+
+995
+01:04:12.920 --> 01:04:15.060
+because remember our formula set,
+
+996
+01:04:15.260 --> 01:04:19.280
+my depth here is log k.
+
+997
+01:04:19.280 --> 01:04:22.420
+And if my elements are smaller, my k is higher.
+
+998
+01:04:23.000 --> 01:04:26.640
+And of course my k is as much as I can fit on a half a page.
+
+999
+01:04:26.800 --> 01:04:34.920
+If my elements are smaller, I have a higher fanout and therefore my tree will be less
+
+1000
+01:04:34.920 --> 01:04:36.720
+deep and therefore lookup will be faster.
+
+1001
+01:04:37.300 --> 01:04:42.500
+So this is the one advantage of the b-tree, a b-plus tree, higher fanout.
+
+1002
+01:04:43.280 --> 01:04:47.860
+Second advantage, if you ask me, this is relatively even more important, namely it's
+
+1003
+01:04:49.460 --> 01:04:52.640
+In a B tree, pretty nasty things can happen.
+
+1004
+01:04:53.620 --> 01:04:59.320
+For example, assume here we would, look at this example here, we would want to delete
+
+1005
+01:04:59.320 --> 01:05:08.700
+the value, let's say 37, sorry, they want to delete the value 43.
+
+1006
+01:05:10.080 --> 01:05:14.560
+Then my page would be less than half full because I have only one element here.
+
+1007
+01:05:14.560 --> 01:05:18.780
+So now what we would have to do is we would have to text the next element in this case
+
+1008
+01:05:18.780 --> 01:05:24.760
+47 and move it here and then but then we need a new element for the root and then we could
+
+1009
+01:05:24.760 --> 01:05:31.320
+for example pull up the 55 here and you know this is super super complicated to implement
+
+1010
+01:05:31.320 --> 01:05:38.500
+because now suddenly we must touch quite a few pages just because we want deleted one
+
+1011
+01:05:38.500 --> 01:05:44.080
+element also because we must update the separator and separate it must move down super difficult
+
+1012
+01:05:45.720 --> 01:05:52.240
+operations while in a in a b plus tree we don't have mean in the b plus three we don't have to
+
+1013
+01:05:52.240 --> 01:05:57.060
+move a value there's a 47 if you want to do something because what is that you must physically
+
+1014
+01:05:57.060 --> 01:06:03.660
+move it in a b plus tree we can just store value in the um in the node that does not necessarily
+
+1015
+01:06:03.660 --> 01:06:10.040
+have to occur yeah like uh for example if somebody inserts a 48 i just inserted here do nothing
+
+1016
+01:06:10.040 --> 01:06:17.840
+Also if somebody deletes 25, we delete 25, we do nothing.
+
+1017
+01:06:18.520 --> 01:06:23.380
+The separator says everything up to 25 is here, it's true, there is no 25 but this doesn't
+
+1018
+01:06:23.380 --> 01:06:23.620
+matter.
+
+1019
+01:06:23.780 --> 01:06:25.520
+So this is still true.
+
+1020
+01:06:25.800 --> 01:06:28.800
+While in a B tree we could not do this so easily.
+
+1021
+01:06:29.500 --> 01:06:35.380
+So B plus tree we can do most operations, I say most not all, but we can do most operations
+
+1022
+01:06:35.380 --> 01:06:39.020
+on the leaf nodes and we much more rarely have to touch the inner nodes.
+
+1023
+01:06:40.040 --> 01:06:43.300
+Basically a B tree, we would have to update the internodes much more frequently.
+
+1024
+01:06:43.680 --> 01:06:47.800
+Therefore, don't use B trees, use B plus trees.
+
+1025
+01:06:48.940 --> 01:06:51.260
+They are both faster and much easier to implement.
+
+1026
+01:06:51.900 --> 01:06:55.480
+So B plus trees are what we usually want to do.
+
+1027
+01:06:59.660 --> 01:07:04.580
+And so now how does this, if you zoom into the, I mean this is just a picture, how does
+
+1028
+01:07:04.580 --> 01:07:06.220
+this physically look like?
+
+1029
+01:07:08.240 --> 01:07:11.960
+So the inner node probably looks something like this.
+
+1030
+01:07:13.480 --> 01:07:19.820
+So we have, so this is a page of an inner node.
+
+1031
+01:07:19.980 --> 01:07:21.840
+We start with a log sequence number as usual.
+
+1032
+01:07:21.940 --> 01:07:24.900
+So this is for recovery, just the last change on this page.
+
+1033
+01:07:25.060 --> 01:07:25.820
+This is just a number.
+
+1034
+01:07:26.120 --> 01:07:30.640
+So then we store the so-called upper pointer here.
+
+1035
+01:07:30.840 --> 01:07:33.140
+So remember that we have one page.
+
+1036
+01:07:33.140 --> 01:07:36.400
+So we have a lot of, let's say, look at this example here.
+
+1037
+01:07:36.540 --> 01:07:39.520
+So we have a lot of key pointer pairs.
+
+1038
+01:07:41.460 --> 01:07:48.020
+Here so, or perhaps I should say pointer key pairs, because I say this page, so this, let's
+
+1039
+01:07:48.020 --> 01:07:54.680
+give it a number, this page seven is responsible for everything up to 58.
+
+1040
+01:07:55.360 --> 01:08:00.960
+Then this page 20 here is responsible for everything for up to 90.
+
+1041
+01:08:00.960 --> 01:08:04.760
+So we have pairs of page number key, page number key, page number keys.
+
+1042
+01:08:04.920 --> 01:08:08.960
+We have many of these and we have one page more.
+
+1043
+01:08:09.100 --> 01:08:10.340
+And this is what we call here.
+
+1044
+01:08:10.440 --> 01:08:13.640
+This is what we call upper in this slide.
+
+1045
+01:08:14.600 --> 01:08:20.340
+Because this is everything that is larger than the largest key in a page.
+
+1046
+01:08:20.520 --> 01:08:22.300
+The same here, my largest key is 49.
+
+1047
+01:08:22.740 --> 01:08:25.500
+Everything larger than 49 comes to this upper pointer.
+
+1048
+01:08:25.500 --> 01:08:26.300
+Okay.
+
+1049
+01:08:28.180 --> 01:08:33.780
+As we see in this page structure here, the upper is a page of the rightmost child.
+
+1050
+01:08:34.020 --> 01:08:36.080
+So because this rightmost child is different.
+
+1051
+01:08:36.640 --> 01:08:39.340
+And then we store how many entries do we have.
+
+1052
+01:08:39.420 --> 01:08:41.700
+And then we have of course many key child pairs.
+
+1053
+01:08:42.140 --> 01:08:47.020
+So key child, key, it's more precisely key child page.
+
+1054
+01:08:47.360 --> 01:08:49.460
+Now this is the page number of the child page.
+
+1055
+01:08:49.920 --> 01:08:51.640
+Also key child, key child, key child.
+
+1056
+01:08:51.740 --> 01:08:52.600
+This is inner node.
+
+1057
+01:08:53.280 --> 01:08:58.240
+On the leaf node, in principle we do the same, let's ignore this thing here for a moment.
+
+1058
+01:08:59.720 --> 01:09:05.440
+We also have the, sorry, I didn't see this, let's ignore this for a moment, we come to
+
+1059
+01:09:05.440 --> 01:09:06.380
+this back.
+
+1060
+01:09:06.620 --> 01:09:11.860
+So we start the same, we have a log sequence number, then we have the number of elements
+
+1061
+01:09:11.860 --> 01:09:17.400
+that we want to store, then we have key tablid pairs, this is not a child page of course,
+
+1062
+01:09:17.480 --> 01:09:20.620
+but this is now tablid, so we have many key tablid pairs.
+
+1063
+01:09:23.100 --> 01:09:25.580
+two entries more that I didn't explain yet.
+
+1064
+01:09:25.720 --> 01:09:27.660
+First one we see is this next pointer here.
+
+1065
+01:09:28.180 --> 01:09:29.480
+So why do we have this?
+
+1066
+01:09:30.520 --> 01:09:32.600
+So you saw this also in this picture,
+
+1067
+01:09:33.580 --> 01:09:35.760
+in the B plus three, when we look at the,
+
+1068
+01:09:35.920 --> 01:09:38.940
+this is a leaf page, let's call this leaf page one.
+
+1069
+01:09:39.340 --> 01:09:41.040
+This is leaf page two.
+
+1070
+01:09:41.300 --> 01:09:43.880
+And then the leaf page one has a pointer here
+
+1071
+01:09:43.880 --> 01:09:44.780
+to the leaf page two.
+
+1072
+01:09:44.900 --> 01:09:46.200
+This is here the next pointer.
+
+1073
+01:09:46.360 --> 01:09:50.180
+This is what I mark here and we have right to it next.
+
+1074
+01:09:53.820 --> 01:09:55.460
+Same here, we have a next pointer.
+
+1075
+01:09:57.860 --> 01:09:59.140
+Here we have a next pointer.
+
+1076
+01:10:00.160 --> 01:10:02.480
+And I see we always store the next leaf page.
+
+1077
+01:10:03.220 --> 01:10:03.400
+Next.
+
+1078
+01:10:04.600 --> 01:10:06.000
+Okay, why do we need this?
+
+1079
+01:10:07.180 --> 01:10:12.560
+Strictly speaking, we do not need it in a strong sense, but it's very useful to have
+
+1080
+01:10:12.560 --> 01:10:16.020
+because it allows us to run queries more quickly.
+
+1081
+01:10:16.520 --> 01:10:26.120
+Now, for example, if somebody wants to run a query, I want to say x between, let's say
+
+1082
+01:10:26.980 --> 01:10:36.400
+27 and 54, what happens is I go into my, I search for 27 in my B3.
+
+1083
+01:10:36.660 --> 01:10:40.120
+So I go, say 27 is less than 49, I go down here.
+
+1084
+01:10:40.640 --> 01:10:43.500
+27 is between 25 and 35, so I go here.
+
+1085
+01:10:44.460 --> 01:10:49.420
+So then on the page, because on the page the elements are sorted too, so I store them sorted
+
+1086
+01:10:49.420 --> 01:10:50.020
+on the page.
+
+1087
+01:10:50.400 --> 01:10:54.300
+Therefore I find the first element that I have to retrieve is 29, because this is between
+
+1088
+01:10:54.780 --> 01:10:55.840
+27 and 59.
+
+1089
+01:10:56.260 --> 01:10:59.420
+So 29 I found as first element, and then I just go to the right.
+
+1090
+01:10:59.880 --> 01:11:02.320
+That's the 29 qualifies, 35 qualifies.
+
+1091
+01:11:02.600 --> 01:11:06.000
+Then I reach the end of the page, I follow the next pointer, I read.
+
+1092
+01:11:06.800 --> 01:11:10.140
+Yeah, 36 qualifies, 41 qualifies, 43, 47.
+
+1093
+01:11:10.400 --> 01:11:12.360
+I follow the next pointer, I go to the next page.
+
+1094
+01:11:13.660 --> 01:11:19.320
+53 qualifies and then here I count the first image that does not qualify and then I can't stop
+
+1095
+01:11:19.860 --> 01:11:23.120
+Because I know everything further to the right will be larger
+
+1096
+01:11:24.180 --> 01:11:26.600
+Therefore I can now stop processing
+
+1097
+01:11:27.780 --> 01:11:29.880
+okay, and so I
+
+1098
+01:11:30.580 --> 01:11:34.020
+Use this next pointer here to simplify my search
+
+1099
+01:11:34.020 --> 01:11:39.660
+So basically I only navigate down the tree once in the beginning and then I run to the right on the page
+
+1100
+01:11:39.660 --> 01:11:41.700
+and when I hit the end of the page, I follow the next pointer.
+
+1101
+01:11:42.120 --> 01:11:46.040
+This gives me pretty good performance when running a range query.
+
+1102
+01:11:46.360 --> 01:11:48.620
+Okay, so this is what we need to use the next pointer for.
+
+1103
+01:11:48.980 --> 01:11:51.260
+Now what about this ominous number here?
+
+1104
+01:11:51.780 --> 01:11:59.880
+So I said here, it writes this here as tilde 0, and this means, this means 1, 1, 1, 1,
+
+1105
+01:11:59.980 --> 01:12:01.620
+and so on, 1 in binary.
+
+1106
+01:12:02.240 --> 01:12:04.660
+So this is a value that just contains the 1.
+
+1107
+01:12:04.660 --> 01:12:09.320
+or another notation here would be of course just write minus one.
+
+1108
+01:12:12.120 --> 01:12:14.360
+Now, why do we use this?
+
+1109
+01:12:14.520 --> 01:12:19.880
+Yeah, the problem is when we navigate down the tree, how do we know when, because in the picture
+
+1110
+01:12:19.880 --> 01:12:26.340
+here I said we start with the leaf node, we start with the root node here and then I go down for
+
+1111
+01:12:26.340 --> 01:12:31.840
+example to this node and then at this point I have found a leaf node and then I can start
+
+1112
+01:12:31.840 --> 01:12:35.500
+retrieving the values. How do I know that I found a leaf node?
+
+1113
+01:12:36.140 --> 01:12:43.840
+Yes, this is an inner node, this is an inner node, and this is a leaf node.
+
+1114
+01:12:45.560 --> 01:12:51.440
+But how do I know this? Because in the data system, I just say here, this might
+
+1115
+01:12:51.440 --> 01:12:58.560
+be here page number, this something, then I say this here is page number 120, this is
+
+1116
+01:12:58.560 --> 01:13:03.560
+page number 40, how should I know that page number 40 is the leaf node while page number
+
+1117
+01:13:03.560 --> 01:13:04.760
+120 is an inner node?
+
+1118
+01:13:06.060 --> 01:13:08.700
+I don't know this, at least not in advance.
+
+1119
+01:13:08.980 --> 01:13:13.300
+So I just know that my next level is on page 120, if it's a leaf or an inner node, I don't
+
+1120
+01:13:13.300 --> 01:13:13.500
+know.
+
+1121
+01:13:14.740 --> 01:13:18.440
+And one way to tackle this problem is to distinguish them.
+
+1122
+01:13:18.580 --> 01:13:25.800
+So basically I write in the header of the page a value that cannot occur in the inner
+
+1123
+01:13:25.800 --> 01:13:26.080
+node.
+
+1124
+01:13:26.080 --> 01:13:27.760
+Like here for example, on the leaf node,
+
+1125
+01:13:27.980 --> 01:13:29.520
+we write this value here,
+
+1126
+01:13:30.780 --> 01:13:33.520
+and this value, because this is minus one,
+
+1127
+01:13:33.900 --> 01:13:36.220
+this cannot be the page number of the rightmost child.
+
+1128
+01:13:37.580 --> 01:13:39.120
+And that's why at least I must make sure
+
+1129
+01:13:39.120 --> 01:13:40.100
+that this cannot be the case.
+
+1130
+01:13:40.400 --> 01:13:43.740
+So this here is the same memory location at this one here.
+
+1131
+01:13:45.160 --> 01:13:47.120
+And so when I fetch the page,
+
+1132
+01:13:47.300 --> 01:13:49.620
+I look at this field, the second field,
+
+1133
+01:13:49.800 --> 01:13:53.820
+I check if the second field on my page is minus one.
+
+1134
+01:13:53.820 --> 01:13:57.660
+If yes, I encountered a leaf node, if not, I encountered an inner node.
+
+1135
+01:13:58.300 --> 01:14:02.260
+Okay, and of course in my inner nodes, then I process differently than if I encounter
+
+1136
+01:14:02.260 --> 01:14:02.740
+a leaf node.
+
+1137
+01:14:02.920 --> 01:14:05.620
+So leaf nodes, of course, I do the lookup differently.
+
+1138
+01:14:06.800 --> 01:14:09.580
+And so some mechanism like this you need.
+
+1139
+01:14:09.700 --> 01:14:13.960
+Now there are different ways to implement this, but you have to realize, I mean, this
+
+1140
+01:14:13.960 --> 01:14:18.240
+is surprisingly difficult because you are not the only one who navigates the data structure.
+
+1141
+01:14:19.420 --> 01:14:24.080
+Like you start from the root and then you move down, but while you move down, somebody
+
+1142
+01:14:24.080 --> 01:14:25.460
+else might change the tree.
+
+1143
+01:14:25.860 --> 01:14:28.800
+In particular, it could be that the depth of the tree grows.
+
+1144
+01:14:29.280 --> 01:14:33.460
+So your tree might become deeper and somebody might split nodes.
+
+1145
+01:14:34.900 --> 01:14:39.480
+And therefore it's not so totally obvious, at least in advance, it's not totally obvious
+
+1146
+01:14:40.000 --> 01:14:43.600
+if my next page is a leaf node or an inner node.
+
+1147
+01:14:43.780 --> 01:14:47.880
+So you have to have some kind of mechanism to handle this.
+
+1148
+01:14:48.240 --> 01:14:49.640
+use a marker that we did here.
+
+1149
+01:14:49.980 --> 01:14:51.820
+An alternative technique would be to use counting.
+
+1150
+01:14:52.380 --> 01:14:54.720
+So if you remember how deep your tree is,
+
+1151
+01:14:55.200 --> 01:14:57.400
+then you can count on which level you are.
+
+1152
+01:14:57.620 --> 01:14:59.540
+And of course, if somebody splits,
+
+1153
+01:15:00.620 --> 01:15:01.900
+so that when you grow the trees,
+
+1154
+01:15:01.940 --> 01:15:02.740
+the depths can increase,
+
+1155
+01:15:03.160 --> 01:15:04.560
+but you can know,
+
+1156
+01:15:04.880 --> 01:15:05.800
+I think we will see this,
+
+1157
+01:15:05.840 --> 01:15:07.040
+and then we come to the insert logic,
+
+1158
+01:15:07.200 --> 01:15:09.380
+you can know that you only grow at the root,
+
+1159
+01:15:09.540 --> 01:15:12.800
+therefore the depths of a node relative to the leaves.
+
+1160
+01:15:13.040 --> 01:15:14.000
+So if you say, this is,
+
+1161
+01:15:14.260 --> 01:15:15.500
+you must not count from the root,
+
+1162
+01:15:15.640 --> 01:15:16.560
+you must count from the leaves.
+
+1163
+01:15:18.240 --> 01:15:19.200
+depth one, depth two.
+
+1164
+01:15:19.280 --> 01:15:20.120
+If you count like this,
+
+1165
+01:15:20.280 --> 01:15:25.060
+you can be sure that your depths of an individual tree,
+
+1166
+01:15:25.480 --> 01:15:27.580
+of an original node will not change.
+
+1167
+01:15:27.720 --> 01:15:29.380
+And therefore you can use this also to recognize
+
+1168
+01:15:29.380 --> 01:15:31.320
+if you have a leaf on inner node.
+
+1169
+01:15:31.460 --> 01:15:35.380
+And so you can use some mechanism to handle this,
+
+1170
+01:15:35.500 --> 01:15:37.640
+but you need to be aware of this.
+
+1171
+01:15:38.500 --> 01:15:40.040
+Distinguishing inner nodes from leaf nodes
+
+1172
+01:15:40.040 --> 01:15:41.900
+is not as easy as you might wish.
+
+1173
+01:15:42.060 --> 01:15:44.280
+And this is of course the danger of doing what we do here,
+
+1174
+01:15:44.400 --> 01:15:45.520
+because here we draw a small,
+
+1175
+01:15:45.520 --> 01:15:52.120
+me and draw your picture say hey obviously this is a leaf node but if you implement it yourself
+
+1176
+01:15:52.120 --> 01:15:56.320
+and i think you will do this in the exercises i hope you do this in the exercises if you implement
+
+1177
+01:15:56.320 --> 01:16:03.540
+it yourself you will realize it's not so totally obvious and if you if in your lookup you are now
+
+1178
+01:16:03.540 --> 01:16:12.040
+at an inner node or at leaf node okay and now so this is a high level operation now how do we
+
+1179
+01:16:12.040 --> 01:16:13.800
+how do you perform a lookup?
+
+1180
+01:16:14.200 --> 01:16:17.440
+So when we search an element in my B-tree
+
+1181
+01:16:17.440 --> 01:16:18.180
+and we do with the following,
+
+1182
+01:16:18.320 --> 01:16:19.500
+first we start with the root node.
+
+1183
+01:16:19.740 --> 01:16:20.680
+So this is my current node.
+
+1184
+01:16:21.080 --> 01:16:23.740
+So then we say, is my current load in leaf node?
+
+1185
+01:16:24.580 --> 01:16:27.440
+If yes, then we return the current page
+
+1186
+01:16:28.060 --> 01:16:30.420
+or if somebody really wanted to find the entries
+
+1187
+01:16:30.420 --> 01:16:32.260
+and we returned the entry on the page.
+
+1188
+01:16:32.360 --> 01:16:33.980
+So then we look at the entries on the page
+
+1189
+01:16:33.980 --> 01:16:35.100
+and we return the entry.
+
+1190
+01:16:35.540 --> 01:16:39.380
+Now, if it's not a leaf node,
+
+1191
+01:16:39.380 --> 01:16:45.740
+node, then we find the first entry in my inner node that is greater or equal to the search
+
+1192
+01:16:45.740 --> 01:16:47.720
+key and we do this of course with the binary search.
+
+1193
+01:16:47.940 --> 01:16:55.340
+And now this is important to do because, I mean, my picture here looks small, like if
+
+1194
+01:16:55.340 --> 01:17:00.460
+you say, first for the value 28, you would say, I just look at the two elements and then
+
+1195
+01:17:00.460 --> 01:17:00.880
+find it.
+
+1196
+01:17:01.000 --> 01:17:07.060
+But in reality, this here can be thousand or multiple thousand perhaps, yeah, a thousand,
+
+1197
+01:17:07.060 --> 01:17:10.100
+2000, and then you don't want to look at all the entries.
+
+1198
+01:17:10.280 --> 01:17:10.500
+Yeah.
+
+1199
+01:17:10.600 --> 01:17:15.780
+If you want to compare your search key with thousands entries on a page, this is slow.
+
+1200
+01:17:15.960 --> 01:17:16.840
+You don't want to do this.
+
+1201
+01:17:17.280 --> 01:17:21.520
+What we do instead is we keep all entries sorted, then we can do binary search.
+
+1202
+01:17:21.640 --> 01:17:27.020
+So we jump to the middle and then always come, always come, jump to the smaller page.
+
+1203
+01:17:28.160 --> 01:17:28.560
+Okay.
+
+1204
+01:17:28.820 --> 01:17:34.460
+And so until we find the first entry that is greater or equal to the search key, and if
+
+1205
+01:17:34.460 --> 01:17:39.180
+If we do not find such an entry, then we follow the upper edge.
+
+1206
+01:17:39.380 --> 01:17:45.460
+So which means, because if you don't find this, it means my search key is larger than
+
+1207
+01:17:45.460 --> 01:17:46.580
+every entry that we have.
+
+1208
+01:17:46.740 --> 01:17:49.560
+If this is the case, then we go to the rightmost child.
+
+1209
+01:17:49.800 --> 01:17:51.120
+So we follow the upper entry.
+
+1210
+01:17:51.400 --> 01:17:55.840
+Otherwise we go down to the corresponding page to my, to my value here.
+
+1211
+01:17:55.960 --> 01:18:02.840
+So if we come to this, look at this picture here, let's hypothetically say I'm searching
+
+1212
+01:18:04.900 --> 01:18:06.440
+let's say 48.
+
+1213
+01:18:08.000 --> 01:18:09.340
+So then I start here.
+
+1214
+01:18:09.540 --> 01:18:10.700
+This is an inner node.
+
+1215
+01:18:10.880 --> 01:18:15.140
+I check what is the first entry that is greater or equal to 48.
+
+1216
+01:18:15.300 --> 01:18:16.100
+This is 49.
+
+1217
+01:18:16.360 --> 01:18:17.500
+I follow this pointer.
+
+1218
+01:18:18.080 --> 01:18:19.480
+Then here, another inner node.
+
+1219
+01:18:19.620 --> 01:18:23.020
+What is the first value that is greater equal to 48?
+
+1220
+01:18:23.240 --> 01:18:24.540
+There is no such value.
+
+1221
+01:18:24.660 --> 01:18:26.180
+Therefore I follow the uppermost pointer.
+
+1222
+01:18:26.340 --> 01:18:26.760
+Then I'm here.
+
+1223
+01:18:27.080 --> 01:18:28.260
+Then here I would say,
+
+1224
+01:18:28.360 --> 01:18:29.640
+or let's say I search for 47.
+
+1225
+01:18:29.840 --> 01:18:30.300
+That's nicer.
+
+1226
+01:18:30.620 --> 01:18:31.180
+Let's say 47.
+
+1227
+01:18:31.820 --> 01:18:33.600
+Then I come to the leaf node.
+
+1228
+01:18:34.460 --> 01:18:35.220
+Of course, I do the same.
+
+1229
+01:18:35.440 --> 01:18:38.820
+Find the first element that is greater or equal to 47.
+
+1230
+01:18:38.820 --> 01:18:40.220
+In this case, it is 47.
+
+1231
+01:18:40.400 --> 01:18:41.900
+So we have found the place.
+
+1232
+01:18:42.060 --> 01:18:43.240
+And also on the leaf node,
+
+1233
+01:18:43.300 --> 01:18:44.720
+we do this with binary search
+
+1234
+01:18:44.720 --> 01:18:46.720
+because of the same argument,
+
+1235
+01:18:47.920 --> 01:18:53.580
+namely that we can have thousands of elements
+
+1236
+01:18:53.580 --> 01:18:57.400
+and then we don't want to look at all of them.
+
+1237
+01:18:58.220 --> 01:19:00.480
+So this is how the basic lookup works.
+
+1238
+01:19:02.180 --> 01:19:08.180
+So, and, oh, looking at my time, I have only 10 minutes left.
+
+1239
+01:19:08.540 --> 01:19:14.000
+Yeah, so, but then before doing first operation on the B tree, perhaps one of the inserts
+
+1240
+01:19:14.000 --> 01:19:16.040
+we can cover because it's pretty simple too.
+
+1241
+01:19:16.300 --> 01:19:18.140
+So, but first continuous lookup.
+
+1242
+01:19:18.440 --> 01:19:22.980
+So, so once you found the correct pointer to follow, of course, then we continue here,
+
+1243
+01:19:23.100 --> 01:19:23.800
+then we check again.
+
+1244
+01:19:23.960 --> 01:19:28.800
+I do have a, in a note, if yes, do this again, if you leave note, we search for this.
+
+1245
+01:19:29.300 --> 01:19:29.680
+Okay.
+
+1246
+01:19:30.480 --> 01:19:31.480
+how basic lookup works.
+
+1247
+01:19:32.280 --> 01:19:33.660
+Now, interesting question is,
+
+1248
+01:19:33.840 --> 01:19:35.400
+can you do better than this?
+
+1249
+01:19:37.200 --> 01:19:39.800
+And answer is yes, at least sometimes.
+
+1250
+01:19:40.020 --> 01:19:41.200
+Meaning it's not always possible,
+
+1251
+01:19:41.500 --> 01:19:42.620
+depends on your data, what you have,
+
+1252
+01:19:42.700 --> 01:19:44.760
+but you can do this a bit better than perhaps.
+
+1253
+01:19:45.840 --> 01:19:48.020
+Because what we said so far is,
+
+1254
+01:19:49.440 --> 01:19:52.020
+we go to a page, then we do binary search.
+
+1255
+01:19:52.580 --> 01:19:53.020
+Yeah, so,
+
+1256
+01:19:56.940 --> 01:19:59.100
+so, I mean, my pages are too small
+
+1257
+01:20:00.820 --> 01:20:06.160
+And because I go here and then I have a thousand elements and do the binary search
+
+1258
+01:20:06.160 --> 01:20:10.680
+Of course, if you have a thousand elements then you will do this binary search roughly
+
+1259
+01:20:11.300 --> 01:20:13.380
+Look at ten elements on your page
+
+1260
+01:20:13.380 --> 01:20:16.960
+Question is can you look at less than ten elements in a page in particular?
+
+1261
+01:20:17.100 --> 01:20:20.400
+You know that you look at this ten element page ten elements at random
+
+1262
+01:20:20.400 --> 01:20:28.300
+Which means that you will most likely or at least often you will get cache misses and also your branch predictor will be unhappy about you
+
+1263
+01:20:30.740 --> 01:20:34.620
+because you realize the mean binary search works like this.
+
+1264
+01:20:34.880 --> 01:20:36.460
+Let's draw a picture here.
+
+1265
+01:20:36.960 --> 01:20:39.560
+So if this is my 1000 elements that I have.
+
+1266
+01:20:41.680 --> 01:20:43.900
+So binary search like this, I jump in the middle
+
+1267
+01:20:44.720 --> 01:20:47.240
+and then if, then I compare,
+
+1268
+01:20:48.920 --> 01:20:51.660
+and then if it's less, then afterwards I jump here.
+
+1269
+01:20:52.540 --> 01:20:54.960
+If it's more, then I jump here.
+
+1270
+01:20:55.200 --> 01:20:55.640
+Okay.
+
+1271
+01:20:55.640 --> 01:20:59.100
+Okay, now if you search values at random,
+
+1272
+01:20:59.240 --> 01:21:00.820
+if you always search for the same values, okay,
+
+1273
+01:21:00.920 --> 01:21:02.260
+but if you search for values at random,
+
+1274
+01:21:03.240 --> 01:21:05.700
+then the probability that you go jump
+
+1275
+01:21:05.700 --> 01:21:07.980
+to the left and the right is roughly 50%.
+
+1276
+01:21:08.800 --> 01:21:09.980
+Yeah, and this is bad,
+
+1277
+01:21:10.160 --> 01:21:13.020
+because this means that your CPU cannot predict reliable
+
+1278
+01:21:13.020 --> 01:21:15.240
+if you go to the left position
+
+1279
+01:21:15.240 --> 01:21:16.480
+or if you go to the right position.
+
+1280
+01:21:16.820 --> 01:21:19.800
+And this will make your CPU a bit unhappy.
+
+1281
+01:21:20.240 --> 01:21:22.080
+And this will unfortunately mean
+
+1282
+01:21:22.080 --> 01:21:24.920
+that you will get suboptimal performance.
+
+1283
+01:21:26.000 --> 01:21:30.960
+And also because, I mean if you think about classical binary search implementation like
+
+1284
+01:21:30.960 --> 01:21:39.400
+this here, so we have a lower and upper bound, upper bound and we have of course the value
+
+1285
+01:21:39.400 --> 01:21:39.740
+x.
+
+1286
+01:21:39.880 --> 01:21:41.960
+And so the classical implementation looks like this.
+
+1287
+01:21:41.960 --> 01:22:00.240
+So while lower is not upper, then we say middle is equal to lower plus upper minus lower half.
+
+1288
+01:22:00.500 --> 01:22:01.920
+So this is my middle here.
+
+1289
+01:22:09.000 --> 01:22:17.740
+if data at position M is less than X,
+
+1290
+01:22:19.460 --> 01:22:24.120
+then we say upper bound is equal to M,
+
+1291
+01:22:24.980 --> 01:22:33.900
+else if data M is less than X,
+
+1292
+01:22:35.100 --> 01:22:39.120
+is larger than X, then lower bound is M plus one,
+
+1293
+01:22:43.180 --> 01:22:44.440
+else return M.
+
+1294
+01:22:45.780 --> 01:22:46.280
+Oops.
+
+1295
+01:22:48.400 --> 01:22:50.680
+And also do some other way to real single.
+
+1296
+01:22:50.840 --> 01:22:52.280
+Okay, so this is a classical way
+
+1297
+01:22:52.280 --> 01:22:53.300
+to implement a binary search.
+
+1298
+01:22:54.700 --> 01:22:59.980
+Now good news is you only do this logarithmic number of times.
+
+1299
+01:23:00.060 --> 01:23:00.780
+So if you have those elements,
+
+1300
+01:23:00.940 --> 01:23:01.940
+if you do this only 10 times,
+
+1301
+01:23:04.300 --> 01:23:05.660
+This is not so super cheap.
+
+1302
+01:23:05.960 --> 01:23:09.040
+Particularly because the CPU cannot predict reliably
+
+1303
+01:23:09.040 --> 01:23:11.260
+if this ifs here will be true or false.
+
+1304
+01:23:12.320 --> 01:23:18.460
+So this could be true or false at 50% chance,
+
+1305
+01:23:18.620 --> 01:23:20.240
+because if you jump through this,
+
+1306
+01:23:20.900 --> 01:23:22.180
+then you sometimes will be true,
+
+1307
+01:23:22.280 --> 01:23:23.040
+sometimes it will be false.
+
+1308
+01:23:23.260 --> 01:23:26.120
+And this is bad for your performance,
+
+1309
+01:23:26.260 --> 01:23:28.220
+because if you want to predict what you want to take,
+
+1310
+01:23:28.380 --> 01:23:29.060
+because you all have,
+
+1311
+01:23:29.220 --> 01:23:30.480
+or most likely you all have,
+
+1312
+01:23:30.560 --> 01:23:32.540
+you have CPUs with order of order execution.
+
+1313
+01:23:33.920 --> 01:23:37.160
+And therefore the CPU runs multiple instructions in parallel
+
+1314
+01:23:37.160 --> 01:23:39.820
+and it can only do this if it can predict what you are doing.
+
+1315
+01:23:41.120 --> 01:23:42.740
+So can we speed this up?
+
+1316
+01:23:42.960 --> 01:23:45.260
+Yes, there are two ways to speed this up.
+
+1317
+01:23:45.400 --> 01:23:46.980
+And by the way, just as I see this code,
+
+1318
+01:23:47.420 --> 01:23:49.560
+know that you should not do the following.
+
+1319
+01:23:50.680 --> 01:23:54.020
+So I wrote this here so they can remove it later.
+
+1320
+01:23:54.180 --> 01:23:56.260
+Do not do this here.
+
+1321
+01:23:59.080 --> 01:23:59.920
+Don't do this.
+
+1322
+01:24:00.380 --> 01:24:02.200
+You could think, hey, isn't this the same?
+
+1323
+01:24:02.380 --> 01:24:03.320
+Is it easier to write?
+
+1324
+01:24:03.920 --> 01:24:04.980
+you can get overflows.
+
+1325
+01:24:05.380 --> 01:24:07.800
+So if L and R are up and low about a large,
+
+1326
+01:24:07.940 --> 01:24:08.840
+you get numerical overflows.
+
+1327
+01:24:08.980 --> 01:24:09.360
+Don't do this.
+
+1328
+01:24:09.860 --> 01:24:11.780
+Dangerous, but lose you right like this.
+
+1329
+01:24:12.000 --> 01:24:13.160
+So the question is, can we do better?
+
+1330
+01:24:13.760 --> 01:24:15.280
+And answer is yes.
+
+1331
+01:24:16.380 --> 01:24:17.440
+In two ways.
+
+1332
+01:24:17.920 --> 01:24:22.040
+First, we can make this here branch free.
+
+1333
+01:24:22.760 --> 01:24:25.840
+So we can make it so that the,
+
+1334
+01:24:30.240 --> 01:24:33.040
+this, we don't have an if in the inner lobe.
+
+1335
+01:24:33.920 --> 01:24:34.420
+without if.
+
+1336
+01:24:34.720 --> 01:24:37.340
+Okay, and you could say, how can we ever do this?
+
+1337
+01:24:38.340 --> 01:24:40.300
+Although I'm not sure that really explains this.
+
+1338
+01:24:41.640 --> 01:24:46.160
+Might go beyond, why not?
+
+1339
+01:24:46.320 --> 01:24:46.980
+Oh, let's do this.
+
+1340
+01:24:47.380 --> 01:24:53.120
+Okay, so you now see some a bit more advanced computation here.
+
+1341
+01:24:53.260 --> 01:24:54.260
+So how do we do this?
+
+1342
+01:24:54.900 --> 01:24:57.740
+We say, we start with the same upper and lower bound.
+
+1343
+01:24:57.960 --> 01:25:01.500
+Let's say N is upper minus lower.
+
+1344
+01:25:02.500 --> 01:25:03.800
+So then while,
+
+1345
+01:25:06.260 --> 01:25:06.940
+while
+
+1346
+01:25:08.640 --> 01:25:10.480
+n is larger than one,
+
+1347
+01:25:10.660 --> 01:25:11.820
+so if more than one element,
+
+1348
+01:25:13.400 --> 01:25:13.800
+we say
+
+1349
+01:25:15.740 --> 01:25:18.740
+n is equal to L plus
+
+1350
+01:25:20.920 --> 01:25:21.600
+n,
+
+1351
+01:25:23.720 --> 01:25:25.040
+or let's, let's, let's,
+
+1352
+01:25:27.180 --> 01:25:29.620
+no, let's, let's formulate it like this.
+
+1353
+01:25:30.500 --> 01:25:31.620
+m is equal to
+
+1354
+01:25:33.660 --> 01:25:34.380
+n half
+
+1355
+01:25:35.280 --> 01:25:36.900
+okay and now what happens is
+
+1356
+01:25:39.260 --> 01:25:40.040
+and of course
+
+1357
+01:25:40.040 --> 01:25:41.520
+and we always shrink it
+
+1358
+01:25:41.520 --> 01:25:43.440
+so at the end of the loop we say
+
+1359
+01:25:43.820 --> 01:25:44.860
+n is equal to
+
+1360
+01:25:46.720 --> 01:25:47.080
+n
+
+1361
+01:25:48.020 --> 01:25:48.860
+divided by 2
+
+1362
+01:25:48.860 --> 01:25:52.000
+so my bound is always half
+
+1363
+01:25:52.000 --> 01:25:54.180
+the only question is do we have to go to the left half
+
+1364
+01:25:54.180 --> 01:25:54.980
+or to the right half
+
+1365
+01:25:54.980 --> 01:25:56.660
+basically what we would have to do
+
+1366
+01:25:56.660 --> 01:25:59.360
+I first write it with an if but then I replace it with an if
+
+1367
+01:25:59.620 --> 01:26:18.140
+So basically what we would do is, if data L plus M is larger than X, then we say L is
+
+1368
+01:26:18.140 --> 01:26:21.340
+equal to L plus M.
+
+1369
+01:26:25.640 --> 01:26:30.080
+And so if you have to go to the right half,
+
+1370
+01:26:30.340 --> 01:26:32.220
+then we must increase my lower bound.
+
+1371
+01:26:32.800 --> 01:26:34.740
+If we go to the left half,
+
+1372
+01:26:34.880 --> 01:26:36.400
+then we don't do anything with the lower bound.
+
+1373
+01:26:36.600 --> 01:26:38.660
+Okay, so at this point we have only one if,
+
+1374
+01:26:38.780 --> 01:26:40.440
+and the really funny thing is
+
+1375
+01:26:40.440 --> 01:26:42.240
+we can really remove this if two.
+
+1376
+01:26:42.740 --> 01:26:44.320
+Yeah, because what we can do is,
+
+1377
+01:26:46.940 --> 01:26:48.280
+one way for example to implement,
+
+1378
+01:26:48.400 --> 01:26:49.420
+there might be a way to implement this,
+
+1379
+01:26:49.520 --> 01:26:50.960
+one way to implement this is,
+
+1380
+01:26:50.960 --> 01:27:07.220
+We say L is increased by M times data, data L plus M larger than X.
+
+1381
+01:27:07.840 --> 01:27:08.440
+Okay?
+
+1382
+01:27:10.000 --> 01:27:11.640
+Now what happens here?
+
+1383
+01:27:11.740 --> 01:27:13.020
+So here we compare this value.
+
+1384
+01:27:13.220 --> 01:27:15.780
+If this is larger than this value here is one.
+
+1385
+01:27:16.980 --> 01:27:19.520
+If it is less, it's less or equal than it's zero.
+
+1386
+01:27:20.960 --> 01:27:26.140
+We multiply m with one or two, so if it's larger than we have m, if it's less than we
+
+1387
+01:27:26.140 --> 01:27:28.760
+have zero, we increase a by this and then that's it.
+
+1388
+01:27:29.100 --> 01:27:31.800
+So now this new loop contains no if.
+
+1389
+01:27:32.240 --> 01:27:39.300
+So of course we do a multiplication, in fact this you might wish to use other ways to, you
+
+1390
+01:27:39.300 --> 01:27:44.660
+might want to turn this here into a CMOF, conditional move, but I don't want to go into
+
+1391
+01:27:44.660 --> 01:27:45.900
+assembler at this point here.
+
+1392
+01:27:46.080 --> 01:27:49.880
+So I'm just saying, so you can, then it will be even faster.
+
+1393
+01:27:50.960 --> 01:27:53.260
+even faster, but I don't want to make it too complicated.
+
+1394
+01:27:53.580 --> 01:27:58.180
+Just saying this, if you formulate it like this, you can do a binary search that does
+
+1395
+01:27:58.180 --> 01:28:00.400
+not have an if, and in insight.
+
+1396
+01:28:00.560 --> 01:28:03.780
+Yeah, and this means therefore, of course, that the if cannot be mispredicted.
+
+1397
+01:28:03.920 --> 01:28:09.320
+So this will be faster, at least if the, I mean, I did extensive performance test of
+
+1398
+01:28:09.320 --> 01:28:14.800
+this, this will be faster if the range that you're searching for is not too large.
+
+1399
+01:28:15.320 --> 01:28:21.860
+If it is very large, then it is faster to do the multiple ifs instead of using conditional
+
+1400
+01:28:21.860 --> 01:28:25.120
+moves, so instead of using branch free binary search.
+
+1401
+01:28:26.620 --> 01:28:29.260
+But just so this is a branch free binary search.
+
+1402
+01:28:30.320 --> 01:28:36.320
+For small ranges and small means a few thousand or perhaps a few 10,000, this here is faster.
+
+1403
+01:28:36.560 --> 01:28:39.200
+And typically a B3 page is in this ballpark.
+
+1404
+01:28:39.340 --> 01:28:41.680
+So branch free binary search is a good idea.
+
+1405
+01:28:42.720 --> 01:28:46.300
+Now question is, can we, so this will be a bit faster than the other binary search.
+
+1406
+01:28:46.640 --> 01:28:48.200
+The question is, can we do even better?
+
+1407
+01:28:48.340 --> 01:28:49.460
+And the answer is yes, yes, we can.
+
+1408
+01:28:49.580 --> 01:28:51.780
+At least, I mean, so this branch of binary search you can always do.
+
+1409
+01:28:52.380 --> 01:28:55.380
+The next trick I want to show you, you can only do sometimes.
+
+1410
+01:28:55.640 --> 01:28:57.940
+And this is because this depends on the data types that we have.
+
+1411
+01:28:59.000 --> 01:29:01.160
+So if you have strings, then we cannot do much.
+
+1412
+01:29:02.540 --> 01:29:04.860
+But what if we have numbers, for example?
+
+1413
+01:29:05.220 --> 01:29:10.040
+Yeah, so assume, so here we are, and we are, we want to search, for example,
+
+1414
+01:29:11.800 --> 01:29:20.720
+So let's say for the value 55.
+
+1415
+01:29:21.740 --> 01:29:23.820
+So we are searching for 55.
+
+1416
+01:29:26.120 --> 01:29:29.700
+So here of course, this is a root node, we have only one entry element anyway, we cannot
+
+1417
+01:29:29.700 --> 01:29:30.000
+do much.
+
+1418
+01:29:30.140 --> 01:29:31.300
+So we just go to the right.
+
+1419
+01:29:31.460 --> 01:29:35.880
+Here we have two elements, we might do binary search or we just compared and then we go
+
+1420
+01:29:35.880 --> 01:29:36.100
+here.
+
+1421
+01:29:36.220 --> 01:29:39.160
+But now what about, what about this next node?
+
+1422
+01:29:39.160 --> 01:29:43.120
+So in my picture, of course, it only contains four nodes, but in reality, this could be
+
+1423
+01:29:43.120 --> 01:29:43.520
+a thousand.
+
+1424
+01:29:43.700 --> 01:29:46.400
+Let's pretend here that we have not four nodes, but we have a thousand.
+
+1425
+01:29:47.980 --> 01:29:48.340
+Okay.
+
+1426
+01:29:48.620 --> 01:29:50.140
+Oops, sorry, not 10,000, there's thousands.
+
+1427
+01:29:52.420 --> 01:29:54.980
+So and of course we can do binary search, but can we do better?
+
+1428
+01:29:55.140 --> 01:29:55.780
+And the answer is yes.
+
+1429
+01:29:56.020 --> 01:29:56.640
+So why?
+
+1430
+01:29:58.140 --> 01:30:02.800
+While traversing, we have seen that we are in a range that is larger than 49.
+
+1431
+01:30:02.820 --> 01:30:07.980
+So I know that the smallest possible value that I have in my page is 49.
+
+1432
+01:30:09.160 --> 01:30:16.120
+this because i walked to the right here so 49 is a lower bound and upper bound obviously is 58
+
+1433
+01:30:17.740 --> 01:30:23.120
+because this is a separator that we went down and so therefore my page must contain values
+
+1434
+01:30:23.120 --> 01:30:31.220
+between 49 and 58 okay and now what i could do is instead of doing a trivial binary search
+
+1435
+01:30:31.220 --> 01:30:38.460
+i could try to interpolate basically i say my value here i'm searching for 58 55 so i then i
+
+1436
+01:30:39.160 --> 01:30:48.120
+45 is six steps away from the lower bound of 49 and in total I have 58 minus 49 values.
+
+1437
+01:30:48.540 --> 01:30:52.740
+So therefore I believe my position on this page will be this fraction.
+
+1438
+01:30:53.060 --> 01:30:56.180
+And this will be then the approximate position on the page.
+
+1439
+01:31:00.320 --> 01:31:01.680
+Approximate position.
+
+1440
+01:31:05.020 --> 01:31:07.400
+And this is what we call interpolation search.
+
+1441
+01:31:09.160 --> 01:31:14.580
+this is my page, instead of starting like a binary search in the middle, I take my key
+
+1442
+01:31:14.580 --> 01:31:18.620
+that I have, so then of course I traverse down a tree and I have seen values that are
+
+1443
+01:31:18.620 --> 01:31:22.780
+larger and smaller than me, so I traverse down a tree, this gave me up on lower bounds.
+
+1444
+01:31:23.140 --> 01:31:26.660
+Then I take my value and I interpolate and I kind of could for example say,
+
+1445
+01:31:26.840 --> 01:31:33.260
+if my distribution on a page is uniform, then I would expect my value to be here.
+
+1446
+01:31:33.980 --> 01:31:38.380
+So for example here. So I go to this position.
+
+1447
+01:31:39.160 --> 01:31:40.840
+Now, if I'm lucky, it's right, of course.
+
+1448
+01:31:41.540 --> 01:31:45.080
+Could be that most likely it will not be right, at least not exactly right.
+
+1449
+01:31:45.180 --> 01:31:47.640
+It will be roughly the right ballpark, but not exactly right.
+
+1450
+01:31:47.820 --> 01:31:49.540
+So what I can do then, so I start here.
+
+1451
+01:31:50.340 --> 01:31:54.700
+So what I do then is, I check, am I too small, am I too large?
+
+1452
+01:31:54.960 --> 01:32:01.980
+So let's assume that the values that I currently found is to make some concrete example, let's
+
+1453
+01:32:01.980 --> 01:32:05.580
+Let's say, if you're searching for 1150,
+
+1454
+01:32:05.800 --> 01:32:09.640
+and the value here that I found is 1120.
+
+1455
+01:32:09.920 --> 01:32:12.440
+So it's not totally wrong, but it's too small.
+
+1456
+01:32:12.640 --> 01:32:16.180
+So what I do then is, I go one step to the right,
+
+1457
+01:32:16.340 --> 01:32:17.640
+I go to look at the next element.
+
+1458
+01:32:18.300 --> 01:32:20.280
+And this could be in this case be for example,
+
+1459
+01:32:24.720 --> 01:32:25.640
+1125 or so.
+
+1460
+01:32:26.200 --> 01:32:27.720
+Then I go, it's still too small.
+
+1461
+01:32:28.100 --> 01:32:29.780
+Then I go two elements to the right.
+
+1462
+01:32:29.780 --> 01:32:37.420
+this could be for example 1140 then I go four elements to the right you know
+
+1463
+01:32:37.420 --> 01:32:43.860
+that I exponentially increase the step so and then this could be then say let's
+
+1464
+01:32:43.860 --> 01:32:48.340
+say a hundred thousand one hundred seventy this is too large then in this
+
+1465
+01:32:48.340 --> 01:32:52.580
+incident while now I do binary search so then I do binary search in this small
+
+1466
+01:32:52.580 --> 01:32:57.820
+interval binary search okay so we guessed the first position by by
+
+1467
+01:33:00.000 --> 01:33:04.260
+So this will bring me to roughly the correct position, not exactly the right position,
+
+1468
+01:33:04.500 --> 01:33:05.500
+but roughly the correct position.
+
+1469
+01:33:05.760 --> 01:33:11.560
+Then I do something that is called, if you look at Wikipedia, people call this exponential
+
+1470
+01:33:11.560 --> 01:33:12.160
+search.
+
+1471
+01:33:12.320 --> 01:33:19.360
+So I do exponentially increasing steps in the right direction until I find a range that
+
+1472
+01:33:19.360 --> 01:33:22.400
+my value must contain and then I do binary search.
+
+1473
+01:33:22.460 --> 01:33:27.320
+And of course this range is most likely much smaller than the full page, definitely much
+
+1474
+01:33:27.320 --> 01:33:28.300
+smaller than the full page.
+
+1475
+01:33:29.780 --> 01:33:33.800
+I will in many cases be faster than binary search.
+
+1476
+01:33:34.640 --> 01:33:37.520
+So, and I, because my, if my,
+
+1477
+01:33:37.680 --> 01:33:39.180
+the better my initial guess is,
+
+1478
+01:33:39.340 --> 01:33:42.020
+so the closer my initial position is to my real position,
+
+1479
+01:33:42.160 --> 01:33:43.820
+the faster the whole mechanism is.
+
+1480
+01:33:44.260 --> 01:33:47.660
+So if I'm only one or two steps away, then it's perfect.
+
+1481
+01:33:47.820 --> 01:33:48.840
+So I'm very, very fast.
+
+1482
+01:33:49.560 --> 01:33:51.800
+If my interpolation doesn't work very well,
+
+1483
+01:33:51.900 --> 01:33:54.420
+if my data is skewed, then it doesn't work that bad,
+
+1484
+01:33:54.600 --> 01:33:55.460
+as it doesn't work that good,
+
+1485
+01:33:55.580 --> 01:33:56.480
+but it doesn't matter that much
+
+1486
+01:33:56.480 --> 01:33:58.880
+because we are still logarithmic in lookup cast.
+
+1487
+01:34:00.420 --> 01:34:06.280
+Okay, so this is, so I see I'm running out of time for the, oops, running out of time
+
+1488
+01:34:06.280 --> 01:34:11.060
+for the, for the insert, for the, for the Btree.
+
+1489
+01:34:11.540 --> 01:34:16.760
+But so therefore we stop here, we're looking at the lookup, but I just want to drive this
+
+1490
+01:34:16.760 --> 01:34:17.320
+point home.
+
+1491
+01:34:17.800 --> 01:34:21.840
+Lookup performance is super important for two reasons.
+
+1492
+01:34:21.980 --> 01:34:24.040
+Of course, first you do much more lookups than anything else.
+
+1493
+01:34:24.440 --> 01:34:29.360
+Second all the other operations, insert, update and so on, they will always first do a lookup.
+
+1494
+01:34:29.780 --> 01:34:31.900
+So therefore you want to spend effort
+
+1495
+01:34:31.900 --> 01:34:33.040
+in making your look up fast.
+
+1496
+01:34:33.560 --> 01:34:36.700
+And second, you must keep in mind your pages are large.
+
+1497
+01:34:36.940 --> 01:34:40.400
+And as we can be, we store thousands of entries on a page
+
+1498
+01:34:40.400 --> 01:34:44.320
+and therefore also the search within a page must be fast.
+
+1499
+01:34:44.640 --> 01:34:47.940
+So the Btree by its algorithmic structure
+
+1500
+01:34:48.540 --> 01:34:50.600
+allows you to look at only a few pages
+
+1501
+01:34:50.600 --> 01:34:51.620
+or two or three pages,
+
+1502
+01:34:51.760 --> 01:34:53.560
+but nevertheless the page itself
+
+1503
+01:34:53.560 --> 01:34:55.120
+is a non-trivial data structure.
+
+1504
+01:34:55.920 --> 01:34:59.740
+So we must manipulate the page itself quickly.
+
+1505
+01:35:00.260 --> 01:35:02.960
+And so this is what you look at today.
+
+1506
+01:35:03.180 --> 01:35:07.620
+So look up and in the next section, then we will continue and look at of course other
+
+1507
+01:35:07.620 --> 01:35:10.200
+operations, insert, deletion and so on.
+
+1508
+01:35:11.560 --> 01:35:12.500
+So thank you.
+
+1509
+01:35:12.620 --> 01:35:14.020
+I will stop here for now.

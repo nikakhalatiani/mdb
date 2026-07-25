@@ -1,0 +1,1357 @@
+[00:00:00.840 --> 00:00:02.680] Welcome to the lecture on database implementation.
+[00:00:03.740 --> 00:00:11.040] So in the last lecture, we have looked at the storage part until we came to this part here, slotted pages.
+[00:00:11.520 --> 00:00:24.260] So basically the problem that we have to address is how do we map database data, in particular records, which means tuples basically, to fixed size data structures, fixed size pages.
+[00:00:24.480 --> 00:00:28.620] So the most well known concept for this is a so-called slotted pages concept.
+[00:00:31.120 --> 00:00:37.900] So we have this page of a certain size, in this case here we say page 1, 2, 3, and this
+[00:00:37.900 --> 00:00:44.760] has a certain size, for example we could say 16 kilobytes or perhaps a lot more than this.
+[00:00:45.200 --> 00:00:48.940] However, something like this, 32 kilobytes, so a certain size.
+[00:00:50.260 --> 00:00:53.300] And then we put the records on there.
+[00:00:53.700 --> 00:00:57.520] So this is a record, we just write all the data that we have here.
+[00:00:57.520 --> 00:01:04.860] If you just A, B, C, 1, 2, 3, and so everything is written as a byte range on the page.
+[00:01:05.660 --> 00:01:08.320] And now where does the name slotted page come from?
+[00:01:08.400 --> 00:01:11.280] We have a slot that references this record.
+[00:01:11.440 --> 00:01:15.180] So this, for example, this slot here could point to that record.
+[00:01:15.360 --> 00:01:20.120] And then we would address this record by the combination of page number.
+[00:01:20.820 --> 00:01:27.800] So in this case we could say page number 1, 2, 3, slot, sorry, it's supposed to be 3,
+[00:01:28.180 --> 00:01:33.560] 1, 2, 3, slot 0, and that's, this is then the record. Now strictly speaking this is not,
+[00:01:36.660 --> 00:01:40.640] oops, I messed up the
+[00:01:44.160 --> 00:01:53.600] the number. So this is in fact the record 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11.
+[00:01:53.940 --> 00:02:05.640] Oh, did it start from 0? 0, 1, 2, 3, 4. So this is in fact was slot number 11.
+[00:02:05.640 --> 00:02:07.620] 11, so I miscounted.
+[00:02:09.200 --> 00:02:11.280] So this here is a number.
+[00:02:16.220 --> 00:02:20.680] And so this then allows you to reference a certain record.
+[00:02:24.600 --> 00:02:29.080] Now what you see in this page here, you see some more entries here.
+[00:02:29.300 --> 00:02:31.680] So this is the regular record, so we just store here.
+[00:02:32.140 --> 00:02:37.020] Now here you see a special case, namely a record that was moved to another page.
+[00:02:37.240 --> 00:02:41.740] So this can happen, for example, if you insert records and then your page is full at some point,
+[00:02:42.080 --> 00:02:44.980] and then you want to update the record to make it larger.
+[00:02:45.240 --> 00:02:46.820] So for example, you want to change the string
+[00:02:48.540 --> 00:02:52.480] AB and we want to transform it into a new string XYZ.
+[00:02:52.600 --> 00:02:54.060] And this of course makes the string larger.
+[00:02:54.340 --> 00:02:57.120] Now it could be that there simply is not enough space for this record,
+[00:02:57.280 --> 00:02:59.300] for this longer string, because my page is full.
+[00:02:59.300 --> 00:03:03.200] So what I do then is I move the new record on a separate page.
+[00:03:03.340 --> 00:03:04.800] So here we call this overflow record.
+[00:03:04.980 --> 00:03:08.840] We move it to a separate page and on the original page,
+[00:03:08.900 --> 00:03:13.440] we just remember that this record existed and now what is this new number?
+[00:03:13.560 --> 00:03:17.120] So here we store that the record was number 1, 2, 3, 7,
+[00:03:17.120 --> 00:03:20.460] is now stored as a position 5, 6, 7, 6.
+[00:03:20.760 --> 00:03:22.160] So this is what we store here.
+[00:03:22.260 --> 00:03:23.640] This is a forward.
+[00:03:26.440 --> 00:03:28.500] And we reference the new position.
+[00:03:29.300 --> 00:03:35.820] Now the good thing about this forward mechanism is that we can now keep the original ID.
+[00:03:36.000 --> 00:03:40.460] So we moved it to a server page because we didn't have space, but nobody knows this.
+[00:03:40.560 --> 00:03:46.420] Now so this ID here keeps stable, so this record always remains, keeps this number.
+[00:03:46.660 --> 00:03:48.560] It doesn't matter if it was moved to a server page or not.
+[00:03:48.660 --> 00:03:49.660] So we always keep this number.
+[00:03:50.040 --> 00:03:55.080] And this is important because it could be that this number is stored somewhere, for
+[00:03:55.080 --> 00:03:56.220] example in an index.
+[00:03:56.220 --> 00:04:02.220] So we might have an index on this table and this index references this tuple.
+[00:04:02.440 --> 00:04:06.820] Now if we move this tuple to another page, I don't want to go through all the indexes
+[00:04:06.820 --> 00:04:07.440] and update them.
+[00:04:07.960 --> 00:04:13.900] Instead, I keep the ID stable and insert a forward.
+[00:04:14.160 --> 00:04:25.560] Now of course there is a certain cost involved, because if you do this, if you have to follow
+[00:04:26.220 --> 00:04:29.580] here, then we jump from one page to another page. This gives me another page
+[00:04:29.580 --> 00:04:33.900] for all this cost me performance, but I hope that this is the exception. So most
+[00:04:33.900 --> 00:04:37.500] doubles will not be moved to another pages, and this is absolutely true.
+[00:04:37.800 --> 00:04:42.720] First, because most doubles are never updated, so the majority of the data
+[00:04:42.720 --> 00:04:46.780] items are inserted and then perhaps deleted at some point, but they're never
+[00:04:46.780 --> 00:04:51.960] updated most of the time. So frequent updates are rare, and therefore we can
+[00:04:51.960 --> 00:04:57.240] expect that most of the data I could just keep it as it is. And the second thing is,
+[00:04:57.860 --> 00:05:00.660] this, I mean in the worst case, we have to touch two pages instead of one,
+[00:05:00.880 --> 00:05:06.000] but we will do two things to mitigate this. First, this chain will never get longer than two.
+[00:05:06.900 --> 00:05:10.140] And that's why perhaps it's not obvious why this is the case, because it could be, of course,
+[00:05:10.460 --> 00:05:16.100] that this page here is full two. Now, if somebody wants to update this overflow record and make it
+[00:05:16.100 --> 00:05:21.200] even larger so it doesn't fit here so we want to make this here increase this
+[00:05:21.200 --> 00:05:26.520] there's no space but what we do not do I draw this here now this dotted pages so
+[00:05:26.520 --> 00:05:31.540] what we do not do I mean you put it on another page of course as of the now we
+[00:05:31.540 --> 00:05:36.020] have a really large record now what we do not do is it makes a chain longer
+[00:05:36.020 --> 00:05:39.760] because this would give me a very bad performance of course what we do instead
+[00:05:41.120 --> 00:05:42.280] So don't do this.
+[00:05:42.860 --> 00:05:44.940] Instead we update the link.
+[00:05:45.420 --> 00:05:48.460] So we let this here one point is new position
+[00:05:48.460 --> 00:05:49.820] and then clear this.
+[00:05:51.620 --> 00:05:53.300] Clear because the override doesn't exist.
+[00:05:53.480 --> 00:05:54.620] And so we throw away this.
+[00:05:54.980 --> 00:05:58.320] And so my chain at most contains one hop.
+[00:05:59.020 --> 00:06:01.140] So I might have to access two pages,
+[00:06:01.280 --> 00:06:02.380] but never more than two.
+[00:06:02.520 --> 00:06:03.340] So this is one thing.
+[00:06:03.620 --> 00:06:05.800] And the second trick that we will see in a moment
+[00:06:05.800 --> 00:06:11.100] when we talk about the implementation of the storage layout,
+[00:06:11.980 --> 00:06:15.660] this chain we only follow if we come from an index.
+[00:06:16.120 --> 00:06:19.440] So if somebody says, give me a record 1237,
+[00:06:19.820 --> 00:06:22.480] so this means we directly jump, we explicitly,
+[00:06:22.880 --> 00:06:24.080] so we come from index,
+[00:06:25.460 --> 00:06:27.580] index, then we jump to, it takes this idea,
+[00:06:27.720 --> 00:06:29.020] then we jump to this page here,
+[00:06:29.240 --> 00:06:31.580] we find this record, we see, oh, there's a forward,
+[00:06:31.800 --> 00:06:32.840] then we go to another page.
+[00:06:32.960 --> 00:06:34.760] So this, if you come from index, this can happen.
+[00:06:35.800 --> 00:06:39.940] ahead, if we come from an index, we did random access anyway, because we moved through a B-tree.
+[00:06:40.500 --> 00:06:46.540] Therefore, we only do this, we only do this rarely, because we use an index only if there are few
+[00:06:46.540 --> 00:06:54.440] entries. And so in this case, you'd have another page. If we instead scan the page, so if we do a
+[00:06:54.440 --> 00:07:00.860] table scan, then we do not follow this link. So the performance penalty is only for point access,
+[00:07:00.860 --> 00:07:06.200] So jumping to a specific record, scanning the whole, every page does not cost me anything,
+[00:07:06.260 --> 00:07:07.460] even if I moved a record.
+[00:07:07.640 --> 00:07:09.720] And we will see in a moment how to implement this.
+[00:07:10.280 --> 00:07:10.620] Okay.
+[00:07:10.680 --> 00:07:16.340] So this is a pretty nice concept, very flexible and quite popular.
+[00:07:16.500 --> 00:07:22.480] So many systems, I would perhaps even say most database systems implement some very of this,
+[00:07:22.620 --> 00:07:24.240] at least historically they have done this.
+[00:07:24.340 --> 00:07:27.060] So this is a very popular way to store data.
+[00:07:27.820 --> 00:07:31.800] Now we here we look a bit more closely how we implement this.
+[00:07:32.340 --> 00:07:34.300] So this is now a zoomed in version.
+[00:07:35.860 --> 00:07:41.240] And so we, if you start a page, we will usually implement it like this.
+[00:07:41.360 --> 00:07:43.580] So we, in the page, we have a fixed size header.
+[00:07:44.460 --> 00:07:46.080] So there's a fixed size header in the front.
+[00:07:46.640 --> 00:07:49.360] And then we will have slots and tuples.
+[00:07:49.620 --> 00:07:55.940] And now you see on this page, this slide here, I said, we put the slots on the front.
+[00:07:57.060 --> 00:08:01.820] here we said we put the slots at the end now what should we do should we put it at the front at the
+[00:08:01.820 --> 00:08:08.720] end and this doesn't really matter now so um depends on the small implementation details
+[00:08:08.720 --> 00:08:13.740] sometimes it's a bit easier to put the slots at the front at the end but in reality this this
+[00:08:14.120 --> 00:08:18.740] doesn't really matter if you want to put it at the front or at the end both as that so both things
+[00:08:18.740 --> 00:08:23.780] exist there are systems that put a slot in the front and put them at the end here i will now
+[00:08:23.780 --> 00:08:29.660] assumes that I put the slots at the front. But as I said, the difference is a minor.
+[00:08:30.080 --> 00:08:35.260] Now, what is more important is that the slots and the data items themselves
+[00:08:35.260 --> 00:08:40.900] grow against each other. So this means if I insert a new tuple, I will create a new slot here
+[00:08:41.440 --> 00:08:48.500] and I will put a new data item here. Then if a new tuple comes, I put a new slot here and I put
+[00:08:48.500 --> 00:08:49.640] a new data item here.
+[00:08:49.820 --> 00:08:51.280] So they grow against each other.
+[00:08:51.560 --> 00:08:55.360] Data grows in this direction, tuples grows in the other direction.
+[00:08:55.600 --> 00:08:58.180] And the page is full of course when both meet.
+[00:08:58.540 --> 00:09:03.600] So when the slots and the data items hit each other, so then the page is full.
+[00:09:04.860 --> 00:09:07.920] Now why do we do this?
+[00:09:08.040 --> 00:09:13.840] So why do we have this complicated growing against each other instead of just statically
+[00:09:13.840 --> 00:09:15.540] allocating n slots and that is?
+[00:09:15.540 --> 00:09:19.080] The answer of course is that we don't know how large the data item is.
+[00:09:19.420 --> 00:09:23.860] So here it looks like a nice fixed size box, but this is just a picture.
+[00:09:24.280 --> 00:09:33.240] In reality, this data item can have variable size, therefore I don't know how many slots
+[00:09:33.240 --> 00:09:33.700] there are.
+[00:09:34.020 --> 00:09:37.860] So if my data items are very large, then I will have only few slots.
+[00:09:38.360 --> 00:09:41.700] If I have very small data items, then I will have many slots.
+[00:09:42.020 --> 00:09:43.300] I cannot know this before.
+[00:09:43.300 --> 00:09:47.540] In particular, I mean, this is probably most clear if you think about this, this could
+[00:09:47.540 --> 00:09:48.100] be a string.
+[00:09:48.640 --> 00:09:52.780] Assume the data item is a single string, so we have a tuple that consists of a single
+[00:09:52.780 --> 00:09:53.460] string column.
+[00:09:54.180 --> 00:09:57.280] And therefore you can never know how large the thing will be.
+[00:09:57.560 --> 00:10:02.240] Because if the user inserts a lot of short strings, then we can fit many tuples on the
+[00:10:02.240 --> 00:10:02.500] page.
+[00:10:02.740 --> 00:10:07.120] If the user inserts many long strings, then we can fit only a few tuples on the page.
+[00:10:07.260 --> 00:10:12.720] And we cannot know this beforehand, and therefore we cannot know how many slots to allocate.
+[00:10:13.740 --> 00:10:17.620] And therefore the number of slots and the number of data items is dynamic.
+[00:10:18.440 --> 00:10:18.880] Okay.
+[00:10:18.940 --> 00:10:21.920] Now we have, so this is as long as you only insert, everything is nice.
+[00:10:22.540 --> 00:10:22.980] Yeah.
+[00:10:22.980 --> 00:10:27.480] So of course, everything gets a bit more ugly is the moment you do update and delete.
+[00:10:28.440 --> 00:10:34.900] So because I grow and then here's another data item, then I have another data item.
+[00:10:35.080 --> 00:10:38.860] And now somebody wants to, I mean, easy case is somebody just wants to lead this.
+[00:10:39.580 --> 00:10:40.020] Okay.
+[00:10:40.180 --> 00:10:40.980] That's not too bad.
+[00:10:40.980 --> 00:10:47.820] And we can, yeah, so we will see what we do in practice is we will do nothing.
+[00:10:48.040 --> 00:10:49.800] We will just remember that it's deleted.
+[00:10:51.800 --> 00:10:57.280] And because what we would have to do is, we would have to do basically garbage collection,
+[00:10:57.380 --> 00:11:01.960] which means we move all data items of, we cannot, perhaps it also delete this, we delete
+[00:11:01.960 --> 00:11:02.640] multiple items.
+[00:11:02.940 --> 00:11:06.140] Now, what we would want to do at some point is, we want to move everything.
+[00:11:06.140 --> 00:11:11.640] So we want to move, for example, this here, and then we would move that data item where
+[00:11:11.640 --> 00:11:13.240] this one was before and so on.
+[00:11:13.300 --> 00:11:15.780] So we compactify them, move them next to each other.
+[00:11:17.600 --> 00:11:21.400] But of course this cost me something, therefore I only do this if I have to.
+[00:11:21.920 --> 00:11:26.220] So the first instance, if I delete a data item, I do nothing.
+[00:11:27.240 --> 00:11:33.960] Now if my page is full, so data items and slots cross, but I know that I would have
+[00:11:33.960 --> 00:11:39.420] enough space, I just didn't reclaim the space, then I do compactification, which means I
+[00:11:39.420 --> 00:11:44.320] just move everything compact again so that all the holes are gone and then I can reuse
+[00:11:44.320 --> 00:11:44.880] the space.
+[00:11:45.040 --> 00:11:49.380] So I delay the compactification until I have to amortize the cost.
+[00:11:51.380 --> 00:11:55.120] Okay, so this is, this is for deletions, for updates of course it's the same.
+[00:11:55.260 --> 00:12:01.800] So if I update and the size does not change or it shrinks or it's the same, then I can
+[00:12:01.800 --> 00:12:05.320] just update in place, of course I can just do data prime and then have an update.
+[00:12:05.520 --> 00:12:11.780] If the size does increase, then I treat this internally as a delete followed by an insert
+[00:12:11.780 --> 00:12:12.760] on the same page.
+[00:12:12.920 --> 00:12:15.180] So then I do an insert on the same.
+[00:12:16.300 --> 00:12:21.500] Again we might have extra difficulties if it doesn't fit, because it's too large, then
+[00:12:21.500 --> 00:12:25.460] we must insert a redirection, insert it on another page.
+[00:12:25.640 --> 00:12:30.260] But if this is not the case, then we just put it somewhere else and treat this as a delete
+[00:12:31.800 --> 00:12:33.140] to reclaim space.
+[00:12:34.380 --> 00:12:36.560] So this is a basic strategy here.
+[00:12:37.260 --> 00:12:41.980] Now if you zoom into the header of the slotted page, so this is basically the fields that
+[00:12:41.980 --> 00:12:43.100] we will need.
+[00:12:43.340 --> 00:12:47.820] And so first one here, log sequence number, we will talk about this later in the lecture
+[00:12:47.820 --> 00:12:49.000] when we talk about recovery.
+[00:12:49.200 --> 00:12:55.700] This basically means we remember the last change on every page and we do this to cope
+[00:12:55.700 --> 00:12:56.280] with crashes.
+[00:12:56.620 --> 00:13:00.560] So if we crash, we must know what, which operation were performed on the page.
+[00:13:01.800 --> 00:13:02.600] change on each page.
+[00:13:02.740 --> 00:13:03.540] This is just a number.
+[00:13:03.760 --> 00:13:04.760] Now this is a number.
+[00:13:05.940 --> 00:13:10.420] And then the next one here is we store how many slots we have.
+[00:13:10.640 --> 00:13:13.960] And this number of course grows dynamically if somebody inserts.
+[00:13:15.700 --> 00:13:18.480] Then we store what is the first three slot.
+[00:13:18.640 --> 00:13:20.160] I will say more about this in a moment.
+[00:13:20.540 --> 00:13:22.240] And then we store two pointers.
+[00:13:22.500 --> 00:13:24.960] Basically one is data start.
+[00:13:25.140 --> 00:13:30.040] So where's my data here?
+[00:13:32.680 --> 00:13:36.820] So, data start points here, if this is a tuple, then data start points here.
+[00:13:37.080 --> 00:13:44.040] And if I insert now, if I insert new items, then I update my pointer to always point to
+[00:13:44.040 --> 00:13:47.600] the first tuple, the first block here.
+[00:13:47.800 --> 00:13:50.480] So you always point to the beginning of the data.
+[00:13:50.600 --> 00:13:52.780] So this grows basically in this direction.
+[00:13:53.840 --> 00:14:00.680] And now the last one here, free space, this is the space that would be available after
+[00:14:00.680 --> 00:14:01.460] compactification.
+[00:14:01.800 --> 00:14:03.440] because this is just what I said.
+[00:14:05.080 --> 00:14:07.380] If you delete something, then,
+[00:14:07.500 --> 00:14:08.980] so for example, if I delete this here,
+[00:14:09.560 --> 00:14:11.440] then I do decrease the free space.
+[00:14:11.720 --> 00:14:15.220] So if I delete, then I do increase my free space,
+[00:14:15.740 --> 00:14:17.900] but I do not update the data start.
+[00:14:18.340 --> 00:14:19.960] Now, because there's a tuple in front,
+[00:14:20.080 --> 00:14:21.580] I mean, if I delete the very first tuple,
+[00:14:21.800 --> 00:14:25.260] I can update data start and move the data start back.
+[00:14:25.480 --> 00:14:27.380] But if I delete something in the middle, I do nothing.
+[00:14:27.580 --> 00:14:29.460] I just increase the free space.
+[00:14:29.460 --> 00:14:30.760] I say there is enough free space.
+[00:14:31.480 --> 00:14:37.360] Now we see that in principle, so we say we have two things, let's call this effective
+[00:14:37.360 --> 00:14:45.820] ... effective ... oh, that's a long word.
+[00:14:46.080 --> 00:14:47.240] Let's write it differently.
+[00:14:47.500 --> 00:14:51.920] We say effective free space, EFS, I just made up this acronym, effective free space.
+[00:14:52.920 --> 00:15:00.420] is page size minus header size,
+[00:15:05.760 --> 00:15:09.020] minus slot count,
+[00:15:10.560 --> 00:15:16.160] slot count times slot size.
+[00:15:21.040 --> 00:15:29.800] Okay, so this is the space of this page, except the header, this was 3D header size, except
+[00:15:29.800 --> 00:15:32.780] the space for the slots and of course, except the space of the data.
+[00:15:33.300 --> 00:15:35.300] Let's write the minus somewhere.
+[00:15:37.120 --> 00:15:45.120] So minus, minus, and this is the size of the data, the size of the data is page size.
+[00:15:52.780 --> 00:15:58.040] Okay, so this is the effective free space and we realize of course that effective free
+[00:15:58.040 --> 00:16:01.320] space is less or equal to free space.
+[00:16:04.160 --> 00:16:08.900] And the interesting case of course is if they are not equal, because if they are equal then
+[00:16:08.900 --> 00:16:11.140] I have no wasted space.
+[00:16:11.140 --> 00:16:16.840] If they are not equal, so if effective free space is less than free space, then I can
+[00:16:17.880 --> 00:16:26.100] regain space by running competitification.
+[00:16:26.420 --> 00:16:35.980] So if it's less, if EFS is less than free space, then we can do competitification.
+[00:16:36.500 --> 00:16:40.400] But we only do this if you have to, because competitification costs us something.
+[00:16:41.380 --> 00:16:43.200] we can have many items in there.
+[00:16:43.320 --> 00:16:45.280] So we don't want to do this every time we do an update,
+[00:16:45.520 --> 00:16:48.960] but only if the other would otherwise be full.
+[00:16:49.400 --> 00:16:51.200] And here you see a note on the slide.
+[00:16:52.360 --> 00:16:55.100] A slide page can contain hundreds of entries.
+[00:16:55.620 --> 00:16:57.960] This is something you should absolutely keep in mind.
+[00:16:58.080 --> 00:16:59.040] I mean, if you have, for example,
+[00:16:59.140 --> 00:17:00.480] to make an extreme case,
+[00:17:00.680 --> 00:17:02.780] you have a 16 kilobytes page
+[00:17:03.320 --> 00:17:05.340] and we have my tuple perhaps has only,
+[00:17:06.680 --> 00:17:08.560] let's say eight byte tuples.
+[00:17:10.100 --> 00:17:16.440] So then just say 8 bytes tuple and 8 byte header, 8 byte slot.
+[00:17:17.300 --> 00:17:21.900] Could be that I have such a case and then I can of course fit 1024 entries and a bit
+[00:17:21.900 --> 00:17:23.360] less because it's better for the header.
+[00:17:23.920 --> 00:17:31.040] But let's say roughly 1000 entries on a page.
+[00:17:35.140 --> 00:17:41.060] And, okay, so this is a clearly non-zero number and this means we must be a bit careful.
+[00:17:41.200 --> 00:17:46.120] For example, if you want to insert something, what you should not do is check for what is
+[00:17:46.120 --> 00:17:47.160] the first free slot.
+[00:17:47.620 --> 00:17:54.260] Because if you do this for a thousand entries, remember if you do this n, if you do n insert,
+[00:17:54.480 --> 00:17:56.460] so this is O of n square.
+[00:17:57.700 --> 00:18:01.400] And because first entry of course only has to check one, second entry has to check two,
+[00:18:01.540 --> 00:18:03.220] third entry has to check three and so on.
+[00:18:03.560 --> 00:18:07.640] So after the nth entry we have to check n entries, other entries, n minus one, other
+[00:18:07.640 --> 00:18:07.960] entries.
+[00:18:08.280 --> 00:18:11.000] Therefore we have the order of n square runtime.
+[00:18:11.700 --> 00:18:12.980] This is problematic.
+[00:18:12.980 --> 00:18:15.480] So we do not want to do this.
+[00:18:15.660 --> 00:18:16.520] So n square is bad.
+[00:18:17.500 --> 00:18:21.000] So you should not scan your slots to find a file out was this free.
+[00:18:21.200 --> 00:18:22.020] It's too expensive.
+[00:18:22.700 --> 00:18:24.320] Therefore we use this hint here.
+[00:18:24.320 --> 00:18:26.700] Now we remember what is the first free slot.
+[00:18:27.420 --> 00:18:31.780] And therefore if you insert something and you want to check is there a free slot, you
+[00:18:31.780 --> 00:18:32.600] look at this entry.
+[00:18:32.760 --> 00:18:34.400] If there is no free slot, we stop immediately.
+[00:18:34.900 --> 00:18:39.200] Otherwise we take the free slot and then continue scanning to the next free slot.
+[00:18:39.540 --> 00:18:43.400] This usually means only a large linear scan over the data.
+[00:18:43.540 --> 00:18:45.980] So this is basically a cache for our free slot.
+[00:18:47.180 --> 00:18:50.720] Okay, and this number of course is only updated if you do deletes.
+[00:18:50.720 --> 00:18:53.080] and we usually have far more inserts and deletes,
+[00:18:53.140 --> 00:18:55.100] and therefore we don't have a lot of these.
+[00:18:56.660 --> 00:18:59.700] So performance is pretty critical for the slotted pages.
+[00:19:00.240 --> 00:19:04.080] I mean, you could say, hey, these are only 16 kilobytes or 32 kilobytes,
+[00:19:04.220 --> 00:19:05.360] it's not that bad, but it's not true.
+[00:19:05.560 --> 00:19:07.760] Whereas in reality, performance is quite crucial.
+[00:19:08.020 --> 00:19:11.800] If you do a naive implementation, your slotted page will be slow.
+[00:19:13.820 --> 00:19:17.180] Okay, now next question is, what is in the slot?
+[00:19:17.840 --> 00:19:21.840] And so I just said we need 8 bytes for the slot, for example, but what do you really
+[00:19:21.840 --> 00:19:22.460] store there?
+[00:19:22.780 --> 00:19:25.260] And so basically we need two kinds of information.
+[00:19:25.480 --> 00:19:28.480] First we need the offset of the tuple within the page.
+[00:19:28.620 --> 00:19:30.040] We must know where it is.
+[00:19:30.180 --> 00:19:36.820] So if, for example, if this is my page here, so on this here is now byte position 0, this
+[00:19:36.820 --> 00:19:41.140] is byte position here, 2 to the power of 16 minus 1.
+[00:19:41.420 --> 00:19:45.980] And so this is the last, or if I accept them, this of course without minus 1.
+[00:19:47.380 --> 00:19:52.560] beginning at the end of the page. Now if my tuple is for example here, then I could say,
+[00:19:52.700 --> 00:20:01.200] this might be at offset, I just made it up roughly, let's say 2500. So it's this byte position.
+[00:20:01.540 --> 00:20:06.260] Therefore here I would have a header. Then I would write here, okay, my first tuple is at position
+[00:20:07.120 --> 00:20:13.220] 2500. And I must also know how large is the tuple. So if this here is for example 30 bytes,
+[00:20:13.220 --> 00:20:16.680] then I write here 30.
+[00:20:16.940 --> 00:20:19.480] So I store the offset in the page
+[00:20:19.480 --> 00:20:20.900] and the length of the data item.
+[00:20:21.000 --> 00:20:25.040] And this allows me to reference the data item itself.
+[00:20:26.100 --> 00:20:28.900] Okay, so conceptually quite simple,
+[00:20:29.100 --> 00:20:29.680] position and length.
+[00:20:30.040 --> 00:20:32.320] Now I said conceptually quite simple
+[00:20:32.320 --> 00:20:34.980] and reality can be slightly more complicated
+[00:20:34.980 --> 00:20:36.240] than you might think
+[00:20:36.240 --> 00:20:40.460] because there can be, in rare circumstances,
+[00:20:40.460 --> 00:20:43.380] be cases where you want to store empty tuples.
+[00:20:44.480 --> 00:20:47.200] You could say, why do you ever want to store empty tuples?
+[00:20:47.360 --> 00:20:49.160] Trust me, there are cases where you want to do this.
+[00:20:49.820 --> 00:20:54.040] Most obvious example, if you just store a single string, and the string cannot be null
+[00:20:54.040 --> 00:20:58.440] and nothing else, so just a single string, then you might wish to just store the string
+[00:20:58.440 --> 00:20:59.520] as it is in the tuple.
+[00:21:00.020 --> 00:21:02.220] And then the length of the tuple is the length of the string.
+[00:21:03.540 --> 00:21:07.760] And then because somebody can insert an empty string, of course, we can have empty tuples.
+[00:21:09.140 --> 00:21:13.240] Now, if you say offset length, no problem, so I just put in the length zero.
+[00:21:13.760 --> 00:21:18.800] Yeah, but now we have a problem that we must distinguish an empty tuple from a tuple that
+[00:21:18.800 --> 00:21:21.100] was deleted, from a free slot basically.
+[00:21:21.560 --> 00:21:25.520] And then if we do this like this, we say if my front slot is free, so there is no tuple
+[00:21:25.520 --> 00:21:30.900] exists, then we drive right here zero zero, this means free slots, no space, so you can
+[00:21:30.900 --> 00:21:31.660] just reuse it.
+[00:21:31.960 --> 00:21:36.580] But if you want to store an empty tuple, so a tuple that does exist but just has the length
+[00:21:37.760 --> 00:21:42.760] Then we store it with offset larger than zero, for example, one zero, and then we can distinguish
+[00:21:42.760 --> 00:21:43.640] these two cases.
+[00:21:44.020 --> 00:21:44.100] Okay.
+[00:21:44.200 --> 00:21:45.820] So this one here exists as empty.
+[00:21:46.020 --> 00:21:49.220] The other one does not exist and it's empty too, of course, but it doesn't exist.
+[00:21:50.060 --> 00:21:56.920] So then we, otherwise this is our encoding, we just store offset in length in the, in
+[00:21:56.920 --> 00:21:57.540] the slot.
+[00:21:59.800 --> 00:22:05.020] Now so far everything looked great in the page where we say we just store the data and
+[00:22:05.020 --> 00:22:06.880] if we don't fit, we put it on a different page.
+[00:22:07.760 --> 00:22:14.380] a conceptually simple thing problem is there can be very ugly things happening
+[00:22:14.380 --> 00:22:20.080] in combination with transactions so here's an example transaction load that
+[00:22:21.520 --> 00:22:30.620] creates difficulties and also first assume that so i have a page this was my original page now
+[00:22:30.620 --> 00:22:35.960] on this page i had a data item let's call this i1 and this was for example very large
+[00:22:38.120 --> 00:22:41.940] Now transaction one comes and deletes this data item.
+[00:22:42.220 --> 00:22:45.240] And of course I will have, I didn't draw this very nice.
+[00:22:45.320 --> 00:22:46.820] Of course I also have a header in the slot.
+[00:22:48.440 --> 00:22:51.120] So now transaction one comes and deletes this data item one.
+[00:22:51.240 --> 00:22:51.900] And this is no problem.
+[00:22:52.020 --> 00:22:54.240] Of course we can do this because now we have just free space.
+[00:22:54.420 --> 00:22:54.500] Okay.
+[00:22:54.620 --> 00:22:55.620] So this is easy.
+[00:22:55.720 --> 00:22:56.800] We can just do this.
+[00:22:59.840 --> 00:23:00.280] Okay.
+[00:23:00.660 --> 00:23:04.120] Now transaction two is a new data item I2.
+[00:23:04.120 --> 00:23:10.300] And after this, my page is full and really full.
+[00:23:11.280 --> 00:23:15.540] I mean, here you see some free space because I didn't draw to the bitter end, but I assume
+[00:23:15.540 --> 00:23:16.680] this is really, really full.
+[00:23:17.500 --> 00:23:18.580] Now transaction one commits.
+[00:23:19.480 --> 00:23:19.620] Okay.
+[00:23:20.100 --> 00:23:21.360] Sorry, transaction two commits.
+[00:23:21.780 --> 00:23:22.180] Okay.
+[00:23:22.240 --> 00:23:25.580] So at this point, this page is fixed, stored on the page and this is added as it is.
+[00:23:25.960 --> 00:23:27.900] And now transaction one comes in the bolts.
+[00:23:28.760 --> 00:23:32.780] Now we have a problem because we must put item 1 back.
+[00:23:33.420 --> 00:23:37.820] So here we must put item 1, but I remember the page is full, I cannot put item 1.
+[00:23:38.640 --> 00:23:45.160] Okay, now the theory says no problem, we just create an indirection, we put I1 on a different
+[00:23:45.160 --> 00:23:45.620] page.
+[00:23:45.820 --> 00:23:49.080] We have a new page and we just put I1 here.
+[00:23:49.480 --> 00:23:53.180] And then I put a forward from this page to that page.
+[00:23:53.520 --> 00:23:54.800] So this is the theory.
+[00:23:54.800 --> 00:23:57.400] The problem is, the forward also costs space.
+[00:23:57.800 --> 00:24:03.180] That's because if we think about this picture here, we saw this nice looking forward record
+[00:24:03.180 --> 00:24:06.540] here, this takes up probably at least 8 bytes, perhaps more.
+[00:24:07.020 --> 00:24:09.180] So this costs me space too.
+[00:24:09.440 --> 00:24:10.620] And where do I put this?
+[00:24:10.680 --> 00:24:12.460] Because if my page is full, then it's full.
+[00:24:12.680 --> 00:24:13.880] So I cannot put.
+[00:24:15.360 --> 00:24:19.520] So one option of course would be to move both i1 and i2.
+[00:24:19.740 --> 00:24:20.800] So this would work.
+[00:24:20.800 --> 00:24:25.520] Because then I just move I2 to another page too, then I have an interaction for I2.
+[00:24:25.640 --> 00:24:29.140] But now I have space on the original page for both entries.
+[00:24:29.320 --> 00:24:33.980] So this box is ugly to implement, very tricky to implement, because now suddenly we have
+[00:24:33.980 --> 00:24:40.200] to look at three pages and so, yeah, so difficult to implement and we don't want to do this.
+[00:24:41.380 --> 00:24:43.520] So we don't want the extra complexity.
+[00:24:43.740 --> 00:24:49.280] Therefore, your life is much, much, much, much easier if you implement it differently.
+[00:24:50.800 --> 00:24:55.280] implement if you store the tuple ID of a forwarded record
+[00:24:55.280 --> 00:24:56.760] inside the slot.
+[00:24:57.780 --> 00:25:00.260] Which means you take the slots that you have on the page
+[00:25:00.260 --> 00:25:03.580] and inside this, you store the new tuple ID
+[00:25:03.580 --> 00:25:04.780] if it was forwarded.
+[00:25:04.900 --> 00:25:06.320] And if it was not forwarded,
+[00:25:06.320 --> 00:25:09.180] of course then we point the original space.
+[00:25:10.220 --> 00:25:13.860] And we can do this if we can borrow one bit
+[00:25:13.860 --> 00:25:15.760] from the tuple ID, which we often can,
+[00:25:15.960 --> 00:25:18.740] or we have some other way to detect some invalid tuple ID.
+[00:25:18.740 --> 00:25:23.860] And for example, you could say my tablid is, let's say eight bytes in size.
+[00:25:24.580 --> 00:25:31.460] And I promise my topmost byte of my eight bytes will never be all one, so will never
+[00:25:31.460 --> 00:25:32.860] be hex ff.
+[00:25:33.320 --> 00:25:35.440] And this will never be the case for tablid.
+[00:25:36.340 --> 00:25:41.220] And therefore, if I see this and I know this is not a tablid, so I can distinguish my entry
+[00:25:41.220 --> 00:25:49.580] between a valid table ID and an invalid one, and if such a mechanism, then I can store both
+[00:25:49.580 --> 00:25:54.400] a regular slot and a table ID in the same space.
+[00:25:55.240 --> 00:26:01.620] Now a disadvantage of course is this wastes a bit space, because now my slots must be
+[00:26:01.620 --> 00:26:02.860] as large as my table IDs.
+[00:26:03.220 --> 00:26:08.980] And my table IDs, remember here, when we said it's probably 8 bytes at least, 8 bytes,
+[00:26:08.980 --> 00:26:10.860] That's why here we just need offset and length.
+[00:26:11.040 --> 00:26:20.000] And if my page size is at most 16 kilobytes, so I could do this with two byte and two byte
+[00:26:20.000 --> 00:26:25.960] to mean four byte would be enough if my space is 16 kilobytes, oh, sorry, not 64.
+[00:26:26.860 --> 00:26:34.480] If my page is at most 64 kilobytes, then I could do this with two byte and two byte.
+[00:26:34.860 --> 00:26:35.340] Okay.
+[00:26:35.340 --> 00:26:36.920] It's larger than I need four byte anyway.
+[00:26:36.920 --> 00:26:38.600] So that's not a problem.
+[00:26:39.100 --> 00:26:42.720] If it's larger than 60 kilobytes, then we need larger entries anyway.
+[00:26:43.140 --> 00:26:49.260] But if it's at most 60 kilobytes, I could use four byte slots, so two byte and two byte.
+[00:26:50.140 --> 00:26:52.080] But trust me, you don't want to do this.
+[00:26:53.160 --> 00:26:54.880] What you want to do, sorry, too fast.
+[00:26:55.060 --> 00:27:01.140] What I want to do is, you want to use eight bytes for the slot and use this eight bytes
+[00:27:01.140 --> 00:27:05.700] to encode both offset length encoding and the table ID.
+[00:27:06.920 --> 00:27:11.920] is much, much easier if you do this, because this terrible problem here that we don't have
+[00:27:11.920 --> 00:27:13.580] enough space for the undo never happens.
+[00:27:13.820 --> 00:27:17.640] Because if we undo, we always have space in the slot itself.
+[00:27:18.060 --> 00:27:22.660] And so we can always forward it, no problem, because the slot itself gives me space to
+[00:27:22.660 --> 00:27:23.360] store the forward.
+[00:27:23.760 --> 00:27:29.040] Now this is much easier to implement, and therefore I warmly recommend you to do this.
+[00:27:30.620 --> 00:27:34.580] And I think in the exercises you will implement this, therefore this is not only a theoretical
+[00:27:34.580 --> 00:27:40.660] argument, but you will probably become familiar with the implementation of a slotted page.
+[00:27:41.200 --> 00:27:46.500] And therefore you want to do this, store the tuple ID of a forwarded tuple in the slot
+[00:27:46.500 --> 00:27:47.820] itself, much easier.
+[00:27:49.440 --> 00:27:49.540] Okay.
+[00:27:49.780 --> 00:27:53.520] And so then, then this is one way we can be implemented.
+[00:27:53.760 --> 00:27:56.320] So one possible slot implementation looks like this.
+[00:27:57.680 --> 00:27:59.960] So in total here, we have eight bytes in my slot.
+[00:28:00.780 --> 00:28:04.740] Yeah, so this is in total is each box is one byte.
+[00:28:04.900 --> 00:28:05.820] So these are eight bytes.
+[00:28:08.520 --> 00:28:12.040] So and then we say, we'd look at the first byte.
+[00:28:12.360 --> 00:28:17.060] If the first byte is not or another etc.
+[00:28:17.080 --> 00:28:19.560] Next in the beginning is not OXFF.
+[00:28:19.780 --> 00:28:24.260] So it's not all bits set, then the whole eight bytes are tablid.
+[00:28:24.260 --> 00:28:38.920] So then this here can be, this is a tuple ID if t is not equal to OXFF.
+[00:28:40.040 --> 00:28:44.240] So then this is a tuple ID and then this slot points to another record.
+[00:28:44.480 --> 00:28:45.880] So then point to the original record.
+[00:28:45.880 --> 00:28:56.480] Okay, otherwise if t is not this, then we, sorry, if t is equal to OXFF, then it is a
+[00:28:56.480 --> 00:28:57.120] regular slot.
+[00:28:57.580 --> 00:29:03.560] Okay, then we look at the next byte and then we say, if this here is an indicator to tell
+[00:29:03.560 --> 00:29:06.960] me was this record moved from somewhere else, yes or no.
+[00:29:07.160 --> 00:29:11.580] So I want to move this, sorry, I want to know this if my record was moved from somewhere
+[00:29:12.520 --> 00:29:17.320] So if this is a zero here, then it was not moved from somewhere else, so standard case.
+[00:29:17.520 --> 00:29:20.760] So then O and L just point to offset and length.
+[00:29:20.940 --> 00:29:23.160] So we use 8 bytes for offset and 8 bytes for length.
+[00:29:23.340 --> 00:29:27.340] And then we can encode, we can handle megabyte pages with this.
+[00:29:27.460 --> 00:29:31.180] So we just encode everything with offset and length.
+[00:29:31.440 --> 00:29:35.820] If S is not equal to zero, then in principle it's the same.
+[00:29:35.820 --> 00:29:42.920] So again, we have tuple at offset and length, but the first eight bytes of the tuple now
+[00:29:42.920 --> 00:29:44.460] contains the original tuple idea.
+[00:29:45.400 --> 00:29:46.460] Now why do we do this?
+[00:29:47.260 --> 00:29:50.180] So this here is a trick to speed up scanning.
+[00:29:51.420 --> 00:29:57.700] And so this we use this speed up scanning.
+[00:29:59.160 --> 00:30:05.120] This is important to get good scan performance if you ever have to move tuples.
+[00:30:05.820 --> 00:30:12.320] do we do this? Remember when we come and look at this page here, when we read, I mean, if you could
+[00:30:12.320 --> 00:30:16.360] use an index, we follow the chain, that's it. But if you do a table scan, table scan means we look at
+[00:30:16.360 --> 00:30:22.720] every tuple in my relation. So I look at everything. If we do a table scan and I come to this page here
+[00:30:24.460 --> 00:30:29.980] and then counter this record where it was moved, we do nothing. So we just ignore it,
+[00:30:30.080 --> 00:30:35.100] because we know that we will see the pointer at some later point in time. So we do nothing,
+[00:30:35.820 --> 00:30:41.480] the chain. Usually you read this record because it's correct in place, but we ignore this record.
+[00:30:41.940 --> 00:30:48.200] Okay. Then at some later point in time, we encounter the second page and now we see the
+[00:30:48.200 --> 00:30:53.420] original record that we had seen before. So at this point now I do read this. Okay. Now we do
+[00:30:53.420 --> 00:31:00.120] to read this, but what I have to do now is I have to record the original table idea. I mean,
+[00:31:00.820 --> 00:31:04.900] most of the times the table ID is invisible to the user, even though some database systems
+[00:31:05.880 --> 00:31:08.700] what is the tuple ID, but we need this tuple ID,
+[00:31:08.760 --> 00:31:10.740] for example, to do updates or deletes or so.
+[00:31:11.660 --> 00:31:14.100] And delete on update first runs a query
+[00:31:14.100 --> 00:31:15.740] to figure out which tuples are affected
+[00:31:15.740 --> 00:31:16.880] and then performs update.
+[00:31:17.080 --> 00:31:20.500] And for this cases, we need the tuple ID internally
+[00:31:20.500 --> 00:31:21.840] to perform the change.
+[00:31:21.940 --> 00:31:23.820] Therefore we must produce a correct tuple ID.
+[00:31:24.000 --> 00:31:25.980] So in the moment that we read this,
+[00:31:26.280 --> 00:31:29.520] we report the tuple ID not as,
+[00:31:29.700 --> 00:31:33.660] so what we could report is five, six, seven,
+[00:31:33.660 --> 00:31:37.620] and then 0, 0, 0, 0, 5.
+[00:31:37.840 --> 00:31:38.800] We don't do this.
+[00:31:39.240 --> 00:31:40.580] So don't report this.
+[00:31:40.700 --> 00:31:44.120] Instead, we report 1, 2, 3, dot 7.
+[00:31:44.220 --> 00:31:46.160] So we report the original tuple ID
+[00:31:46.160 --> 00:31:47.420] so that if somebody updates,
+[00:31:47.620 --> 00:31:49.120] then all the correct things happen.
+[00:31:49.940 --> 00:31:51.920] But of course, we must know that this is the case.
+[00:31:52.040 --> 00:31:53.560] We must distinguish the tuple
+[00:31:53.560 --> 00:31:56.040] that is correctly placed on this page
+[00:31:56.040 --> 00:31:58.040] and the tuple that was moved from somewhere else.
+[00:31:59.180 --> 00:32:02.300] And this is what we do here.
+[00:32:04.380 --> 00:32:08.260] sorry, this s-byte to indicate that the tupper was moved
+[00:32:08.260 --> 00:32:10.780] and it was moved, then we store the original tupper ID
+[00:32:10.780 --> 00:32:14.720] in front of the tupper, so that we can report it.
+[00:32:14.900 --> 00:32:16.480] Now, so then when we scan it,
+[00:32:16.620 --> 00:32:18.500] we report the original tupper ID
+[00:32:18.500 --> 00:32:20.200] instead of its current physical position.
+[00:32:20.660 --> 00:32:24.180] Okay, and with this trick, scans are very fast.
+[00:32:24.560 --> 00:32:26.840] Also moving tupper costs you nothing in scan performance,
+[00:32:26.860 --> 00:32:27.860] just in .excess.
+[00:32:29.840 --> 00:32:32.220] Okay, so much about the pages.
+[00:32:34.340 --> 00:32:39.180] I learned at least the basic in an introduction to database class, probably not as detailed
+[00:32:39.180 --> 00:32:40.120] as we do it here.
+[00:32:40.460 --> 00:32:45.440] And you will also do an implementation yourself because then you understand much better how
+[00:32:45.440 --> 00:32:46.200] everything works.
+[00:32:46.600 --> 00:32:49.420] But now we assume we have a slotted page mechanism.
+[00:32:49.580 --> 00:32:52.900] So we can store basically my slotted page, it looks like this.
+[00:32:53.120 --> 00:32:53.740] So I can store.
+[00:32:54.140 --> 00:32:59.220] So here we say I have a few slots, header, slot, slot, slot, and then I have here tuple.
+[00:33:01.240 --> 00:33:03.940] Now the next question is, what is in this box?
+[00:33:04.340 --> 00:33:06.520] So how do we materialize the table?
+[00:33:09.260 --> 00:33:14.360] And of course what we could do is we could just take all the attributes in my relation
+[00:33:14.360 --> 00:33:17.680] and just write them as they are in this right range.
+[00:33:18.000 --> 00:33:23.760] So here for example if an integer field we just write the number, 4, 5, 6, then we have
+[00:33:23.760 --> 00:33:29.200] a string, then we can say for example, string 3, then we have ABC, then we have another
+[00:33:29.220 --> 00:33:37.320] integer 2, 2, 2, and then we have length 5, a, a, a, a, a, so that's it.
+[00:33:38.080 --> 00:33:41.720] Our civilization works, but this is not a good idea.
+[00:33:42.640 --> 00:33:45.080] I mean, civilization gives me some great content.
+[00:33:45.280 --> 00:33:49.460] I can store everything, I can read everything, but query performance is bad.
+[00:33:49.880 --> 00:33:52.300] Now let's give, give this field a name.
+[00:33:52.300 --> 00:34:01.160] Then let's say somebody says, let's call this A, B, this here now is a field C, D and this
+[00:34:01.160 --> 00:34:02.080] here is a field E.
+[00:34:04.680 --> 00:34:16.260] So assume somebody says, select some D from R.
+[00:34:18.080 --> 00:34:20.940] So how do we do this?
+[00:34:22.300 --> 00:34:24.820] We find the tuple and then I want to find D.
+[00:34:25.100 --> 00:34:26.840] Okay, how do I find the position of D?
+[00:34:27.120 --> 00:34:38.360] I first read the length of C and then I add the length of C to this position basically.
+[00:34:38.700 --> 00:34:44.620] So I take this position here and do a plus and then I find the position of D.
+[00:34:45.060 --> 00:34:48.100] Okay, so it means I have to do arithmetic to read a field.
+[00:34:48.100 --> 00:34:53.080] Now we say this D is perhaps not that bad, if assume we have even more, let's say we
+[00:34:53.080 --> 00:35:02.980] have another field F, so if I don't say some D but I do some F, then it's even more complicated.
+[00:35:03.760 --> 00:35:10.660] I read C, then I find the position of, let's clear this carefully.
+[00:35:12.200 --> 00:35:17.880] So I read the length of C, with the length of C I find the position of E, then I read
+[00:35:18.100 --> 00:35:20.400] length of E and with the length of E I find F.
+[00:35:21.360 --> 00:35:25.560] So clearly the excess cost for an attribute is linear,
+[00:35:25.800 --> 00:35:27.160] at least in worst case, is linear
+[00:35:27.160 --> 00:35:28.480] at the number of attributes that I have.
+[00:35:28.700 --> 00:35:30.200] Because I have many string columns
+[00:35:30.200 --> 00:35:32.100] and string columns are variable lengths,
+[00:35:32.340 --> 00:35:34.100] I have to read all of the string columns
+[00:35:34.100 --> 00:35:36.400] in front of the columns that I'm interested in
+[00:35:37.600 --> 00:35:40.100] until I can compute the position of the attributes
+[00:35:40.100 --> 00:35:40.820] that I want to have.
+[00:35:41.460 --> 00:35:42.280] This is bad.
+[00:35:42.900 --> 00:35:45.100] I mean, in this case I have only five attributes.
+[00:35:45.100 --> 00:35:46.920] there are people who have hundreds,
+[00:35:47.260 --> 00:35:49.240] thousands of columns in a tuple.
+[00:35:49.560 --> 00:35:51.460] Okay, if you ask me, this is a bit crazy,
+[00:35:51.640 --> 00:35:53.020] but I happen to know people
+[00:35:53.020 --> 00:35:54.920] who have database systems
+[00:35:54.920 --> 00:35:57.560] with many hundreds of fields
+[00:35:57.560 --> 00:35:58.880] in a single relation.
+[00:35:59.340 --> 00:36:02.420] And then O of N excess cost
+[00:36:02.420 --> 00:36:03.700] is highly unattractive.
+[00:36:03.800 --> 00:36:05.620] It's super expensive to access
+[00:36:05.620 --> 00:36:06.860] the attribute at the end.
+[00:36:07.200 --> 00:36:09.180] So serialization is not a good idea.
+[00:36:10.100 --> 00:36:11.640] Now, what should we do instead?
+[00:36:12.860 --> 00:36:14.320] So what we do instead is
+[00:36:15.320 --> 00:36:17.760] We first, we do two things.
+[00:36:17.980 --> 00:36:20.940] We split my tuple into two parts,
+[00:36:21.200 --> 00:36:23.720] namely the fixed part and the variable size part.
+[00:36:23.840 --> 00:36:25.140] So this is a fixed part.
+[00:36:31.440 --> 00:36:33.660] And then this year is a variable length part.
+[00:36:36.920 --> 00:36:37.400] Okay.
+[00:36:37.640 --> 00:36:40.600] And now the entries in the fixed part
+[00:36:40.600 --> 00:36:42.180] I can access in constant time, obviously.
+[00:36:42.380 --> 00:36:43.480] So these were my fields,
+[00:36:45.400 --> 00:36:47.420] A, B, C, D, E.
+[00:36:47.600 --> 00:36:50.760] Okay, so this is the field A, this is the field B,
+[00:36:51.140 --> 00:36:53.800] this is the field D and this is the,
+[00:36:53.880 --> 00:36:55.800] oh no, did I make it correct?
+[00:36:55.960 --> 00:36:56.040] Yes.
+[00:36:56.460 --> 00:37:00.480] So, and then this here is the string C
+[00:37:01.140 --> 00:37:03.860] and this here is the string E.
+[00:37:04.720 --> 00:37:07.380] Okay, so I have moved the strings to the end.
+[00:37:09.000 --> 00:37:13.920] And what I also did is inside the fixers part,
+[00:37:15.100 --> 00:37:16.460] length as I did previously.
+[00:37:16.620 --> 00:37:17.680] So on the previous slide, I said,
+[00:37:17.760 --> 00:37:18.600] I saw the length of the string.
+[00:37:18.740 --> 00:37:19.300] I don't do this.
+[00:37:19.680 --> 00:37:21.980] Instead, I store the end of the string.
+[00:37:22.460 --> 00:37:25.700] So I remember here, you will see this pointer drawn.
+[00:37:25.880 --> 00:37:27.320] We store the end of the string.
+[00:37:27.480 --> 00:37:29.520] Now, why is the end and not the beginning?
+[00:37:29.680 --> 00:37:32.340] I mean, because first the beginning of C would be pointless.
+[00:37:32.460 --> 00:37:35.320] I can just compute this as a position of C.
+[00:37:36.420 --> 00:37:39.020] And you can ask why not the length?
+[00:37:39.820 --> 00:37:42.040] Because the length itself does not help me
+[00:37:42.040 --> 00:37:43.060] to find an entry.
+[00:37:43.060 --> 00:37:50.400] And also because if I have many string columns and just store the length, then the offset
+[00:37:50.400 --> 00:38:09.960] of string i is then the size of the fixed part, fixed plus the sum of the length of s, j, where
+[00:38:09.960 --> 00:38:15.140] j is between one and i minus one.
+[00:38:15.940 --> 00:38:17.620] Yeah, so this is also don't want to do this.
+[00:38:17.780 --> 00:38:20.180] So I don't want to update all the length,
+[00:38:20.320 --> 00:38:20.820] so this is bad.
+[00:38:21.580 --> 00:38:23.580] Don't do this, but just do instead,
+[00:38:23.720 --> 00:38:24.900] instead of storing the length is,
+[00:38:26.320 --> 00:38:27.600] you store the end,
+[00:38:27.820 --> 00:38:30.600] and then the length can be computed easily.
+[00:38:30.880 --> 00:38:33.160] Because the length of a string now,
+[00:38:33.340 --> 00:38:35.320] so the length of a string i,
+[00:38:35.320 --> 00:38:47.800] Okay, string i is the end of i minus the end of i minus 1.
+[00:38:48.160 --> 00:38:50.280] Okay, except for the first string, of course.
+[00:38:50.280 --> 00:39:05.460] Because for the first string, otherwise it's end i minus size of fixed, fixed if i equal
+[00:39:05.460 --> 00:39:05.760] zero.
+[00:39:05.940 --> 00:39:07.480] Of course, for the first string is different.
+[00:39:07.740 --> 00:39:10.020] First string is the end of the first string minus the fixed part.
+[00:39:10.160 --> 00:39:14.400] But for all other strings, it's my end minus the end of the previous string.
+[00:39:14.400 --> 00:39:15.260] Okay.
+[00:39:16.200 --> 00:39:20.980] And this means that I can access any attribute in constant time.
+[00:39:21.300 --> 00:39:26.080] The fixed size attributes I can access in constant time anyway, because it means they
+[00:39:26.080 --> 00:39:28.540] are in the fixed size parts, so they are always the same position.
+[00:39:29.040 --> 00:39:33.140] And the variable length elements, I can use this simple computation here and then I can
+[00:39:33.140 --> 00:39:40.280] get the position and the length of every string in constant time.
+[00:39:41.420 --> 00:39:45.960] So this is a pretty useful way to store variable length records.
+[00:39:47.300 --> 00:39:53.300] Now, so to get even better performance, we start to reorder the attributes.
+[00:39:53.520 --> 00:39:58.520] Now, we don't, I mean, in this case, I said I store them ABC, even though I split them
+[00:39:58.520 --> 00:40:01.600] and fixed them in variable length, I store them as they were declared.
+[00:40:01.600 --> 00:40:03.900] So ABC in the same order as in the table.
+[00:40:04.100 --> 00:40:06.200] In reality, you do not want to do this.
+[00:40:06.940 --> 00:40:15.540] So what you do instead is you separate in fixed and variable part of course, and in
+[00:40:15.540 --> 00:40:19.280] for the fixed size part, you treat a string basically as two elements.
+[00:40:19.460 --> 00:40:25.400] So a string is a length field as a fixed size and the data, this is variable size of course.
+[00:40:25.500 --> 00:40:27.680] This is fixed and this is variable size.
+[00:40:27.900 --> 00:40:29.600] And we really treat them as is.
+[00:40:29.800 --> 00:40:32.800] So for the length, we treat them as a separate attribute.
+[00:40:34.280 --> 00:40:40.800] Now we take all attributes that we have and we sort them by decreasing alignment.
+[00:40:41.260 --> 00:40:41.820] Okay.
+[00:40:41.860 --> 00:40:44.160] Now what does alignment mean?
+[00:40:44.940 --> 00:40:49.720] Now, I'm not sure how familiar you are with hardware.
+[00:40:50.480 --> 00:40:54.520] In particular, if you're only used to Intel architectures, you probably are not used to
+[00:40:54.520 --> 00:40:57.660] problems with alignment because the Intel processor is nice to you.
+[00:40:57.660 --> 00:41:02.660] Basically alignment means, so if I have an aligned,
+[00:41:07.980 --> 00:41:09.840] aligned, how do you call this?
+[00:41:10.000 --> 00:41:12.980] Aligned variable, yeah.
+[00:41:15.480 --> 00:41:16.520] How do you write this?
+[00:41:16.820 --> 00:41:22.220] So aligned X means that if he takes the address of X,
+[00:41:24.380 --> 00:41:25.980] we had to process here as a number.
+[00:41:30.200 --> 00:41:34.380] This is a number, we take the address of x,
+[00:41:34.580 --> 00:41:35.840] we interpret it as a number,
+[00:41:36.240 --> 00:41:40.560] then we compute the reminder of dividing this here
+[00:41:40.560 --> 00:41:42.840] by alignment of x.
+[00:41:48.720 --> 00:41:52.100] And then this here must be equal to zero.
+[00:41:52.340 --> 00:41:55.580] Now so basically the address of a variable
+[00:41:55.580 --> 00:41:59.040] must be a multiple of the alignment of the variable.
+[00:41:59.300 --> 00:42:00.800] Okay, this is then we consider this as aligned.
+[00:42:00.980 --> 00:42:02.980] Now it didn't explain what aligned is.
+[00:42:03.240 --> 00:42:05.520] In first approximation, this is not exactly true,
+[00:42:05.660 --> 00:42:08.640] but in first approximation, this here is the size.
+[00:42:09.700 --> 00:42:12.860] At least for basic types, size of x.
+[00:42:13.120 --> 00:42:14.840] So which means an integer,
+[00:42:16.840 --> 00:42:19.140] this is four bytes in size,
+[00:42:20.640 --> 00:42:23.740] and therefore has an alignment of
+[00:42:25.880 --> 00:42:28.520] Line, line, so much just to write here.
+[00:42:28.660 --> 00:42:30.260] It says an alignment, let's just write a,
+[00:42:30.620 --> 00:42:33.600] has an alignment of four.
+[00:42:33.820 --> 00:42:34.160] Okay.
+[00:42:34.680 --> 00:42:37.340] Long, eight bytes,
+[00:42:39.160 --> 00:42:42.240] therefore alignment is eight.
+[00:42:42.700 --> 00:42:43.000] Okay.
+[00:42:43.400 --> 00:42:46.280] Size equals alignment, at least for base types.
+[00:42:46.520 --> 00:42:48.860] Now, if you have compound types is no longer true,
+[00:42:49.020 --> 00:42:51.440] because then if your compound type,
+[00:42:51.540 --> 00:42:52.580] like you have a pair, for example,
+[00:42:52.580 --> 00:43:02.380] you have a pair of integer, integer. So then this is 2 times 4 equals 8 bytes,
+[00:43:03.220 --> 00:43:10.600] but alignment is only 4. But alignment is 4 because we only have to align each individual
+[00:43:10.600 --> 00:43:15.360] entry. Each individual entry has 4 bytes, therefore we don't need an alignment higher than 4.
+[00:43:15.360 --> 00:43:24.680] Okay, but this is just a, so a special case, so as long as we look only at individual fields,
+[00:43:25.000 --> 00:43:31.740] then we don't have compounds, we just have single values, integers or whatever, time,
+[00:43:31.920 --> 00:43:32.780] time for types, whatever.
+[00:43:33.000 --> 00:43:36.460] And this, in all these cases for simple data types, alignment equals size.
+[00:43:36.660 --> 00:43:43.620] Now, so we want that the address of a value is a multiple of the size of the value for
+[00:43:43.620 --> 00:43:44.280] simple types.
+[00:43:46.040 --> 00:43:48.000] And now why do you want to do this?
+[00:43:50.180 --> 00:43:52.200] The answer is depends on your processor.
+[00:43:52.720 --> 00:43:54.520] If you do a misaligned read,
+[00:43:54.840 --> 00:43:57.040] so now first place like makes it a bit more clear.
+[00:43:57.160 --> 00:43:58.740] Let's assume this here is my memory buffer.
+[00:44:00.600 --> 00:44:01.820] This is my memory buffer.
+[00:44:01.980 --> 00:44:04.260] This goes from zero to, I don't know, large number.
+[00:44:04.760 --> 00:44:06.820] And then if I store an integer here,
+[00:44:07.300 --> 00:44:09.640] let's say I have an int, let's call this A.
+[00:44:10.160 --> 00:44:12.540] Then I have a byte, let's call this B.
+[00:44:13.760 --> 00:44:14.860] Oops, sorry, B.
+[00:44:15.360 --> 00:44:19.840] Then this is of course at position four, then at position five, we have another integer.
+[00:44:21.480 --> 00:44:28.920] And let's call this C. Now, if you want to read the, this here is aligned, this here
+[00:44:28.920 --> 00:44:29.940] is misaligned.
+[00:44:30.720 --> 00:44:31.120] Okay.
+[00:44:32.760 --> 00:44:33.160] Misaligned.
+[00:44:33.400 --> 00:44:36.880] Because it's misaligned because its offset is not a multiple of four.
+[00:44:37.120 --> 00:44:39.820] It offset is five, five is not a multiple of four, therefore it's misaligned.
+[00:44:40.820 --> 00:44:41.220] Okay.
+[00:44:41.560 --> 00:44:44.080] And now if you want to read A, no problem, you can do this.
+[00:44:45.360 --> 00:44:47.820] You can see what happens depends on your processor.
+[00:44:48.160 --> 00:44:51.760] If you do this on for example a spark processor, your program crashes.
+[00:44:53.020 --> 00:44:57.180] Because the processor says you are not allowed to read a value that is misaligned.
+[00:44:57.440 --> 00:45:02.120] If you do this on an Intel processor, Intel is nice to you, it can do the read.
+[00:45:02.420 --> 00:45:04.940] Only thing is the read might be a bit slower.
+[00:45:05.400 --> 00:45:07.340] The misaligned reads can be slower.
+[00:45:07.520 --> 00:45:09.740] Although I should say in the past they used to be slower.
+[00:45:10.300 --> 00:45:15.080] Nowadays or already since quite a few years, Intel processors have spent a lot of optimization
+[00:45:15.360 --> 00:45:21.760] this. So on Intel processors, misaligned reads are just as fast as aligned reads, except for the
+[00:45:22.420 --> 00:45:27.000] case that the read crosses the cache line boundary, which can happen. Now, of course,
+[00:45:27.100 --> 00:45:31.980] it could be because you're misaligned, your value crosses to another cache line, then it can be
+[00:45:31.980 --> 00:45:38.080] slower. So Intel is not that bad, but in other processors it's really bad. Either it's not
+[00:45:38.080 --> 00:45:42.120] supported or it's really slow. Therefore, you want that all your values are aligned.
+[00:45:42.760 --> 00:45:48.280] Okay, how can we make sure that everything aligned? We sort them by decreasing alignment.
+[00:45:48.500 --> 00:45:53.620] So this works because alignment here, that my alignment is always the power of two.
+[00:45:53.960 --> 00:45:59.740] Now so all my alignments are the power of two and therefore it's easy to see that if you take
+[00:45:59.740 --> 00:46:08.960] powers of two and you sort them by decreasing a value and you sum them up, the current sum that
+[00:46:08.960 --> 00:46:11.960] you have is always a multiple of the values that you have.
+[00:46:12.940 --> 00:46:18.280] So for example, if you have some numbers, let's say my first attribute is 8 byte, 4
+[00:46:18.920 --> 00:46:28.560] byte, let's call this a, b is 4, c is 8, d is 1, e is 4, for example like this.
+[00:46:29.300 --> 00:46:38.940] Okay, then we sort them and then we get the numbers in sorted order, we get 8a, 8x, 8x,
+[00:46:40.940 --> 00:46:50.900] C for B for E and then it lasts 1D.
+[00:46:51.260 --> 00:46:56.180] So if you, and now if you compute offsets, this here would start offset 0, this here
+[00:46:56.180 --> 00:47:02.060] would call it offset 8, this would call it offset 16, this would start offset 20, this
+[00:47:02.060 --> 00:47:07.380] would start offset 24 and you see every offset that we get is a multiple offset alignment
+[00:47:08.960 --> 00:47:11.480] by construction, because we made it like this,
+[00:47:11.960 --> 00:47:13.760] by sorting them in decreasing alignments,
+[00:47:14.020 --> 00:47:16.460] all my attributes will be properly laid out.
+[00:47:18.360 --> 00:47:20.640] And we get on it, we get better performance
+[00:47:20.640 --> 00:47:22.540] and other processes we prevent to crash.
+[00:47:22.760 --> 00:47:24.380] So this is what we want to do.
+[00:47:25.440 --> 00:47:26.680] We want to have some aligned
+[00:47:28.860 --> 00:47:30.940] and the variable parts of the strings,
+[00:47:31.480 --> 00:47:33.920] we consider them to have the alignment ones
+[00:47:33.920 --> 00:47:34.940] that we just put them at the end.
+[00:47:35.100 --> 00:47:36.340] And so at the end we would put the strings
+[00:47:36.340 --> 00:47:38.420] because for strings alignment is not a problem.
+[00:47:38.960 --> 00:47:41.480] strings, we read them character wise anyway.
+[00:47:41.720 --> 00:47:42.780] Now strings you put at the end.
+[00:47:43.340 --> 00:47:44.700] Okay, so this is what we do.
+[00:47:44.900 --> 00:47:46.200] We rearrange them.
+[00:47:46.540 --> 00:47:49.760] So then it no longer corresponds to the order
+[00:47:49.760 --> 00:47:50.980] that it was declared in the table,
+[00:47:51.100 --> 00:47:51.800] but this doesn't matter.
+[00:47:52.020 --> 00:47:54.460] Well, because we, of course we remember the mapping.
+[00:47:54.680 --> 00:47:57.060] We can still retrieve every attribute in constant time.
+[00:47:58.100 --> 00:48:00.660] And by doing so you get better performance
+[00:48:00.660 --> 00:48:02.680] without wasting any space on padding.
+[00:48:02.860 --> 00:48:04.600] So because this is the alternative basically,
+[00:48:05.180 --> 00:48:06.580] the alternative would be to use padding
+[00:48:06.580 --> 00:48:08.420] and we do not want to do this.
+[00:48:08.960 --> 00:48:11.120] So to illustrate what would happen here,
+[00:48:11.300 --> 00:48:14.020] if you would mean there are basically two ways
+[00:48:14.020 --> 00:48:14.900] to avoid misalignment.
+[00:48:15.160 --> 00:48:17.200] One is reordering, this is what we do here.
+[00:48:17.420 --> 00:48:19.540] Second one is padding, this we don't want to do.
+[00:48:19.760 --> 00:48:22.580] Now, but I just want to show you how it would work.
+[00:48:22.720 --> 00:48:25.360] Here we could lay out A, eight bytes,
+[00:48:25.540 --> 00:48:26.600] and we would be at position eight.
+[00:48:26.880 --> 00:48:28.400] Then we would lay out B,
+[00:48:31.960 --> 00:48:36.040] and this is four bytes, afterwards we add 12.
+[00:48:36.040 --> 00:48:42.880] Now I am not allowed to place C next, because if I would put C here, and so I would draw
+[00:48:42.880 --> 00:48:44.560] this with a dotted box, we don't do this.
+[00:48:44.660 --> 00:48:50.620] If I would put C here, then my C would be misaligned because alignment is 8, 12 is not
+[00:48:50.620 --> 00:48:51.320] a multiple of 8.
+[00:48:51.500 --> 00:48:59.000] So what we could do then is we waste space, so basically we have four bytes here padding,
+[00:49:00.880 --> 00:49:03.660] wasting, wasted space that we don't use, up to 16.
+[00:49:03.860 --> 00:49:06.260] And then we can of course put the C again.
+[00:49:06.800 --> 00:49:10.200] Yeah, so up to, then up to 24.
+[00:49:12.200 --> 00:49:14.240] We don't want to do this because it wastes space,
+[00:49:14.360 --> 00:49:14.940] it's a bad idea.
+[00:49:15.140 --> 00:49:17.500] But this is what, for example, a C compiler would do,
+[00:49:17.860 --> 00:49:19.120] or a C++ compiler.
+[00:49:19.340 --> 00:49:20.220] They would do this.
+[00:49:21.180 --> 00:49:22.460] They would enter padding.
+[00:49:25.380 --> 00:49:28.100] So they would add space until everything is aligned.
+[00:49:29.000 --> 00:49:31.380] The compiler also cares about alignment for you,
+[00:49:31.540 --> 00:49:33.400] but it does it by adding padding.
+[00:49:33.740 --> 00:49:38.560] What we prefer instead is we reorder the attributes
+[00:49:38.560 --> 00:49:39.980] such that no padding occurs.
+[00:49:40.240 --> 00:49:41.020] This is much better.
+[00:49:42.580 --> 00:49:45.560] In C, the programming specification doesn't allow this.
+[00:49:45.700 --> 00:49:47.600] So the compiler is not allowed to reorder attributes.
+[00:49:47.820 --> 00:49:50.480] Otherwise it would be a good idea to do this in C2.
+[00:49:50.820 --> 00:49:52.540] But in databases we can do this
+[00:49:52.540 --> 00:49:55.000] because nobody except us will look at the data.
+[00:49:56.600 --> 00:50:00.660] So this is a basic layout for a tuple.
+[00:50:01.040 --> 00:50:05.760] Now so far I just said we just store all the values as they are.
+[00:50:06.020 --> 00:50:10.820] Now there is a certain very undesirable value that unfortunately occurs in the database
+[00:50:10.820 --> 00:50:11.140] system.
+[00:50:11.220 --> 00:50:11.920] This is null.
+[00:50:12.760 --> 00:50:17.800] So you know that by default every column is nullable, so you can insert any value or null.
+[00:50:18.240 --> 00:50:24.240] And null represents an unknown or unspecified value and this is a special value that is
+[00:50:25.560 --> 00:50:30.440] other value yeah of course if you want to do your database system a favor you declare the column to
+[00:50:30.440 --> 00:50:36.980] be as not null so if you do a create table create table then you say x integer
+[00:50:39.640 --> 00:50:45.660] not null so then your system knows oh this can have you been i and it can store it much more
+[00:50:45.660 --> 00:50:51.760] efficiently so declaring a table as not a column is not null is a good idea unless of course you
+[00:50:51.760 --> 00:50:52.860] really need null.
+[00:50:53.020 --> 00:50:56.720] I mean, sometimes you want to store null because you want to cope with the fact that some values
+[00:50:56.720 --> 00:51:03.320] are missing and then by all means, please use null, don't implement it yourself with some crazy
+[00:51:03.320 --> 00:51:04.120] special values.
+[00:51:04.320 --> 00:51:05.900] Use nulls if you have to.
+[00:51:06.540 --> 00:51:11.400] So nulls are okay if you need them, but if you do not need them, then please declare the column
+[00:51:11.400 --> 00:51:11.880] was not null.
+[00:51:12.060 --> 00:51:18.600] So if we do it like this here, it's integer, we declared x is nullable, sorry, x is not nullable,
+[00:51:18.600 --> 00:51:20.820] so it cannot be null, but y is nullable.
+[00:51:21.500 --> 00:51:24.100] Okay, now how do we do this?
+[00:51:24.380 --> 00:51:26.740] So if you do a record layout like this,
+[00:51:26.840 --> 00:51:28.760] which I have, we just store x and y,
+[00:51:30.160 --> 00:51:32.920] for x is everything's fine, but for y,
+[00:51:33.140 --> 00:51:35.080] so if you just use four bytes here,
+[00:51:36.100 --> 00:51:39.180] four bytes, what do we do is null?
+[00:51:40.080 --> 00:51:43.180] Null is separate from every other value.
+[00:51:43.400 --> 00:51:46.120] So now there are different,
+[00:51:46.120 --> 00:51:49.360] And basically two different schools to implement this.
+[00:51:49.700 --> 00:51:56.600] One is to say, I just pick one value that is invalid and that we use to represent null.
+[00:51:58.720 --> 00:52:00.840] But this is usually not possible.
+[00:52:01.460 --> 00:52:03.280] I mean, in some special cases it is.
+[00:52:03.420 --> 00:52:09.160] For example, if you look about the IEEE representation of doubles, you realize that some values are
+[00:52:09.160 --> 00:52:13.080] impossible and therefore you can use one of these values to represent a null.
+[00:52:13.080 --> 00:52:18.100] but this is a special case if you just think about integers mean every value can
+[00:52:19.520 --> 00:52:23.760] in this four byte range can occur and can be stored in the database you know so therefore we
+[00:52:23.760 --> 00:52:31.020] we cannot store this now um this doesn't stop people from trying even though it's impossible
+[00:52:31.020 --> 00:52:37.960] it doesn't stop people from trying what they usually do is for integers they take int min
+[00:52:40.700 --> 00:52:43.300] And say int min here is null.
+[00:52:43.520 --> 00:52:45.220] So this is what some people do.
+[00:52:45.940 --> 00:52:49.660] Now, int min is a very, very special value.
+[00:52:50.380 --> 00:52:51.880] I'm not sure if you're aware of this.
+[00:52:52.260 --> 00:52:53.820] Integers gives me so large numbers.
+[00:52:53.980 --> 00:52:56.260] Let's look here at a special case
+[00:52:56.260 --> 00:52:58.320] because it's easier to think about this.
+[00:52:58.820 --> 00:53:00.340] Let's think about int 8.
+[00:53:01.000 --> 00:53:03.660] It has an 8-bit integer.
+[00:53:04.420 --> 00:53:05.720] So 8-bit integer.
+[00:53:06.980 --> 00:53:09.060] I only use this because it gives me
+[00:53:10.700 --> 00:53:14.940] slide and the same is true for larger integers, but I only use 8 bits here.
+[00:53:15.200 --> 00:53:20.800] If you look about this, this is a range from, there is of course a zero involved, then the
+[00:53:21.460 --> 00:53:30.600] largest possible 8-bit integer is 127 and the smallest possible integer is minus 128.
+[00:53:32.100 --> 00:53:33.280] This here is int min.
+[00:53:34.500 --> 00:53:40.640] And you see that the domain is asymmetric.
+[00:53:40.960 --> 00:53:47.040] So there exists a value, namely this one here, let's call this int min for this domain.
+[00:53:47.220 --> 00:53:51.040] In min, there exists a value for which no positive number exists.
+[00:53:51.680 --> 00:54:02.080] So if you take this number, try to compute this as x and then we compute minus x, we
+[00:54:02.080 --> 00:54:02.860] can't represent this.
+[00:54:03.280 --> 00:54:07.760] What happens is if you take minus 128 and you do minus on this, you end up again with
+[00:54:07.760 --> 00:54:11.140] minus 128, which is of course a bit odd.
+[00:54:11.800 --> 00:54:14.760] But the reason is the integer cannot represent this number.
+[00:54:14.840 --> 00:54:19.940] The positive number is unrepresentable because the negative number is smaller, but the absolute
+[00:54:19.940 --> 00:54:24.760] value of the negative number is a little higher than the largest possible positive number.
+[00:54:25.420 --> 00:54:30.340] So this one here is special and this by the way creates all kinds of problems.
+[00:54:30.940 --> 00:54:35.680] For example, if you want to crush your program hard, so if you take a programming language
+[00:54:35.680 --> 00:54:40.780] of your choice, I mean, no, not your choice, because there's a really high level one, they
+[00:54:40.780 --> 00:54:41.940] check against this.
+[00:54:42.220 --> 00:54:45.280] Take a nice, simple, low level language like C.
+[00:54:45.880 --> 00:54:59.960] And then you take int min, now the real int min, of course, is 232, minus this one, yeah.
+[00:55:00.900 --> 00:55:03.520] Oh, sorry, not two, one.
+[00:55:04.880 --> 00:55:09.300] So this here is a, is a int min.
+[00:55:13.260 --> 00:55:14.980] Yeah, and if you take this one here,
+[00:55:15.060 --> 00:55:15.900] let's call this x.
+[00:55:16.300 --> 00:55:19.900] And then if you compute x divided by minus one,
+[00:55:21.800 --> 00:55:23.200] yeah, you do this in your code.
+[00:55:24.460 --> 00:55:27.400] You say that equals x divided by minus one.
+[00:55:27.620 --> 00:55:28.560] What do you think will happen?
+[00:55:30.620 --> 00:55:32.840] I can tell you what will happen, your program will crash.
+[00:55:34.060 --> 00:55:36.820] Your program will crash and you will get a signal and you will die.
+[00:55:37.440 --> 00:55:40.700] So this is what happens and this is what most people don't expect.
+[00:55:42.120 --> 00:55:44.980] I think most people are aware that this here is a bad idea.
+[00:55:45.720 --> 00:55:50.400] So x divided by zero is clearly a bad idea, so this will also crash and people are aware
+[00:55:50.400 --> 00:55:50.820] of this.
+[00:55:51.120 --> 00:55:57.020] What people are not so aware of is that this here will crash too if x is equal to int
+[00:55:57.020 --> 00:55:58.280] min and only in this case.
+[00:55:58.740 --> 00:56:03.840] Here every other value is okay, but int min, if you divide int min by minus one, your program
+[00:56:03.840 --> 00:56:04.300] will crash.
+[00:56:05.720 --> 00:56:11.780] And so this means that int min is a very unpleasant value and some people say, hey, you know what,
+[00:56:12.280 --> 00:56:18.220] this is an ugly value anyway, just remove int min from my domain and if therefore we
+[00:56:18.220 --> 00:56:19.740] use int min to represent null.
+[00:56:20.340 --> 00:56:24.840] Because I say this is a forbidden number, nobody is allowed to use this and then now
+[00:56:24.840 --> 00:56:28.700] I have gained a number that nobody is allowed to use and therefore I can just use this.
+[00:56:29.920 --> 00:56:37.340] This looks reasonable until you realize that the first programmation is okay, but then
+[00:56:37.340 --> 00:56:39.720] you realize other bad things that can happen.
+[00:56:39.860 --> 00:56:46.600] Like this one here for example, x is 2 to the power of 30, not 31, 30.
+[00:56:46.960 --> 00:56:47.520] Okay, no problem.
+[00:56:47.520 --> 00:56:57.440] then you say y is minus x no problem either and then you say z is equal to y
+[00:56:57.440 --> 00:57:06.760] plus y and now we have a problem because this year this new z value that I just
+[00:57:06.760 --> 00:57:13.500] got is equal to int min which means you performed a computation on non-null
+[00:57:13.500 --> 00:57:18.300] values, meaning this is clearly not null, 2 above 30 is a regular number, minus 2 above
+[00:57:18.300 --> 00:57:22.120] 30 is also a regular number, and now you take two regular numbers, you do a plus and the
+[00:57:22.120 --> 00:57:22.740] result is null.
+[00:57:23.840 --> 00:57:27.140] And this is something that you don't want to do, because it is semantically wrong.
+[00:57:27.700 --> 00:57:31.420] Now there are two things you can do, either you ignore the problem and if the user happens
+[00:57:31.420 --> 00:57:36.580] to compute null, then okay, this is of course, don't do this, this is bad, because then you
+[00:57:36.580 --> 00:57:40.520] suddenly your database outputs null, even though it is wrong, don't do this.
+[00:57:41.040 --> 00:57:47.000] alternative is after every computation you must check if the result happens to be in min and if
+[00:57:47.000 --> 00:57:52.460] yes you produce an error okay this is also possible but this costs you performance yeah so
+[00:57:52.460 --> 00:57:57.600] you don't want to do this also it's ugly to implement and so now so therefore i would say
+[00:57:57.600 --> 00:58:02.920] don't do this if you can avoid this now especially values from the domain is
+[00:58:03.780 --> 00:58:07.800] difficult surprisingly difficult to implement i mean it looks attractive at first glance because
+[00:58:07.800 --> 00:58:11.460] Because you can say I can still store this as regular integer, need nothing special.
+[00:58:11.680 --> 00:58:20.560] But this is just misleading because you get a lot of complexity by treating this special
+[00:58:20.560 --> 00:58:21.160] value special.
+[00:58:21.540 --> 00:58:28.400] So therefore a nicer thing is to say I just use one separate bit, a null indicator that
+[00:58:28.400 --> 00:58:33.480] says I have an x value x and I have a separate bit here that says x null.
+[00:58:34.620 --> 00:58:38.480] Now a separate bit, and then I can store every possible value in x, no problem.
+[00:58:38.680 --> 00:58:40.340] I just check is my null bit set.
+[00:58:40.440 --> 00:58:43.520] If yes, I ignore the x value because it's null, otherwise I use the value.
+[00:58:45.200 --> 00:58:50.380] So using a null bit allows me to omit the value from storing.
+[00:58:50.960 --> 00:58:54.880] This means when I store the value, I mean the disadvantage of course is it must store
+[00:58:54.880 --> 00:58:55.880] the null bit.
+[00:58:56.020 --> 00:58:57.620] Clearly, I must store one bit more.
+[00:58:57.620 --> 00:59:03.860] On the plus side, if I have a null value, I can at least sometimes choose a representation
+[00:59:03.860 --> 00:59:09.660] that just stores the null bit and then treats this x as variable size and kicks out the
+[00:59:09.660 --> 00:59:09.840] x.
+[00:59:09.960 --> 00:59:11.520] So we don't store the x.
+[00:59:13.620 --> 00:59:15.740] So now this of course is a trade-off.
+[00:59:15.840 --> 00:59:20.760] If I do this, access to my values become more complicated because of variable size things
+[00:59:20.760 --> 00:59:24.460] and so on the plus side, I save space because I use only one bit.
+[00:59:24.460 --> 00:59:31.160] So this is also called null compression and this is useful if you have a lot of null values.
+[00:59:31.380 --> 00:59:34.480] And so if many of your values are null, then this is a good technique.
+[00:59:35.560 --> 00:59:38.420] Downside of course is complexity and excess cost.
+[00:59:40.820 --> 00:59:47.140] Okay, but this already brings me to the next part of how do we store tuples, namely,
+[00:59:47.400 --> 00:59:48.940] what about compression?
+[00:59:48.940 --> 00:59:55.720] Now, so some database systems want to store the database in a compressed form.
+[00:59:55.960 --> 00:59:58.360] And yes, there are actually good reasons to do this.
+[00:59:58.480 --> 01:00:04.200] But first you should realize most of the time we do not compress data to save space.
+[01:00:04.680 --> 01:00:05.360] I mean, it's not always true.
+[01:00:05.520 --> 01:00:10.520] Some people really care about space, but most people do not care about space so much.
+[01:00:10.680 --> 01:00:13.240] What we usually care about is performance.
+[01:00:13.800 --> 01:00:16.420] So we compress data to get better performance.
+[01:00:16.640 --> 01:00:17.880] Now why is this so?
+[01:00:18.940 --> 01:00:20.560] So let's do the math.
+[01:00:20.760 --> 01:00:29.400] So assume hypothetically I have my data here is 200 megabytes of data and if I query this
+[01:00:29.400 --> 01:00:34.840] then I need, I have to read this from, for example, from a disk that can read 200 megabytes
+[01:00:34.840 --> 01:00:36.800] per second, then I need for this one second.
+[01:00:38.740 --> 01:00:44.580] Then after, so this here is IO, input outputs from disk, one second.
+[01:00:44.580 --> 01:00:50.780] Now, if instead of having 200 megabyte, I can compress this to, if I instead compress
+[01:00:50.780 --> 01:01:03.000] this to 100 megabyte, then I only need half a second of IO.
+[01:01:03.840 --> 01:01:08.580] So I gained a factor two in performance because my data size was reduced by factor two.
+[01:01:09.200 --> 01:01:10.960] And this is what I'm interested in.
+[01:01:10.960 --> 01:01:16.220] And also we reduce the space to reduce bandwidth consumption.
+[01:01:16.480 --> 01:01:20.520] Bandwidth is limited, often not always, but often is limited.
+[01:01:20.740 --> 01:01:25.500] And therefore I compress my data to use less bandwidth and therefore improve performance.
+[01:01:26.520 --> 01:01:32.320] So this is the main idea behind compression, because the argument here is disk is cheap.
+[01:01:32.560 --> 01:01:35.340] I can buy a very large disk for a little money.
+[01:01:35.360 --> 01:01:36.440] So who cares about space?
+[01:01:37.960 --> 01:01:44.400] But I mean, just to be totally honest with you, I learned this is not always the case.
+[01:01:44.560 --> 01:01:50.800] I know at least one company that cares about space because of customer experience.
+[01:01:52.500 --> 01:01:54.820] So you could say, who cares about it?
+[01:01:54.820 --> 01:01:57.220] You just buy a larger disk and this is absolutely true.
+[01:01:57.340 --> 01:01:59.060] Disks are cheap and so who cares about this?
+[01:02:00.180 --> 01:02:05.200] But if you ship your product to a customer and the customer experiences a full disk,
+[01:02:06.840 --> 01:02:08.500] Therefore, you try to avoid this.
+[01:02:08.660 --> 01:02:13.200] You try to compress the data, even though it might have been a visor choice to just
+[01:02:13.200 --> 01:02:14.020] buy a larger disk.
+[01:02:14.540 --> 01:02:16.000] But nevertheless, some people care about disk.
+[01:02:16.180 --> 01:02:17.200] But this is the exception.
+[01:02:17.400 --> 01:02:20.260] Most people primarily care about performance.
+[01:02:20.760 --> 01:02:24.700] And therefore we compress data to improve performance.
+[01:02:25.180 --> 01:02:29.680] So this is also here on the bottom of the slide, you see written here, some people do
+[01:02:29.680 --> 01:02:34.580] care about space, mostly embedded database systems where really space is limited.
+[01:02:36.440 --> 01:02:43.440] server database systems compression is, space consumption is not that critical usually.
+[01:02:45.120 --> 01:02:49.040] Of course you don't want to waste space, but it's not as urgent. But for performance reasons,
+[01:02:49.180 --> 01:02:53.660] you always want to, are interested in compression. Okay, now how to compress?
+[01:02:54.800 --> 01:03:00.060] So if you look at general purpose compression schemes, I hope you are familiar with at least
+[01:03:00.060 --> 01:03:05.120] some of these. If you look at general purpose compression schemes, you see the larger the
+[01:03:06.440 --> 01:03:12.340] works now for example if you think about the classical compression at lz77 now this is uh
+[01:03:12.340 --> 01:03:19.040] one of the most mainstream compression schemes you take a large buffer and then you write in here
+[01:03:19.040 --> 01:03:26.020] some for example abcd and so on then you say oh you know what take this sequence again and repeat
+[01:03:26.020 --> 01:03:33.580] it five times as was the back pointer followed by frequency you see takes this five times and then
+[01:03:35.960 --> 01:03:39.740] Then perhaps just take the g and then put it 10 times and so on.
+[01:03:39.880 --> 01:03:44.080] This is how a classical asset 77 works.
+[01:03:44.340 --> 01:03:47.240] We reference the data that we have outputted before.
+[01:03:47.240 --> 01:03:52.680] We do a back pointer and a repeat count and then we reference this.
+[01:03:52.760 --> 01:03:55.560] And this works the better, the larger the buffer is.
+[01:03:55.800 --> 01:04:01.100] Clearly if you have a tiny buffer, so if my buffer contains just three values, I have
+[01:04:01.100 --> 01:04:02.160] I have no redundancy at all,
+[01:04:02.240 --> 01:04:03.520] so I cannot compress anything.
+[01:04:03.720 --> 01:04:06.740] And so if my data is very small, I cannot compress it.
+[01:04:06.840 --> 01:04:07.880] It has to be large enough
+[01:04:07.880 --> 01:04:12.220] so that I see enough repetitions to compress my data.
+[01:04:12.880 --> 01:04:18.740] So this is classical runoff simulation schemes,
+[01:04:19.260 --> 01:04:22.020] and they want to have large compressed chunks
+[01:04:22.020 --> 01:04:22.920] to improve performance.
+[01:04:23.020 --> 01:04:24.660] But the problem is to improve compression.
+[01:04:24.940 --> 01:04:27.440] Problem is we don't want to have large compressed chunks
+[01:04:28.100 --> 01:04:30.240] because otherwise you cannot update very well.
+[01:04:31.100 --> 01:04:33.120] I have compressed a five megabytes of data
+[01:04:33.120 --> 01:04:34.760] and I want to update something in the middle.
+[01:04:35.220 --> 01:04:36.440] Now, how should I do this?
+[01:04:36.580 --> 01:04:38.060] I mean, I could decompress everything,
+[01:04:38.380 --> 01:04:40.200] do the update and recompress everything,
+[01:04:40.380 --> 01:04:42.520] but this is not so super attractive.
+[01:04:43.120 --> 01:04:46.080] Yeah, so it's quite expensive.
+[01:04:46.760 --> 01:04:48.280] Also other problems are,
+[01:04:48.380 --> 01:04:49.860] what about page size, for example?
+[01:04:50.020 --> 01:04:52.520] So it could be that somebody performs an update
+[01:04:52.520 --> 01:04:55.420] and after this update, compression rate is much worse.
+[01:04:56.100 --> 01:04:58.440] I mean, not super likely, but can happen.
+[01:04:58.440 --> 01:05:03.440] And then suddenly it no longer fits on the page where it was before and everything is
+[01:05:03.440 --> 01:05:03.660] ugly.
+[01:05:04.240 --> 01:05:09.340] So compressing large chunks is good for compression, but bad for the database system.
+[01:05:09.880 --> 01:05:14.420] What would work much better would be to say, okay, I compress each individual tuple.
+[01:05:14.520 --> 01:05:16.560] So I compress one tuple and I compress the next tuple.
+[01:05:16.980 --> 01:05:18.220] Compress the tuple by tuple.
+[01:05:18.480 --> 01:05:24.480] This is both good for updates because I can then update a single tuple as I want and also
+[01:05:24.480 --> 01:05:25.060] for handling.
+[01:05:25.060 --> 01:05:28.980] Because in the lower layers, so the slotted page,
+[01:05:29.440 --> 01:05:31.040] if you think about this layer here,
+[01:05:32.720 --> 01:05:36.480] the slotted page only knows it has a byte range.
+[01:05:36.640 --> 01:05:38.880] So my record here has a sequence of bytes.
+[01:05:39.080 --> 01:05:40.940] I don't care what the content is.
+[01:05:41.280 --> 01:05:43.780] It's this here, compressed, uncompressed, doesn't matter.
+[01:05:44.080 --> 01:05:45.180] Now, so for the slotted page,
+[01:05:45.340 --> 01:05:47.780] slotted page only has to know how large is the record.
+[01:05:48.320 --> 01:05:51.460] So we have a range of bytes, and this is what we store.
+[01:05:51.940 --> 01:05:54.880] Compression or not, totally unimportant for the slotted page.
+[01:05:55.060 --> 01:06:01.860] So therefore, it's from the layering perspective, it is attractive if the compression is implemented
+[01:06:01.860 --> 01:06:05.700] on top of the slotted page layer.
+[01:06:05.820 --> 01:06:10.120] So the slotted page layer doesn't care, it just says, okay, I store a tuple.
+[01:06:10.280 --> 01:06:11.700] And then I compress each tuple.
+[01:06:14.120 --> 01:06:16.700] But still doesn't tell me how should I compress it.
+[01:06:17.060 --> 01:06:21.340] Using a general purpose scheme like LZ77 is too expensive.
+[01:06:21.820 --> 01:06:23.180] We don't want to do this.
+[01:06:25.060 --> 01:06:31.140] significant cost for compression and also for decompression and second if you just compress a single tupper then
+[01:06:31.700 --> 01:06:35.400] It doesn't compress very well because probably we don't have a lot of redundancy in there
+[01:06:36.380 --> 01:06:40.740] Now so this is too expensive or if you look I mean in reality if you look at something like zip
+[01:06:40.740 --> 01:06:46.380] It's just even worse. It's not only as a 77, but for example, you also add another Huffman encoding or or
+[01:06:48.380 --> 01:06:54.540] Arithmetic encoding or something. Yeah, so we have to type some bit bit encoding on top of the SS 77
+[01:06:55.060 --> 01:06:57.920] And this is all super expensive and we don't want to do this
+[01:06:57.920 --> 01:07:00.180] because otherwise all your performance
+[01:07:00.180 --> 01:07:01.760] will be burned in decompression.
+[01:07:03.240 --> 01:07:06.540] And after all, we compress for performance reasons.
+[01:07:06.720 --> 01:07:08.580] You have to be compressed to improve performance.
+[01:07:08.760 --> 01:07:15.900] Therefore, if my compression is expensive, we lose.
+[01:07:16.080 --> 01:07:18.140] And my data gets smaller, but I get slower
+[01:07:18.140 --> 01:07:23.040] because all my time is burned in decompression.
+[01:07:23.220 --> 01:07:24.460] And therefore we don't want to do this.
+[01:07:26.000 --> 01:07:29.220] By the way, this brings me to a sad tale of my younger days.
+[01:07:29.420 --> 01:07:35.420] So when I was a, I think I might even have been a real student like you or a PhD student,
+[01:07:35.580 --> 01:07:39.200] but at least I was still, perhaps I was a PhD student.
+[01:07:39.340 --> 01:07:45.220] But shortly after my studies, I encountered a very beautiful compression scheme that I
+[01:07:45.220 --> 01:07:48.100] thought would be very nice to implement in a database system.
+[01:07:49.400 --> 01:07:54.260] And you know, on paper it looks very well and reality is not that super great.
+[01:07:55.060 --> 01:07:57.200] This is something that's called adaptive Huffman.
+[01:07:57.440 --> 01:08:00.100] Now you are probably familiar with Huffman encoding.
+[01:08:00.740 --> 01:08:02.320] You know, so Huffman encoding
+[01:08:03.680 --> 01:08:05.300] does basically does the following.
+[01:08:05.680 --> 01:08:09.140] You take your symbols and in your dictionary
+[01:08:09.140 --> 01:08:11.920] and then assign them weights
+[01:08:11.920 --> 01:08:14.900] and from the weights compute decision trees.
+[01:08:15.080 --> 01:08:17.160] For example, you say, if I say a zero,
+[01:08:17.280 --> 01:08:18.460] then I get a symbol A.
+[01:08:18.720 --> 01:08:22.400] If I say a one, then I have another decision point here.
+[01:08:22.400 --> 01:08:26.660] then I get this, if I get a 1 and a 0, then I get the symbol B.
+[01:08:27.260 --> 01:08:31.280] And otherwise, if I get another 1, then I say, okay, if I get a 0,
+[01:08:31.360 --> 01:08:41.180] then I have another decision point, 0, 1, 1, 0, oh, sorry, 0, 1.
+[01:08:41.400 --> 01:08:48.900] So then we get here A, B, C, D, E, and F.
+[01:08:48.900 --> 01:08:52.880] So this is for an example for a Huffman tree.
+[01:08:53.120 --> 01:08:59.120] Now if he encodes the data that contains a lot of As and also a lot of Bs, then I get
+[01:08:59.120 --> 01:09:00.040] very small encoding.
+[01:09:00.040 --> 01:09:13.080] For example, because if my input here is AABDA, then this here is encoded as 00, oh this is
+[01:09:13.080 --> 01:09:14.560] supposed to be a B, sorry.
+[01:09:14.560 --> 01:09:25.520] Sorry, B. My B is encoded as one zero, my D is encoded as one one zero one and my A
+[01:09:25.520 --> 01:09:26.580] again is encoded as zero.
+[01:09:27.480 --> 01:09:32.740] So then to encode this here, we have five bytes of input but as output we just need
+[01:09:34.960 --> 01:09:36.540] nine bits as output.
+[01:09:36.540 --> 01:09:42.600] And so we compressed eight bytes into nine bits.
+[01:09:43.760 --> 01:09:45.880] And so this of course is great, much smaller.
+[01:09:46.240 --> 01:09:49.240] And so this works beautifully, except,
+[01:09:49.480 --> 01:09:51.640] so this is a compression scheme here,
+[01:09:52.720 --> 01:09:54.360] except for the unpleasant problem.
+[01:09:54.760 --> 01:09:57.560] How do I know that my tree is like this?
+[01:09:58.640 --> 01:10:01.180] Because I mean to decompress the data,
+[01:10:01.360 --> 01:10:03.160] I must know this tree.
+[01:10:03.420 --> 01:10:04.860] I must know this Huffman tree.
+[01:10:06.680 --> 01:10:10.220] So if I would of course I could see rise this tree as a good source a tree
+[01:10:10.220 --> 01:10:15.160] But this would also cost me quite a bit of space as if I if I write the tree out first
+[01:10:15.160 --> 01:10:18.160] Then I my encoded schemes larger than input
+[01:10:19.680 --> 01:10:25.620] Yeah, so this only makes sense if I compress a reasonably large input because otherwise my serialized
+[01:10:25.620 --> 01:10:27.560] Huffman tree is larger data
+[01:10:27.560 --> 01:10:32.280] So what's the point as a half an encoding does not work if you have to ship the tree
+[01:10:32.280 --> 01:10:35.580] Meaning if the tree is known if you can always use the same trees, that's okay
+[01:10:36.540 --> 01:10:40.000] trips the tree, then half-minute coding doesn't work because the tree itself is too large.
+[01:10:40.980 --> 01:10:42.780] Now comes adaptive half-minute coding.
+[01:10:42.920 --> 01:10:44.300] This is a really brilliant idea.
+[01:10:45.160 --> 01:10:48.340] Again, choose my input A, what was the input?
+[01:10:48.620 --> 01:10:56.540] A, A, B, D, A I think was my input.
+[01:10:58.460 --> 01:11:00.760] So and how does adaptive half-minute coding work?
+[01:11:00.920 --> 01:11:04.960] It says in the beginning if I know nothing, I assume everything has the same probability,
+[01:11:06.540 --> 01:11:08.320] The original tree, for example, looks like this.
+[01:11:10.500 --> 01:11:20.320] 0, 1, 0, sorry, I should have drawn it.
+[01:11:20.880 --> 01:11:22.820] There is a longer, more gap between this.
+[01:11:23.040 --> 01:11:24.920] So let's say, this is my root.
+[01:11:25.520 --> 01:11:27.520] If I get a 0, I go here to the left.
+[01:11:27.620 --> 01:11:28.700] If I get a 1, I go here.
+[01:11:29.160 --> 01:11:29.860] 1, 0.
+[01:11:30.200 --> 01:11:31.720] If I get a 0, I go here.
+[01:11:33.720 --> 01:11:36.980] one I go here,
+[01:11:40.160 --> 01:11:43.820] and sorry, and if I forget another zero I go here,
+[01:11:44.040 --> 01:11:45.800] I should have drawn one more to the right.
+[01:11:51.700 --> 01:11:58.700] One, and then zero, one, zero, one,
+[01:11:58.980 --> 01:12:01.720] and then of course I label this here with,
+[01:12:03.720 --> 01:12:15.700] Then A, B, and C, D, and so on.
+[01:12:15.860 --> 01:12:17.140] Then of course some more.
+[01:12:17.540 --> 01:12:20.440] Now as the first symbol comes, I just encoded it as it is.
+[01:12:20.580 --> 01:12:22.240] In this case I say for example three As.
+[01:12:22.860 --> 01:12:26.760] Then I realize, oh you know what, the A is more frequent than other symbols, so let's
+[01:12:26.760 --> 01:12:27.800] change the encoding.
+[01:12:27.800 --> 01:12:37.520] Now, then I didn't draw an ideal scheme for this, but just for example, pretend that I
+[01:12:37.520 --> 01:12:44.040] do the following, you know, to be honest, this is not what the real adapter does, but
+[01:12:44.040 --> 01:12:46.940] I cannot dynamically reorder my tree so easily.
+[01:12:47.140 --> 01:12:52.440] I can, for example, say this, I make the A, give A a shorter code and to B, which has
+[01:12:52.440 --> 01:12:54.780] not occurred yet, I give, for example, this code here.
+[01:12:55.580 --> 01:12:58.740] So then comes another A and just give it a 0, 0.
+[01:12:58.980 --> 01:13:00.520] And then again I update this.
+[01:13:04.380 --> 01:13:06.580] And then I move this tree somewhere else.
+[01:13:11.760 --> 01:13:17.960] So I give the 0, 0 to an A. And then the CD I put for example here.
+[01:13:20.240 --> 01:13:26.180] Of course, as I said, the real reordering is different, but I cannot dynamically build
+[01:13:26.180 --> 01:13:27.840] a real adaptable half a tree here.
+[01:13:28.020 --> 01:13:29.420] But I give it different weights.
+[01:13:29.640 --> 01:13:33.960] So I update my tree, and then comes my B, B gets the number that it has here, in this
+[01:13:33.960 --> 01:13:37.240] case 111, and then if we update the B2, then we make B cheaper.
+[01:13:37.940 --> 01:13:47.240] Then comes my D, and my D now gets 101, 101, and then of course I also update the D, and
+[01:13:47.960 --> 01:13:50.000] a is in this case, I just get a zero.
+[01:13:51.940 --> 01:13:56.360] And this means that of course, in the beginning, the a was more expensive because I didn't
+[01:13:56.360 --> 01:13:57.300] know that a was frequent.
+[01:13:57.580 --> 01:14:02.980] But so this was the first a, this was the second a, and this is the last a.
+[01:14:03.180 --> 01:14:06.460] We see so the frequent numbers get shorter codes over time.
+[01:14:06.700 --> 01:14:08.560] And the infrequent number gets longer, of course.
+[01:14:08.760 --> 01:14:09.840] So this is what happens.
+[01:14:10.160 --> 01:14:16.400] And the good thing is, in this scheme, we do not have to transfer the tree because the
+[01:14:17.960 --> 01:14:18.360] weights.
+[01:14:18.840 --> 01:14:22.840] So when both during compression and decompression, we update the tree all the time.
+[01:14:23.040 --> 01:14:27.060] And so the trees is passed implicitly.
+[01:14:27.180 --> 01:14:30.220] And this allows us to run Huffman coding even for short inputs.
+[01:14:30.520 --> 01:14:31.480] Absolutely great idea.
+[01:14:31.780 --> 01:14:32.080] Yeah.
+[01:14:32.260 --> 01:14:34.880] So only problem is it works terribly.
+[01:14:37.300 --> 01:14:40.200] Because this does not have reasonable performance.
+[01:14:41.000 --> 01:14:43.000] Adaptive Huffman looks great.
+[01:14:44.180 --> 01:14:47.180] So if you just see it on a paper, it says, hey, this is really a nice idea.
+[01:14:48.900 --> 01:14:51.100] So much better encoding, really good,
+[01:14:51.840 --> 01:14:54.020] until you start to implement this.
+[01:14:55.100 --> 01:14:56.580] First, it's not so easy to implement.
+[01:14:56.760 --> 01:14:59.140] You saw already that I could not easily update the tree.
+[01:14:59.320 --> 01:15:00.360] I, in fact, I cheated.
+[01:15:00.540 --> 01:15:02.700] So my tree was no longer an adaptive huffin tree
+[01:15:02.700 --> 01:15:04.600] because it was too complicated to change this.
+[01:15:04.760 --> 01:15:06.480] So updating the tree is not that easy.
+[01:15:06.620 --> 01:15:07.380] There's a lot of code.
+[01:15:07.920 --> 01:15:09.860] And second, it's quite expensive.
+[01:15:10.680 --> 01:15:12.500] Yeah, therefore, I mean,
+[01:15:12.680 --> 01:15:14.560] I have indeed implemented this at some point
+[01:15:14.560 --> 01:15:16.340] and ran it in a database system.
+[01:15:17.960 --> 01:15:19.960] which was okay, then you run a query,
+[01:15:20.000 --> 01:15:21.380] so you want to decompress it,
+[01:15:21.480 --> 01:15:24.460] and performance was terrible, really terrible.
+[01:15:24.960 --> 01:15:25.440] Why?
+[01:15:25.600 --> 01:15:27.700] Because all the time was spent on decompression.
+[01:15:28.920 --> 01:15:31.260] And this means that compression was a bad idea.
+[01:15:31.840 --> 01:15:34.400] After all, we want to compress to become faster.
+[01:15:35.120 --> 01:15:37.440] And therefore we must choose encoding schemes
+[01:15:37.440 --> 01:15:38.000] that are cheap.
+[01:15:39.060 --> 01:15:40.680] And for this reason, in fact,
+[01:15:40.820 --> 01:15:43.440] usually we will not use a Huffman encoding,
+[01:15:43.680 --> 01:15:45.860] because Huffman encoding is a bit level encoding.
+[01:15:45.860 --> 01:15:47.860] So we use a variable number of bits per level.
+[01:15:48.440 --> 01:15:49.900] This is quite expensive.
+[01:15:50.160 --> 01:15:55.380] We prefer, not always, but we will prefer to use byte-wise encoding,
+[01:15:55.520 --> 01:15:59.540] which means we give a data element 1, 2, 3, 4, 5, 6, as many as it needs bytes,
+[01:15:59.780 --> 01:16:01.040] but not individual bits.
+[01:16:01.660 --> 01:16:04.580] Why? Because we can manipulate bytes much more cheaply than bits.
+[01:16:05.260 --> 01:16:09.000] Therefore we prefer byte-level encoding over bit-level encoding.
+[01:16:09.140 --> 01:16:12.260] Even though of course, bit-level encoding compresses better, no question about this.
+[01:16:12.260 --> 01:16:16.200] bit level encoding gives me smaller data,
+[01:16:16.660 --> 01:16:20.940] but it costs me more CPU instructions to decompress.
+[01:16:21.380 --> 01:16:24.080] And therefore we usually prefer byte level encoding.
+[01:16:24.820 --> 01:16:28.900] Okay, so now this is one way to how we can implement this.
+[01:16:29.120 --> 01:16:33.280] For example, we can represent an integer like this.
+[01:16:34.740 --> 01:16:36.980] Of course, because I just said,
+[01:16:37.000 --> 01:16:38.380] we want to do everything byte level
+[01:16:38.380 --> 01:16:40.480] and relatively this will be stored in different bytes,
+[01:16:42.260 --> 01:16:42.800] problem for now.
+[01:16:43.020 --> 01:16:46.220] So we just say each integer can be represented like this.
+[01:16:46.360 --> 01:16:47.880] We have a two-bit header.
+[01:16:48.440 --> 01:16:49.980] So we have a two-bit header field.
+[01:16:50.560 --> 01:16:53.060] And then we have zero to four bytes of data.
+[01:16:53.180 --> 01:16:56.100] And these two bits here, we can store four different values.
+[01:16:56.260 --> 01:16:59.020] And according to environment A, for example, is this one here.
+[01:17:00.960 --> 01:17:05.920] So we say if my header field is all zeros, then I use one byte of data.
+[01:17:06.240 --> 01:17:11.660] Now, if most of my integers are short, I just store two zeros and then one byte.
+[01:17:12.260 --> 01:17:14.380] smaller than 4 bytes that I would need for the full integer.
+[01:17:15.800 --> 01:17:21.540] If my data is too large, so it's a number that's above 256 or if it's side above 127,
+[01:17:22.360 --> 01:17:24.600] then I store there a 0,1.
+[01:17:24.760 --> 01:17:27.060] So say I need 2 byte values and I can store 2 bytes.
+[01:17:27.200 --> 01:17:32.040] If it's even larger than this, I store 1,0, I can store 3 byte values and then in the
+[01:17:32.040 --> 01:17:35.220] maximum case I write 1,1 and I can store 4 byte values.
+[01:17:35.680 --> 01:17:40.560] And if most of the integers are short or shorter at least than the full 4 bytes, then you save
+[01:17:40.560 --> 01:17:41.540] quite a bit of space.
+[01:17:42.260 --> 01:17:48.760] This is an encoding scheme that is easy to implement, cheap, because I just need to read
+[01:17:48.760 --> 01:17:51.440] two bits and then do everything byte wise afterwards.
+[01:17:52.000 --> 01:17:55.640] So this can be done quite cheaply.
+[01:17:55.980 --> 01:17:59.360] And you can also use this to handle null values if you want.
+[01:17:59.580 --> 01:18:04.040] And because instead of having this extra null bit, you can use this encoding scheme to represent
+[01:18:04.040 --> 01:18:04.580] nulls.
+[01:18:04.740 --> 01:18:09.180] You say if my header field is all zeros, then I said, oh, I have a null value and this here
+[01:18:09.180 --> 01:18:12.020] therefore null bytes in size, I have no entry.
+[01:18:12.220 --> 01:18:14.500] If I get to 0, 1, then I have one byte,
+[01:18:14.580 --> 01:18:15.940] if we get to 1, 0, I have two bytes,
+[01:18:16.040 --> 01:18:17.380] and if we get to 1, 1, I have four bytes.
+[01:18:17.780 --> 01:18:21.320] Of course, I lose, I cannot represent this case here anymore,
+[01:18:21.380 --> 01:18:23.540] but on the plus side, I can represent null values.
+[01:18:23.720 --> 01:18:26.100] And probably it's not that common that I need three,
+[01:18:26.120 --> 01:18:27.000] but not four bytes.
+[01:18:27.220 --> 01:18:28.920] So I can do this.
+[01:18:29.300 --> 01:18:32.440] And I can use this to compress integer values quite well.
+[01:18:32.560 --> 01:18:34.360] And this is cheaply,
+[01:18:34.360 --> 01:18:35.860] it can be done for each individual attribute.
+[01:18:38.320 --> 01:18:46.700] Now, downside of course is if you do this, if you do integer encoding like this, my originally
+[01:18:46.700 --> 01:18:51.840] fixed size entries, my integers become a variable size because I have different lengths.
+[01:18:52.200 --> 01:18:52.520] Yeah.
+[01:18:52.520 --> 01:18:54.380] So this is a bit problematic.
+[01:18:56.180 --> 01:18:59.940] So locating a compressed attribute becomes more expensive because now it means I have
+[01:18:59.940 --> 01:19:01.760] to look at the previous entries that are compressed.
+[01:19:02.960 --> 01:19:03.480] Yeah.
+[01:19:03.560 --> 01:19:05.580] But in reality it's not that bad.
+[01:19:06.360 --> 01:19:08.740] It costs something, but we can implement it.
+[01:19:08.940 --> 01:19:10.920] So what we do is we start as usually,
+[01:19:11.040 --> 01:19:13.040] we start the fixed part in the beginning,
+[01:19:13.160 --> 01:19:14.060] the real fixed part of course.
+[01:19:14.500 --> 01:19:17.380] Then we look at the length, just at the length bit.
+[01:19:18.100 --> 01:19:20.360] Remember I said we want to store everything byte wise.
+[01:19:20.560 --> 01:19:23.040] Therefore what we will do is we will take four
+[01:19:23.040 --> 01:19:25.480] of these two bit length indicators
+[01:19:25.480 --> 01:19:26.560] and store them in one byte.
+[01:19:26.720 --> 01:19:27.840] So this is one byte here.
+[01:19:29.860 --> 01:19:31.380] We store this in one byte.
+[01:19:32.760 --> 01:19:40.000] And now to access, for example, this attribute or any of them would require us to look at
+[01:19:40.000 --> 01:19:45.340] the previous lengths in theory, but then in principle we would have to do this.
+[01:19:45.420 --> 01:19:51.040] But because we know that one byte can have only 256 possible values, we can pre-compute
+[01:19:51.040 --> 01:19:51.220] this.
+[01:19:51.640 --> 01:19:59.360] So we know if you see this byte in my length indicator, then my fields will be at this
+[01:19:59.360 --> 01:20:00.660] position and will have that length.
+[01:20:01.640 --> 01:20:05.200] lookup table that for every possible length byte gives me the positions of
+[01:20:05.200 --> 01:20:10.280] length of each field and then decompress is again pretty cheap. I mean it costs a
+[01:20:10.280 --> 01:20:14.520] few instructions but it's pretty cheap, much cheaper than if you would really
+[01:20:14.520 --> 01:20:19.380] individually decompress each individual byte. So now with the lookup table we can
+[01:20:19.380 --> 01:20:25.560] make it much more handleable. Another popular technique that we can use to
+[01:20:25.560 --> 01:20:30.000] compress data is we can use dictionary encoding and this is primarily relevant
+[01:20:31.380 --> 01:20:33.000] I mean, people are very fond of strings.
+[01:20:34.440 --> 01:20:39.960] People tend to have a lot of data in their database
+[01:20:39.960 --> 01:20:40.960] that is stored as strings.
+[01:20:41.300 --> 01:20:44.500] And this data tends to be redundant.
+[01:20:44.780 --> 01:20:46.800] For example, if you store address information
+[01:20:46.800 --> 01:20:50.500] of customers, of users,
+[01:20:51.040 --> 01:20:52.560] then you might have, for example,
+[01:20:52.660 --> 01:20:54.340] a few people who live in the same city.
+[01:20:54.820 --> 01:20:57.400] Like your city of Berlin might occur a few times
+[01:20:57.400 --> 01:20:59.100] or city of Munich might occur a few times.
+[01:20:59.100 --> 01:21:04.680] Instead of storing this string each and every time, you can store it only once in a dictionary.
+[01:21:05.080 --> 01:21:09.920] And then for example, say my string Berlin has a number one, my string Munich has a number
+[01:21:09.920 --> 01:21:14.240] two, and my string Passauerstrasse for example has a number three.
+[01:21:14.680 --> 01:21:19.000] And in fact, it happens to be that this Passauerstrasse exists in both cities.
+[01:21:19.780 --> 01:21:24.380] So that therefore if you have a tuppel, you have a tuppel that says I live in city one
+[01:21:24.380 --> 01:21:25.380] in street three.
+[01:21:25.640 --> 01:21:27.780] Another one says I live in city two, street three.
+[01:21:29.100 --> 01:21:32.820] Passauer Straße in different cities, but you store the string only once.
+[01:21:33.400 --> 01:21:37.140] And in the table itself, you store only nice integer IDs.
+[01:21:37.560 --> 01:21:38.860] We just store an integer.
+[01:21:39.420 --> 01:21:43.320] Integers are smaller than the strings and also much more efficient to handle.
+[01:21:43.560 --> 01:21:47.920] So by doing this, you save a lot of redundancy.
+[01:21:49.100 --> 01:21:56.180] In fact, I jokingly heard from a database vendor who said, it would be a good idea to
+[01:21:56.180 --> 01:22:00.520] to ship the database with the name of all US states,
+[01:22:00.960 --> 01:22:04.580] because the state names occur very, very frequently
+[01:22:04.580 --> 01:22:05.220] in datasets.
+[01:22:05.600 --> 01:22:07.400] And probably if you store country names,
+[01:22:08.060 --> 01:22:11.600] US cities, sorry, US state names and so on,
+[01:22:11.700 --> 01:22:13.640] and you have them preloaded somewhere,
+[01:22:13.980 --> 01:22:15.800] instead of storing it in the database,
+[01:22:16.040 --> 01:22:18.200] you can compress quite a few data by datasets
+[01:22:19.140 --> 01:22:19.860] by using this.
+[01:22:20.060 --> 01:22:21.620] Of course, this is domain specific
+[01:22:21.620 --> 01:22:23.740] if you have a lot of customer from the US.
+[01:22:23.900 --> 01:22:25.380] If you have customers from Germany,
+[01:22:26.180 --> 01:22:29.980] be better to store German city names.
+[01:22:30.160 --> 01:22:34.500] Of course you cannot know this beforehand, therefore we of course do not store them in
+[01:22:34.500 --> 01:22:38.700] the database binary, but we just recognize them in the dataset.
+[01:22:39.000 --> 01:22:42.060] So we can pull out common strings and store them only once.
+[01:22:43.280 --> 01:22:47.440] And really, strings are extremely frequent, much more frequent than you might think.
+[01:22:47.700 --> 01:22:52.240] I mean, we in the introduction to databases teach everybody, ah, you should store data
+[01:22:52.240 --> 01:22:57.080] nicely in a normalized form and then factor out common entries and then you have fields as they
+[01:22:57.080 --> 01:23:01.560] make sense and of course you should do this everything is right problem is people don't do
+[01:23:01.560 --> 01:23:07.780] this yeah so people very very frequently store data redundantly yes you have this here you have
+[01:23:07.780 --> 01:23:14.260] records that yes you have safe here abc uh sorry then abc again then abc again and i mean abc is
+[01:23:14.260 --> 01:23:19.500] still short yeah could be this can be long strings stored over and over again all the same string i
+[01:23:19.500 --> 01:23:22.840] if you look at this you could say hey please store the string in a separate table and just
+[01:23:22.840 --> 01:23:28.460] reference with the four key but people don't do this yeah in fact then there are uh
+[01:23:29.740 --> 01:23:35.400] products like sap said at least historically stored everything as a string really everything
+[01:23:35.400 --> 01:23:41.880] even numbers yes everything was stored as a string and um mean uh you mean you could say
+[01:23:41.880 --> 01:23:48.360] why do this yeah it has historic reasons because when this was first developed database systems
+[01:23:49.540 --> 01:23:53.840] data types and the only data type was really robust across database systems
+[01:23:53.840 --> 01:23:57.620] every database system treated is more or less the same was a string and therefore
+[01:23:57.620 --> 01:24:00.960] they said okay we just store everything as a string and then we can control
+[01:24:00.960 --> 01:24:04.500] everything and then we have no problems of course they don't do this very bad
+[01:24:04.500 --> 01:24:08.160] idea to do this at least nowadays performance will be terrible you will do
+[01:24:08.160 --> 01:24:11.460] everything in your application don't do this but nevertheless if you look at
+[01:24:11.460 --> 01:24:17.980] datasets people have a lot of strings and making your string smaller is a good
+[01:24:19.500 --> 01:24:20.720] Dictionary compression is one technique.
+[01:24:21.040 --> 01:24:22.360] As you are to other techniques,
+[01:24:22.400 --> 01:24:24.260] like you can try to compress within the string
+[01:24:24.260 --> 01:24:25.900] because here we in a particular compression,
+[01:24:26.080 --> 01:24:30.180] you only store the string, the same string once,
+[01:24:30.380 --> 01:24:32.960] but if the strings differ, you store them multiple times.
+[01:24:33.100 --> 01:24:34.940] You can try to be even more aggressive.
+[01:24:35.000 --> 01:24:37.500] For example, if you realize that you have a lot of strings
+[01:24:37.500 --> 01:24:38.280] that look like this,
+[01:24:38.700 --> 01:24:41.520] http.or slash less than
+[01:24:43.640 --> 01:24:44.820] Google or something,
+[01:24:45.760 --> 01:24:48.640] or you have http
+[01:24:50.220 --> 01:24:50.900] http
+[01:24:50.900 --> 01:24:52.220] dot dot slash
+[01:24:52.220 --> 01:24:54.720] dot dot dot dot
+[01:24:54.720 --> 01:24:55.480] tom
+[01:24:55.480 --> 01:24:58.260] and so on and you can realize
+[01:24:58.260 --> 01:25:00.460] of course these individual strings will be
+[01:25:00.460 --> 01:25:02.320] stored only once but we can also
+[01:25:02.320 --> 01:25:04.360] realize that oh this prefix here
+[01:25:04.360 --> 01:25:05.840] occurs quite frequently
+[01:25:06.580 --> 01:25:07.780] let's pull it out
+[01:25:09.000 --> 01:25:10.300] so we can use
+[01:25:10.300 --> 01:25:12.280] prefix compression in my dictionary so that
+[01:25:12.280 --> 01:25:14.200] stored only once then reuse
+[01:25:14.820 --> 01:25:17.540] and neighboring entries, or you can be even more aggressive,
+[01:25:17.680 --> 01:25:19.580] but I don't want to spend a lot of time on compression.
+[01:25:19.740 --> 01:25:22.400] I'm just saying, try to compress your data is a good idea.
+[01:25:22.620 --> 01:25:24.280] Only balance you have to find here is,
+[01:25:24.840 --> 01:25:28.460] don't waste too much CPU time on compression,
+[01:25:28.780 --> 01:25:31.600] because otherwise your decompression is too expensive.
+[01:25:31.820 --> 01:25:33.460] And so there's a certain balance here
+[01:25:33.460 --> 01:25:36.120] that we have to choose between how aggressive you compress.
+[01:25:36.280 --> 01:25:38.720] But in general, compression is good for performance reasons.
+[01:25:40.240 --> 01:25:43.020] Okay, so I think if I look at the time,
+[01:25:44.820 --> 01:25:48.420] the end, let me briefly look.
+[01:25:48.620 --> 01:25:53.320] Yeah, so I'm at about at the end of what I want to talk
+[01:25:53.320 --> 01:25:53.780] about today.
+[01:25:54.400 --> 01:25:57.640] One problem is that we did not cover yet is what to do
+[01:25:57.640 --> 01:26:01.940] if my record is too large, because if you think about
+[01:26:01.940 --> 01:26:04.520] the started pages, you always said, okay,
+[01:26:05.060 --> 01:26:05.940] am I record here?
+[01:26:06.120 --> 01:26:09.020] I have a fixed size page, for example, 16 kilobytes,
+[01:26:09.620 --> 01:26:11.980] or could be large of course, but it will be fixed size.
+[01:26:11.980 --> 01:26:13.460] and then my tuple is stored here.
+[01:26:14.580 --> 01:26:17.880] What I do if a user inserts a database with a string
+[01:26:17.880 --> 01:26:19.540] that is larger than 16 kilobytes.
+[01:26:21.360 --> 01:26:24.400] And now what happens differs between the database systems.
+[01:26:24.500 --> 01:26:25.300] If you do this in Oracle,
+[01:26:25.440 --> 01:26:26.680] you just simply get an error message.
+[01:26:26.860 --> 01:26:28.460] Oracle says, no, you're not allowed to do this.
+[01:26:29.600 --> 01:26:30.860] Tuple must fit on a page.
+[01:26:30.980 --> 01:26:33.840] If a tuple is larger than a page, then I don't accept it.
+[01:26:34.540 --> 01:26:36.320] But this makes unhappy users
+[01:26:37.460 --> 01:26:39.660] because users want to store long strings.
+[01:26:40.000 --> 01:26:41.700] And so we need a mechanism for this.
+[01:26:41.980 --> 01:26:44.620] And second, even in systems who do not support us
+[01:26:44.620 --> 01:26:47.260] for arbitrary records, nearly everybody has a,
+[01:26:47.880 --> 01:26:49.820] you can declare a field to be large.
+[01:26:50.040 --> 01:26:52.240] There you can say I have a blob.
+[01:26:52.380 --> 01:26:54.040] The blob means binary large object,
+[01:26:54.060 --> 01:26:57.060] which means this is now large and I want to store this.
+[01:26:57.200 --> 01:26:58.660] Please store a large binary data for me.
+[01:26:58.760 --> 01:27:00.600] Or if you want to have a large string,
+[01:27:00.960 --> 01:27:03.820] you can call this clop, character large object.
+[01:27:04.840 --> 01:27:06.780] You tell the database system this is long,
+[01:27:07.020 --> 01:27:07.940] please store this for me.
+[01:27:08.080 --> 01:27:10.180] And therefore we need a mechanism to handle this,
+[01:27:12.380 --> 01:27:14.640] And this is what we will do, look at next.
+[01:27:15.720 --> 01:27:16.760] Okay, thank you.

@@ -1,0 +1,5961 @@
+WEBVTT
+
+1
+00:00:00.000 --> 00:00:02.700
+Welcome to this lecture on database implementation.
+
+2
+00:00:03.500 --> 00:00:08.520
+So in the last lecture we have looked at joint implementations and different ways to implement non-ener joints.
+
+3
+00:00:08.780 --> 00:00:11.480
+Today we want to continue with the remaining operators.
+
+4
+00:00:12.240 --> 00:00:14.920
+So, and we start with sort.
+
+5
+00:00:15.880 --> 00:00:23.440
+Sort is an incredibly useful operator because you can implement many of the other operators using sorting.
+
+6
+00:00:23.600 --> 00:00:29.800
+It is not necessarily a good idea from a performance perspective because usually we will prefer hashing over sorting.
+
+7
+00:00:30.000 --> 00:00:31.500
+because hashing is usually faster.
+
+8
+00:00:32.280 --> 00:00:34.660
+But nevertheless, sorting is a super versatile scheme.
+
+9
+00:00:35.000 --> 00:00:37.740
+And so if you want to minimize your implementation effort,
+
+10
+00:00:38.000 --> 00:00:40.500
+you can just implement sorting once
+
+11
+00:00:40.500 --> 00:00:42.860
+and then map nearly everything else to sorting.
+
+12
+00:00:43.000 --> 00:00:44.220
+For example, sort merge join.
+
+13
+00:00:44.500 --> 00:00:47.100
+You can do aggregation using sorting.
+
+14
+00:00:47.280 --> 00:00:49.560
+We can duplicate elimination, many, many other things.
+
+15
+00:00:49.720 --> 00:00:51.720
+So sorting is a super powerful technique.
+
+16
+00:00:52.480 --> 00:00:55.800
+So now, how do we sort?
+
+17
+00:00:56.060 --> 00:00:58.000
+Actually, we talked already in the beginning
+
+18
+00:01:00.000 --> 00:01:05.020
+If I remember correctly, you have implemented already external sorting at the beginning as an exercise.
+
+19
+00:01:05.760 --> 00:01:09.940
+Therefore, I can keep this reasonably brief, but basically what we do is,
+
+20
+00:01:11.120 --> 00:01:13.880
+first we load as much as we can into main memory,
+
+21
+00:01:14.620 --> 00:01:19.180
+and then we sort in memory using some algorithm,
+
+22
+00:01:20.080 --> 00:01:21.960
+and then we write out a sorted run.
+
+23
+00:01:22.100 --> 00:01:24.020
+So we have a randomly sorted data as input,
+
+24
+00:01:24.380 --> 00:01:28.020
+then I make my memory here full, I sort this memory, and then I write this to disk.
+
+25
+00:01:28.240 --> 00:01:29.820
+So then I have a sorted run.
+
+26
+00:01:30.000 --> 00:01:30.900
+So we call this a run.
+
+27
+00:01:31.160 --> 00:01:33.700
+Then we load the next piece in memory
+
+28
+00:01:33.700 --> 00:01:35.200
+and write it out and so on.
+
+29
+00:01:35.300 --> 00:01:37.660
+And so at the end, we have many, many sorted runs.
+
+30
+00:01:38.260 --> 00:01:39.680
+And now once we have this,
+
+31
+00:01:39.760 --> 00:01:41.720
+what we can just do is you can merge them.
+
+32
+00:01:43.000 --> 00:01:45.420
+And so we read them sequentially,
+
+33
+00:01:45.600 --> 00:01:47.780
+both of these here, we start reading this,
+
+34
+00:01:47.900 --> 00:01:48.740
+we start reading that.
+
+35
+00:01:49.080 --> 00:01:50.640
+And we always look what is the smallest
+
+36
+00:01:50.640 --> 00:01:53.360
+and then we create from this two sorted runs,
+
+37
+00:01:53.540 --> 00:01:54.520
+a larger sorted run.
+
+38
+00:01:54.820 --> 00:01:56.400
+There's now the merge result of this.
+
+39
+00:01:56.860 --> 00:02:01.900
+Now, and if we are lucky, we are done with just one merge pass.
+
+40
+00:02:02.020 --> 00:02:05.280
+If you're unlucky, we have to do this repeatedly to handle the merge factor.
+
+41
+00:02:05.420 --> 00:02:08.460
+So it could be that we cannot merge an arbitrary number of runs,
+
+42
+00:02:08.900 --> 00:02:13.840
+but for example, only two, and then we have to do this, of course, multiple times.
+
+43
+00:02:14.960 --> 00:02:17.980
+Okay, so this is a very high level strategy for external sorting.
+
+44
+00:02:18.220 --> 00:02:21.780
+Now, how you really implement this, so there are many, many details here,
+
+45
+00:02:21.900 --> 00:02:24.900
+how what we can do to how we vary the implementation.
+
+46
+00:02:26.660 --> 00:02:29.500
+And first let's talk about the generic algorithm here.
+
+47
+00:02:29.660 --> 00:02:35.920
+So this is sort as producer consumer model, leaving out all the details, at least the
+
+48
+00:02:36.420 --> 00:02:37.240
+critical details.
+
+49
+00:02:37.360 --> 00:02:40.040
+So this is true basically for all implementations here.
+
+50
+00:02:40.360 --> 00:02:45.640
+So when we ask the sort-rater to produce data, we just ask our own input here to produce
+
+51
+00:02:45.640 --> 00:02:45.980
+data.
+
+52
+00:02:46.140 --> 00:02:48.040
+So at this point you get all the data.
+
+53
+00:02:48.220 --> 00:02:53.340
+Now we flush whatever we have into disk, because it could be that we still have data
+
+54
+00:02:53.340 --> 00:02:53.800
+and disk.
+
+55
+00:02:53.800 --> 00:02:57.040
+And then we merge the partitions and we have only one partition left.
+
+56
+00:02:57.460 --> 00:03:01.480
+And now our problem is trivial because this partition is now sorted.
+
+57
+00:03:01.660 --> 00:03:07.260
+So what we do is we just loop here over all tuples in my sorted partition and offer each
+
+58
+00:03:07.260 --> 00:03:11.240
+tuple here to my consumer.
+
+59
+00:03:11.460 --> 00:03:13.160
+So I just say here it is tuple, tuple, tuple.
+
+60
+00:03:13.760 --> 00:03:20.300
+And when we get a tuple here, this consume function, so then we check if we have still
+
+61
+00:03:20.300 --> 00:03:20.660
+space.
+
+62
+00:03:20.660 --> 00:03:22.840
+If yes, we just store it in memory.
+
+63
+00:03:23.800 --> 00:03:29.020
+not so my memory is full i flush my memory and afterwards i have new space i can store the data
+
+64
+00:03:29.020 --> 00:03:34.820
+okay so this is high level how sorting works of course the what i left out here are how do
+
+65
+00:03:34.820 --> 00:03:40.980
+these functions work yeah flush and merge so this is basically the critical questions so what do i
+
+66
+00:03:40.980 --> 00:03:46.400
+do if my memory is full what do i do after i have written out sorted runs so these are basically the
+
+67
+00:03:46.400 --> 00:03:49.320
+the design points I have when implementing sorting.
+
+68
+00:03:51.280 --> 00:03:56.440
+Okay, and now the easy solution for flushing is,
+
+69
+00:03:56.860 --> 00:03:58.180
+you make your memory full,
+
+70
+00:03:58.440 --> 00:03:59.400
+then you call quick sort.
+
+71
+00:04:00.020 --> 00:04:01.620
+Yeah, so at this point,
+
+72
+00:04:01.680 --> 00:04:03.060
+of course everything is sorted.
+
+73
+00:04:03.320 --> 00:04:05.700
+Now you write everything out and release memory.
+
+74
+00:04:06.300 --> 00:04:08.340
+Okay, good thing, easy to implement.
+
+75
+00:04:08.860 --> 00:04:11.200
+Also the sort algorithm is fast.
+
+76
+00:04:11.320 --> 00:04:13.300
+Now quick sort, if you implement this carefully,
+
+77
+00:04:13.420 --> 00:04:14.460
+it's a very fast algorithm.
+
+78
+00:04:16.400 --> 00:04:19.020
+a good choice if you implement this carefully.
+
+79
+00:04:20.620 --> 00:04:23.900
+Now, strictly speaking, there are better ways to do this.
+
+80
+00:04:24.120 --> 00:04:30.180
+Of course, depends on your definition of better, but at least if you expect that you have a
+
+81
+00:04:30.180 --> 00:04:36.200
+slow external memory, so if you go to disk basically, then we might favor the second
+
+82
+00:04:36.200 --> 00:04:36.900
+solution here.
+
+83
+00:04:37.040 --> 00:04:42.100
+Namely, we implement not quicksort, but heapsort with replacement selection.
+
+84
+00:04:42.760 --> 00:04:44.200
+Okay, now what does this mean?
+
+85
+00:04:44.200 --> 00:04:46.260
+This is actually a very interesting technique.
+
+86
+00:04:46.480 --> 00:04:48.760
+So I hope you all remember how heapsort works.
+
+87
+00:04:49.220 --> 00:04:52.780
+So we have here an array, this is a sorted heap.
+
+88
+00:04:52.960 --> 00:04:54.740
+So my smallest limit is here.
+
+89
+00:04:55.920 --> 00:04:58.340
+So I just create some random heap here.
+
+90
+00:05:00.900 --> 00:05:08.840
+Now let's say, so this here for example would be a heap.
+
+91
+00:05:10.240 --> 00:05:17.280
+So every element is smaller than its children, and this is true here, so this here is sorted,
+
+92
+00:05:19.960 --> 00:05:21.680
+it satisfies the heap condition.
+
+93
+00:05:21.900 --> 00:05:29.180
+Now if a new value comes, so let's say we want to insert for example, so basically what
+
+94
+00:05:30.900 --> 00:05:33.100
+So when the tuples come, we first fill the element to the heap until the heap is full.
+
+95
+00:05:33.320 --> 00:05:34.600
+Now a new tuple comes.
+
+96
+00:05:34.720 --> 00:05:40.120
+For example, now comes the value, let's say, 6.
+
+97
+00:05:41.140 --> 00:05:42.240
+So my heap is full.
+
+98
+00:05:42.340 --> 00:05:43.740
+I cannot put 6 in the heap.
+
+99
+00:05:43.880 --> 00:05:47.120
+What I do now is I write out the smallest element, the 0.
+
+100
+00:05:47.360 --> 00:05:51.760
+So I write 0 here to my, so then I remove the 0.
+
+101
+00:05:51.980 --> 00:05:56.800
+I replace it with the last element in my heap, 5.
+
+102
+00:05:56.800 --> 00:05:58.680
+Now I restore the heap condition.
+
+103
+00:05:59.740 --> 00:06:06.380
+I see this here violates the heap condition, therefore I swap the 5 here with the small
+
+104
+00:06:06.380 --> 00:06:10.520
+of my two children, so this here 5 and 2.
+
+105
+00:06:15.460 --> 00:06:22.120
+Yeah and sorry, now again restore the heap condition, this is again violated here,
+
+106
+00:06:22.400 --> 00:06:24.000
+so we swap these two here.
+
+107
+00:06:26.900 --> 00:06:33.260
+So now heap condition is restored and I have a free space.
+
+108
+00:06:33.460 --> 00:06:37.740
+So I can insert 6 into my heap and this in fact fits here.
+
+109
+00:06:37.920 --> 00:06:39.080
+Heap condition is satisfied.
+
+110
+00:06:39.280 --> 00:06:41.720
+So now I have successfully inserted 6.
+
+111
+00:06:41.900 --> 00:06:44.180
+Now I just wrote a 0 and I insert them.
+
+112
+00:06:44.440 --> 00:06:49.020
+So I can continue doing this until I can continue adding new elements.
+
+113
+00:06:49.260 --> 00:06:53.040
+So it takes the smallest element from the heap, insert a new element into the heap until
+
+114
+00:06:54.120 --> 00:06:56.320
+hit an element that is smaller.
+
+115
+00:06:56.500 --> 00:06:58.820
+For example, the next element I would remove the two,
+
+116
+00:06:59.840 --> 00:07:01.060
+of course, so then here again,
+
+117
+00:07:01.120 --> 00:07:03.280
+I would restore the heap condition.
+
+118
+00:07:03.540 --> 00:07:05.400
+I would swap this, for example,
+
+119
+00:07:05.620 --> 00:07:06.940
+with different ways to implement this,
+
+120
+00:07:07.020 --> 00:07:09.420
+but once I swap it with six again,
+
+121
+00:07:09.700 --> 00:07:11.640
+and now as the heap condition is violated,
+
+122
+00:07:12.100 --> 00:07:17.440
+so I repair this, I swap this here with three,
+
+123
+00:07:18.920 --> 00:07:23.220
+and then this six,
+
+124
+00:07:24.200 --> 00:07:32.120
+CSE evaluation so then I swap this again and now my heap condition is restored.
+
+125
+00:07:32.580 --> 00:07:35.480
+Okay now but now what happens if somebody now tries to insert a 1?
+
+126
+00:07:36.200 --> 00:07:38.320
+So as soon as the new value that is coming is a 1.
+
+127
+00:07:38.540 --> 00:07:42.300
+So this of course I can no longer add it to my heap, of course I've already written out 2.
+
+128
+00:07:42.460 --> 00:07:48.280
+So if I would add my 1 into my heap I would violate my sort order.
+
+129
+00:07:52.180 --> 00:07:57.860
+Therefore, what I do now is I say, okay, I reduce my heap by one.
+
+130
+00:07:57.980 --> 00:07:59.080
+So it might make a double bar.
+
+131
+00:07:59.220 --> 00:08:01.600
+You say, okay, my heap could just got one element smaller.
+
+132
+00:08:01.820 --> 00:08:07.800
+And instead I store the one into a new heap on the other end.
+
+133
+00:08:08.680 --> 00:08:13.500
+And so my heap, but I can continue running my current elements again, but if a new element
+
+134
+00:08:13.500 --> 00:08:15.500
+comes, so one I have to add to my extra heap.
+
+135
+00:08:15.500 --> 00:08:19.460
+But if the next element that would come would for example be a 12,
+
+136
+00:08:20.360 --> 00:08:23.480
+then I could take the 3 here next out.
+
+137
+00:08:24.440 --> 00:08:28.300
+It takes the 3, swap it here with 6,
+
+138
+00:08:29.140 --> 00:08:30.440
+restore the heap condition.
+
+139
+00:08:31.420 --> 00:08:34.020
+So first remove this, restore the heap condition,
+
+140
+00:08:34.080 --> 00:08:38.440
+heap condition is violated, swap 6 and 4.
+
+141
+00:08:41.380 --> 00:08:41.980
+6.
+
+142
+00:08:43.060 --> 00:08:44.560
+Now heap condition is satisfied.
+
+143
+00:08:44.640 --> 00:08:45.420
+So this is the heap again.
+
+144
+00:08:45.480 --> 00:08:46.220
+I have a free space.
+
+145
+00:08:46.360 --> 00:08:47.580
+So I enter this wave and then done.
+
+146
+00:08:48.180 --> 00:08:48.260
+Okay.
+
+147
+00:08:48.400 --> 00:08:49.260
+So I 12 I can do.
+
+148
+00:08:50.040 --> 00:08:55.300
+And so of course, as long as my elements are roughly increasing, I can easily add them
+
+149
+00:08:55.300 --> 00:08:55.820
+to the heap.
+
+150
+00:08:56.000 --> 00:09:00.040
+If I get outliers, so outliers that are smaller than the smallest value that I have added,
+
+151
+00:09:00.180 --> 00:09:02.320
+I add them to the end of the heap and the heap shrinks over time.
+
+152
+00:09:02.460 --> 00:09:04.800
+And at some point, of course, my heap is empty.
+
+153
+00:09:05.000 --> 00:09:06.300
+So my first heap is empty.
+
+154
+00:09:06.420 --> 00:09:07.380
+Everything is in the second heap.
+
+155
+00:09:07.380 --> 00:09:14.800
+And then at this point, I stop a run and I use a new space that I have as new heap.
+
+156
+00:09:15.260 --> 00:09:15.700
+Okay.
+
+157
+00:09:15.780 --> 00:09:18.640
+So this is called replacement selection, heap sort of this replacement selection.
+
+158
+00:09:19.160 --> 00:09:25.300
+And the good thing is if you do this, you produce a longer runs than if you do quicksort,
+
+159
+00:09:25.400 --> 00:09:29.700
+because in a quicksort you only write a run that is as large as your memory.
+
+160
+00:09:30.160 --> 00:09:34.320
+With replacement selection is larger than your memory, as we see in the example.
+
+161
+00:09:34.320 --> 00:09:36.760
+Now, how much larger, depends.
+
+162
+00:09:38.420 --> 00:09:42.320
+But, so, I mean, there are some cases you can see if,
+
+163
+00:09:42.440 --> 00:09:46.240
+one is if your input is already sorted or nearly sorted,
+
+164
+00:09:46.540 --> 00:09:50.000
+you write out only one run, which is super great,
+
+165
+00:09:50.100 --> 00:09:52.280
+because it's not that uncommon that input is sorted.
+
+166
+00:09:52.560 --> 00:09:55.020
+Like if a relation that is sorted by date roughly,
+
+167
+00:09:55.620 --> 00:09:57.640
+because people insert in the date order,
+
+168
+00:09:57.860 --> 00:09:59.900
+so that if you want to sort this result by date,
+
+169
+00:10:00.440 --> 00:10:02.580
+replacement section will create a single run.
+
+170
+00:10:04.900 --> 00:10:07.820
+While Quicksort would cut this into many paces.
+
+171
+00:10:08.540 --> 00:10:15.120
+And on average, we can see that we expect that the run length that we get is twice as
+
+172
+00:10:15.120 --> 00:10:16.920
+long as my memory size.
+
+173
+00:10:17.440 --> 00:10:19.580
+Best case, one run.
+
+174
+00:10:20.020 --> 00:10:22.280
+Typical case, double memory size.
+
+175
+00:10:23.100 --> 00:10:31.220
+And if you look in the book, The Art of Computer Programming by Knuth, he shows why we expect
+
+176
+00:10:31.220 --> 00:10:33.120
+double run as input.
+
+177
+00:10:34.320 --> 00:10:35.240
+implementation of this in detail.
+
+178
+00:10:35.680 --> 00:10:36.080
+Okay.
+
+179
+00:10:36.120 --> 00:10:36.700
+So this is great.
+
+180
+00:10:36.800 --> 00:10:39.040
+So replacement selection actually is better than Quicksort.
+
+181
+00:10:39.080 --> 00:10:39.940
+If you go to disk.
+
+182
+00:10:40.320 --> 00:10:43.600
+Now, the only unpleasant thing is, I mean, replacement selection is good.
+
+183
+00:10:44.040 --> 00:10:48.800
+If you input it has fixed lengths, because then I can easily remove and replace.
+
+184
+00:10:48.960 --> 00:10:51.940
+If you have variableized size input, then the replacement selection is
+
+185
+00:10:51.940 --> 00:10:52.920
+actually quite difficult to implement.
+
+186
+00:10:53.100 --> 00:10:56.460
+It can be implemented, but this is much more difficult to implement.
+
+187
+00:10:56.660 --> 00:10:59.780
+If you have variable six Quicksort, of course, the system has an analysis problem.
+
+188
+00:11:01.660 --> 00:11:02.060
+Okay.
+
+189
+00:11:02.060 --> 00:11:04.800
+Okay, now what about, this is a flush side,
+
+190
+00:11:04.900 --> 00:11:06.040
+now what about the merge side?
+
+191
+00:11:06.400 --> 00:11:08.680
+So usually we merge on the fly,
+
+192
+00:11:08.820 --> 00:11:10.380
+which means we take all my runs here.
+
+193
+00:11:11.240 --> 00:11:15.020
+So, and so the first run, second run, third run, and so on.
+
+194
+00:11:15.160 --> 00:11:17.600
+And we read all of them in parallel,
+
+195
+00:11:17.860 --> 00:11:19.880
+and we always output the smallest element.
+
+196
+00:11:20.440 --> 00:11:22.900
+Okay, only question is how do we find the smallest element?
+
+197
+00:11:23.240 --> 00:11:24.680
+And because in theory here,
+
+198
+00:11:24.700 --> 00:11:25.820
+this could be a large number,
+
+199
+00:11:25.980 --> 00:11:28.040
+at least a reasonably large number, so some N here.
+
+200
+00:11:28.040 --> 00:11:31.120
+and you all have to find the smallest element
+
+201
+00:11:31.120 --> 00:11:34.160
+from n things here.
+
+202
+00:11:34.500 --> 00:11:36.440
+The best way to implement this is,
+
+203
+00:11:37.380 --> 00:11:38.700
+I mean the naive way,
+
+204
+00:11:39.620 --> 00:11:41.560
+the really naive way, of course we don't do.
+
+205
+00:11:41.740 --> 00:11:44.180
+The really naive way would be to loop over all elements
+
+206
+00:11:44.180 --> 00:11:44.860
+and fix the smallest.
+
+207
+00:11:45.040 --> 00:11:46.100
+Don't do this, terrible runtime.
+
+208
+00:11:46.640 --> 00:11:47.580
+Okay, don't do this.
+
+209
+00:11:47.920 --> 00:11:49.720
+Better way, use a priority queue.
+
+210
+00:11:50.340 --> 00:11:52.600
+Only problem is this is especially kind of priority queue
+
+211
+00:11:52.600 --> 00:11:54.760
+here, namely we take the smallest element out
+
+212
+00:11:54.760 --> 00:11:56.440
+and then we want to replace it
+
+213
+00:11:58.040 --> 00:12:03.160
+So for example, if this here is the smallest one, a one, then a five, then in my priority queue,
+
+214
+00:12:03.280 --> 00:12:07.420
+I would have that one is the smallest for that one here, and that four is the smallest from that one.
+
+215
+00:12:07.560 --> 00:12:10.880
+Also, then I would want to remove one and replace it with five.
+
+216
+00:12:12.280 --> 00:12:16.860
+And you can do this, of course, using a regular priority queue, like a heap,
+
+217
+00:12:17.460 --> 00:12:22.640
+but you can do better. The most efficient way to implement this is tree of losers,
+
+218
+00:12:22.960 --> 00:12:25.320
+which is also explained in the book by Knuth.
+
+219
+00:12:25.320 --> 00:12:27.720
+or you can have some other fancy data structures
+
+220
+00:12:27.720 --> 00:12:29.480
+that priority queues that allows you
+
+221
+00:12:29.480 --> 00:12:30.960
+to do updates efficiently.
+
+222
+00:12:31.720 --> 00:12:35.320
+So weak heaps, for example, or some other implementation.
+
+223
+00:12:35.860 --> 00:12:37.900
+A regular heap is also quite okay.
+
+224
+00:12:38.740 --> 00:12:40.840
+You do, unfortunately,
+
+225
+00:12:41.460 --> 00:12:43.340
+so the naive A to implement this does twice
+
+226
+00:12:43.340 --> 00:12:44.960
+the number of comparisons to a tree of losers.
+
+227
+00:12:45.140 --> 00:12:46.760
+So tree of losers improves the number of comparisons
+
+228
+00:12:46.760 --> 00:12:48.300
+by factor two, but nevertheless,
+
+229
+00:12:48.380 --> 00:12:50.580
+it's not a super great difference.
+
+230
+00:12:50.760 --> 00:12:52.940
+Even a naive heap would be okay
+
+231
+00:12:52.940 --> 00:12:54.860
+because at least you get logarithmic cost.
+
+232
+00:12:56.400 --> 00:12:57.940
+And now the only question is,
+
+233
+00:12:58.040 --> 00:12:59.360
+what do you do with N is too large?
+
+234
+00:12:59.920 --> 00:13:01.400
+Because depending on your hardware,
+
+235
+00:13:01.620 --> 00:13:03.740
+it could be that you cannot merge
+
+236
+00:13:03.740 --> 00:13:04.800
+an arbitrary number of runs.
+
+237
+00:13:05.260 --> 00:13:06.880
+I mean, historically, when we,
+
+238
+00:13:07.020 --> 00:13:08.320
+I think at the beginning of this lecture,
+
+239
+00:13:08.440 --> 00:13:10.740
+I talked, I'm sure if I really did this,
+
+240
+00:13:10.920 --> 00:13:15.100
+but usually I do, perhaps I didn't use this recording.
+
+241
+00:13:15.460 --> 00:13:17.660
+Usually I talk about external memory sorting
+
+242
+00:13:17.660 --> 00:13:19.860
+with tapes, because this is where the people
+
+243
+00:13:19.860 --> 00:13:21.440
+who invented external memory sorting.
+
+244
+00:13:21.900 --> 00:13:23.800
+And of course there you can only merge,
+
+245
+00:13:25.320 --> 00:13:26.480
+many tape drives you have.
+
+246
+00:13:26.780 --> 00:13:27.900
+If you have four tape drives,
+
+247
+00:13:28.000 --> 00:13:29.380
+you can only merge four runs, of course.
+
+248
+00:13:29.720 --> 00:13:30.800
+In red, you can merge less
+
+249
+00:13:30.800 --> 00:13:32.500
+because you have to also write to the output.
+
+250
+00:13:32.740 --> 00:13:36.440
+But so you have a limited number of devices that you can read.
+
+251
+00:13:37.480 --> 00:13:38.800
+If you read from SSDs,
+
+252
+00:13:38.820 --> 00:13:40.580
+this might not be an issue for you,
+
+253
+00:13:40.720 --> 00:13:43.140
+then you can really merge a high number,
+
+254
+00:13:43.920 --> 00:13:46.260
+perhaps not an unbounded high number,
+
+255
+00:13:46.340 --> 00:13:47.720
+because at some point it becomes inefficient
+
+256
+00:13:47.720 --> 00:13:48.960
+to read from so many runs.
+
+257
+00:13:49.120 --> 00:13:50.240
+So if you have too many runs,
+
+258
+00:13:50.340 --> 00:13:51.400
+then you do a partial merge,
+
+259
+00:13:51.500 --> 00:13:52.920
+which means you take a number of runs
+
+260
+00:13:52.920 --> 00:13:55.300
+that you can merge and produce a larger run
+
+261
+00:13:55.320 --> 00:13:58.820
+from this and you do this until a total merge becomes feasible.
+
+262
+00:13:59.440 --> 00:14:02.620
+So this is how you implement external memory sorting.
+
+263
+00:14:04.740 --> 00:14:06.740
+Now, what other operators do we need?
+
+264
+00:14:06.940 --> 00:14:10.440
+One here, what we need for SQL, of course, is group by.
+
+265
+00:14:11.180 --> 00:14:13.380
+So let's say if somebody says,
+
+266
+00:14:13.380 --> 00:14:26.200
+So it says here select some X from group by Y.
+
+267
+00:14:27.420 --> 00:14:29.680
+And also this is supposed to be an X.
+
+268
+00:14:30.060 --> 00:14:35.520
+So the easiest way to implement this is you take your input, you sort it by Y, because
+
+269
+00:14:35.520 --> 00:14:51.920
+Because then you know that the xy pairs, xy, so x4y5, x10y5, if you sort them, of course
+
+270
+00:14:51.920 --> 00:14:52.740
+the aggregate is trivial.
+
+271
+00:14:52.980 --> 00:14:57.340
+Because I just read my input sequentially, I sum up these numbers, I sum up that numbers
+
+272
+00:14:57.340 --> 00:14:57.920
+and then I am done.
+
+273
+00:14:58.560 --> 00:15:01.040
+So when my input is sorted, problems are solved.
+
+274
+00:15:01.240 --> 00:15:02.240
+Trivial aggregation.
+
+275
+00:15:04.580 --> 00:15:07.480
+Only problem is of course I have to sort and sorting is not cheap.
+
+276
+00:15:07.840 --> 00:15:11.420
+Sorting is n log n, so this is not exactly cheap to do.
+
+277
+00:15:12.380 --> 00:15:15.340
+The alternative is to use a hash based group by.
+
+278
+00:15:16.040 --> 00:15:21.700
+So in that case, if you would aggregate into a big hash table, this works fine as long
+
+279
+00:15:21.700 --> 00:15:22.520
+as everything fits.
+
+280
+00:15:22.740 --> 00:15:27.480
+If my data does not fit in memory, then I have to split my hash table to disk and then
+
+281
+00:15:27.480 --> 00:15:30.800
+I have to merge the split partition.
+
+282
+00:15:32.240 --> 00:15:36.640
+join if you think about this and so this is why we built a hash table just in a hash join
+
+283
+00:15:36.640 --> 00:15:42.880
+as long as everything fits great if it doesn't fit i split my input into partitions organized by
+
+284
+00:15:42.880 --> 00:15:48.040
+hash value and then i merge within a partition so i have to read the partition again and then find
+
+285
+00:15:48.040 --> 00:15:56.260
+duplicates and then merge them okay so the so this is the implementation here for an in-memory group
+
+286
+00:15:57.400 --> 00:16:02.380
+by so we initialize a hash table in the beginning of course and then i
+
+287
+00:16:03.020 --> 00:16:07.920
+when i reproduce and i read my input and afterwards everything is done actually so
+
+288
+00:16:07.920 --> 00:16:12.940
+after my input is processed i have already the results so therefore i can to produce my output
+
+289
+00:16:12.940 --> 00:16:19.200
+i just scan all groups in my hash table and i output each group to my consumer okay now so the
+
+290
+00:16:19.200 --> 00:16:23.620
+real aggregation work is performed here and the consume function so in the consume function a new
+
+291
+00:16:23.810 --> 00:16:26.610
+So this example comes and I assume I group by a here.
+
+292
+00:16:26.710 --> 00:16:27.790
+So this is my group by attributes.
+
+293
+00:16:28.110 --> 00:16:29.690
+And so I check in the hash table,
+
+294
+00:16:29.750 --> 00:16:33.010
+if a group with, for the values a already exists,
+
+295
+00:16:33.710 --> 00:16:35.850
+if yes, I update the group.
+
+296
+00:16:36.350 --> 00:16:39.110
+So if I have a sum, I increase the sum of whatever I do.
+
+297
+00:16:39.230 --> 00:16:40.830
+So if I count, I increase the count.
+
+298
+00:16:40.990 --> 00:16:41.970
+So at this point,
+
+299
+00:16:42.050 --> 00:16:43.590
+you update my aggregation functions here.
+
+300
+00:16:44.090 --> 00:16:47.250
+Otherwise I create a new group for this, for this value.
+
+301
+00:16:47.370 --> 00:16:49.350
+So therefore I had the examples here,
+
+302
+00:16:49.490 --> 00:16:53.130
+but as I said, I think x, y was something like
+
+303
+00:16:53.810 --> 00:17:02.370
+five six five uh seven five uh two six eight six and something like this so i would now in this
+
+304
+00:17:02.370 --> 00:17:09.650
+case it's sorted of yes it's really easy no assume that this is not sorted i don't know that this is
+
+305
+00:17:09.650 --> 00:17:16.610
+sorted so i want to do it hash based so uh so these values now come to me so the first value comes
+
+306
+00:17:16.610 --> 00:17:23.550
+i check in the mesh table it's empty so i create a new group say okay for the for the value five
+
+307
+00:17:23.810 --> 00:17:26.190
+My aggregation is now 3.
+
+308
+00:17:26.690 --> 00:17:28.050
+Okay, next tapple comes,
+
+309
+00:17:28.410 --> 00:17:29.950
+I again check here 5,
+
+310
+00:17:29.950 --> 00:17:33.550
+and now I update my aggregate here from 3 to 6.
+
+311
+00:17:34.130 --> 00:17:39.410
+Next value comes, I update my aggregate from 6 to 13.
+
+312
+00:17:41.010 --> 00:17:42.130
+Then the next value comes,
+
+313
+00:17:42.270 --> 00:17:43.850
+oh, and I have this group I don't have already,
+
+314
+00:17:43.910 --> 00:17:45.550
+so I therefore create a new group with 2.
+
+315
+00:17:45.790 --> 00:17:48.790
+Next value comes, I update the group where my value was to 8.
+
+316
+00:17:50.090 --> 00:17:51.190
+And that's it.
+
+317
+00:17:51.990 --> 00:17:53.490
+Okay, actually quite simple to implement.
+
+318
+00:17:53.810 --> 00:17:55.550
+Oh, no, I said it's quite simple to implement.
+
+319
+00:17:56.130 --> 00:17:59.210
+What is potentially not so simple is,
+
+320
+00:17:59.890 --> 00:18:02.050
+whatever it means, some count is okay.
+
+321
+00:18:02.370 --> 00:18:03.650
+But what about min max?
+
+322
+00:18:04.310 --> 00:18:07.010
+Yeah, so you can also maintain min and max.
+
+323
+00:18:11.290 --> 00:18:14.390
+And for some attributes that here,
+
+324
+00:18:15.010 --> 00:18:16.830
+if these are numbers, no problem,
+
+325
+00:18:16.970 --> 00:18:17.870
+it just works just the same.
+
+326
+00:18:17.990 --> 00:18:19.990
+If these are strings, that's not so easy
+
+327
+00:18:19.990 --> 00:18:22.390
+because it could be that the smallest
+
+328
+00:18:23.950 --> 00:18:27.690
+but also the smallest, is larger than the initial value that you get.
+
+329
+00:18:27.930 --> 00:18:31.230
+So the first time you see this group, you see a certain string value,
+
+330
+00:18:31.450 --> 00:18:36.930
+but there could be other string values that are, in sort order, greater or less,
+
+331
+00:18:37.070 --> 00:18:38.250
+but in length are longer.
+
+332
+00:18:39.170 --> 00:18:43.630
+And this is of course a problem, and there are different ways to tackle this,
+
+333
+00:18:43.750 --> 00:18:46.570
+but the easiest way to tackle this is to reserve the maximum space,
+
+334
+00:18:46.690 --> 00:18:50.630
+because you know how long the values can be at most, you can derive this from the schema.
+
+335
+00:18:50.630 --> 00:18:53.630
+So you reserve enough space to the data can store those.
+
+336
+00:18:53.830 --> 00:18:55.170
+So the longest possible string,
+
+337
+00:18:55.310 --> 00:18:58.170
+then you can also evaluate min and max.
+
+338
+00:18:59.090 --> 00:19:01.310
+Or alternative would be you reallocate,
+
+339
+00:19:01.510 --> 00:19:02.770
+so you create a new group.
+
+340
+00:19:03.250 --> 00:19:04.430
+So different ways to implement this.
+
+341
+00:19:04.550 --> 00:19:06.310
+But let's say variable length is a bit tricky.
+
+342
+00:19:07.270 --> 00:19:08.850
+But without variable length everything is okay.
+
+343
+00:19:10.110 --> 00:19:14.770
+So this was the basic primitive.
+
+344
+00:19:14.990 --> 00:19:18.490
+So we have already talked to join, sort, group by.
+
+345
+00:19:18.490 --> 00:19:23.310
+There are some other stuff you can do in a deadweight system and one particular thing
+
+346
+00:19:23.310 --> 00:19:24.970
+we can do are the set operations.
+
+347
+00:19:25.630 --> 00:19:27.470
+So union, intersect, accept.
+
+348
+00:19:28.910 --> 00:19:32.310
+They, in a first glance, look a bit like a join actually.
+
+349
+00:19:32.430 --> 00:19:35.030
+Intersect, you want to find everything that occurs left and right.
+
+350
+00:19:35.170 --> 00:19:42.730
+So this is a bit like a join, same as accept looks a bit like an anti-join, but they behave
+
+351
+00:19:42.730 --> 00:19:43.290
+slightly different.
+
+352
+00:19:43.430 --> 00:19:46.790
+So therefore we look at different ways to implement this.
+
+353
+00:19:48.490 --> 00:19:53.270
+repetition here you hope you all know the difference between intersect and intersect all
+
+354
+00:19:53.270 --> 00:20:00.450
+and the same for the other ones the left side here has set semantic the right hand side here has
+
+355
+00:20:00.450 --> 00:20:07.650
+multi-set or back my back is a different name for what is that my t set semantic now or back
+
+356
+00:20:08.650 --> 00:20:14.830
+so which means that the ones with all do allow duplicates whereas the one without all remove
+
+357
+00:20:14.830 --> 00:20:18.150
+duplicates. Set is duplicate free, a mighty set can have duplicates.
+
+358
+00:20:18.630 --> 00:20:23.710
+So therefore we have some treat them somewhat differently. Okay so first we
+
+359
+00:20:23.710 --> 00:20:28.010
+look at union all means this is trivial, this does nothing. So union all is a
+
+360
+00:20:28.010 --> 00:20:31.850
+trivial set operation, the only trivial set operation actually. We just take two
+
+361
+00:20:33.170 --> 00:20:37.950
+relations and union them and keep them. So here we say we take two tuppled
+
+362
+00:20:37.950 --> 00:20:41.310
+streams, I get two tuppled streams as input, it just concatenates them. So
+
+363
+00:20:41.310 --> 00:20:44.350
+So everything from the left, then everything from the right, and that's it.
+
+364
+00:20:44.890 --> 00:20:47.830
+I might have to rename attributes depending on how it's implemented.
+
+365
+00:20:47.990 --> 00:20:48.810
+This does nothing.
+
+366
+00:20:48.950 --> 00:20:51.490
+So most likely, here is nearly no code.
+
+367
+00:20:51.570 --> 00:20:54.470
+Most likely this operator here does nearly nothing.
+
+368
+00:20:54.750 --> 00:20:58.010
+Here we just execute one operator, we execute another operator, that's it.
+
+369
+00:20:58.150 --> 00:21:00.850
+We might have to do some renaming, but it's trivial.
+
+370
+00:21:01.290 --> 00:21:02.870
+So no work is performed.
+
+371
+00:21:03.070 --> 00:21:04.290
+So this is really easy.
+
+372
+00:21:05.870 --> 00:21:08.330
+This one here is not so easy.
+
+373
+00:21:08.330 --> 00:21:14.250
+So we, namely, so this, now we have to remove duplicates.
+
+374
+00:21:14.470 --> 00:21:21.910
+So what we can, could do is we could first run a union all and then remove duplicates.
+
+375
+00:21:21.990 --> 00:21:23.350
+This is actually a valid way to implement this.
+
+376
+00:21:23.450 --> 00:21:24.650
+So this is what we see here.
+
+377
+00:21:24.770 --> 00:21:31.130
+We say E1, union E2 is the same as running E1, union E2 with duplicates.
+
+378
+00:21:31.350 --> 00:21:36.310
+So allowing duplicates is we draw by doing this bar here on top of this union operator.
+
+379
+00:21:36.310 --> 00:21:39.530
+So this means we do a union all, we allow duplicates.
+
+380
+00:21:39.690 --> 00:21:43.470
+And afterwards we group everything here by the attributes.
+
+381
+00:21:43.890 --> 00:21:45.510
+And this of course removes duplicates.
+
+382
+00:21:45.670 --> 00:21:46.870
+Here group by removes duplicates.
+
+383
+00:21:47.150 --> 00:21:52.650
+Therefore this is one way to implement union.
+
+384
+00:21:53.110 --> 00:21:57.130
+Now what we could do instead is we could directly write everything into one hash table.
+
+385
+00:21:57.290 --> 00:21:59.950
+Like we built a hash table and store everything from the left and everything
+
+386
+00:21:59.950 --> 00:22:01.430
+from the right in the hash table.
+
+387
+00:22:01.430 --> 00:22:07.830
+this could be a tiny bit more efficient than running a group I operator but in
+
+388
+00:22:07.830 --> 00:22:13.410
+reality this is nearly no difference and so this union is nearly identical to
+
+389
+00:22:13.410 --> 00:22:19.690
+group I just union all into group I also in fact you can implement this it's the
+
+390
+00:22:19.690 --> 00:22:26.130
+same now what about the others so intersect so an intersect is similar to
+
+391
+00:22:26.130 --> 00:22:33.810
+a semi-join so basically E1 intersect E2 is roughly the same as E1 semi-join E2.
+
+392
+00:22:33.930 --> 00:22:38.630
+I say roughly the same because it's only the same if E1 is duplicate free.
+
+393
+00:22:38.890 --> 00:22:44.090
+Now so if you have no duplicate in E1 then we can in fact evaluate and intersect with the semi-join.
+
+394
+00:22:47.950 --> 00:22:52.230
+What we can do is we can figure it out during the build phase.
+
+395
+00:22:52.230 --> 00:22:57.370
+So basically we put one of the two sites into a hash table
+
+396
+00:22:58.070 --> 00:22:59.470
+and by building the hash table,
+
+397
+00:22:59.570 --> 00:23:01.110
+we can recognize if there are duplicates
+
+398
+00:23:01.110 --> 00:23:02.430
+and if yes, we remove them.
+
+399
+00:23:02.670 --> 00:23:04.590
+And so we don't store duplicates in the hash table.
+
+400
+00:23:05.010 --> 00:23:07.870
+And then afterwards, my hash table is duplicate free.
+
+401
+00:23:08.470 --> 00:23:12.650
+And then I can run a semi-join.
+
+402
+00:23:13.230 --> 00:23:15.030
+And if I have already a joint partner,
+
+403
+00:23:15.050 --> 00:23:16.430
+I don't output the joint partner again.
+
+404
+00:23:16.550 --> 00:23:20.310
+So just use a marking technique that we saw before.
+
+405
+00:23:22.230 --> 00:23:27.450
+that you saw for semi-join so we remember if you have a joint partner if not we output this now
+
+406
+00:23:27.450 --> 00:23:32.450
+so this is one way to implement this or alternative if you look at how to implement
+
+407
+00:23:32.450 --> 00:23:38.390
+the intersect all this we see in the next slide and then we we implement it basically using like
+
+408
+00:23:38.390 --> 00:23:44.430
+intersect equivalent to intersect all slightly different of course but equivalent now from a
+
+409
+00:23:44.430 --> 00:23:48.390
+performance perspective this here is actually the more efficient one but on the other hand you have
+
+410
+00:23:48.390 --> 00:23:49.890
+to implement the intersect all anyway.
+
+411
+00:23:50.270 --> 00:23:53.190
+Therefore we can also lift into the intersect all
+
+412
+00:23:53.190 --> 00:23:54.390
+implementation if you want.
+
+413
+00:23:54.710 --> 00:23:57.790
+I have over my time implemented both strategies.
+
+414
+00:23:58.150 --> 00:23:59.690
+Now, so using intersect all is easier.
+
+415
+00:23:59.890 --> 00:24:01.850
+A separate implementation is a bit more efficient.
+
+416
+00:24:03.630 --> 00:24:06.710
+Okay, so how do we implement intersect all?
+
+417
+00:24:07.290 --> 00:24:10.330
+Yeah, so it is this intersection with Beck semantic
+
+418
+00:24:11.230 --> 00:24:13.870
+and this is defined over the characteristic function.
+
+419
+00:24:14.010 --> 00:24:15.590
+Now, what does this mean characteristic function?
+
+420
+00:24:15.590 --> 00:24:18.790
+this is basically the frequency function.
+
+421
+00:24:18.950 --> 00:24:20.630
+So the frequency function tells you
+
+422
+00:24:20.630 --> 00:24:23.450
+how often an element occurs in a set.
+
+423
+00:24:23.810 --> 00:24:26.630
+So like if you look at this multi-set here,
+
+424
+00:24:27.530 --> 00:24:28.630
+I draw this as a multi-set,
+
+425
+00:24:28.830 --> 00:24:36.230
+three, four, five, five, six, six, six, seven.
+
+426
+00:24:36.470 --> 00:24:38.690
+And I want to intersect this with this set here
+
+427
+00:24:38.690 --> 00:24:44.270
+that says one, five, five, six, six, nine.
+
+428
+00:24:45.590 --> 00:24:47.570
+So by the way, if you intersect these,
+
+429
+00:24:50.670 --> 00:24:52.850
+then we get as a result here,
+
+430
+00:24:54.970 --> 00:24:55.730
+what is that?
+
+431
+00:24:56.350 --> 00:24:58.730
+5, 5, 6, 6.
+
+432
+00:24:59.070 --> 00:24:59.510
+Okay.
+
+433
+00:25:00.350 --> 00:25:01.390
+This is the answer.
+
+434
+00:25:01.550 --> 00:25:02.910
+And now how can we figure this out?
+
+435
+00:25:03.050 --> 00:25:04.370
+And we look at the frequencies of these.
+
+436
+00:25:04.550 --> 00:25:06.890
+We see the value of three occurs once.
+
+437
+00:25:07.530 --> 00:25:09.110
+The value of four occurs once.
+
+438
+00:25:09.430 --> 00:25:10.690
+The value of five occurs twice.
+
+439
+00:25:11.050 --> 00:25:13.030
+The value of six occurs three times.
+
+440
+00:25:13.250 --> 00:25:14.490
+The value of seven occurs once.
+
+441
+00:25:15.590 --> 00:25:17.810
+The other side says the value 5 occurs 2 times,
+
+442
+00:25:19.030 --> 00:25:21.150
+the value 6 occurs 2 times, that's it.
+
+443
+00:25:21.670 --> 00:25:22.010
+And I'm sorry,
+
+444
+00:25:23.590 --> 00:25:24.650
+value 1 occurs once,
+
+445
+00:25:24.890 --> 00:25:25.490
+5 2 times,
+
+446
+00:25:25.610 --> 00:25:26.110
+6 2 times,
+
+447
+00:25:26.470 --> 00:25:27.450
+9 1s.
+
+448
+00:25:28.050 --> 00:25:28.910
+Okay, and we say,
+
+449
+00:25:29.110 --> 00:25:30.690
+if we look at these frequencies here,
+
+450
+00:25:31.130 --> 00:25:32.610
+we see in the intersect,
+
+451
+00:25:32.870 --> 00:25:33.570
+and by the way,
+
+452
+00:25:33.650 --> 00:25:35.370
+this is called a characteristic function
+
+453
+00:25:35.370 --> 00:25:37.250
+because this is a bijective mapping
+
+454
+00:25:37.250 --> 00:25:38.950
+between the set and these frequencies.
+
+455
+00:25:39.090 --> 00:25:40.990
+You can deduce one from the other.
+
+456
+00:25:42.270 --> 00:25:44.510
+And we can compute intersection now,
+
+457
+00:25:45.590 --> 00:25:50.390
+of the frequencies. So we say, we look at the value of three, minimum frequency of the both
+
+458
+00:25:50.390 --> 00:25:56.210
+tiles is zero, so it's not in the set. So one's the same, one minimum frequency is one, so min,
+
+459
+00:26:00.070 --> 00:26:07.810
+frequency. So four minimum is zero, five minimum is two, therefore we have two in the set, six
+
+460
+00:26:07.810 --> 00:26:12.510
+minimum is two, two in the set, seven, zero, nine, zero.
+
+461
+00:26:12.770 --> 00:26:13.230
+Okay.
+
+462
+00:26:13.510 --> 00:26:16.230
+So we look basically look at the frequencies of both sides.
+
+463
+00:26:16.350 --> 00:26:16.770
+We count them.
+
+464
+00:26:17.070 --> 00:26:20.610
+Then we take the minimum of both and then we output them.
+
+465
+00:26:21.130 --> 00:26:21.490
+Okay.
+
+466
+00:26:21.690 --> 00:26:23.470
+And how do we compute this?
+
+467
+00:26:23.490 --> 00:26:24.610
+If we just use a group by,
+
+468
+00:26:25.130 --> 00:26:28.890
+and so because counting is just what a group by operator does.
+
+469
+00:26:29.230 --> 00:26:30.330
+And so basically we do,
+
+470
+00:26:31.190 --> 00:26:33.570
+we take to these two sets, one,
+
+471
+00:26:34.370 --> 00:26:37.650
+We compute this, we compute R1, R2.
+
+472
+00:26:38.270 --> 00:26:39.970
+Here we compute a union all,
+
+473
+00:26:40.250 --> 00:26:41.690
+and then we do a group by,
+
+474
+00:26:42.330 --> 00:26:44.190
+and then of course here we have to remember
+
+475
+00:26:44.190 --> 00:26:45.130
+that we have come from the left.
+
+476
+00:26:45.210 --> 00:26:46.690
+So basically we have to compute here a value
+
+477
+00:26:47.210 --> 00:26:51.710
+that says F is one, F is two or something like this.
+
+478
+00:26:51.770 --> 00:26:53.590
+We have to figure out if you're left or right.
+
+479
+00:26:53.750 --> 00:26:54.950
+Then we group by A,
+
+480
+00:26:55.250 --> 00:26:57.610
+and here we then we say,
+
+481
+00:26:58.690 --> 00:27:08.990
+here we sum up the values where f is 1, we sum up the values where f is 2.
+
+482
+00:27:10.690 --> 00:27:18.550
+Now I have gets accounts for left and right and after at the end here I filter that,
+
+483
+00:27:19.450 --> 00:27:25.930
+I compute the minimum of these two and then I shouldn't use filter here, I use unnest basically.
+
+484
+00:27:29.810 --> 00:27:38.430
+unless the coil this here count one count two and unless this here on min c1 c2 okay
+
+485
+00:27:38.430 --> 00:27:43.190
+so i take the minimum of these two counts and i replicate the tuple as as often as the minimum
+
+486
+00:27:43.190 --> 00:27:49.090
+of these two counts and this is exactly the semantic of intersect all you know so i count
+
+487
+00:27:49.090 --> 00:27:54.330
+both sides and adjust expenses it's a good thing about this strategy is we have everything already
+
+488
+00:27:54.330 --> 00:27:59.150
+Un-gen-oil is trivial, group I with all, also un-nest, we didn't talk about un-nest, but
+
+489
+00:27:59.150 --> 00:28:00.790
+trust me, un-nest is a trivial operator.
+
+490
+00:28:00.970 --> 00:28:05.910
+We just take an integer value and then we replicate the tuple as often as the integer
+
+491
+00:28:05.910 --> 00:28:06.390
+value is.
+
+492
+00:28:06.590 --> 00:28:10.530
+So this is very easy here and therefore it's pretty simple to implement.
+
+493
+00:28:12.990 --> 00:28:18.170
+And so we can use the standard algorithm that we have, we can also use this in external
+
+494
+00:28:18.170 --> 00:28:19.350
+memory, everything is possible.
+
+495
+00:28:19.930 --> 00:28:27.090
+now um we can do slightly better if you are in memory because the way i have sketched it is we
+
+496
+00:28:27.090 --> 00:28:32.510
+would count the occurrences on the left and on the right yeah so this is on the other hand if my
+
+497
+00:28:32.510 --> 00:28:38.150
+memory is if my hash table is in memory and i get a trouble from the right where no value from the
+
+498
+00:28:38.150 --> 00:28:44.650
+left exists yeah so i can immediately throw it away so basically if i do intersect all here of
+
+499
+00:28:45.670 --> 00:28:48.290
+R1, R2, and I get an R2 value,
+
+500
+00:28:48.550 --> 00:28:51.430
+and I have no corresponding entry in memory,
+
+501
+00:28:51.670 --> 00:28:55.130
+I will never create a new group,
+
+502
+00:28:55.950 --> 00:28:57.230
+if everything has fit.
+
+503
+00:28:57.470 --> 00:28:59.330
+And because I know that obviously,
+
+504
+00:28:59.550 --> 00:29:01.210
+the count on the left must be zero,
+
+505
+00:29:01.370 --> 00:29:02.750
+if it is not in the memory,
+
+506
+00:29:03.070 --> 00:29:04.190
+therefore I can never find,
+
+507
+00:29:04.530 --> 00:29:06.310
+I never produce a non-zero count,
+
+508
+00:29:06.430 --> 00:29:07.810
+I can immediately throw the tablet away.
+
+509
+00:29:08.450 --> 00:29:10.050
+And so this is a small optimization
+
+510
+00:29:10.590 --> 00:29:11.490
+that can be done here,
+
+511
+00:29:11.670 --> 00:29:13.950
+if everything did fit in memory.
+
+512
+00:29:14.650 --> 00:29:16.490
+case we can do slightly more efficient.
+
+513
+00:29:17.050 --> 00:29:19.710
+And so the trick for intersect all is to go over the
+
+514
+00:29:19.710 --> 00:29:21.790
+frequencies to the counts of the occurrences.
+
+515
+00:29:22.730 --> 00:29:23.170
+Okay.
+
+516
+00:29:23.750 --> 00:29:29.230
+And now the last set operation that we're missing is accept.
+
+517
+00:29:29.650 --> 00:29:31.690
+So this is roughly like an anti-join,
+
+518
+00:29:31.730 --> 00:29:34.570
+the same argument as with intersect intersect
+
+519
+00:29:34.570 --> 00:29:36.770
+with the same join, except it's an anti-join.
+
+520
+00:29:36.950 --> 00:29:38.810
+And so we want to output everything from
+
+521
+00:29:38.810 --> 00:29:40.270
+E1 that does not exist in E2.
+
+522
+00:29:41.350 --> 00:29:43.250
+Again, only if it's duplicate free,
+
+523
+00:29:44.650 --> 00:29:46.470
+with a non-inner joint implementation,
+
+524
+00:29:46.650 --> 00:29:49.890
+we can handle this using a flag.
+
+525
+00:29:50.250 --> 00:29:51.590
+And so we can have a flag,
+
+526
+00:29:51.710 --> 00:29:52.510
+did I have a joint partner?
+
+527
+00:29:52.690 --> 00:29:54.730
+Yes or no, I never output it.
+
+528
+00:29:54.890 --> 00:29:56.310
+Oh no, in this case it's safe anyway.
+
+529
+00:29:57.470 --> 00:29:58.890
+Oh no, no, it's not safe.
+
+530
+00:29:59.650 --> 00:30:00.890
+And it's not super safe.
+
+531
+00:30:01.070 --> 00:30:02.630
+Of course, yeah, it's a,
+
+532
+00:30:02.910 --> 00:30:05.590
+now I must build a hash table over E1 to do this.
+
+533
+00:30:05.710 --> 00:30:06.790
+And so then if I do this,
+
+534
+00:30:07.030 --> 00:30:08.890
+then I can figure out if I have duplicates.
+
+535
+00:30:10.390 --> 00:30:11.770
+Or alternatively we use this,
+
+536
+00:30:12.570 --> 00:30:13.790
+you know what's coming.
+
+537
+00:30:15.030 --> 00:30:20.750
+for x accept all and accept all basically works like like intersect all
+
+538
+00:30:20.750 --> 00:30:27.910
+only in x in intersect all we did minimum in exact all we do minus now so
+
+539
+00:30:27.910 --> 00:30:33.290
+this is exact all again defined over the characteristic function occurred
+
+540
+00:30:33.290 --> 00:30:38.650
+accounts occurrences left and right just just identical to intersect all the
+
+541
+00:30:38.650 --> 00:30:44.470
+only difference is in this line here yeah namely in this line we say in the
+
+542
+00:30:44.650 --> 00:30:50.050
+In the exact case we take the minimum frequency, in the except case we subtract the occurrences
+
+543
+00:30:50.050 --> 00:30:54.330
+from the left, we say occurrences from the left minus occurrences from the right.
+
+544
+00:30:54.450 --> 00:31:01.430
+That is if we reduce frequency, so if a value occurs three times on the left and two times
+
+545
+00:31:01.430 --> 00:31:07.790
+on the right, then the output of course is 1, 3, because 1 did survive, so these cross
+
+546
+00:31:07.790 --> 00:31:10.110
+each other out, the 1, 3 survived.
+
+547
+00:31:10.670 --> 00:31:15.130
+Of course, if the right hand side occurs more frequencies, more values on the left, then the output is zero.
+
+548
+00:31:15.290 --> 00:31:19.010
+Therefore, the ABC is the maximum here of zero and subtraction.
+
+549
+00:31:19.270 --> 00:31:23.870
+Okay, but basically if you know how to do intersect all G, you also know how to do except all.
+
+550
+00:31:23.990 --> 00:31:26.670
+Basically the same, only the computation is slightly different.
+
+551
+00:31:26.930 --> 00:31:30.910
+And also here this same argument holds as in the intersect case.
+
+552
+00:31:31.210 --> 00:31:35.610
+In the in-memory case, if we don't find a group in memory, we can immediately stop.
+
+553
+00:31:35.710 --> 00:31:36.770
+We don't have to create a group.
+
+554
+00:31:36.770 --> 00:31:41.590
+And so we don't have to count if we are sure that my count will be zero in the end anyway.
+
+555
+00:31:42.050 --> 00:31:43.630
+And so we can do this small optimization.
+
+556
+00:31:45.350 --> 00:31:50.390
+So this was the end of my operator.
+
+557
+00:31:50.590 --> 00:31:54.810
+So now we have seen all operators that we need for SQL.
+
+558
+00:31:55.690 --> 00:31:57.170
+No, first let me check if this is true.
+
+559
+00:31:58.350 --> 00:31:59.350
+Did forget any?
+
+560
+00:32:01.130 --> 00:32:05.910
+No, I think this is in fact, at least for basic SQL, this is enough for window function.
+
+561
+00:32:06.770 --> 00:32:08.910
+but for basic SQL, this is enough.
+
+562
+00:32:09.010 --> 00:32:11.530
+You can express everything that we have in SQL using these operators.
+
+563
+00:32:13.330 --> 00:32:13.810
+Okay.
+
+564
+00:32:14.230 --> 00:32:18.590
+What we did not talk about yet is this section here, code generation.
+
+565
+00:32:18.930 --> 00:32:23.350
+Now we have mentioned repeatedly that when we want to evaluate
+
+566
+00:32:23.350 --> 00:32:26.490
+operators and expressions, we have to do something.
+
+567
+00:32:26.610 --> 00:32:29.270
+So we have to produce something into executable form.
+
+568
+00:32:29.630 --> 00:32:33.630
+And today I want to look a bit at how we can really do this.
+
+569
+00:32:33.770 --> 00:32:34.030
+Okay.
+
+570
+00:32:34.030 --> 00:32:38.910
+So basically for performance reasons,
+
+571
+00:32:39.090 --> 00:32:42.850
+we will have to compile my,
+
+572
+00:32:42.850 --> 00:32:44.270
+at least my operator subscripts,
+
+573
+00:32:44.430 --> 00:32:46.770
+potentially even some part of the operators themselves
+
+574
+00:32:47.390 --> 00:32:49.730
+into some kind of executable form.
+
+575
+00:32:49.810 --> 00:32:51.110
+Now, what is executable form?
+
+576
+00:32:51.330 --> 00:32:52.950
+Now we have freedom here.
+
+577
+00:32:52.950 --> 00:32:54.170
+So we could use bytecode.
+
+578
+00:32:54.370 --> 00:32:56.830
+I've sketched you an implementation using bytecode,
+
+579
+00:32:56.930 --> 00:32:58.570
+or we could generate machine code.
+
+580
+00:32:58.710 --> 00:33:00.470
+So real executable code.
+
+581
+00:33:02.310 --> 00:33:07.250
+and of course from a performance perspective machine code is best so you want to produce
+
+582
+00:33:07.250 --> 00:33:12.210
+machine code this is the most efficient it's also the most difficult but i think at this point you
+
+583
+00:33:12.210 --> 00:33:18.070
+i hope already did an exercise where you did this yourself i think you will you did already an
+
+584
+00:33:18.070 --> 00:33:25.450
+exercise where you generated machine code and um generating machine code is really fun so it's not
+
+585
+00:33:25.450 --> 00:33:30.270
+that not as daunting as you might think and performance of course is great very fast.
+
+586
+00:33:31.070 --> 00:33:36.010
+Now historically generating machine code was a bit of fraud upon because you have
+
+587
+00:33:36.010 --> 00:33:40.110
+of course you have portability issues like you can generate machine code for one machine
+
+588
+00:33:40.110 --> 00:33:43.350
+but then a new processor comes up and they know what you do then yeah.
+
+589
+00:33:44.470 --> 00:33:51.210
+And fortunately in the past people were hesitant to do this. So the very very first
+
+590
+00:33:51.210 --> 00:33:57.770
+a relational database system, system R, started by generating machine code, but then they wanted
+
+591
+00:33:57.770 --> 00:34:01.770
+to port the system to a new machine, then said, oh, should I reimplement all my machine
+
+592
+00:34:01.770 --> 00:34:02.250
+code generation?
+
+593
+00:34:02.530 --> 00:34:06.770
+They said no, they switched instead to an interpretation framework.
+
+594
+00:34:06.990 --> 00:34:08.290
+And so they went away.
+
+595
+00:34:09.190 --> 00:34:13.810
+Nowadays you no longer have to do this because what you can do is you can just use existing
+
+596
+00:34:13.810 --> 00:34:15.210
+code generation frameworks for you.
+
+597
+00:34:15.290 --> 00:34:16.750
+So you don't have to implement it yourself.
+
+598
+00:34:16.750 --> 00:34:23.070
+So some well known toolkits here are for example LLVM and this I will probably recommend for you.
+
+599
+00:34:23.270 --> 00:34:28.250
+So this is very matured, easy to use and works just fine.
+
+600
+00:34:28.390 --> 00:34:30.330
+So LLVM is a very good choice.
+
+601
+00:34:31.170 --> 00:34:34.250
+There is not the only one, there are other toolkits you can use, LitJit, GNU, Lightning
+
+602
+00:34:34.250 --> 00:34:38.690
+or another one that we have used also is this one here, SMJIT.
+
+603
+00:34:39.290 --> 00:34:42.470
+So there are different frameworks you can use to generate machine code for you.
+
+604
+00:34:43.710 --> 00:34:46.690
+but definitely you really want to use a framework.
+
+605
+00:34:47.130 --> 00:34:49.550
+You probably don't want to generate machine code yourself.
+
+606
+00:34:49.830 --> 00:34:52.450
+It's too difficult and also not worth the effort.
+
+607
+00:34:52.650 --> 00:34:53.950
+Other people have done this already.
+
+608
+00:34:54.190 --> 00:34:55.590
+Why should you implement it yourself?
+
+609
+00:34:56.770 --> 00:34:58.350
+And if you use such a toolkit,
+
+610
+00:34:58.570 --> 00:35:00.610
+then generating machine code is not that difficult.
+
+611
+00:35:00.810 --> 00:35:01.750
+It's actually quite easy.
+
+612
+00:35:03.250 --> 00:35:05.350
+Many of these even offer you some optimization,
+
+613
+00:35:05.670 --> 00:35:07.830
+so they can even improve the code that you generate
+
+614
+00:35:07.830 --> 00:35:09.310
+to make it faster to execute.
+
+615
+00:35:09.470 --> 00:35:11.310
+In particular, LVM supports this.
+
+616
+00:35:12.470 --> 00:35:16.010
+Okay, and we will talk a bit about how to do this.
+
+617
+00:35:16.290 --> 00:35:19.910
+So now LAVM, so name LAVM by the way
+
+618
+00:35:19.910 --> 00:35:22.190
+is low level virtual machine.
+
+619
+00:35:22.350 --> 00:35:26.010
+So it means it abstracts away a computer,
+
+620
+00:35:26.030 --> 00:35:27.810
+but it's a pretty low level abstraction.
+
+621
+00:35:28.030 --> 00:35:30.530
+So this looks, if you ever saw assembler code
+
+622
+00:35:30.530 --> 00:35:32.550
+for a real assembler code, I mean,
+
+623
+00:35:33.510 --> 00:35:36.390
+the language of LAVM looks a bit like assembler code.
+
+624
+00:35:36.510 --> 00:35:39.130
+So they have very low level primitives,
+
+625
+00:35:39.310 --> 00:35:41.710
+but it's not real assembler.
+
+626
+00:35:42.470 --> 00:35:46.850
+if you wish a high level assembler that extracts away from you some of the problems.
+
+627
+00:35:47.290 --> 00:35:52.890
+So now what is our characteristic properties here? First we pretend as if you would have
+
+628
+00:35:52.890 --> 00:35:58.730
+an unbounded number of registers. In the real machines is not true of course. So a real processor
+
+629
+00:35:58.730 --> 00:36:04.970
+has, depending on which processor you use, but if you use a 64-bit Intel for example,
+
+630
+00:36:05.010 --> 00:36:09.070
+you have 16 general purpose registers that you can use.
+
+631
+00:36:13.930 --> 00:36:17.130
+If you use the 32-bit until you have only six,
+
+632
+00:36:17.210 --> 00:36:18.030
+but you shouldn't do this.
+
+633
+00:36:18.610 --> 00:36:20.050
+Now six is really too little.
+
+634
+00:36:20.610 --> 00:36:22.190
+And 64-bit mode, we have 16,
+
+635
+00:36:22.250 --> 00:36:24.250
+which is at least some reasonable number.
+
+636
+00:36:24.490 --> 00:36:26.010
+Other processes have even more.
+
+637
+00:36:26.170 --> 00:36:26.850
+Now, but nevertheless,
+
+638
+00:36:26.950 --> 00:36:28.850
+you will have a significant number of registers.
+
+639
+00:36:29.310 --> 00:36:31.310
+At some point you will run out of registers
+
+640
+00:36:31.310 --> 00:36:33.950
+and you will have to store your values on the stack instead,
+
+641
+00:36:34.130 --> 00:36:36.030
+because you cannot keep them on registers.
+
+642
+00:36:37.010 --> 00:36:38.850
+But LVM hides this problem for you.
+
+643
+00:36:39.170 --> 00:36:41.710
+So in LVM, you can just pretend
+
+644
+00:36:42.470 --> 00:36:47.210
+many as you need and this is how the code looks like here this is a definition of a small lvm
+
+645
+00:36:47.210 --> 00:36:54.090
+fragment and this defines a factorial function so we compute factorial here so we define the
+
+646
+00:36:54.090 --> 00:36:58.630
+function factorial we get an argument x so therefore what you do here first if we say okay
+
+647
+00:36:58.630 --> 00:37:05.610
+let's compare x with one we check if x is larger than one if this is the result of this comparison
+
+648
+00:37:05.610 --> 00:37:11.230
+is taught in this register's unnamed register just gets the value one so unnamed register one
+
+649
+00:37:12.470 --> 00:37:17.670
+as you need so this is a comparison if this is true so this is a boolean flag here if this is
+
+650
+00:37:17.670 --> 00:37:22.730
+true we jump to a one otherwise we'll jump to a two so you see already the second characteristic
+
+651
+00:37:22.730 --> 00:37:29.650
+here unbounded number of registers and strongly typed so each register has a type here namely
+
+652
+00:37:29.650 --> 00:37:36.150
+and this year register one is a boolean register x is an 32-bit integer and so we have a type
+
+653
+00:37:36.150 --> 00:37:41.510
+attached to the register so if the weight is larger than one then we jump to label one this is here
+
+654
+00:37:42.470 --> 00:37:44.690
+What we do then is we subtract one from x
+
+655
+00:37:44.690 --> 00:37:46.430
+and we call factorial of,
+
+656
+00:37:47.230 --> 00:37:49.610
+so we subtract x one from x.
+
+657
+00:37:49.730 --> 00:37:52.010
+This gives us a new value register two.
+
+658
+00:37:52.390 --> 00:37:55.010
+And then we call factorial recursive passing
+
+659
+00:37:55.010 --> 00:37:56.130
+this new value two here.
+
+660
+00:37:56.350 --> 00:37:57.690
+And then we take the result,
+
+661
+00:37:58.530 --> 00:37:59.450
+this is stored here,
+
+662
+00:37:59.610 --> 00:38:01.350
+multiplies with x and that's it.
+
+663
+00:38:02.990 --> 00:38:05.190
+And otherwise we directly jump here.
+
+664
+00:38:05.670 --> 00:38:07.470
+So now here something funny happens.
+
+665
+00:38:07.630 --> 00:38:08.510
+This is a phi node.
+
+666
+00:38:08.650 --> 00:38:09.450
+Now what is a phi node?
+
+667
+00:38:09.550 --> 00:38:10.770
+Or actually, why do we need phi node?
+
+668
+00:38:12.470 --> 00:38:17.510
+There's a second, a third property that is probably unusual the first time you see this,
+
+669
+00:38:17.670 --> 00:38:24.390
+namely, it uses single static assignment, which means you can, once you have assigned
+
+670
+00:38:24.390 --> 00:38:26.430
+a value to register, you can never change it.
+
+671
+00:38:26.690 --> 00:38:31.550
+And so here we have assigned a value to register one and register one now has this value and
+
+672
+00:38:31.550 --> 00:38:32.690
+this can never be changed.
+
+673
+00:38:35.370 --> 00:38:40.290
+And single static assignment is great for, if you want to analyze data flow, because
+
+674
+00:38:40.290 --> 00:38:44.910
+we know that values never change. So data flow analysis is much easier if we have single static
+
+675
+00:38:44.910 --> 00:38:51.290
+assignment. The only problem is now what do you do with loops, for example. So if you would do a
+
+676
+00:38:52.570 --> 00:38:58.290
+for loop here, we say for x in one to 10. So how do you implement this? If I cannot update x,
+
+677
+00:38:58.470 --> 00:39:02.690
+so I can assign one to x, but I cannot update x. So how do we translate this?
+
+678
+00:39:02.690 --> 00:39:10.970
+yeah so and um this is done using phi nodes so phi nodes are ways to to create new values
+
+679
+00:39:10.970 --> 00:39:18.150
+depending on where you come from so basically we want to translate this we have we do this using
+
+680
+00:39:18.150 --> 00:39:25.530
+three bodies here we say before the loop before then we have the loop body
+
+681
+00:39:30.410 --> 00:39:38.090
+and then we have after the loop okay so and before the loop we do nothing basically we just say
+
+682
+00:39:38.090 --> 00:39:41.650
+uh branch to body
+
+683
+00:39:44.370 --> 00:39:51.630
+put quality okay now within the within the loop we have this variable x we say this variable x
+
+684
+00:39:51.630 --> 00:39:52.410
+Now what is x?
+
+685
+00:39:52.690 --> 00:39:55.670
+We say x is finite
+
+686
+00:39:56.390 --> 00:39:59.070
+and we say we take the value one
+
+687
+00:39:59.870 --> 00:40:01.730
+if we come from before.
+
+688
+00:40:05.330 --> 00:40:05.810
+Yeah.
+
+689
+00:40:06.290 --> 00:40:07.910
+And we take the value we don't know yet.
+
+690
+00:40:08.630 --> 00:40:11.650
+We will see what value we take otherwise.
+
+691
+00:40:12.170 --> 00:40:13.730
+Okay, so this is my x value.
+
+692
+00:40:14.230 --> 00:40:17.270
+So then by, and I can do something with my x.
+
+693
+00:40:17.510 --> 00:40:19.350
+So now the next value of course is,
+
+694
+00:40:19.470 --> 00:40:20.670
+next is x plus one.
+
+695
+00:40:21.630 --> 00:40:25.670
+And then I check, I need more space unfortunately.
+
+696
+00:40:28.710 --> 00:40:32.350
+Next is as n is x plus one, then continue is,
+
+697
+00:40:33.170 --> 00:40:37.250
+is n is less than 10, less than equal to 10.
+
+698
+00:40:38.230 --> 00:40:41.690
+Okay, and then we say conditional branch,
+
+699
+00:40:43.150 --> 00:40:46.290
+when condition C is true, then we go to loop,
+
+700
+00:40:47.290 --> 00:40:48.610
+else we go to after.
+
+701
+00:40:50.650 --> 00:40:52.290
+Okay, and then here is after.
+
+702
+00:40:54.370 --> 00:40:55.830
+Then of course here something continues.
+
+703
+00:40:56.030 --> 00:41:01.870
+And now you see what we put here in the fine node, namely, the first time we run into the
+
+704
+00:41:01.870 --> 00:41:03.870
+loop we take the value one, of course we start with one.
+
+705
+00:41:04.090 --> 00:41:09.210
+And the second iteration, so when we come from our own loop here, then we take the value
+
+706
+00:41:09.210 --> 00:41:09.490
+n.
+
+707
+00:41:11.390 --> 00:41:17.490
+And then when we come from loop, take n, the first time you take one, when you come from
+
+708
+00:41:18.610 --> 00:41:19.670
+from yourself, you take N.
+
+709
+00:41:19.970 --> 00:41:21.650
+So this is what the final does.
+
+710
+00:41:21.870 --> 00:41:25.470
+And this allows you to express this without updating.
+
+711
+00:41:25.570 --> 00:41:27.250
+Notice this value X here is never updated.
+
+712
+00:41:27.570 --> 00:41:29.810
+And if we assign X once, that's it.
+
+713
+00:41:30.650 --> 00:41:32.830
+And so this is the first time you see this,
+
+714
+00:41:32.930 --> 00:41:35.450
+this takes some time to get used to,
+
+715
+00:41:35.550 --> 00:41:37.350
+but this has many good properties.
+
+716
+00:41:37.530 --> 00:41:39.430
+So single-septic assignment is very good.
+
+717
+00:41:39.590 --> 00:41:40.970
+And so you want to use this
+
+718
+00:41:40.970 --> 00:41:43.890
+because you can generate much better code for this,
+
+719
+00:41:43.970 --> 00:41:45.270
+much easier we can generate code for this.
+
+720
+00:41:46.370 --> 00:41:46.770
+Okay.
+
+721
+00:41:48.610 --> 00:41:51.450
+we also need to find out, namely when we,
+
+722
+00:41:51.510 --> 00:41:53.110
+to distinguish between control flow.
+
+723
+00:41:53.270 --> 00:41:55.950
+So when we took the branch, we did recursive call,
+
+724
+00:41:56.030 --> 00:41:57.790
+then we computed the value, this one here.
+
+725
+00:41:57.970 --> 00:42:00.090
+If we did not take the branch,
+
+726
+00:42:00.230 --> 00:42:01.590
+then we want to output the value one.
+
+727
+00:42:01.750 --> 00:42:02.890
+And this is what we see here.
+
+728
+00:42:02.950 --> 00:42:04.990
+We say the value five is computed as,
+
+729
+00:42:05.690 --> 00:42:07.470
+if we took the branch, then we take the value four.
+
+730
+00:42:07.670 --> 00:42:11.290
+If we did not take the branch, then we take the value one.
+
+731
+00:42:11.990 --> 00:42:12.350
+Okay.
+
+732
+00:42:12.730 --> 00:42:15.650
+And then, then we output the result of five.
+
+733
+00:42:15.650 --> 00:42:18.630
+So this computes a factorial function.
+
+734
+00:42:20.190 --> 00:42:22.790
+And you probably have already played with this
+
+735
+00:42:22.790 --> 00:42:23.610
+in the exercises.
+
+736
+00:42:25.150 --> 00:42:27.870
+So, and we can take this here
+
+737
+00:42:27.870 --> 00:42:30.490
+and can take a second to flash the framework
+
+738
+00:42:31.070 --> 00:42:34.610
+and we can produce code reasonably easy.
+
+739
+00:42:34.830 --> 00:42:38.770
+Yeah, so as long as we only compute scalar expressions
+
+740
+00:42:38.770 --> 00:42:40.450
+like plus minus comparison or so on,
+
+741
+00:42:40.610 --> 00:42:43.250
+we can directly translate this to LVM.
+
+742
+00:42:43.250 --> 00:42:47.770
+It's very easy because maps more or less to one of these maps to a few LVM instructions.
+
+743
+00:42:47.990 --> 00:42:48.250
+That's easy.
+
+744
+00:42:48.490 --> 00:42:53.590
+So if you just load this scalar value into LVM registers, you might need more registers
+
+745
+00:42:53.590 --> 00:42:54.670
+for null indicators.
+
+746
+00:42:54.810 --> 00:42:59.970
+So if you have to handle NILs and we need something, but yeah, so here's basic primitives.
+
+747
+00:43:00.130 --> 00:43:03.570
+We just directly map to LVM instructions.
+
+748
+00:43:03.830 --> 00:43:04.490
+It's very easy.
+
+749
+00:43:04.650 --> 00:43:12.090
+Now, some operations of course are complicated like predicate.
+
+750
+00:43:13.250 --> 00:43:15.950
+is this is a bit like a simplified regular expression.
+
+751
+00:43:16.130 --> 00:43:17.230
+This is complicated.
+
+752
+00:43:17.510 --> 00:43:19.630
+For this, it doesn't make sense to generate code.
+
+753
+00:43:19.850 --> 00:43:21.090
+Now this is a lot of code
+
+754
+00:43:21.090 --> 00:43:22.610
+and the code is always the same.
+
+755
+00:43:22.770 --> 00:43:23.970
+It doesn't depend on the query.
+
+756
+00:43:24.150 --> 00:43:25.950
+Therefore we just implement this once,
+
+757
+00:43:26.290 --> 00:43:29.230
+regular in C++ and then we call this from LVM
+
+758
+00:43:29.230 --> 00:43:33.050
+because our generated code can call existing code just fine.
+
+759
+00:43:33.190 --> 00:43:35.970
+And so we can mix existing code and generated code.
+
+760
+00:43:36.090 --> 00:43:39.910
+Therefore this one is something that is clearly called
+
+761
+00:43:39.910 --> 00:43:41.590
+while other stuff is generated.
+
+762
+00:43:43.250 --> 00:43:45.490
+try to generate code that minimizes branching
+
+763
+00:43:45.490 --> 00:43:46.930
+and minimizes the number of function codes.
+
+764
+00:43:47.070 --> 00:43:50.150
+As you don't want to call it unnecessary functions.
+
+765
+00:43:50.510 --> 00:43:51.330
+On the other hand,
+
+766
+00:43:51.470 --> 00:43:54.390
+there's also we don't want to generate a needless code.
+
+767
+00:43:54.750 --> 00:43:56.630
+Therefore there's a certain trade-off here
+
+768
+00:43:57.970 --> 00:44:01.350
+between compile time and execution time.
+
+769
+00:44:02.230 --> 00:44:03.910
+But nevertheless, expressions are easy.
+
+770
+00:44:05.790 --> 00:44:07.250
+The real challenge here is how,
+
+771
+00:44:07.390 --> 00:44:08.730
+what do we do with the sets?
+
+772
+00:44:10.170 --> 00:44:20.930
+yeah and so if you want to want to translate set operations so like join and group by and so on
+
+773
+00:44:20.930 --> 00:44:25.530
+then we have to do something different because lvm of course only handles individual values it's
+
+774
+00:44:25.530 --> 00:44:31.190
+knows nothing about relational algebra so um so for this we need some some different mechanism
+
+775
+00:44:33.970 --> 00:44:36.910
+Okay, and how do we do that?
+
+776
+00:44:37.250 --> 00:44:45.570
+So of course, what we have looked already at different ways to implement to evaluate
+
+777
+00:44:45.570 --> 00:44:49.350
+operators and we have seen the iterator model which is very widely used.
+
+778
+00:44:49.570 --> 00:44:54.570
+But in reality, the iterator model does not really mimic like CPUs work.
+
+779
+00:44:55.010 --> 00:44:59.270
+I mean, the iterator model is in a way natural, if you have implemented your, if you have
+
+780
+00:45:01.190 --> 00:45:02.730
+it directly follows the relation algebra.
+
+781
+00:45:02.970 --> 00:45:04.430
+So therefore people have used this.
+
+782
+00:45:05.470 --> 00:45:07.930
+But if you think about what was the kind of computations
+
+783
+00:45:07.930 --> 00:45:08.970
+that we perform, yeah,
+
+784
+00:45:09.510 --> 00:45:12.430
+then the iterator model does not really match
+
+785
+00:45:12.430 --> 00:45:13.630
+what we would like to do.
+
+786
+00:45:13.710 --> 00:45:16.790
+Because what we want is we would want to have locality.
+
+787
+00:45:17.010 --> 00:45:19.390
+Like we want to touch data as rarely as possible.
+
+788
+00:45:19.630 --> 00:45:22.130
+Yeah, and we want to do as much as we can
+
+789
+00:45:22.130 --> 00:45:24.230
+on a single piece of data before we look at the next,
+
+790
+00:45:24.730 --> 00:45:25.690
+and there's the next one.
+
+791
+00:45:25.790 --> 00:45:27.950
+So locality is important for performance.
+
+792
+00:45:28.290 --> 00:45:30.390
+And this observation here brings us to the idea
+
+793
+00:45:31.190 --> 00:45:33.490
+data-centric query execution that's written here.
+
+794
+00:45:34.110 --> 00:45:39.890
+So basically the first rule here, as we say, we should read and write data as
+
+795
+00:45:39.890 --> 00:45:42.530
+rarely as possible because reading and writing is expensive.
+
+796
+00:45:43.130 --> 00:45:46.050
+I mean not super expensive it's in memory, but it is expensive.
+
+797
+00:45:46.190 --> 00:45:48.710
+Your memory is relatively slow compared to your CPU.
+
+798
+00:45:49.470 --> 00:45:57.150
+And so the corresponding property is we will want to keep data in CPU
+
+799
+00:45:57.150 --> 00:45:58.570
+registers as much as we can.
+
+800
+00:45:59.290 --> 00:46:01.650
+because CPU registers are much faster than memory.
+
+801
+00:46:03.570 --> 00:46:06.190
+And furthermore, what we see is the code
+
+802
+00:46:06.190 --> 00:46:07.930
+should center around the data,
+
+803
+00:46:08.230 --> 00:46:10.270
+not the data move according to the code,
+
+804
+00:46:10.350 --> 00:46:12.250
+because this is what happens in the iterator model.
+
+805
+00:46:12.450 --> 00:46:13.510
+In the iterator model,
+
+806
+00:46:13.550 --> 00:46:16.390
+the code corresponds to the logical operators
+
+807
+00:46:16.390 --> 00:46:18.390
+and we pass data between operators.
+
+808
+00:46:18.430 --> 00:46:20.210
+Like we make copies or we store it somewhere.
+
+809
+00:46:20.370 --> 00:46:22.830
+But we pass data between code fragments,
+
+810
+00:46:22.930 --> 00:46:24.230
+but this is not what we should do.
+
+811
+00:46:24.330 --> 00:46:26.510
+We should instead organize the code in a way
+
+812
+00:46:26.510 --> 00:46:28.890
+that data is touched as rarely as possible.
+
+813
+00:46:29.550 --> 00:46:31.110
+And the good thing is if you do this,
+
+814
+00:46:31.310 --> 00:46:32.410
+you increase locality,
+
+815
+00:46:32.650 --> 00:46:36.250
+like you touch the same part of the data repeatedly
+
+816
+00:46:36.790 --> 00:46:37.970
+and you reduce branching,
+
+817
+00:46:38.010 --> 00:46:39.190
+which is also good for performance.
+
+818
+00:46:40.790 --> 00:46:44.650
+Okay, so these are the high level ideas of the approach.
+
+819
+00:46:44.750 --> 00:46:47.010
+Now I want to show you an example how to do this.
+
+820
+00:46:47.610 --> 00:46:51.010
+So here we see data-centric execution
+
+821
+00:46:51.850 --> 00:46:56.890
+on a picture here with visible pipeline boundaries.
+
+822
+00:46:57.030 --> 00:46:58.130
+So we see what we compute here.
+
+823
+00:46:58.230 --> 00:47:00.310
+We take three relations, one, two, three.
+
+824
+00:47:00.690 --> 00:47:02.850
+We filter R1, we filter R2,
+
+825
+00:47:02.870 --> 00:47:04.630
+we group by the filter R2,
+
+826
+00:47:04.770 --> 00:47:06.210
+and then we take R3,
+
+827
+00:47:06.330 --> 00:47:07.730
+and then we join everything here together.
+
+828
+00:47:08.570 --> 00:47:10.230
+And if you think about what's happening here,
+
+829
+00:47:10.310 --> 00:47:11.750
+if you think about the pipelining,
+
+830
+00:47:12.270 --> 00:47:14.470
+you see the first dotted boundary here.
+
+831
+00:47:14.530 --> 00:47:15.610
+This is my first pipeline.
+
+832
+00:47:16.150 --> 00:47:17.270
+I'm drawn, oh, sorry.
+
+833
+00:47:17.990 --> 00:47:18.890
+I messed it up now.
+
+834
+00:47:18.890 --> 00:47:21.030
+So I draw a boundary about this.
+
+835
+00:47:21.030 --> 00:47:21.770
+This is my first pipeline.
+
+836
+00:47:22.010 --> 00:47:25.190
+So what we do here is we read everything from R1,
+
+837
+00:47:25.710 --> 00:47:28.790
+we filter and then we write everything into a hash table.
+
+838
+00:47:28.910 --> 00:47:30.030
+So this is one part.
+
+839
+00:47:30.170 --> 00:47:33.030
+So if we want to execute this all together
+
+840
+00:47:33.030 --> 00:47:34.990
+because we touch the data from R1,
+
+841
+00:47:35.090 --> 00:47:35.830
+then we write it back.
+
+842
+00:47:35.930 --> 00:47:38.770
+We want to execute this in one piece.
+
+843
+00:47:40.870 --> 00:47:42.570
+And the same here with R2,
+
+844
+00:47:42.790 --> 00:47:43.810
+we read everything from R2,
+
+845
+00:47:43.970 --> 00:47:45.310
+we filter, put it in a hash table,
+
+846
+00:47:45.850 --> 00:47:46.530
+we read the hash table,
+
+847
+00:47:46.650 --> 00:47:48.570
+put it into another hash table
+
+848
+00:47:48.890 --> 00:47:54.710
+here we read r3 and probe to hash tables and we want to execute. So this is how the data flows.
+
+849
+00:47:54.930 --> 00:47:59.410
+We want that my code follows the data flow basically. And therefore what we want to do
+
+850
+00:47:59.410 --> 00:48:03.350
+now is instead of iterating over the data in the iterator model, we want to use a push model
+
+851
+00:48:03.350 --> 00:48:07.050
+and we push the data through the pipeline and we see how this works.
+
+852
+00:48:08.490 --> 00:48:14.770
+So the corresponding code that we want to get for this is this one here. And you see that next
+
+853
+00:48:14.770 --> 00:48:19.770
+to the code we have this brackets here and each bracket corresponds to one pipeline.
+
+854
+00:48:20.010 --> 00:48:23.790
+So this here is the first pipeline, namely that one here, the first pipeline. We say,
+
+855
+00:48:24.610 --> 00:48:29.970
+we loop over all tuples in R1, we check the condition and at the end we store them in the
+
+856
+00:48:30.990 --> 00:48:35.290
+hash table. So this is one piece of code and we want to execute it like this. So this here corresponds
+
+857
+00:48:35.290 --> 00:48:42.730
+to the push model. We push it up and we generate code for exactly this sequence here. Okay, then
+
+858
+00:48:42.730 --> 00:48:48.830
+Then the next pipeline here, the second pipeline here, second, third and fourth.
+
+859
+00:48:49.530 --> 00:48:55.870
+Second pipeline, we loop over everything in R2, we filter and put it in a hash table,
+
+860
+00:48:56.430 --> 00:49:02.130
+three we read the hash table, build a new hash table and four, loop R3, probe the first
+
+861
+00:49:02.130 --> 00:49:05.290
+hash table, probe the second hash table and then output the result.
+
+862
+00:49:05.810 --> 00:49:11.190
+So this is the kind of code that we want to get and this is also the kind of most of compact
+
+863
+00:49:11.190 --> 00:49:12.010
+code that you can imagine.
+
+864
+00:49:12.730 --> 00:49:14.850
+Compare this to what would happen in the iterator model.
+
+865
+00:49:15.010 --> 00:49:17.210
+The iterator model model would jump all over the code,
+
+866
+00:49:17.270 --> 00:49:17.730
+all the place.
+
+867
+00:49:17.950 --> 00:49:21.050
+Here we have small tight loops that read data,
+
+868
+00:49:21.190 --> 00:49:22.150
+do something, write data.
+
+869
+00:49:22.290 --> 00:49:23.210
+This is always a primitive.
+
+870
+00:49:23.530 --> 00:49:25.710
+And we touch data as rarely as possible.
+
+871
+00:49:28.510 --> 00:49:30.490
+So therefore the strategy here,
+
+872
+00:49:30.690 --> 00:49:32.230
+we are producing operator loops
+
+873
+00:49:32.230 --> 00:49:33.570
+over all materializing tuples.
+
+874
+00:49:33.910 --> 00:49:36.430
+So the current tuple is loaded into CPU registers.
+
+875
+00:49:38.010 --> 00:49:40.250
+All pipelining and system operators are applied.
+
+876
+00:49:40.250 --> 00:49:42.870
+and then the tuples materialize into the next pipeline breaker.
+
+877
+00:49:44.210 --> 00:49:49.470
+And our goal here is we want to maximize code and data locality.
+
+878
+00:49:50.510 --> 00:49:54.890
+And we have a tight loop that performs the number of operations and that does everything
+
+879
+00:49:54.890 --> 00:50:00.790
+that we can. So we minimize memory access. So the downside, well, it's not really a downside,
+
+880
+00:50:00.930 --> 00:50:04.770
+but of course what happens here is that the operator boundaries are blurred.
+
+881
+00:50:05.130 --> 00:50:09.810
+So we no longer see the operators as clearly as before. Why? So if you think about this,
+
+882
+00:50:10.250 --> 00:50:17.750
+this part for example belongs to this join here and this part also belongs to this join yeah so
+
+883
+00:50:17.750 --> 00:50:27.850
+this this all this the one operator here is ripped apart into pieces there's a be um so we no longer
+
+884
+00:50:27.850 --> 00:50:33.830
+have a clearly visibility in the code what what belongs to what operator so this is distributed
+
+885
+00:50:33.830 --> 00:50:38.530
+all over the place but on the other hand this is a good thing i mean first time you see this
+
+886
+00:50:40.250 --> 00:50:43.270
+to the iterator model, but performance wise, this is a good thing.
+
+887
+00:50:43.930 --> 00:50:48.550
+And because we, we perform the work when it's appropriate, yeah.
+
+888
+00:50:48.690 --> 00:50:54.630
+And we don't want to jump, don't want to pass data around just to keep my code
+
+889
+00:50:54.630 --> 00:50:56.210
+nicely following the operator model.
+
+890
+00:50:56.510 --> 00:50:56.950
+Okay.
+
+891
+00:50:57.230 --> 00:50:59.390
+So therefore this is actually a good property here.
+
+892
+00:51:01.010 --> 00:51:01.490
+Yeah.
+
+893
+00:51:01.550 --> 00:51:04.310
+So the code centers around the data and not on the operators.
+
+894
+00:51:04.810 --> 00:51:04.890
+Okay.
+
+895
+00:51:05.530 --> 00:51:06.770
+This is what we get now.
+
+896
+00:51:06.770 --> 00:51:11.410
+Now, so this chapter here is called code generation.
+
+897
+00:51:11.650 --> 00:51:13.970
+So how do we generate the code?
+
+898
+00:51:14.550 --> 00:51:18.130
+So we now have to write code basically
+
+899
+00:51:18.130 --> 00:51:19.790
+that generates this code for us.
+
+900
+00:51:21.570 --> 00:51:25.150
+And we do this by using a produce-consume interface
+
+901
+00:51:25.150 --> 00:51:26.430
+that we already talked about
+
+902
+00:51:26.430 --> 00:51:28.630
+in the event we talked about the different models.
+
+903
+00:51:28.910 --> 00:51:30.990
+Now, the big difference here is that
+
+904
+00:51:31.710 --> 00:51:33.630
+the produce-consume function do not really exist.
+
+905
+00:51:33.630 --> 00:51:35.970
+So this is a concept basically.
+
+906
+00:51:36.650 --> 00:51:41.270
+So, I mean, when we talked about the push model,
+
+907
+00:51:41.510 --> 00:51:44.950
+I pretended like the operator would really have a produce
+
+908
+00:51:44.950 --> 00:51:47.170
+and consume function and I showed you how to implement this.
+
+909
+00:51:47.310 --> 00:51:49.050
+But in reality, this function doesn't exist.
+
+910
+00:51:49.210 --> 00:51:53.330
+Instead, what we do is we generate a generator code
+
+911
+00:51:53.330 --> 00:51:55.010
+that has a produce logic.
+
+912
+00:51:55.010 --> 00:51:57.330
+So that generates a code that produces tuples.
+
+913
+00:51:57.510 --> 00:52:00.190
+And we have a consume logic that generates codes
+
+914
+00:52:00.190 --> 00:52:01.450
+that accepts incoming tuples.
+
+915
+00:52:02.310 --> 00:52:04.010
+If it is in the generative code,
+
+916
+00:52:04.030 --> 00:52:05.430
+you no longer see the produce, consume.
+
+917
+00:52:06.510 --> 00:52:08.810
+If you think about this example here,
+
+918
+00:52:09.050 --> 00:52:10.290
+this is a push model,
+
+919
+00:52:10.530 --> 00:52:13.210
+but you don't see a single call to produce and consume.
+
+920
+00:52:13.470 --> 00:52:14.590
+It's simply invisible.
+
+921
+00:52:15.150 --> 00:52:17.850
+There's no, conceptually there is produce, consume here,
+
+922
+00:52:17.910 --> 00:52:19.790
+but in the code, it's no longer visible.
+
+923
+00:52:21.430 --> 00:52:24.790
+Okay, so therefore, how can we produce this code?
+
+924
+00:52:25.290 --> 00:52:27.510
+So, and this is now here,
+
+925
+00:52:27.510 --> 00:52:31.610
+So this is a real C++ sketch here, how to do this.
+
+926
+00:52:31.870 --> 00:52:33.470
+Basically when we have a hash join
+
+927
+00:52:34.190 --> 00:52:37.710
+and we ask the hash join, please produce code.
+
+928
+00:52:37.910 --> 00:52:45.150
+What we do is we ask my left part here, produce code.
+
+929
+00:52:45.690 --> 00:52:49.950
+And this will now generate code that produces code.
+
+930
+00:52:50.370 --> 00:52:52.310
+And also here we call this drive plan function
+
+931
+00:52:52.310 --> 00:52:53.010
+and produce the code.
+
+932
+00:52:53.130 --> 00:52:56.370
+And then we ask my right side lies,
+
+933
+00:52:57.510 --> 00:53:03.990
+the producer code and then we can call this okay then we generate calls we
+
+934
+00:53:03.990 --> 00:53:11.910
+put we perform a call so this is a call to a hash join here from from c++ okay
+
+935
+00:53:11.910 --> 00:53:16.810
+and there's this and in the consume function here so this is a consume that
+
+936
+00:53:16.810 --> 00:53:20.270
+we get and the consume checks okay do I get a table from the left or from the
+
+937
+00:53:20.270 --> 00:53:25.230
+right if it's from the table from the left what we will do here is we collect
+
+938
+00:53:25.230 --> 00:53:31.910
+by values note that this all happens here at compile time not at execution time and so therefore we just remember okay
+
+939
+00:53:31.910 --> 00:53:36.450
+What are the columns that I will that I will need so I collect here in a vector
+
+940
+00:53:36.450 --> 00:53:44.110
+So corners but only as IDs basically I couldn't collect IDs of all columns that I will need I store them here and then I will
+
+941
+00:53:44.670 --> 00:53:47.950
+Use a helper function helper function that computes the size of the tuple
+
+942
+00:53:48.510 --> 00:53:54.470
+I use a function that computes the hash value of the tuple and this helper function now they generate real code, okay?
+
+943
+00:53:55.230 --> 00:54:01.750
+and then we call a function that says okay please store this tuple here and the left in a hash table
+
+944
+00:54:01.750 --> 00:54:08.530
+and this is this is a size and this is my hash value and as a result you will get a pointer to
+
+945
+00:54:08.530 --> 00:54:14.310
+where your tuple should be now so this here is now a pointer where your tuple should be then you
+
+946
+00:54:14.310 --> 00:54:21.710
+generate new code that really materializes the tuple into the hash table okay so this is how you
+
+947
+00:54:23.030 --> 00:54:28.210
+generate this and in the end you end up really with producing code that looks less like this
+
+948
+00:54:28.210 --> 00:54:33.510
+is a protocol of course but you generate exactly this code here where we said this materialized t
+
+949
+00:54:33.510 --> 00:54:40.970
+in hash table this is just the example that we have seen okay and uh so the same for the right
+
+950
+00:54:40.970 --> 00:54:46.710
+side of course when you get tupper from the right side comes we now this year is made for uh for an
+
+951
+00:54:46.710 --> 00:54:47.950
+external memory has joined.
+
+952
+00:54:48.130 --> 00:54:50.830
+So therefore we also materialize the right-hand tuple.
+
+953
+00:54:51.330 --> 00:54:54.050
+And here you see already we say we spool to disk if needed.
+
+954
+00:54:54.290 --> 00:54:56.990
+So we start tuple to disk and then we write it.
+
+955
+00:54:57.130 --> 00:55:00.630
+If you would do an in-memory case, then we would not materialize the right-hand
+
+956
+00:55:00.630 --> 00:55:03.130
+side, but we would just do probe and then perform the lookup.
+
+957
+00:55:05.150 --> 00:55:05.550
+Okay.
+
+958
+00:55:05.890 --> 00:55:08.190
+And so then the,
+
+959
+00:55:11.510 --> 00:55:14.990
+when we, when we, this is a joint function basically.
+
+960
+00:55:16.710 --> 00:55:20.430
+I get a tuple from my left tuple, pointed to my left tuple, pointed to the right tuple.
+
+961
+00:55:20.630 --> 00:55:22.910
+I load by both values in the registers.
+
+962
+00:55:24.130 --> 00:55:29.290
+Yeah, so this is here we call helper function says dematerializer, which says load my left tuple.
+
+963
+00:55:29.450 --> 00:55:32.330
+And so what I need for my left tuple in register, load my right tuple.
+
+964
+00:55:32.510 --> 00:55:36.830
+Then here I say I call helper that says, okay, test the joint condition.
+
+965
+00:55:37.010 --> 00:55:38.870
+So I compared my left values with my right values.
+
+966
+00:55:39.130 --> 00:55:43.090
+If the predicate is false, please jump here.
+
+967
+00:55:43.090 --> 00:55:46.050
+So this is a basic block, so a label,
+
+968
+00:55:46.150 --> 00:55:47.750
+labeling you generate code where you jump to
+
+969
+00:55:47.750 --> 00:55:48.530
+of the conditions false.
+
+970
+00:55:49.030 --> 00:55:51.350
+Now, then you might have some residual predicates
+
+971
+00:55:51.350 --> 00:55:53.930
+or the residual predicates are predicates
+
+972
+00:55:53.930 --> 00:55:55.130
+that are not equal conditions.
+
+973
+00:55:55.290 --> 00:55:58.270
+Like you could say, I want that A like B or something.
+
+974
+00:55:58.570 --> 00:56:00.570
+You cannot evaluate this with a hash join.
+
+975
+00:56:00.830 --> 00:56:02.350
+Therefore we check them afterwards.
+
+976
+00:56:02.730 --> 00:56:04.090
+This is what we do in this loop.
+
+977
+00:56:04.270 --> 00:56:06.190
+The loop of all residual conditions,
+
+978
+00:56:06.750 --> 00:56:07.770
+we derive the values.
+
+979
+00:56:07.910 --> 00:56:08.990
+This is a Boolean value now.
+
+980
+00:56:09.230 --> 00:56:11.070
+Then here we check if the condition is true.
+
+981
+00:56:11.070 --> 00:56:17.770
+and so this is an if, but note that this here is not a regular if, but this is a code gen if.
+
+982
+00:56:18.050 --> 00:56:20.170
+And so we now generate code for an if.
+
+983
+00:56:20.630 --> 00:56:25.830
+Yes, if you check if the condition is true and if it's false, then we jump to this label here,
+
+984
+00:56:26.170 --> 00:56:26.830
+jump to false.
+
+985
+00:56:27.790 --> 00:56:29.390
+Otherwise we did find a match.
+
+986
+00:56:29.590 --> 00:56:33.510
+So if I look at my parent operator and call consume and then do something.
+
+987
+00:56:33.730 --> 00:56:39.150
+But know that this consume here that we call is called at compile time, not execution time.
+
+988
+00:56:41.450 --> 00:56:45.630
+generates code there to do something with the tupler.
+
+989
+00:56:46.890 --> 00:56:47.190
+Okay.
+
+990
+00:56:48.010 --> 00:56:51.610
+So this is how we can generate code.
+
+991
+00:56:52.150 --> 00:56:53.910
+Now let me briefly check my time.
+
+992
+00:56:54.470 --> 00:56:56.150
+Yeah, I realized, unfortunately,
+
+993
+00:56:56.150 --> 00:56:57.310
+you might have noticed this,
+
+994
+00:56:57.310 --> 00:56:59.830
+that we are coming uncomfortably close
+
+995
+00:56:59.830 --> 00:57:00.870
+to the end of the semester,
+
+996
+00:57:00.890 --> 00:57:03.410
+not to say this is the last lecture, unfortunately.
+
+997
+00:57:03.830 --> 00:57:06.390
+And my timing was not ideal.
+
+998
+00:57:06.710 --> 00:57:10.110
+So I mean, I will not squeeze everything in here,
+
+999
+00:57:11.070 --> 00:57:14.990
+wanted to do a code generation because I think this is one of the more interesting and useful
+
+1000
+00:57:14.990 --> 00:57:19.970
+parts of a lecture and I also want to cover parallel execution I will probably not be able
+
+1001
+00:57:19.970 --> 00:57:25.070
+to cover the rest of the lecture but this is okay but at least the most important parts I still
+
+1002
+00:57:25.070 --> 00:57:33.790
+wanted to do therefore we will use the remaining time to look at parallel execution this is a
+
+1003
+00:57:33.790 --> 00:57:41.950
+particular interesting thing because I mean, yeah, but there might be multiple reasons why you want to
+
+1004
+00:57:42.950 --> 00:57:47.630
+use a parallelism. One reason of course is you might just have multiple users that are parallel,
+
+1005
+00:57:47.810 --> 00:57:51.690
+yet run queries at the same time. Of course you want to run them in parallel, but this is trivial.
+
+1006
+00:57:51.910 --> 00:57:55.490
+This is very easy. Now this is a not an interesting case of expert execution.
+
+1007
+00:57:56.050 --> 00:58:01.490
+They're also relatively uninteresting, more interesting somewhat, but a bit less interesting is,
+
+1008
+00:58:02.650 --> 00:58:04.970
+No, no, perhaps I shouldn't, I shouldn't order them like this.
+
+1009
+00:58:05.110 --> 00:58:06.570
+So this is a boring case, first one.
+
+1010
+00:58:06.970 --> 00:58:08.030
+Multiple users is easy.
+
+1011
+00:58:08.190 --> 00:58:10.550
+Just run query, run another query in different threads.
+
+1012
+00:58:10.650 --> 00:58:10.990
+It's easy.
+
+1013
+00:58:11.710 --> 00:58:13.390
+The more challenging one is this one here.
+
+1014
+00:58:14.190 --> 00:58:17.270
+On a modern CPU, you will have more than one core.
+
+1015
+00:58:17.670 --> 00:58:20.810
+I mean, probably even your laptop has at least two or four cores.
+
+1016
+00:58:21.030 --> 00:58:22.670
+And if you look at desktop machines,
+
+1017
+00:58:23.130 --> 00:58:25.550
+the desktop machine I am currently using have 16 cores.
+
+1018
+00:58:25.830 --> 00:58:29.590
+And you can also for affordable price get 32 cores nowadays.
+
+1019
+00:58:32.650 --> 00:58:39.850
+latest AMD they even sell you desktop machines with 64 cores at a somewhat reasonable price and
+
+1020
+00:58:39.850 --> 00:58:45.170
+these these start to get expensive but they're not so insanely expensive so for companies that
+
+1021
+00:58:45.170 --> 00:58:50.670
+is perfectly affordable for a private customer probably not but for company can afford this you
+
+1022
+00:58:50.670 --> 00:58:57.170
+so we can expect that as that a machine nowadays at least probably 16 cores up to 64 or if you have
+
+1023
+00:58:57.170 --> 00:58:58.730
+multi-socket machines even more.
+
+1024
+00:58:58.890 --> 00:59:02.030
+Yeah, you can build a machine for a reasonable price
+
+1025
+00:59:02.030 --> 00:59:04.330
+that has 128 cores or so, or even more.
+
+1026
+00:59:04.630 --> 00:59:06.970
+So you have a high number of cores.
+
+1027
+00:59:07.250 --> 00:59:08.810
+And if you have that many cores,
+
+1028
+00:59:08.930 --> 00:59:10.750
+of course it doesn't make sense to run single-threaded.
+
+1029
+00:59:10.990 --> 00:59:13.890
+Because if you have 64 cores and run single-threaded,
+
+1030
+00:59:14.630 --> 00:59:18.270
+I'm wasting 63 of my 64 cores, this is of course bad.
+
+1031
+00:59:18.550 --> 00:59:19.830
+And therefore on modern machines,
+
+1032
+00:59:19.950 --> 00:59:21.350
+basically parallelism is a must.
+
+1033
+00:59:22.310 --> 00:59:25.270
+Another reason why you want to use parallelism is,
+
+1034
+00:59:27.170 --> 00:59:31.850
+like SSDs that only give you best performance if you query them for multiple threads and
+
+1035
+00:59:31.850 --> 00:59:32.050
+parallel.
+
+1036
+00:59:32.190 --> 00:59:34.050
+Single threads you cannot get maximum bandwidth.
+
+1037
+00:59:34.330 --> 00:59:39.870
+So this also forces you into parallelism but on the other hand this is a, yeah I think
+
+1038
+00:59:39.870 --> 00:59:41.730
+the most interesting case is the second one.
+
+1039
+00:59:41.890 --> 00:59:45.730
+We just have an inside high number of cores and we want to utilize them.
+
+1040
+00:59:46.650 --> 00:59:54.390
+Okay, and if you look at parallelism there are different ways to parallelize interqueryl
+
+1041
+00:59:54.390 --> 00:59:56.590
+parallelism and intraqueryl parallelism.
+
+1042
+00:59:57.890 --> 01:00:01.250
+So interquery parallelism just means we run multiple queries simultaneously.
+
+1043
+01:00:02.130 --> 01:00:06.990
+And so for this, we map each query to a thread and then of course we need concordial control.
+
+1044
+01:00:07.310 --> 01:00:11.370
+But otherwise, parallelism, this kind of parallelism is for free, but that is very easy.
+
+1045
+01:00:11.510 --> 01:00:13.250
+We just want to write one query, that is easy.
+
+1046
+01:00:13.370 --> 01:00:14.550
+So this is not the interesting case.
+
+1047
+01:00:14.790 --> 01:00:18.090
+The interesting case is that one here, intraquery parallelism.
+
+1048
+01:00:18.610 --> 01:00:24.430
+And also within are two different forms, vertical and horizontal.
+
+1049
+01:00:24.430 --> 01:00:30.910
+horizontal is in a way the uninteresting case again like there are some parts like we have
+
+1050
+01:00:30.910 --> 01:00:37.930
+they have such such a query here you can quickly realize that these two subtrees here t1 and t2
+
+1051
+01:00:37.930 --> 01:00:42.450
+are independent of each other they're logically independent therefore what we could do is we take
+
+1052
+01:00:42.450 --> 01:00:48.690
+one thread that executes t1 we run one thread that executes t2 and once both are done they also
+
+1053
+01:00:48.690 --> 01:00:52.370
+to do the group by, the subtree and the group by.
+
+1054
+01:00:52.870 --> 01:00:55.350
+And after both threads are done, we join the result.
+
+1055
+01:00:56.010 --> 01:00:56.370
+Okay.
+
+1056
+01:00:57.910 --> 01:01:01.270
+Again, it's a pretty simple form of parallelism,
+
+1057
+01:01:01.390 --> 01:01:02.810
+but also not a very useful form
+
+1058
+01:01:02.810 --> 01:01:05.270
+because it's not that common that you have this structure.
+
+1059
+01:01:05.510 --> 01:01:07.430
+And because we need a query basically
+
+1060
+01:01:07.430 --> 01:01:09.470
+where we can really cut my query into pieces
+
+1061
+01:01:10.050 --> 01:01:13.610
+and each piece is stored, materialized to disk
+
+1062
+01:01:13.610 --> 01:01:16.270
+and on this materialism operator.
+
+1063
+01:01:17.130 --> 01:01:18.790
+and then we can parallelize this,
+
+1064
+01:01:18.910 --> 01:01:20.430
+but how often this is occur.
+
+1065
+01:01:20.770 --> 01:01:22.010
+Yeah, and also you have to realize,
+
+1066
+01:01:22.110 --> 01:01:24.350
+means there are some expensive theories
+
+1067
+01:01:24.350 --> 01:01:25.810
+that are trivial, like this one.
+
+1068
+01:01:26.570 --> 01:01:28.070
+We scan R and then group I.
+
+1069
+01:01:29.370 --> 01:01:31.510
+Yeah, clearly there's only one operator,
+
+1070
+01:01:31.610 --> 01:01:33.470
+two operators if we include this select,
+
+1071
+01:01:33.810 --> 01:01:35.670
+but there are very little number of operators,
+
+1072
+01:01:35.910 --> 01:01:37.670
+but this here could be huge.
+
+1073
+01:01:37.830 --> 01:01:38.810
+Yeah, it could be that this here
+
+1074
+01:01:38.810 --> 01:01:41.150
+is a few gigabytes of data, terabytes of data.
+
+1075
+01:01:41.370 --> 01:01:43.410
+So then of course we must run this in parallel,
+
+1076
+01:01:43.570 --> 01:01:45.710
+even though it's a very low number of operators.
+
+1077
+01:01:46.270 --> 01:01:48.530
+And this is what we talked about in the last part here,
+
+1078
+01:01:49.090 --> 01:01:50.670
+vertical parallelism.
+
+1079
+01:01:50.770 --> 01:01:53.130
+This means we parallelize the operators themselves.
+
+1080
+01:01:53.830 --> 01:01:55.670
+And this is the most interesting case
+
+1081
+01:01:55.670 --> 01:01:57.130
+and also the most powerful
+
+1082
+01:01:57.130 --> 01:02:00.010
+because if you can parallelize each individual operator,
+
+1083
+01:02:00.290 --> 01:02:03.050
+then of course we can also parallelize the whole query.
+
+1084
+01:02:03.430 --> 01:02:07.590
+And so this is the most powerful way to achieve this.
+
+1085
+01:02:09.310 --> 01:02:13.930
+And now, of course, one question is how do we do this?
+
+1086
+01:02:13.930 --> 01:02:19.390
+And when people first talked about parallelization,
+
+1087
+01:02:19.870 --> 01:02:23.030
+they invented the mechanism
+
+1088
+01:02:23.030 --> 01:02:26.910
+that is called exchange operators.
+
+1089
+01:02:27.210 --> 01:02:29.070
+So basically the idea was,
+
+1090
+01:02:29.390 --> 01:02:32.090
+we hide the fact that we run it parallel
+
+1091
+01:02:32.090 --> 01:02:33.850
+from the operators, operators don't know this.
+
+1092
+01:02:34.670 --> 01:02:39.810
+Instead, we encapsulate the parallelism
+
+1093
+01:02:39.810 --> 01:02:41.990
+in explicit exchange steps
+
+1094
+01:02:43.930 --> 01:02:46.490
+data between threads.
+
+1095
+01:02:47.030 --> 01:02:49.830
+Okay. And so this is an example.
+
+1096
+01:02:49.990 --> 01:02:51.770
+So this is the left side here.
+
+1097
+01:02:51.910 --> 01:02:52.990
+You see a single thread execution.
+
+1098
+01:02:53.190 --> 01:02:55.850
+We just take R, we filter R, then we group by.
+
+1099
+01:02:56.230 --> 01:02:58.150
+Okay. If you want to do this in parallel,
+
+1100
+01:02:58.210 --> 01:03:00.830
+what we could do is we cut R into pieces.
+
+1101
+01:03:01.770 --> 01:03:03.470
+We don't say how, but for example,
+
+1102
+01:03:03.530 --> 01:03:05.390
+this is simply the first thread, the second thread
+
+1103
+01:03:05.390 --> 01:03:08.530
+is also just by row count or something.
+
+1104
+01:03:08.670 --> 01:03:10.930
+And we just, so this is my big R.
+
+1105
+01:03:10.930 --> 01:03:13.130
+we just cut R into three pieces.
+
+1106
+01:03:13.470 --> 01:03:14.490
+R1, R2, R3.
+
+1107
+01:03:15.350 --> 01:03:17.790
+I'm sorry, R2, R1, R2, R3.
+
+1108
+01:03:18.050 --> 01:03:19.970
+We just cut R3, R into pieces.
+
+1109
+01:03:20.550 --> 01:03:22.810
+Then I'd run the same operator as before.
+
+1110
+01:03:22.930 --> 01:03:24.790
+So I filter and I do group by,
+
+1111
+01:03:25.190 --> 01:03:27.350
+and these operators know nothing about parallelism.
+
+1112
+01:03:27.470 --> 01:03:29.390
+So they run it parallel, but they don't know this.
+
+1113
+01:03:29.950 --> 01:03:33.850
+Then I do an exchange, exchange 3, 1,
+
+1114
+01:03:33.970 --> 01:03:36.230
+which means I take three inputs that come in parallel
+
+1115
+01:03:36.750 --> 01:03:39.130
+and I output one output, so one sequential output.
+
+1116
+01:03:40.930 --> 01:03:46.210
+to one and then I do another group by now first why do I need this clearly
+
+1117
+01:03:46.210 --> 01:03:50.110
+because the same group can occur multiple times like the first party I
+
+1118
+01:03:50.110 --> 01:03:54.830
+can have the group seven and then a certain value let's assume I do some
+
+1119
+01:03:54.830 --> 01:04:00.150
+let's say I do some so then the first party I seen the value 10 for the group
+
+1120
+01:04:00.150 --> 01:04:04.830
+seven the second part has seen the value 20 and the third part has seen the value
+
+1121
+01:04:05.570 --> 01:04:06.130
+13.
+
+1122
+01:04:06.430 --> 01:04:06.970
+Okay.
+
+1123
+01:04:07.210 --> 01:04:12.890
+And the final answer of course is I must output 743.
+
+1124
+01:04:13.770 --> 01:04:14.330
+Okay.
+
+1125
+01:04:14.750 --> 01:04:17.370
+And this is what this construct does.
+
+1126
+01:04:17.590 --> 01:04:23.830
+We do pair thread group by, then we exchange result and then we group by again to get the
+
+1127
+01:04:23.830 --> 01:04:25.630
+final result.
+
+1128
+01:04:27.050 --> 01:04:32.270
+And of course we hope, we expect that these groups group by here will make the result
+
+1129
+01:04:32.270 --> 01:04:37.610
+much smaller because this has already removed all duplicates therefore we hope that this work here
+
+1130
+01:04:37.610 --> 01:04:42.750
+is not that much and therefore we can the final group by is not so expensive compared to the
+
+1131
+01:04:42.750 --> 01:04:48.850
+original input so this is a hope here that we have so this is a parallelism this exchange
+
+1132
+01:04:48.850 --> 01:04:53.990
+also historically was it was also invented for a distributed setting because you can just do the
+
+1133
+01:04:53.990 --> 01:04:58.530
+same if you are distributed this is actually strength of the exchange multiple threads
+
+1134
+01:04:58.530 --> 01:04:59.810
+multiple machines makes no difference.
+
+1135
+01:05:00.030 --> 01:05:01.330
+We can handle all of them the same.
+
+1136
+01:05:01.970 --> 01:05:04.370
+On the other hand, it's not a super powerful scheme.
+
+1137
+01:05:04.570 --> 01:05:07.690
+So if you, I mean, there are commercial database systems
+
+1138
+01:05:07.690 --> 01:05:08.950
+that still use this.
+
+1139
+01:05:09.410 --> 01:05:13.050
+So ever we should know how it works and what it does.
+
+1140
+01:05:13.410 --> 01:05:15.850
+But on today's machines,
+
+1141
+01:05:16.050 --> 01:05:19.850
+I believe it's a scheme is largely obsolete.
+
+1142
+01:05:20.050 --> 01:05:22.290
+And we will see in a moment what kind of problems we have.
+
+1143
+01:05:22.390 --> 01:05:23.550
+But first let's talk about exchange,
+
+1144
+01:05:23.690 --> 01:05:24.490
+how we can model this.
+
+1145
+01:05:25.610 --> 01:05:28.050
+So we have, there's a basic exchange here.
+
+1146
+01:05:28.530 --> 01:05:35.410
+we take an input and produce m outputs and there are some special variants here of this like we
+
+1147
+01:05:35.410 --> 01:05:41.170
+can exchange union or we can we can split when we have multiple output streams we can split them
+
+1148
+01:05:41.890 --> 01:05:47.270
+by a hash value so that we know that a certain value must be in a certain partition or we can
+
+1149
+01:05:47.270 --> 01:05:54.290
+do a range split so we split by by data range or we can do a broadcast split which says the full
+
+1150
+01:05:54.290 --> 01:05:58.530
+input is sent to all consumers so depending on the query that you have all of these constructs
+
+1151
+01:05:58.530 --> 01:06:04.410
+can make sense you know so you can can express uh things using all these operators here
+
+1152
+01:06:06.210 --> 01:06:14.870
+and um so you see here some examples how we can how we can uh process like so my original input was
+
+1153
+01:06:14.870 --> 01:06:22.950
+i take my um so this is the thing that's right i take my r filter and group by so these things
+
+1154
+01:06:24.290 --> 01:06:33.230
+And here is I cut my work, I group by each individual part of R and then I exchange and
+
+1155
+01:06:33.230 --> 01:06:34.350
+then do finally group by.
+
+1156
+01:06:34.550 --> 01:06:42.010
+I mean this here has problems with scheme if the same value occurs in all groups because
+
+1157
+01:06:42.010 --> 01:06:43.190
+then it doesn't work that great.
+
+1158
+01:06:43.550 --> 01:06:49.830
+So if you have everything occurs everywhere, then the final group by can be nearly as expensive
+
+1159
+01:06:49.830 --> 01:06:51.590
+as the single traded execution.
+
+1160
+01:06:52.090 --> 01:06:57.930
+and so if we are unlucky and so if you want to avoid this you can instead use this scheme here
+
+1161
+01:06:59.010 --> 01:07:03.890
+so the second scheme says okay i take my input filter makes sense because everybody can filter
+
+1162
+01:07:03.890 --> 01:07:09.990
+and then i do an exchange hash i don't group by but i do an exchange hash three three which means
+
+1163
+01:07:09.990 --> 01:07:16.650
+i take three input streams i put two three output streams but i guarantee you that um a certain
+
+1164
+01:07:16.650 --> 01:07:22.910
+value will only occur on one stream so for example the original i said everybody here can output the
+
+1165
+01:07:22.910 --> 01:07:30.250
+group seven if you are unlucky if you do an x has split then i know that the seven will occur only
+
+1166
+01:07:30.250 --> 01:07:33.670
+one of the three for example this one of course already i don't know because it depends on the
+
+1167
+01:07:33.670 --> 01:07:38.150
+hash value but only one of them will get many threes yes three three three three everybody else
+
+1168
+01:07:38.150 --> 01:07:44.810
+will not get threes therefore we can do a group by in this particular stream then output one seven
+
+1169
+01:07:46.650 --> 01:07:47.550
+a further group by.
+
+1170
+01:07:47.850 --> 01:07:49.790
+So no subsequent group by is needed.
+
+1171
+01:07:49.990 --> 01:07:51.610
+We just do an XA in 3.1,
+
+1172
+01:07:51.670 --> 01:07:53.630
+which means we convert the three input streams
+
+1173
+01:07:53.630 --> 01:07:54.930
+and the one output streams, that's it.
+
+1174
+01:07:55.490 --> 01:07:55.890
+Okay.
+
+1175
+01:07:57.150 --> 01:08:01.650
+And so this way we avoided the duplication.
+
+1176
+01:08:03.010 --> 01:08:05.630
+On the other hand, if you would know that this,
+
+1177
+01:08:05.810 --> 01:08:07.090
+the partition here,
+
+1178
+01:08:07.310 --> 01:08:10.330
+so that we would aggregate everything
+
+1179
+01:08:10.330 --> 01:08:12.810
+into a very small group here,
+
+1180
+01:08:13.010 --> 01:08:14.450
+and the output would be very small,
+
+1181
+01:08:14.510 --> 01:08:15.610
+this here would be more efficient.
+
+1182
+01:08:16.930 --> 01:08:19.890
+if there are very, very few groups after the group I.
+
+1183
+01:08:20.330 --> 01:08:22.770
+This here is better if there are many groups
+
+1184
+01:08:22.770 --> 01:08:24.190
+after this initial group I.
+
+1185
+01:08:24.590 --> 01:08:25.590
+So this depends.
+
+1186
+01:08:26.410 --> 01:08:28.170
+Or there's also something we can do,
+
+1187
+01:08:28.230 --> 01:08:29.750
+we can combine both techniques.
+
+1188
+01:08:29.950 --> 01:08:32.030
+So we do a local pre-aggregation.
+
+1189
+01:08:32.110 --> 01:08:33.350
+So this is the last alternative here.
+
+1190
+01:08:33.430 --> 01:08:34.710
+We do a local pre-aggregation,
+
+1191
+01:08:34.750 --> 01:08:36.170
+which already removes the duplicates.
+
+1192
+01:08:36.510 --> 01:08:38.490
+Then we do an exchange by value.
+
+1193
+01:08:38.770 --> 01:08:41.730
+So then we now find now that this here,
+
+1194
+01:08:41.850 --> 01:08:44.570
+we will example only get the sevens
+
+1195
+01:08:44.570 --> 01:08:45.830
+and at most we get three sevens,
+
+1196
+01:08:46.650 --> 01:08:47.790
+because this is three's mainboard.
+
+1197
+01:08:48.550 --> 01:08:51.650
+And then we do another group Y and then we are done.
+
+1198
+01:08:52.630 --> 01:08:52.730
+Okay.
+
+1199
+01:08:54.490 --> 01:08:58.590
+So this is how we, different ways,
+
+1200
+01:08:58.690 --> 01:09:00.890
+how we can express parallelism is exchanged.
+
+1201
+01:09:01.430 --> 01:09:03.130
+And we can do the same with joints.
+
+1202
+01:09:03.470 --> 01:09:06.390
+So like if we have a single threaded joint,
+
+1203
+01:09:06.450 --> 01:09:07.750
+we can make this multi-threaded.
+
+1204
+01:09:07.770 --> 01:09:10.970
+For example, here saying, I take my R1,
+
+1205
+01:09:11.190 --> 01:09:13.050
+I do a hash split.
+
+1206
+01:09:13.170 --> 01:09:14.750
+So I distribute this over three threads.
+
+1207
+01:09:16.650 --> 01:09:19.230
+the data roughly, the same with the other side,
+
+1208
+01:09:19.370 --> 01:09:21.230
+we distributed over three threads by hash value,
+
+1209
+01:09:21.470 --> 01:09:24.630
+and then each thread performs a regular join.
+
+1210
+01:09:24.890 --> 01:09:27.590
+And we know because we did the partition by hash value,
+
+1211
+01:09:28.970 --> 01:09:31.470
+that my join partner must be come to me.
+
+1212
+01:09:31.610 --> 01:09:33.310
+And so I know that if we get join partners,
+
+1213
+01:09:33.330 --> 01:09:35.010
+I will not need the data from anybody else.
+
+1214
+01:09:35.390 --> 01:09:37.130
+So therefore we can combine the final result
+
+1215
+01:09:37.130 --> 01:09:40.270
+with the 3.1 exchange to produce a final result.
+
+1216
+01:09:40.870 --> 01:09:41.310
+Okay.
+
+1217
+01:09:42.750 --> 01:09:46.930
+Okay, now the good thing about exchange is
+
+1218
+01:09:46.930 --> 01:09:51.310
+it's pretty flexible and we can run a distributed edge
+
+1219
+01:09:51.310 --> 01:09:52.930
+and the operators don't have to know anything
+
+1220
+01:09:52.930 --> 01:09:54.470
+about parallelism because the join,
+
+1221
+01:09:54.570 --> 01:09:55.570
+it's a group I had no idea
+
+1222
+01:09:55.570 --> 01:09:57.170
+that they were running multi-threaded.
+
+1223
+01:09:57.270 --> 01:09:59.230
+So for them just looks like single-threaded.
+
+1224
+01:10:00.110 --> 01:10:03.210
+So this is a strength where some people know it likes this,
+
+1225
+01:10:03.390 --> 01:10:07.330
+but if you ask me today, this scheme is obsolete.
+
+1226
+01:10:07.850 --> 01:10:11.050
+So main problem here is that the degree of parallelism
+
+1227
+01:10:11.310 --> 01:10:12.690
+baked into the plan.
+
+1228
+01:10:12.830 --> 01:10:14.930
+If you think about this, this plan says, okay,
+
+1229
+01:10:15.170 --> 01:10:18.790
+I run on three threads and you run on three threads.
+
+1230
+01:10:18.890 --> 01:10:21.830
+Now you cannot take four, you cannot take two,
+
+1231
+01:10:21.970 --> 01:10:22.910
+at least not easily.
+
+1232
+01:10:23.770 --> 01:10:25.850
+Four you cannot do it or two you could do
+
+1233
+01:10:25.850 --> 01:10:27.870
+by doing multiple drops on the same threads.
+
+1234
+01:10:28.310 --> 01:10:31.790
+But so with my parallelism is baked into the plan.
+
+1235
+01:10:31.990 --> 01:10:34.110
+And this is highly unattractive.
+
+1236
+01:10:34.110 --> 01:10:37.930
+Yeah, because I mean, if you have 64 cores,
+
+1237
+01:10:38.070 --> 01:10:39.570
+my kind of, of course I can scare you 64 cores,
+
+1238
+01:10:41.310 --> 01:10:43.530
+a query runs, a new query comes up.
+
+1239
+01:10:44.470 --> 01:10:46.470
+I cannot take away threads easily.
+
+1240
+01:10:46.850 --> 01:10:50.070
+So changing workload is a problem.
+
+1241
+01:10:50.290 --> 01:10:52.450
+Second problem is, if you think about this,
+
+1242
+01:10:52.810 --> 01:10:56.370
+here we said, let's look at this plan.
+
+1243
+01:10:56.570 --> 01:10:58.830
+Could be that this filter condition
+
+1244
+01:10:58.830 --> 01:11:02.170
+is nearly always false, roughly false,
+
+1245
+01:11:02.370 --> 01:11:03.730
+roughly false for these,
+
+1246
+01:11:03.950 --> 01:11:06.430
+which means R1 and R2 have nearly no work.
+
+1247
+01:11:06.630 --> 01:11:08.130
+And this here is nearly always true,
+
+1248
+01:11:08.710 --> 01:11:10.210
+whereas R3 does also work.
+
+1249
+01:11:11.310 --> 01:11:12.390
+This leads to a high imbalance,
+
+1250
+01:11:12.570 --> 01:11:14.450
+which means a one and a two will finish quickly
+
+1251
+01:11:14.450 --> 01:11:15.430
+and then do nothing.
+
+1252
+01:11:15.730 --> 01:11:17.710
+And then afterwards you run single-threaded.
+
+1253
+01:11:18.410 --> 01:11:19.570
+All your remaining work is done
+
+1254
+01:11:19.570 --> 01:11:22.890
+in this poor thread with the responsible for R3.
+
+1255
+01:11:23.110 --> 01:11:24.030
+This is also bad.
+
+1256
+01:11:25.010 --> 01:11:27.930
+So baking into the,
+
+1257
+01:11:29.430 --> 01:11:31.270
+starting partitioning into the plan
+
+1258
+01:11:31.850 --> 01:11:32.950
+has a lot of disadvantages.
+
+1259
+01:11:33.750 --> 01:11:38.290
+Yeah, and also the exchange itself is pretty expensive.
+
+1260
+01:11:38.290 --> 01:11:39.770
+Like this hash exchange,
+
+1261
+01:11:41.310 --> 01:11:42.070
+This is expensive.
+
+1262
+01:11:42.370 --> 01:11:44.350
+You make copies of your data all the time.
+
+1263
+01:11:44.510 --> 01:11:47.130
+So this, if you ask me, you shouldn't do Exchange.
+
+1264
+01:11:47.570 --> 01:11:50.430
+I mean, I teach it to you because some systems use this,
+
+1265
+01:11:50.550 --> 01:11:54.330
+but if you ask me, Exchange is an obsolete setting.
+
+1266
+01:11:55.010 --> 01:11:56.970
+So what we want instead is,
+
+1267
+01:11:57.090 --> 01:11:59.390
+we want that the database system itself
+
+1268
+01:11:59.390 --> 01:12:00.750
+understands parallelism.
+
+1269
+01:12:01.090 --> 01:12:02.970
+Yeah. So that each operator is aware
+
+1270
+01:12:03.550 --> 01:12:05.050
+that it's running multi-threaded
+
+1271
+01:12:05.050 --> 01:12:09.310
+and that multiple threads can access the same data.
+
+1272
+01:12:11.310 --> 01:12:11.970
+life more difficult.
+
+1273
+01:12:13.770 --> 01:12:16.330
+Like now we must make sure that my data structures
+
+1274
+01:12:16.330 --> 01:12:17.610
+are properly synchronized.
+
+1275
+01:12:17.730 --> 01:12:19.230
+For example, if I have a hash table,
+
+1276
+01:12:19.530 --> 01:12:21.110
+I have to somehow synchronize it
+
+1277
+01:12:21.110 --> 01:12:22.850
+so that multiple threads can access them safely.
+
+1278
+01:12:23.630 --> 01:12:25.870
+Yes, this is a challenge, but on the plus side,
+
+1279
+01:12:26.010 --> 01:12:27.110
+we can now write algorithms
+
+1280
+01:12:27.110 --> 01:12:29.570
+that really are designed for parallelism
+
+1281
+01:12:30.070 --> 01:12:32.350
+and that can run the different relational operators
+
+1282
+01:12:32.350 --> 01:12:35.210
+efficiently in a parallel fashion.
+
+1283
+01:12:36.750 --> 01:12:39.310
+And one particular nice way to do this
+
+1284
+01:12:41.310 --> 01:12:42.450
+also driven parallelism.
+
+1285
+01:12:42.910 --> 01:12:44.050
+Now, what does this mean?
+
+1286
+01:12:44.170 --> 01:12:47.230
+So basically we have a tension here
+
+1287
+01:12:47.230 --> 01:12:50.510
+between flexibility and performance.
+
+1288
+01:12:50.730 --> 01:12:52.050
+This in a way mimics,
+
+1289
+01:12:52.170 --> 01:12:54.350
+but when we talked about blockwise processing,
+
+1290
+01:12:55.730 --> 01:12:57.590
+it's not really because we implemented it
+
+1291
+01:12:57.590 --> 01:12:58.550
+in a push fashion, but nevertheless,
+
+1292
+01:12:58.990 --> 01:13:01.490
+the same observation between the iterator model
+
+1293
+01:13:01.490 --> 01:13:02.590
+and the blockwise processing.
+
+1294
+01:13:03.170 --> 01:13:04.770
+Iterator model is super expensive
+
+1295
+01:13:04.770 --> 01:13:06.750
+because we do this for each individual tuple.
+
+1296
+01:13:08.150 --> 01:13:09.770
+Blockwise is more, is cheaper
+
+1297
+01:13:11.310 --> 01:13:13.550
+we do this and we can pass larger,
+
+1298
+01:13:14.610 --> 01:13:16.030
+we do less calls.
+
+1299
+01:13:16.210 --> 01:13:18.670
+For each call we process large amount of data.
+
+1300
+01:13:18.970 --> 01:13:22.170
+Same here, we schedule work to threads
+
+1301
+01:13:23.190 --> 01:13:25.950
+and scheduling single templates is too expensive.
+
+1302
+01:13:26.350 --> 01:13:27.810
+But what we can do is we can,
+
+1303
+01:13:27.970 --> 01:13:29.410
+we look into my input,
+
+1304
+01:13:29.710 --> 01:13:33.370
+if you break my into constant size work units called morsel.
+
+1305
+01:13:33.610 --> 01:13:34.530
+Now we call this morsel
+
+1306
+01:13:34.530 --> 01:13:36.830
+because we aim to make this thing small.
+
+1307
+01:13:36.970 --> 01:13:38.130
+Now, not super small,
+
+1308
+01:13:38.350 --> 01:13:40.710
+but this should be not that large
+
+1309
+01:13:41.310 --> 01:13:44.270
+If we mean in worst case, I could take my input
+
+1310
+01:13:44.270 --> 01:13:46.690
+and just cut it into a chunk.
+
+1311
+01:13:47.030 --> 01:13:49.370
+As like if I have four threads,
+
+1312
+01:13:49.510 --> 01:13:51.010
+I just cut my input into four pieces.
+
+1313
+01:13:51.210 --> 01:13:52.390
+This is what we don't want to do
+
+1314
+01:13:52.390 --> 01:13:53.710
+because then we are no longer flexible.
+
+1315
+01:13:53.910 --> 01:13:55.430
+And because this is static partitioning
+
+1316
+01:13:55.430 --> 01:13:57.310
+just like in the exchange model.
+
+1317
+01:13:57.510 --> 01:13:59.410
+What we want to do instead is to say, okay,
+
+1318
+01:13:59.750 --> 01:14:02.150
+each thread processes, for example, 10,000 tuples
+
+1319
+01:14:02.150 --> 01:14:03.110
+or a hundred thousand tuples.
+
+1320
+01:14:03.490 --> 01:14:05.190
+And after the next, after we do,
+
+1321
+01:14:05.270 --> 01:14:08.050
+we process 10,000 tuples, we look what happens next.
+
+1322
+01:14:08.050 --> 01:14:09.950
+Okay, so we for each
+
+1323
+01:14:10.710 --> 01:14:14.190
+Part here we run them. So this happens here what we see here
+
+1324
+01:14:14.730 --> 01:14:20.510
+The first thread says okay. I take the three tuples of course already we do more but before this picture we do three
+
+1325
+01:14:21.250 --> 01:14:24.410
+I do the first result tuples and the next thread says okay
+
+1326
+01:14:24.410 --> 01:14:27.530
+I take the next three tuples and then they are executed in parallel
+
+1327
+01:14:27.530 --> 01:14:32.330
+So the first thread here says okay, let's probe the table and then probe the next table
+
+1328
+01:14:32.330 --> 01:14:37.210
+And then I write my result and I write this result into a thread local data
+
+1329
+01:14:38.050 --> 01:14:39.750
+Because when I said about synchronization,
+
+1330
+01:14:39.970 --> 01:14:41.130
+what I meant of course,
+
+1331
+01:14:41.270 --> 01:14:42.590
+is that we don't want to synchronize
+
+1332
+01:14:43.250 --> 01:14:45.210
+because synchronization between threads is expensive.
+
+1333
+01:14:45.550 --> 01:14:47.370
+So therefore the model that we use is
+
+1334
+01:14:48.010 --> 01:14:50.370
+we can read multiple times
+
+1335
+01:14:50.370 --> 01:14:53.150
+because having 10 threads reads the same data
+
+1336
+01:14:53.150 --> 01:14:53.970
+is not a problem.
+
+1337
+01:14:54.150 --> 01:14:55.310
+But when we write,
+
+1338
+01:14:55.470 --> 01:14:57.090
+we always write to private memory.
+
+1339
+01:14:57.210 --> 01:14:58.650
+So that nobody else is looking at
+
+1340
+01:14:59.250 --> 01:15:00.670
+because then we don't need synchronization.
+
+1341
+01:15:01.030 --> 01:15:03.230
+And so therefore the first thread probes
+
+1342
+01:15:03.230 --> 01:15:05.510
+and writes reside to local memory.
+
+1343
+01:15:05.610 --> 01:15:07.310
+Therefore this is the color here.
+
+1344
+01:15:08.050 --> 01:15:10.130
+So we have a second thread here, we pick data,
+
+1345
+01:15:10.410 --> 01:15:13.030
+we probe another probe,
+
+1346
+01:15:13.110 --> 01:15:15.370
+and then we write the results to my private memory.
+
+1347
+01:15:15.630 --> 01:15:16.910
+And the dispatcher here says,
+
+1348
+01:15:17.190 --> 01:15:19.310
+which thread should take which module.
+
+1349
+01:15:19.790 --> 01:15:21.950
+Like we can have some degrees of freedom here.
+
+1350
+01:15:23.490 --> 01:15:25.450
+First approximation, we do this round robin.
+
+1351
+01:15:25.510 --> 01:15:27.190
+So we just take whatever's next.
+
+1352
+01:15:27.370 --> 01:15:28.270
+This is the easiest way.
+
+1353
+01:15:29.230 --> 01:15:30.750
+If you have a machine with NUMA,
+
+1354
+01:15:30.870 --> 01:15:33.310
+so where some memory is more expensive to access in others,
+
+1355
+01:15:33.690 --> 01:15:36.870
+you want to prefer reading from your local NUMA region,
+
+1356
+01:15:38.150 --> 01:15:41.130
+prefer reading data that is sitting next to your CPU.
+
+1357
+01:15:41.270 --> 01:15:43.910
+Therefore the dispatcher might do something smarter
+
+1358
+01:15:43.910 --> 01:15:45.310
+than just giving you the next module.
+
+1359
+01:15:45.450 --> 01:15:46.690
+But nevertheless, conceptually,
+
+1360
+01:15:46.810 --> 01:15:49.250
+we just take a piece of data, then run,
+
+1361
+01:15:49.450 --> 01:15:50.030
+and then we write.
+
+1362
+01:15:50.610 --> 01:15:50.830
+Okay?
+
+1363
+01:15:51.610 --> 01:15:56.090
+So the, it's, now, why do we do this
+
+1364
+01:15:56.090 --> 01:15:58.150
+instead of static partitioning?
+
+1365
+01:15:58.430 --> 01:16:00.670
+Because we observed that the runtime of Mercury
+
+1366
+01:16:00.670 --> 01:16:02.750
+is dominated by the slowest threat.
+
+1367
+01:16:02.970 --> 01:16:05.070
+Also we always wait for whoever's slowest.
+
+1368
+01:16:05.670 --> 01:16:08.650
+In advance, we cannot know who is slowest
+
+1369
+01:16:08.650 --> 01:16:10.990
+because it could depend on the query predicate.
+
+1370
+01:16:11.210 --> 01:16:13.430
+Some predicate might be true for some part of the data
+
+1371
+01:16:13.430 --> 01:16:14.630
+but in force for somebody else,
+
+1372
+01:16:14.730 --> 01:16:16.110
+we cannot know this statically.
+
+1373
+01:16:17.550 --> 01:16:19.250
+So this here, we see here,
+
+1374
+01:16:19.410 --> 01:16:20.970
+for example, non-uniform distribution.
+
+1375
+01:16:21.230 --> 01:16:23.730
+So some data might be more relevant than others.
+
+1376
+01:16:23.990 --> 01:16:25.570
+And therefore the trick here is
+
+1377
+01:16:25.570 --> 01:16:28.190
+we simply don't partition the data at the beginning,
+
+1378
+01:16:28.550 --> 01:16:30.490
+but we use dynamic work stealing.
+
+1379
+01:16:31.590 --> 01:16:37.350
+So each thread here takes, so we have a synchronized queue for small jobs.
+
+1380
+01:16:37.470 --> 01:16:41.750
+So we say this is the jobs that I want to execute and then each thread grabs work from
+
+1381
+01:16:41.750 --> 01:16:46.030
+the queue and if somebody is slower than somebody else doesn't matter because then the other
+
+1382
+01:16:46.550 --> 01:16:50.750
+drops, the other threads will simply take morsels away from him.
+
+1383
+01:16:51.230 --> 01:16:57.770
+So we say in this picture here, we say, first we say thread one, thread two, thread one,
+
+1384
+01:16:57.970 --> 01:16:58.690
+thread two.
+
+1385
+01:17:00.490 --> 01:17:06.470
+rate one gets slow because yeah you know it's simply predicates are more true or so then simply
+
+1386
+01:17:06.470 --> 01:17:14.030
+could be that we take more to t2 t2 t2 t2 and then again t1 and so on yeah so we simply whoever
+
+1387
+01:17:14.030 --> 01:17:19.110
+is finished with this model takes the next piece of work and this makes sure that the runtime of
+
+1388
+01:17:19.110 --> 01:17:25.650
+all threads is roughly the same and because we meet each of them produces a small part of the
+
+1389
+01:17:25.650 --> 01:17:27.590
+and therefore my total execution time
+
+1390
+01:17:27.590 --> 01:17:29.650
+will be roughly the same for odd threads.
+
+1391
+01:17:29.930 --> 01:17:31.050
+And this is of course ideal,
+
+1392
+01:17:31.310 --> 01:17:33.190
+because then we don't have the straggler
+
+1393
+01:17:33.190 --> 01:17:34.190
+for that word we're making.
+
+1394
+01:17:35.690 --> 01:17:37.050
+Okay, and if you think about
+
+1395
+01:17:38.310 --> 01:17:39.910
+the application interface was this,
+
+1396
+01:17:39.970 --> 01:17:41.170
+at least a high level application interface.
+
+1397
+01:17:41.470 --> 01:17:44.450
+If you are familiar with Intel thread building blocks,
+
+1398
+01:17:44.510 --> 01:17:46.430
+DBB, they have a parallel four.
+
+1399
+01:17:46.710 --> 01:17:48.330
+So which says basically we run this
+
+1400
+01:17:49.010 --> 01:17:51.330
+and please dispatch this dynamically over threads
+
+1401
+01:17:51.330 --> 01:17:52.030
+with work stealing.
+
+1402
+01:17:52.030 --> 01:17:56.630
+It just uses such just a primitive as we talked about here.
+
+1403
+01:17:57.950 --> 01:18:01.810
+Okay. And so now how do we build an in-memory hash join?
+
+1404
+01:18:02.590 --> 01:18:07.570
+So in the build phase, each thread scans part of the input
+
+1405
+01:18:07.570 --> 01:18:10.790
+using morsels, so taking the next end tuppets
+
+1406
+01:18:10.790 --> 01:18:12.790
+and then processing them and materialize them.
+
+1407
+01:18:12.930 --> 01:18:15.150
+And of course this materialization here happens
+
+1408
+01:18:15.150 --> 01:18:16.650
+in thread local storage.
+
+1409
+01:18:16.910 --> 01:18:18.550
+So in storage, nobody else can see.
+
+1410
+01:18:18.690 --> 01:18:19.690
+Therefore we can just write them
+
+1411
+01:18:19.690 --> 01:18:20.710
+without any synchronization.
+
+1412
+01:18:22.030 --> 01:18:23.790
+After this, we have collected all tuples
+
+1413
+01:18:23.790 --> 01:18:25.690
+in a piece of memory.
+
+1414
+01:18:27.210 --> 01:18:30.190
+Now, the good thing is we know how many tuples we have
+
+1415
+01:18:30.810 --> 01:18:33.190
+because we have already seen all tuples across all threads.
+
+1416
+01:18:33.850 --> 01:18:36.050
+Of course, a single thread has not seen all tuples,
+
+1417
+01:18:36.150 --> 01:18:38.390
+but the sum of all tuples is all threads.
+
+1418
+01:18:38.510 --> 01:18:39.950
+So at this, after step one, one,
+
+1419
+01:18:40.150 --> 01:18:42.230
+we know how large a hash table should be.
+
+1420
+01:18:42.290 --> 01:18:44.590
+So now we create a hash table of appropriate size
+
+1421
+01:18:44.590 --> 01:18:46.430
+so that everything can fit into it.
+
+1422
+01:18:46.550 --> 01:18:49.070
+And the great advantage of doing this this way
+
+1423
+01:18:49.070 --> 01:18:51.890
+is that we don't have to dynamically size a hash table.
+
+1424
+01:18:52.350 --> 01:18:54.750
+Because trust me, a dynamically sized hash table
+
+1425
+01:18:54.750 --> 01:18:56.130
+that is thread safe is a nightmare.
+
+1426
+01:18:56.770 --> 01:18:57.750
+Either it's super slow,
+
+1427
+01:18:58.250 --> 01:19:00.010
+or it's super complicated to implement.
+
+1428
+01:19:00.430 --> 01:19:02.150
+And also this is terribly difficult.
+
+1429
+01:19:02.710 --> 01:19:04.430
+Simple, therefore the answer is simply don't do this.
+
+1430
+01:19:04.850 --> 01:19:06.210
+Collect the tuppet thread local,
+
+1431
+01:19:06.410 --> 01:19:07.610
+and you would have to do this anyway,
+
+1432
+01:19:07.730 --> 01:19:09.550
+because if you think about a chaining hash table,
+
+1433
+01:19:09.790 --> 01:19:12.190
+we have a dictionary and we have a lot of buckets here.
+
+1434
+01:19:13.290 --> 01:19:16.670
+And what we do in step one, one is we create all the buckets.
+
+1435
+01:19:16.670 --> 01:19:20.730
+We just don't create the dictionary in the beginning, but all the buckets we can already create
+
+1436
+01:19:20.730 --> 01:19:24.410
+And then in step 1-3 we scan over my input again
+
+1437
+01:19:24.410 --> 01:19:30.430
+So over the buckets that have materialized and I just add these pointers here to the hash table
+
+1438
+01:19:30.430 --> 01:19:35.050
+And this can be done in parallel because we can use if you want to enter a
+
+1439
+01:19:35.770 --> 01:19:39.210
+Bucket here into my hash table. I look at the current entry
+
+1440
+01:19:39.210 --> 01:19:45.570
+I put the current entry as my next entry in the next one and then I do an atomic compare exchange
+
+1441
+01:19:46.770 --> 01:19:50.370
+please replace the pointer here to point it to myself
+
+1442
+01:19:51.230 --> 01:19:55.410
+and do this in an atomic fashion and if the pointer has changed in the meantime so somebody
+
+1443
+01:19:55.410 --> 01:20:00.630
+else has already put himself into this bucket then yeah i will just update my next pointer again and
+
+1444
+01:20:00.630 --> 01:20:06.710
+try again that's why i can do this without i don't need a mutex or something so i can do this with
+
+1445
+01:20:06.710 --> 01:20:11.730
+just using atomic operations i can add myself to this table head table i can do this in parallel
+
+1446
+01:20:11.730 --> 01:20:16.230
+so this is here all this is parallel this is parallel this here single threaded but this is
+
+1447
+01:20:16.850 --> 01:20:18.150
+phase, we just create the hash table.
+
+1448
+01:20:18.490 --> 01:20:19.570
+Everything else is parallel.
+
+1449
+01:20:20.530 --> 01:20:23.450
+And then a probe phase, this is fully parallel again.
+
+1450
+01:20:23.630 --> 01:20:26.730
+And also we can, because in the probe phase,
+
+1451
+01:20:26.830 --> 01:20:28.850
+we don't write to the hash table, we just read.
+
+1452
+01:20:29.070 --> 01:20:31.330
+So when a tupper comes, we check if they're a joint partner
+
+1453
+01:20:31.330 --> 01:20:32.810
+and therefore we don't need,
+
+1454
+01:20:34.330 --> 01:20:35.650
+we don't have to do anything.
+
+1455
+01:20:35.850 --> 01:20:39.370
+We can just pull, all threads can pull parallel
+
+1456
+01:20:39.370 --> 01:20:40.410
+probe the hash table.
+
+1457
+01:20:40.770 --> 01:20:42.990
+You have to be slightly careful here.
+
+1458
+01:20:43.690 --> 01:20:46.150
+If you need markers, like if you think about
+
+1459
+01:20:47.290 --> 01:20:50.510
+then we have to use atomic operations again to mark,
+
+1460
+01:20:50.610 --> 01:20:51.770
+okay, this is marked, but nevertheless,
+
+1461
+01:20:52.530 --> 01:20:54.110
+we can still do this in parallel.
+
+1462
+01:20:54.430 --> 01:20:58.710
+We can do everything in parallel and then run this
+
+1463
+01:20:58.710 --> 01:21:01.410
+and then execute this across all threads.
+
+1464
+01:21:02.890 --> 01:21:06.790
+Okay, and this point, I think I will have to stop.
+
+1465
+01:21:06.930 --> 01:21:08.950
+I already rushed a bit, unfortunately,
+
+1466
+01:21:09.330 --> 01:21:11.770
+in talking about parallelism.
+
+1467
+01:21:11.930 --> 01:21:15.190
+In the slides, we have something about main memory databases,
+
+1468
+01:21:16.670 --> 01:21:19.350
+We will not do this because we are just, we didn't finish.
+
+1469
+01:21:19.710 --> 01:21:20.890
+And this might have is,
+
+1470
+01:21:24.090 --> 01:21:25.470
+let's not overdo this.
+
+1471
+01:21:25.610 --> 01:21:26.930
+So I will, I will stop here.
+
+1472
+01:21:26.990 --> 01:21:30.030
+I will stop before the part memory databases.
+
+1473
+01:21:30.330 --> 01:21:32.210
+If you're interested, we will put the slides online,
+
+1474
+01:21:32.210 --> 01:21:33.750
+of course, but you don't have to.
+
+1475
+01:21:34.390 --> 01:21:37.670
+I mean, for a few of your future self for life,
+
+1476
+01:21:37.810 --> 01:21:40.090
+it might be useful for you to take a look at this,
+
+1477
+01:21:40.890 --> 01:21:43.470
+at the slides, but we will not ask this in the exam.
+
+1478
+01:21:43.590 --> 01:21:45.150
+So you don't have to worry about that.
+
+1479
+01:21:47.030 --> 01:21:48.430
+I, therefore I stop here.
+
+1480
+01:21:48.610 --> 01:21:51.770
+I hope you have enjoyed as a lecture a bit.
+
+1481
+01:21:52.030 --> 01:21:53.630
+And also I hope that you have enjoyed
+
+1482
+01:21:53.630 --> 01:21:56.290
+the practical exercises because most things
+
+1483
+01:21:56.290 --> 01:21:58.110
+that we do have higher practical relevance,
+
+1484
+01:21:58.670 --> 01:22:00.050
+very useful not only for databases,
+
+1485
+01:22:00.270 --> 01:22:02.610
+but also for other kinds of data processing tasks.
+
+1486
+01:22:03.150 --> 01:22:06.430
+And therefore I strongly encourage you to do the exercises.
+
+1487
+01:22:06.690 --> 01:22:09.090
+And also, of course, we will ask you similar stuff
+
+1488
+01:22:09.090 --> 01:22:13.610
+in the final exercise.
+
+1489
+01:22:14.010 --> 01:22:16.290
+So yeah, graded exercise that we will do.
+
+1490
+01:22:17.030 --> 01:22:19.310
+Okay, I will stop here and thank you.

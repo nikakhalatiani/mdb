@@ -1,0 +1,2338 @@
+{
+  "video": "dbimpl-06-access-eh.mp4",
+  "video_path": "/Users/nkhalatiani/Desktop/mdb/dbimpl-06-access-eh.mp4",
+  "start_s": 0.0,
+  "end_s": 5453.733333,
+  "sample_count": 5454,
+  "thresholds": {
+    "full_change": 0.012,
+    "title_change": 0.04,
+    "counter_change": 0.008
+  },
+  "candidate_count": 45,
+  "reviewed_candidate_count": 45,
+  "accepted_boundary_count": 37,
+  "slide_count": 38,
+  "slides": [
+    {
+      "occurrence_id": "dbimpl-06-access-eh-001",
+      "canonical_slide_id": "variable-length-records-2-001",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 1,
+      "start_s": 0.0,
+      "end_s": 18.55,
+      "start": "00:00:00.000",
+      "end": "00:00:18.550",
+      "duration_s": 18.55,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Variable Length Records (2)",
+      "screen_title_ocr": "Variable Length Records (2)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "SONS",
+      "slide_text_ocr": "Variable Length Records (2)\n\nVariable length keys are problematic. Consider the following example\n\nCc\n\ndddddddd\n\ne\n\na |) bbbbbbbb\n\noe oe ow ow ow\n\n|\n\nffffffff || g || hhhhhhhh\n\n| i\n\nJJIJIIIII\n\nk | 11111111\n\nm | nnnnnnnn | fe}\n\nVariant B:",
+      "initial_frame_s": 1.0,
+      "annotated_frame_s": 18.15,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/001-variable-length-records-2-001-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/001-variable-length-records-2-001-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 1.0,
+          "timestamp": "00:00:01.000",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/001-variable-length-records-2-001-initial.jpg"
+        },
+        {
+          "timestamp_s": 18.15,
+          "timestamp": "00:00:18.150",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/001-variable-length-records-2-001-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": null,
+      "boundary_reason": "pilot interval start"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-002",
+      "canonical_slide_id": "variable-length-records-4-002",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 2,
+      "start_s": 18.55,
+      "end_s": 31.25,
+      "start": "00:00:18.550",
+      "end": "00:00:31.250",
+      "duration_s": 12.7,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Variable Length Records (4)",
+      "screen_title_ocr": "Variable Length Records (4)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "Variable Length Records (4)\n\nMinimal support: modify the split logic\n\n1\n\nwhen a page overflows, build the sorted list of all values\n\n2\n\ninstead of picking the median value as separator, pick the smallest vz\n\nthe median\n\nfor ties, prefer values closer to the median\n\neen wee nt. ep l tinn93 kit ners\n\na os |",
+      "initial_frame_s": 19.55,
+      "annotated_frame_s": 30.85,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/002-variable-length-records-4-002-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/002-variable-length-records-4-002-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 19.55,
+          "timestamp": "00:00:19.550",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/002-variable-length-records-4-002-initial.jpg"
+        },
+        {
+          "timestamp_s": 30.85,
+          "timestamp": "00:00:30.850",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/002-variable-length-records-4-002-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.8,
+      "boundary_reason": "cropped deck visual state changed; footer unavailable"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-003",
+      "canonical_slide_id": "prefix-b-tree-003",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 3,
+      "start_s": 31.25,
+      "end_s": 347.25,
+      "start": "00:00:31.250",
+      "end": "00:05:47.250",
+      "duration_s": 316.0,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Prefix B*-tree",
+      "screen_title_ocr": "Prefix B*-tree",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "",
+      "slide_text_ocr": "Prefix B*-tree\n\nA Bt-tree can contain separators that do not occur in the data\n\nWe can use this to save space:\n\neeee",
+      "initial_frame_s": 32.25,
+      "annotated_frame_s": 346.85,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/003-prefix-b-tree-003-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/003-prefix-b-tree-003-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 32.25,
+          "timestamp": "00:00:32.250",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/003-prefix-b-tree-003-initial.jpg"
+        },
+        {
+          "timestamp_s": 346.85,
+          "timestamp": "00:05:46.850",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/003-prefix-b-tree-003-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.8,
+      "boundary_reason": "cropped deck visual state changed; footer unavailable"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-004",
+      "canonical_slide_id": "prefix-b-tree-2-004",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 4,
+      "start_s": 347.25,
+      "end_s": 619.95,
+      "start": "00:05:47.250",
+      "end": "00:10:19.950",
+      "duration_s": 272.7,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Prefix B*-tree (2)",
+      "screen_title_ocr": "Prefix B*-tree (2)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "Prefix B*-tree (2)\n\nWe can do even better by factoring out a common prefix:\n\nhttp://www.\n\ngoogle.com\n\nsigmod.org",
+      "initial_frame_s": 348.25,
+      "annotated_frame_s": 619.55,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/004-prefix-b-tree-2-004-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/004-prefix-b-tree-2-004-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 348.25,
+          "timestamp": "00:05:48.250",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/004-prefix-b-tree-2-004-initial.jpg"
+        },
+        {
+          "timestamp_s": 619.55,
+          "timestamp": "00:10:19.550",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/004-prefix-b-tree-2-004-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.8,
+      "boundary_reason": "cropped deck visual state changed; footer unavailable"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-005",
+      "canonical_slide_id": "prefix-b-tree-3-005",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 5,
+      "start_s": 619.95,
+      "end_s": 700.95,
+      "start": "00:10:19.950",
+      "end": "00:11:40.950",
+      "duration_s": 81.0,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Prefix B*-tree (3)",
+      "screen_title_ocr": "Prefix B*-tree (3)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "essed",
+      "slide_text_ocr": "Prefix B*-tree (3)\n\nThe lexicographic sort order makes prefix compression attractive\n\ne\n\nneighboring entries tend to differ only at the end\n\ne\n\na common prefix occurs very frequently\n\ne\n\nnot only for strings, also for compound keys etc.\n\nin particular important if partitioned B-trees\n\nwith big-endian ordering any value might get compressed",
+      "initial_frame_s": 620.95,
+      "annotated_frame_s": 700.55,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/005-prefix-b-tree-3-005-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/005-prefix-b-tree-3-005-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 620.95,
+          "timestamp": "00:10:20.950",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/005-prefix-b-tree-3-005-initial.jpg"
+        },
+        {
+          "timestamp_s": 700.55,
+          "timestamp": "00:11:40.550",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/005-prefix-b-tree-3-005-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.8,
+      "boundary_reason": "cropped deck visual state changed; footer unavailable"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-006",
+      "canonical_slide_id": "professor-board-application-006",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 6,
+      "start_s": 700.95,
+      "end_s": 808.35,
+      "start": "00:11:40.950",
+      "end": "00:13:28.350",
+      "duration_s": 107.4,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "board_or_application",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 0.0,
+      "title": "Professor board / application",
+      "screen_title_ocr": "",
+      "chapter_header": "",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "",
+      "initial_frame_s": 701.95,
+      "annotated_frame_s": 807.95,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/006-professor-board-application-006-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/006-professor-board-application-006-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 701.95,
+          "timestamp": "00:11:41.950",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/006-professor-board-application-006-initial.jpg"
+        },
+        {
+          "timestamp_s": 731.95,
+          "timestamp": "00:12:11.950",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/006-professor-board-application-006-progress-01.jpg"
+        },
+        {
+          "timestamp_s": 761.95,
+          "timestamp": "00:12:41.950",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/006-professor-board-application-006-progress-02.jpg"
+        },
+        {
+          "timestamp_s": 791.95,
+          "timestamp": "00:13:11.950",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/006-professor-board-application-006-progress-03.jpg"
+        },
+        {
+          "timestamp_s": 807.95,
+          "timestamp": "00:13:27.950",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/006-professor-board-application-006-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.93,
+      "boundary_reason": "full-frame layout switched between deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-007",
+      "canonical_slide_id": "prefix-b-tree-3-007",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 7,
+      "start_s": 808.35,
+      "end_s": 831.85,
+      "start": "00:13:28.350",
+      "end": "00:13:51.850",
+      "duration_s": 23.5,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Prefix B*-tree (3)",
+      "screen_title_ocr": "Prefix B*-tree (3)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "essed",
+      "slide_text_ocr": "Prefix B*-tree (3)\n\nC4, 4b)\n\nThe lexicographic sort order makes prefix compression attractive\n\ne\n\nneighboring entries tend to differ only at the end\n\ne\n\na common prefix occurs very frequently\n\ne\n\nnot only for strings, also for compound keys etc.\n\nin particular important if partitioned B-trees\n\nwith big-endian ordering any value might get compressed",
+      "initial_frame_s": 809.35,
+      "annotated_frame_s": 831.45,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/007-prefix-b-tree-3-007-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/007-prefix-b-tree-3-007-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 809.35,
+          "timestamp": "00:13:29.350",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/007-prefix-b-tree-3-007-initial.jpg"
+        },
+        {
+          "timestamp_s": 831.45,
+          "timestamp": "00:13:51.450",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/007-prefix-b-tree-3-007-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.93,
+      "boundary_reason": "full-frame layout switched between deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-008",
+      "canonical_slide_id": "professor-board-application-008",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 8,
+      "start_s": 831.85,
+      "end_s": 869.95,
+      "start": "00:13:51.850",
+      "end": "00:14:29.950",
+      "duration_s": 38.1,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "board_or_application",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 0.0,
+      "title": "Professor board / application",
+      "screen_title_ocr": "aS",
+      "chapter_header": "",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "w-\n\n2S\n\n—\n\n_\n\n2S\n\nAre 276 4 2.\n\npe ERB\n\nLe eh",
+      "initial_frame_s": 832.85,
+      "annotated_frame_s": 869.55,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/008-professor-board-application-008-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/008-professor-board-application-008-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 832.85,
+          "timestamp": "00:13:52.850",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/008-professor-board-application-008-initial.jpg"
+        },
+        {
+          "timestamp_s": 862.85,
+          "timestamp": "00:14:22.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/008-professor-board-application-008-progress-01.jpg"
+        },
+        {
+          "timestamp_s": 869.55,
+          "timestamp": "00:14:29.550",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/008-professor-board-application-008-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.93,
+      "boundary_reason": "full-frame layout switched between deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-009",
+      "canonical_slide_id": "prefix-b-tree-3-009",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 9,
+      "start_s": 869.95,
+      "end_s": 885.15,
+      "start": "00:14:29.950",
+      "end": "00:14:45.150",
+      "duration_s": 15.2,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Prefix B*-tree (3)",
+      "screen_title_ocr": "Prefix B*-tree (3)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "essed",
+      "slide_text_ocr": "Prefix B*-tree (3)\n\nThe lexicographic sort order makes prefix compression attractive\n\ne\n\nneighboring entries tend to differ only at the end\n\ne\n\na common prefix occurs very frequently\n\ne\n\nnot only for strings, also for compound keys etc.\n\nin particular important if partitioned B-trees\n\nwith big-endian ordering any value might get compressed",
+      "initial_frame_s": 870.95,
+      "annotated_frame_s": 884.75,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/009-prefix-b-tree-3-009-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/009-prefix-b-tree-3-009-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 870.95,
+          "timestamp": "00:14:30.950",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/009-prefix-b-tree-3-009-initial.jpg"
+        },
+        {
+          "timestamp_s": 884.75,
+          "timestamp": "00:14:44.750",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/009-prefix-b-tree-3-009-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.93,
+      "boundary_reason": "full-frame layout switched between deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-010",
+      "canonical_slide_id": "professor-board-application-010",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 10,
+      "start_s": 885.15,
+      "end_s": 905.45,
+      "start": "00:14:45.150",
+      "end": "00:15:05.450",
+      "duration_s": 20.3,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "board_or_application",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 0.0,
+      "title": "Professor board / application",
+      "screen_title_ocr": "aS",
+      "chapter_header": "",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "w-\n\n2S\n\n—\n\n_\n\n2S\n\nAre 276 4 2.\n\npe ERB\n\nLe eh",
+      "initial_frame_s": 886.15,
+      "annotated_frame_s": 905.05,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/010-professor-board-application-010-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/010-professor-board-application-010-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 886.15,
+          "timestamp": "00:14:46.150",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/010-professor-board-application-010-initial.jpg"
+        },
+        {
+          "timestamp_s": 905.05,
+          "timestamp": "00:15:05.050",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/010-professor-board-application-010-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.93,
+      "boundary_reason": "full-frame layout switched between deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-011",
+      "canonical_slide_id": "prefix-b-tree-3-011",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 11,
+      "start_s": 905.45,
+      "end_s": 909.55,
+      "start": "00:15:05.450",
+      "end": "00:15:09.550",
+      "duration_s": 4.1,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Prefix B*-tree (3)",
+      "screen_title_ocr": "Prefix B*-tree (3)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "essed",
+      "slide_text_ocr": "Prefix B*-tree (3)\n\nThe lexicographic sort order makes prefix compression attractive\n\ne\n\nneighboring entries tend to differ only at the end\n\ne\n\na common prefix occurs very frequently\n\ne\n\nnot only for strings, also for compound keys etc.\n\nin particular important if partitioned B-trees\n\nwith big-endian ordering any value might get compressed",
+      "initial_frame_s": 906.45,
+      "annotated_frame_s": 909.15,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/011-prefix-b-tree-3-011-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/011-prefix-b-tree-3-011-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 906.45,
+          "timestamp": "00:15:06.450",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/011-prefix-b-tree-3-011-initial.jpg"
+        },
+        {
+          "timestamp_s": 909.15,
+          "timestamp": "00:15:09.150",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/011-prefix-b-tree-3-011-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.93,
+      "boundary_reason": "full-frame layout switched between deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-012",
+      "canonical_slide_id": "hash-based-indexes-012",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 12,
+      "start_s": 909.55,
+      "end_s": 912.05,
+      "start": "00:15:09.550",
+      "end": "00:15:12.050",
+      "duration_s": 2.5,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Hash-Based Indexes",
+      "screen_title_ocr": "Hash-Based Indexes",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "Hash-Based Indexes\n\nIn main memory a hash table is usually faster than a search tree\n\n¢ compute a hash-value h, compute a slot (e.g., s = hmod|T|, access\n\ne promises O(1) access\n\ne (if everything works out fine)\n\nA DBMS could profit from this, too. But:\n\ne random I/O is very expensive on disk\n\ne collisions are problematic (e.g., when chaining)",
+      "initial_frame_s": 910.55,
+      "annotated_frame_s": 911.65,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/012-hash-based-indexes-012-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/012-hash-based-indexes-012-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 910.55,
+          "timestamp": "00:15:10.550",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/012-hash-based-indexes-012-initial.jpg"
+        },
+        {
+          "timestamp_s": 911.65,
+          "timestamp": "00:15:11.650",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/012-hash-based-indexes-012-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.8,
+      "boundary_reason": "cropped deck visual state changed; footer unavailable"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-013",
+      "canonical_slide_id": "prefix-b-tree-3-013",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 13,
+      "start_s": 912.05,
+      "end_s": 932.55,
+      "start": "00:15:12.050",
+      "end": "00:15:32.550",
+      "duration_s": 20.5,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Prefix B*-tree (3)",
+      "screen_title_ocr": "Prefix B*-tree (3)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "essed",
+      "slide_text_ocr": "Prefix B*-tree (3)\n\nThe lexicographic sort order makes prefix compression attractive\n\ne\n\nneighboring entries tend to differ only at the end\n\ne\n\na common prefix occurs very frequently\n\ne\n\nnot only for strings, also for compound keys etc.\n\nin particular important if partitioned B-trees\n\nwith big-endian ordering any value might get compressed",
+      "initial_frame_s": 913.05,
+      "annotated_frame_s": 932.15,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/013-prefix-b-tree-3-013-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/013-prefix-b-tree-3-013-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 913.05,
+          "timestamp": "00:15:13.050",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/013-prefix-b-tree-3-013-initial.jpg"
+        },
+        {
+          "timestamp_s": 932.15,
+          "timestamp": "00:15:32.150",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/013-prefix-b-tree-3-013-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.8,
+      "boundary_reason": "cropped deck visual state changed; footer unavailable"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-014",
+      "canonical_slide_id": "hash-based-indexes-014",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 14,
+      "start_s": 932.55,
+      "end_s": 974.05,
+      "start": "00:15:32.550",
+      "end": "00:16:14.050",
+      "duration_s": 41.5,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Hash-Based Indexes",
+      "screen_title_ocr": "Hash-Based Indexes",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "Hash-Based Indexes\n\nIn main memory a hash table is usually faster than a search tree\n\n¢ compute a hash-value h, compute a slot (e.g., s = hmod|T|, access\n\ne promises O(1) access\n\ne (if everything works out fine)\n\nA DBMS could profit from this, too. But:\n\ne random I/O is very expensive on disk\n\ne collisions are problematic (e.g., when chaining)",
+      "initial_frame_s": 933.55,
+      "annotated_frame_s": 973.65,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/014-hash-based-indexes-014-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/014-hash-based-indexes-014-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 933.55,
+          "timestamp": "00:15:33.550",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/014-hash-based-indexes-014-initial.jpg"
+        },
+        {
+          "timestamp_s": 973.65,
+          "timestamp": "00:16:13.650",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/014-hash-based-indexes-014-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.8,
+      "boundary_reason": "cropped deck visual state changed; footer unavailable"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-015",
+      "canonical_slide_id": "professor-board-application-015",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 15,
+      "start_s": 974.05,
+      "end_s": 1401.75,
+      "start": "00:16:14.050",
+      "end": "00:23:21.750",
+      "duration_s": 427.7,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "board_or_application",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 0.0,
+      "title": "Professor board / application",
+      "screen_title_ocr": "",
+      "chapter_header": "",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "",
+      "initial_frame_s": 975.05,
+      "annotated_frame_s": 1401.35,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/015-professor-board-application-015-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/015-professor-board-application-015-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 975.05,
+          "timestamp": "00:16:15.050",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/015-professor-board-application-015-initial.jpg"
+        },
+        {
+          "timestamp_s": 1005.05,
+          "timestamp": "00:16:45.050",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/015-professor-board-application-015-progress-01.jpg"
+        },
+        {
+          "timestamp_s": 1035.05,
+          "timestamp": "00:17:15.050",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/015-professor-board-application-015-progress-02.jpg"
+        },
+        {
+          "timestamp_s": 1065.05,
+          "timestamp": "00:17:45.050",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/015-professor-board-application-015-progress-03.jpg"
+        },
+        {
+          "timestamp_s": 1095.05,
+          "timestamp": "00:18:15.050",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/015-professor-board-application-015-progress-04.jpg"
+        },
+        {
+          "timestamp_s": 1125.05,
+          "timestamp": "00:18:45.050",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/015-professor-board-application-015-progress-05.jpg"
+        },
+        {
+          "timestamp_s": 1155.05,
+          "timestamp": "00:19:15.050",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/015-professor-board-application-015-progress-06.jpg"
+        },
+        {
+          "timestamp_s": 1185.05,
+          "timestamp": "00:19:45.050",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/015-professor-board-application-015-progress-07.jpg"
+        },
+        {
+          "timestamp_s": 1215.05,
+          "timestamp": "00:20:15.050",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/015-professor-board-application-015-progress-08.jpg"
+        },
+        {
+          "timestamp_s": 1245.05,
+          "timestamp": "00:20:45.050",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/015-professor-board-application-015-progress-09.jpg"
+        },
+        {
+          "timestamp_s": 1275.05,
+          "timestamp": "00:21:15.050",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/015-professor-board-application-015-progress-10.jpg"
+        },
+        {
+          "timestamp_s": 1305.05,
+          "timestamp": "00:21:45.050",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/015-professor-board-application-015-progress-11.jpg"
+        },
+        {
+          "timestamp_s": 1335.05,
+          "timestamp": "00:22:15.050",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/015-professor-board-application-015-progress-12.jpg"
+        },
+        {
+          "timestamp_s": 1365.05,
+          "timestamp": "00:22:45.050",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/015-professor-board-application-015-progress-13.jpg"
+        },
+        {
+          "timestamp_s": 1395.05,
+          "timestamp": "00:23:15.050",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/015-professor-board-application-015-progress-14.jpg"
+        },
+        {
+          "timestamp_s": 1401.35,
+          "timestamp": "00:23:21.350",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/015-professor-board-application-015-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.93,
+      "boundary_reason": "full-frame layout switched between deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-016",
+      "canonical_slide_id": "hash-based-indexes-016",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 16,
+      "start_s": 1401.75,
+      "end_s": 1404.55,
+      "start": "00:23:21.750",
+      "end": "00:23:24.550",
+      "duration_s": 2.8,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Hash-Based Indexes",
+      "screen_title_ocr": "Hash-Based Indexes",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "Hash-Based Indexes\n\nIn main memory a hash table is usually faster than a search tree\n\n¢ compute a hash-value h, compute a slot (e.g., s = hmod|T|, access\n\ne promises O(1) access\n\ne (if everything works out fine)\n\nA DBMS could profit from this, too. But:\n\ne random I/O is very expensive on disk\n\ne collisions are problematic (e.g., when chaining)",
+      "initial_frame_s": 1402.75,
+      "annotated_frame_s": 1404.15,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/016-hash-based-indexes-016-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/016-hash-based-indexes-016-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 1402.75,
+          "timestamp": "00:23:22.750",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/016-hash-based-indexes-016-initial.jpg"
+        },
+        {
+          "timestamp_s": 1404.15,
+          "timestamp": "00:23:24.150",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/016-hash-based-indexes-016-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.93,
+      "boundary_reason": "full-frame layout switched between deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-017",
+      "canonical_slide_id": "hash-based-indexes-017",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 17,
+      "start_s": 1404.55,
+      "end_s": 1416.85,
+      "start": "00:23:24.550",
+      "end": "00:23:36.850",
+      "duration_s": 12.3,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Hash-Based Indexes",
+      "screen_title_ocr": "Hash-Based Indexes",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "Hash-Based Indexes\n\nIn main memory a hash table is usually faster than a search tree\n\n¢ compute a hash-value h, compute a slot (e.g., s = hmod|T|, access\n\ne promises O(1) access\n\ne (if everything works out fine)\n\nA DBMS could profit from this, too. But:\n\ne random I/O is very expensive on disk\n\ne collisions are problematic (e.g., when chaining)",
+      "initial_frame_s": 1405.55,
+      "annotated_frame_s": 1416.45,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/017-hash-based-indexes-017-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/017-hash-based-indexes-017-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 1405.55,
+          "timestamp": "00:23:25.550",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/017-hash-based-indexes-017-initial.jpg"
+        },
+        {
+          "timestamp_s": 1416.45,
+          "timestamp": "00:23:36.450",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/017-hash-based-indexes-017-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.93,
+      "boundary_reason": "full-frame layout switched between deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-018",
+      "canonical_slide_id": "professor-board-application-018",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 18,
+      "start_s": 1416.85,
+      "end_s": 3274.05,
+      "start": "00:23:36.850",
+      "end": "00:54:34.050",
+      "duration_s": 1857.2,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "board_or_application",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 0.0,
+      "title": "Professor board / application",
+      "screen_title_ocr": "",
+      "chapter_header": "",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "",
+      "initial_frame_s": 1417.85,
+      "annotated_frame_s": 3273.65,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 1417.85,
+          "timestamp": "00:23:37.850",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-initial.jpg"
+        },
+        {
+          "timestamp_s": 1447.85,
+          "timestamp": "00:24:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-01.jpg"
+        },
+        {
+          "timestamp_s": 1477.85,
+          "timestamp": "00:24:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-02.jpg"
+        },
+        {
+          "timestamp_s": 1507.85,
+          "timestamp": "00:25:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-03.jpg"
+        },
+        {
+          "timestamp_s": 1537.85,
+          "timestamp": "00:25:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-04.jpg"
+        },
+        {
+          "timestamp_s": 1567.85,
+          "timestamp": "00:26:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-05.jpg"
+        },
+        {
+          "timestamp_s": 1597.85,
+          "timestamp": "00:26:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-06.jpg"
+        },
+        {
+          "timestamp_s": 1627.85,
+          "timestamp": "00:27:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-07.jpg"
+        },
+        {
+          "timestamp_s": 1657.85,
+          "timestamp": "00:27:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-08.jpg"
+        },
+        {
+          "timestamp_s": 1687.85,
+          "timestamp": "00:28:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-09.jpg"
+        },
+        {
+          "timestamp_s": 1717.85,
+          "timestamp": "00:28:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-10.jpg"
+        },
+        {
+          "timestamp_s": 1747.85,
+          "timestamp": "00:29:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-11.jpg"
+        },
+        {
+          "timestamp_s": 1777.85,
+          "timestamp": "00:29:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-12.jpg"
+        },
+        {
+          "timestamp_s": 1807.85,
+          "timestamp": "00:30:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-13.jpg"
+        },
+        {
+          "timestamp_s": 1837.85,
+          "timestamp": "00:30:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-14.jpg"
+        },
+        {
+          "timestamp_s": 1867.85,
+          "timestamp": "00:31:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-15.jpg"
+        },
+        {
+          "timestamp_s": 1897.85,
+          "timestamp": "00:31:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-16.jpg"
+        },
+        {
+          "timestamp_s": 1927.85,
+          "timestamp": "00:32:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-17.jpg"
+        },
+        {
+          "timestamp_s": 1957.85,
+          "timestamp": "00:32:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-18.jpg"
+        },
+        {
+          "timestamp_s": 1987.85,
+          "timestamp": "00:33:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-19.jpg"
+        },
+        {
+          "timestamp_s": 2017.85,
+          "timestamp": "00:33:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-20.jpg"
+        },
+        {
+          "timestamp_s": 2047.85,
+          "timestamp": "00:34:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-21.jpg"
+        },
+        {
+          "timestamp_s": 2077.85,
+          "timestamp": "00:34:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-22.jpg"
+        },
+        {
+          "timestamp_s": 2107.85,
+          "timestamp": "00:35:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-23.jpg"
+        },
+        {
+          "timestamp_s": 2137.85,
+          "timestamp": "00:35:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-24.jpg"
+        },
+        {
+          "timestamp_s": 2167.85,
+          "timestamp": "00:36:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-25.jpg"
+        },
+        {
+          "timestamp_s": 2197.85,
+          "timestamp": "00:36:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-26.jpg"
+        },
+        {
+          "timestamp_s": 2227.85,
+          "timestamp": "00:37:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-27.jpg"
+        },
+        {
+          "timestamp_s": 2257.85,
+          "timestamp": "00:37:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-28.jpg"
+        },
+        {
+          "timestamp_s": 2287.85,
+          "timestamp": "00:38:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-29.jpg"
+        },
+        {
+          "timestamp_s": 2317.85,
+          "timestamp": "00:38:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-30.jpg"
+        },
+        {
+          "timestamp_s": 2347.85,
+          "timestamp": "00:39:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-31.jpg"
+        },
+        {
+          "timestamp_s": 2377.85,
+          "timestamp": "00:39:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-32.jpg"
+        },
+        {
+          "timestamp_s": 2407.85,
+          "timestamp": "00:40:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-33.jpg"
+        },
+        {
+          "timestamp_s": 2437.85,
+          "timestamp": "00:40:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-34.jpg"
+        },
+        {
+          "timestamp_s": 2467.85,
+          "timestamp": "00:41:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-35.jpg"
+        },
+        {
+          "timestamp_s": 2497.85,
+          "timestamp": "00:41:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-36.jpg"
+        },
+        {
+          "timestamp_s": 2527.85,
+          "timestamp": "00:42:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-37.jpg"
+        },
+        {
+          "timestamp_s": 2557.85,
+          "timestamp": "00:42:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-38.jpg"
+        },
+        {
+          "timestamp_s": 2587.85,
+          "timestamp": "00:43:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-39.jpg"
+        },
+        {
+          "timestamp_s": 2617.85,
+          "timestamp": "00:43:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-40.jpg"
+        },
+        {
+          "timestamp_s": 2647.85,
+          "timestamp": "00:44:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-41.jpg"
+        },
+        {
+          "timestamp_s": 2677.85,
+          "timestamp": "00:44:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-42.jpg"
+        },
+        {
+          "timestamp_s": 2707.85,
+          "timestamp": "00:45:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-43.jpg"
+        },
+        {
+          "timestamp_s": 2737.85,
+          "timestamp": "00:45:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-44.jpg"
+        },
+        {
+          "timestamp_s": 2767.85,
+          "timestamp": "00:46:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-45.jpg"
+        },
+        {
+          "timestamp_s": 2797.85,
+          "timestamp": "00:46:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-46.jpg"
+        },
+        {
+          "timestamp_s": 2827.85,
+          "timestamp": "00:47:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-47.jpg"
+        },
+        {
+          "timestamp_s": 2857.85,
+          "timestamp": "00:47:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-48.jpg"
+        },
+        {
+          "timestamp_s": 2887.85,
+          "timestamp": "00:48:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-49.jpg"
+        },
+        {
+          "timestamp_s": 2917.85,
+          "timestamp": "00:48:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-50.jpg"
+        },
+        {
+          "timestamp_s": 2947.85,
+          "timestamp": "00:49:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-51.jpg"
+        },
+        {
+          "timestamp_s": 2977.85,
+          "timestamp": "00:49:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-52.jpg"
+        },
+        {
+          "timestamp_s": 3007.85,
+          "timestamp": "00:50:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-53.jpg"
+        },
+        {
+          "timestamp_s": 3037.85,
+          "timestamp": "00:50:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-54.jpg"
+        },
+        {
+          "timestamp_s": 3067.85,
+          "timestamp": "00:51:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-55.jpg"
+        },
+        {
+          "timestamp_s": 3097.85,
+          "timestamp": "00:51:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-56.jpg"
+        },
+        {
+          "timestamp_s": 3127.85,
+          "timestamp": "00:52:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-57.jpg"
+        },
+        {
+          "timestamp_s": 3157.85,
+          "timestamp": "00:52:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-58.jpg"
+        },
+        {
+          "timestamp_s": 3187.85,
+          "timestamp": "00:53:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-59.jpg"
+        },
+        {
+          "timestamp_s": 3217.85,
+          "timestamp": "00:53:37.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-60.jpg"
+        },
+        {
+          "timestamp_s": 3247.85,
+          "timestamp": "00:54:07.850",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-progress-61.jpg"
+        },
+        {
+          "timestamp_s": 3273.65,
+          "timestamp": "00:54:33.650",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/018-professor-board-application-018-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.93,
+      "boundary_reason": "full-frame layout switched between deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-019",
+      "canonical_slide_id": "untitled-slide-19-019",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 19,
+      "start_s": 3274.05,
+      "end_s": 3309.95,
+      "start": "00:54:34.050",
+      "end": "00:55:09.950",
+      "duration_s": 35.9,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.924,
+      "deck_layout_score": 0.848,
+      "title": "Untitled slide 19",
+      "screen_title_ocr": "",
+      "chapter_header": "",
+      "counter_ocr": "— : . — : ——",
+      "slide_text_ocr": "",
+      "initial_frame_s": 3275.05,
+      "annotated_frame_s": 3309.55,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/019-untitled-slide-19-019-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/019-untitled-slide-19-019-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 3275.05,
+          "timestamp": "00:54:35.050",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/019-untitled-slide-19-019-initial.jpg"
+        },
+        {
+          "timestamp_s": 3309.55,
+          "timestamp": "00:55:09.550",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/019-untitled-slide-19-019-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.93,
+      "boundary_reason": "full-frame layout switched between deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-020",
+      "canonical_slide_id": "hash-based-indexes-020",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 20,
+      "start_s": 3309.95,
+      "end_s": 3311.75,
+      "start": "00:55:09.950",
+      "end": "00:55:11.750",
+      "duration_s": 1.8,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Hash-Based Indexes",
+      "screen_title_ocr": "Hash-Based Indexes",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "Hash-Based Indexes\n\nIn main memory a hash table is usually faster than a search tree\n\n¢ compute a hash-value h, compute a slot (e.g., s = hmod|T|, access\n\ne promises O(1) access\n\ne (if everything works out fine)\n\nA DBMS could profit from this, too. But:\n\ne random I/O is very expensive on disk\n\ne collisions are problematic (e.g., when chaining)",
+      "initial_frame_s": 3310.95,
+      "annotated_frame_s": 3311.35,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/020-hash-based-indexes-020-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/020-hash-based-indexes-020-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 3310.95,
+          "timestamp": "00:55:10.950",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/020-hash-based-indexes-020-initial.jpg"
+        },
+        {
+          "timestamp_s": 3311.35,
+          "timestamp": "00:55:11.350",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/020-hash-based-indexes-020-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.8,
+      "boundary_reason": "cropped deck visual state changed; footer unavailable"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-021",
+      "canonical_slide_id": "professor-board-application-021",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 21,
+      "start_s": 3311.75,
+      "end_s": 3815.65,
+      "start": "00:55:11.750",
+      "end": "01:03:35.650",
+      "duration_s": 503.9,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "board_or_application",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 0.0,
+      "title": "Professor board / application",
+      "screen_title_ocr": "(OS MF ONS",
+      "chapter_header": "IJyfL ISK Vy oy Svc >",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "et A\n\nIth (* (XxX /)\n\nLD\n\nHe C)= *\n\nA 2S ¢\n\na)\n\nBETTER be?\n\nS7(L BAL!\n\nFr B:",
+      "initial_frame_s": 3312.75,
+      "annotated_frame_s": 3815.25,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/021-professor-board-application-021-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/021-professor-board-application-021-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 3312.75,
+          "timestamp": "00:55:12.750",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/021-professor-board-application-021-initial.jpg"
+        },
+        {
+          "timestamp_s": 3342.75,
+          "timestamp": "00:55:42.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/021-professor-board-application-021-progress-01.jpg"
+        },
+        {
+          "timestamp_s": 3372.75,
+          "timestamp": "00:56:12.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/021-professor-board-application-021-progress-02.jpg"
+        },
+        {
+          "timestamp_s": 3402.75,
+          "timestamp": "00:56:42.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/021-professor-board-application-021-progress-03.jpg"
+        },
+        {
+          "timestamp_s": 3432.75,
+          "timestamp": "00:57:12.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/021-professor-board-application-021-progress-04.jpg"
+        },
+        {
+          "timestamp_s": 3462.75,
+          "timestamp": "00:57:42.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/021-professor-board-application-021-progress-05.jpg"
+        },
+        {
+          "timestamp_s": 3492.75,
+          "timestamp": "00:58:12.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/021-professor-board-application-021-progress-06.jpg"
+        },
+        {
+          "timestamp_s": 3522.75,
+          "timestamp": "00:58:42.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/021-professor-board-application-021-progress-07.jpg"
+        },
+        {
+          "timestamp_s": 3552.75,
+          "timestamp": "00:59:12.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/021-professor-board-application-021-progress-08.jpg"
+        },
+        {
+          "timestamp_s": 3582.75,
+          "timestamp": "00:59:42.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/021-professor-board-application-021-progress-09.jpg"
+        },
+        {
+          "timestamp_s": 3612.75,
+          "timestamp": "01:00:12.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/021-professor-board-application-021-progress-10.jpg"
+        },
+        {
+          "timestamp_s": 3642.75,
+          "timestamp": "01:00:42.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/021-professor-board-application-021-progress-11.jpg"
+        },
+        {
+          "timestamp_s": 3672.75,
+          "timestamp": "01:01:12.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/021-professor-board-application-021-progress-12.jpg"
+        },
+        {
+          "timestamp_s": 3702.75,
+          "timestamp": "01:01:42.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/021-professor-board-application-021-progress-13.jpg"
+        },
+        {
+          "timestamp_s": 3732.75,
+          "timestamp": "01:02:12.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/021-professor-board-application-021-progress-14.jpg"
+        },
+        {
+          "timestamp_s": 3762.75,
+          "timestamp": "01:02:42.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/021-professor-board-application-021-progress-15.jpg"
+        },
+        {
+          "timestamp_s": 3792.75,
+          "timestamp": "01:03:12.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/021-professor-board-application-021-progress-16.jpg"
+        },
+        {
+          "timestamp_s": 3815.25,
+          "timestamp": "01:03:35.250",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/021-professor-board-application-021-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.93,
+      "boundary_reason": "full-frame layout switched between deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-022",
+      "canonical_slide_id": "hash-based-indexes-022",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 22,
+      "start_s": 3815.65,
+      "end_s": 3849.75,
+      "start": "01:03:35.650",
+      "end": "01:04:09.750",
+      "duration_s": 34.1,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Hash-Based Indexes",
+      "screen_title_ocr": "Hash-Based Indexes",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "Hash-Based Indexes\n\nIn main memory a hash table is usually faster than a search tree\n\n¢ compute a hash-value h, compute a slot (e.g., s = hmod|T|, access\n\ne promises O(1) access\n\ne (if everything works out fine)\n\nA DBMS could profit from this, too. But:\n\ne random I/O is very expensive on disk\n\ne collisions are problematic (e.g., when chaining)",
+      "initial_frame_s": 3816.65,
+      "annotated_frame_s": 3849.35,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/022-hash-based-indexes-022-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/022-hash-based-indexes-022-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 3816.65,
+          "timestamp": "01:03:36.650",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/022-hash-based-indexes-022-initial.jpg"
+        },
+        {
+          "timestamp_s": 3849.35,
+          "timestamp": "01:04:09.350",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/022-hash-based-indexes-022-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.93,
+      "boundary_reason": "full-frame layout switched between deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-023",
+      "canonical_slide_id": "professor-board-application-023",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 23,
+      "start_s": 3849.75,
+      "end_s": 4275.15,
+      "start": "01:04:09.750",
+      "end": "01:11:15.150",
+      "duration_s": 425.4,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "board_or_application",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 0.0,
+      "title": "Professor board / application",
+      "screen_title_ocr": "",
+      "chapter_header": "",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "",
+      "initial_frame_s": 3850.75,
+      "annotated_frame_s": 4274.75,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/023-professor-board-application-023-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/023-professor-board-application-023-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 3850.75,
+          "timestamp": "01:04:10.750",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/023-professor-board-application-023-initial.jpg"
+        },
+        {
+          "timestamp_s": 3880.75,
+          "timestamp": "01:04:40.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/023-professor-board-application-023-progress-01.jpg"
+        },
+        {
+          "timestamp_s": 3910.75,
+          "timestamp": "01:05:10.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/023-professor-board-application-023-progress-02.jpg"
+        },
+        {
+          "timestamp_s": 3940.75,
+          "timestamp": "01:05:40.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/023-professor-board-application-023-progress-03.jpg"
+        },
+        {
+          "timestamp_s": 3970.75,
+          "timestamp": "01:06:10.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/023-professor-board-application-023-progress-04.jpg"
+        },
+        {
+          "timestamp_s": 4000.75,
+          "timestamp": "01:06:40.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/023-professor-board-application-023-progress-05.jpg"
+        },
+        {
+          "timestamp_s": 4030.75,
+          "timestamp": "01:07:10.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/023-professor-board-application-023-progress-06.jpg"
+        },
+        {
+          "timestamp_s": 4060.75,
+          "timestamp": "01:07:40.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/023-professor-board-application-023-progress-07.jpg"
+        },
+        {
+          "timestamp_s": 4090.75,
+          "timestamp": "01:08:10.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/023-professor-board-application-023-progress-08.jpg"
+        },
+        {
+          "timestamp_s": 4120.75,
+          "timestamp": "01:08:40.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/023-professor-board-application-023-progress-09.jpg"
+        },
+        {
+          "timestamp_s": 4150.75,
+          "timestamp": "01:09:10.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/023-professor-board-application-023-progress-10.jpg"
+        },
+        {
+          "timestamp_s": 4180.75,
+          "timestamp": "01:09:40.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/023-professor-board-application-023-progress-11.jpg"
+        },
+        {
+          "timestamp_s": 4210.75,
+          "timestamp": "01:10:10.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/023-professor-board-application-023-progress-12.jpg"
+        },
+        {
+          "timestamp_s": 4240.75,
+          "timestamp": "01:10:40.750",
+          "role": "progress",
+          "image": "assets/slides/dbimpl-06-access-eh/023-professor-board-application-023-progress-13.jpg"
+        },
+        {
+          "timestamp_s": 4274.75,
+          "timestamp": "01:11:14.750",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/023-professor-board-application-023-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.93,
+      "boundary_reason": "full-frame layout switched between deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-024",
+      "canonical_slide_id": "hash-based-indexes-024",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 24,
+      "start_s": 4275.15,
+      "end_s": 4465.65,
+      "start": "01:11:15.150",
+      "end": "01:14:25.650",
+      "duration_s": 190.5,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Hash-Based Indexes",
+      "screen_title_ocr": "Hash-Based Indexes",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "Hash-Based Indexes\n\nIn main memory a hash table is usually faster than a search tree\n\n¢ compute a hash-value h, compute a slot (e.g., s = hmod|T|, access\n\ne promises O(1) access\n\ne (if everything works out fine)\n\nA DBMS could profit from this, too. But:\n\ne random I/O is very expensive on disk\n\ne collisions are problematic (e.g., when chaining)",
+      "initial_frame_s": 4276.15,
+      "annotated_frame_s": 4465.25,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/024-hash-based-indexes-024-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/024-hash-based-indexes-024-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4276.15,
+          "timestamp": "01:11:16.150",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/024-hash-based-indexes-024-initial.jpg"
+        },
+        {
+          "timestamp_s": 4465.25,
+          "timestamp": "01:14:25.250",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/024-hash-based-indexes-024-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.93,
+      "boundary_reason": "full-frame layout switched between deck and board/application"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-025",
+      "canonical_slide_id": "hash-based-indexes-2-025",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 25,
+      "start_s": 4465.65,
+      "end_s": 4687.55,
+      "start": "01:14:25.650",
+      "end": "01:18:07.550",
+      "duration_s": 221.9,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Hash-Based Indexes (2)",
+      "screen_title_ocr": "Hash-Based Indexes (2)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "Hash-Based Indexes (2)\n\nHash indexes are not as versatile as tree indexes:\n\ne\n\nonly support point query\n\ne\n\nrange queries are very problematic\n\ne\n\norder preserving hashing exists, but is questionable\n\ne\n\nquality of the hash function is critical\n\nAs a consequence, mainly useful for primary key indexes\n\ne unique keys\n\nlL. .\n\nee 0 ne\n\nee ee ee ee\n\nee",
+      "initial_frame_s": 4466.65,
+      "annotated_frame_s": 4687.15,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/025-hash-based-indexes-2-025-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/025-hash-based-indexes-2-025-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4466.65,
+          "timestamp": "01:14:26.650",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/025-hash-based-indexes-2-025-initial.jpg"
+        },
+        {
+          "timestamp_s": 4687.15,
+          "timestamp": "01:18:07.150",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/025-hash-based-indexes-2-025-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.8,
+      "boundary_reason": "cropped deck visual state changed; footer unavailable"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-026",
+      "canonical_slide_id": "extendible-hashing-026",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 26,
+      "start_s": 4687.55,
+      "end_s": 4750.55,
+      "start": "01:18:07.550",
+      "end": "01:19:10.550",
+      "duration_s": 63.0,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Extendible Hashing",
+      "screen_title_ocr": "Extendible Hashing",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "Extendible Hashing\n\nA central problem of hashing schemes on disk are the table size\n\ne\n\nhard to known beforehand\n\ne\n\ntoo small = too many collisions\n\ne\n\nchaining is expensive on disk\n\ne\n\ntoo large = waste of space\n\ne\n\nwould have to grow over time\n\nTraditional solution for main memory: rehashing\n\ne re-map items to hash table sizes",
+      "initial_frame_s": 4688.55,
+      "annotated_frame_s": 4750.15,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/026-extendible-hashing-026-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/026-extendible-hashing-026-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4688.55,
+          "timestamp": "01:18:08.550",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/026-extendible-hashing-026-initial.jpg"
+        },
+        {
+          "timestamp_s": 4750.15,
+          "timestamp": "01:19:10.150",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/026-extendible-hashing-026-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.8,
+      "boundary_reason": "cropped deck visual state changed; footer unavailable"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-027",
+      "canonical_slide_id": "extendible-hashing-2-027",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 27,
+      "start_s": 4750.55,
+      "end_s": 4967.25,
+      "start": "01:19:10.550",
+      "end": "01:22:47.250",
+      "duration_s": 216.7,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Extendible Hashing (2)",
+      "screen_title_ocr": "Extendible Hashing (2)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "5",
+      "slide_text_ocr": "Extendible Hashing (2)\n\nhash table size is always a power of 2\n\nhash table points to buckets (pages)\n\nmultiple table entries can point to the same bucket\n\nbut always systematically (buddy systems)\n\nthus, the “depth” of the buckets varies",
+      "initial_frame_s": 4751.55,
+      "annotated_frame_s": 4966.85,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/027-extendible-hashing-2-027-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/027-extendible-hashing-2-027-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4751.55,
+          "timestamp": "01:19:11.550",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/027-extendible-hashing-2-027-initial.jpg"
+        },
+        {
+          "timestamp_s": 4966.85,
+          "timestamp": "01:22:46.850",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/027-extendible-hashing-2-027-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.8,
+      "boundary_reason": "cropped deck visual state changed; footer unavailable"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-028",
+      "canonical_slide_id": "extendible-hashing-3-028",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 28,
+      "start_s": 4967.25,
+      "end_s": 4971.35,
+      "start": "01:22:47.250",
+      "end": "01:22:51.350",
+      "duration_s": 4.1,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Extendible Hashing (3)",
+      "screen_title_ocr": "Extendible Hashing (3)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "J]",
+      "slide_text_ocr": "Extendible Hashing (3)\n\nwhen a bucket overflows, it is split\n\nif not a maximum depth, the depth is increased\n\nachieved by de-sharing slot entries\n\none more bit becomes relevant\n\nitems are distributed according to hash values\n\nIn! 1.",
+      "initial_frame_s": 4968.25,
+      "annotated_frame_s": 4970.95,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/028-extendible-hashing-3-028-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/028-extendible-hashing-3-028-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4968.25,
+          "timestamp": "01:22:48.250",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/028-extendible-hashing-3-028-initial.jpg"
+        },
+        {
+          "timestamp_s": 4970.95,
+          "timestamp": "01:22:50.950",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/028-extendible-hashing-3-028-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.8,
+      "boundary_reason": "cropped deck visual state changed; footer unavailable"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-029",
+      "canonical_slide_id": "extendible-hashing-2-029",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 29,
+      "start_s": 4971.35,
+      "end_s": 5038.25,
+      "start": "01:22:51.350",
+      "end": "01:23:58.250",
+      "duration_s": 66.9,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Extendible Hashing (2)",
+      "screen_title_ocr": "Extendible Hashing (2)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "_°",
+      "slide_text_ocr": "Extendible Hashing (2)\n\nhash table size is always a power of 2\n\nhash table points to buckets (pages)\n\nmultiple table entries can point to the same bucket\n\nbut always systematically (buddy systems)\n\nthus, the “depth” of the buckets varies\n\nTPI~\n\nDe pIZre",
+      "initial_frame_s": 4972.35,
+      "annotated_frame_s": 5037.85,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/029-extendible-hashing-2-029-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/029-extendible-hashing-2-029-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 4972.35,
+          "timestamp": "01:22:52.350",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/029-extendible-hashing-2-029-initial.jpg"
+        },
+        {
+          "timestamp_s": 5037.85,
+          "timestamp": "01:23:57.850",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/029-extendible-hashing-2-029-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.8,
+      "boundary_reason": "cropped deck visual state changed; footer unavailable"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-030",
+      "canonical_slide_id": "extendible-hashing-2-030",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 30,
+      "start_s": 5038.25,
+      "end_s": 5042.15,
+      "start": "01:23:58.250",
+      "end": "01:24:02.150",
+      "duration_s": 3.9,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Extendible Hashing (2)",
+      "screen_title_ocr": "Extendible Hashing (2)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "a",
+      "slide_text_ocr": "Extendible Hashing (2)\n\nhash table size is always a power of 2\n\nhash table points to buckets (pages)\n\nmultiple table entries can point to the same bucket\n\nbut always systematically (buddy systems)\n\nthus, the “depth” of the buckets varies\n\nTPI~\n\nDe pIZhre >.",
+      "initial_frame_s": 5039.25,
+      "annotated_frame_s": 5041.75,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/030-extendible-hashing-2-030-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/030-extendible-hashing-2-030-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 5039.25,
+          "timestamp": "01:23:59.250",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/030-extendible-hashing-2-030-initial.jpg"
+        },
+        {
+          "timestamp_s": 5041.75,
+          "timestamp": "01:24:01.750",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/030-extendible-hashing-2-030-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.8,
+      "boundary_reason": "cropped deck visual state changed; footer unavailable"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-031",
+      "canonical_slide_id": "extendible-hashing-3-031",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 31,
+      "start_s": 5042.15,
+      "end_s": 5156.15,
+      "start": "01:24:02.150",
+      "end": "01:25:56.150",
+      "duration_s": 114.0,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Extendible Hashing (3)",
+      "screen_title_ocr": "Extendible Hashing (3)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "]",
+      "slide_text_ocr": "Extendible Hashing (3)\n\nwhen a bucket overflows, it is split\n\nif not a maximum depth, the depth is increased\n\nachieved by de-sharing slot entries\n\none more bit becomes relevant\n\nitems are distributed according to hash values\n\nIn! 1 |",
+      "initial_frame_s": 5043.15,
+      "annotated_frame_s": 5155.75,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/031-extendible-hashing-3-031-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/031-extendible-hashing-3-031-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 5043.15,
+          "timestamp": "01:24:03.150",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/031-extendible-hashing-3-031-initial.jpg"
+        },
+        {
+          "timestamp_s": 5155.75,
+          "timestamp": "01:25:55.750",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/031-extendible-hashing-3-031-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.8,
+      "boundary_reason": "cropped deck visual state changed; footer unavailable"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-032",
+      "canonical_slide_id": "extendible-hashing-4-032",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 32,
+      "start_s": 5156.15,
+      "end_s": 5159.65,
+      "start": "01:25:56.150",
+      "end": "01:25:59.650",
+      "duration_s": 3.5,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Extendible Hashing (4)",
+      "screen_title_ocr": "Extendible Hashing (4)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "7",
+      "slide_text_ocr": "Extendible Hashing (4)\n\nif the depth cannot be increased, the table is doubled\n\nother buckets are unaffected\n\nentries are duplicated, resulting in new sharing\n\nnew buckets are linked as usual\n\n00\n\nSLA]\n\naft",
+      "initial_frame_s": 5157.15,
+      "annotated_frame_s": 5159.25,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/032-extendible-hashing-4-032-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/032-extendible-hashing-4-032-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 5157.15,
+          "timestamp": "01:25:57.150",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/032-extendible-hashing-4-032-initial.jpg"
+        },
+        {
+          "timestamp_s": 5159.25,
+          "timestamp": "01:25:59.250",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/032-extendible-hashing-4-032-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.8,
+      "boundary_reason": "cropped deck visual state changed; footer unavailable"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-033",
+      "canonical_slide_id": "extendible-hashing-3-033",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 33,
+      "start_s": 5159.65,
+      "end_s": 5170.75,
+      "start": "01:25:59.650",
+      "end": "01:26:10.750",
+      "duration_s": 11.1,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Extendible Hashing (3)",
+      "screen_title_ocr": "Extendible Hashing (3)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "]",
+      "slide_text_ocr": "Extendible Hashing (3)\n\nwhen a bucket overflows, it is split\n\nif not a maximum depth, the depth is increased\n\nTO\n\nachieved by de-sharing slot entries\n\nad\n\none more bit becomes relevant\n\nSs,\n\nitems are distributed according to hash values\n\nInT 1 |",
+      "initial_frame_s": 5160.65,
+      "annotated_frame_s": 5170.35,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/033-extendible-hashing-3-033-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/033-extendible-hashing-3-033-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 5160.65,
+          "timestamp": "01:26:00.650",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/033-extendible-hashing-3-033-initial.jpg"
+        },
+        {
+          "timestamp_s": 5170.35,
+          "timestamp": "01:26:10.350",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/033-extendible-hashing-3-033-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.8,
+      "boundary_reason": "cropped deck visual state changed; footer unavailable"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-034",
+      "canonical_slide_id": "extendible-hashing-4-034",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 34,
+      "start_s": 5170.75,
+      "end_s": 5276.15,
+      "start": "01:26:10.750",
+      "end": "01:27:56.150",
+      "duration_s": 105.4,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Extendible Hashing (4)",
+      "screen_title_ocr": "Extendible Hashing (4)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "7",
+      "slide_text_ocr": "Extendible Hashing (4)\n\nif the depth cannot be increased, the table is doubled\n\nother buckets are unaffected\n\nentries are duplicated, resulting in new sharing\n\nnew buckets are linked as usual\n\n00\n\nSLA]\n\naft",
+      "initial_frame_s": 5171.75,
+      "annotated_frame_s": 5275.75,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/034-extendible-hashing-4-034-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/034-extendible-hashing-4-034-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 5171.75,
+          "timestamp": "01:26:11.750",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/034-extendible-hashing-4-034-initial.jpg"
+        },
+        {
+          "timestamp_s": 5275.75,
+          "timestamp": "01:27:55.750",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/034-extendible-hashing-4-034-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.8,
+      "boundary_reason": "cropped deck visual state changed; footer unavailable"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-035",
+      "canonical_slide_id": "extendible-hashing-5-035",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 35,
+      "start_s": 5276.15,
+      "end_s": 5279.55,
+      "start": "01:27:56.150",
+      "end": "01:27:59.550",
+      "duration_s": 3.4,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Extendible Hashing (5)",
+      "screen_title_ocr": "Extendible Hashing (5)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "",
+      "slide_text_ocr": "Extendible Hashing (5)\n\ne once a maximum table size is reached start chaining\n\ne ideally occurs rarely, traversing chains is expensive\n\ne optionally one can balance chaining vs. table growth via load factor\n\n00\n\nSLA]\n\n10\n\n|B]",
+      "initial_frame_s": 5277.15,
+      "annotated_frame_s": 5279.15,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/035-extendible-hashing-5-035-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/035-extendible-hashing-5-035-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 5277.15,
+          "timestamp": "01:27:57.150",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/035-extendible-hashing-5-035-initial.jpg"
+        },
+        {
+          "timestamp_s": 5279.15,
+          "timestamp": "01:27:59.150",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/035-extendible-hashing-5-035-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.8,
+      "boundary_reason": "cropped deck visual state changed; footer unavailable"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-036",
+      "canonical_slide_id": "extendible-hashing-4-036",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 36,
+      "start_s": 5279.55,
+      "end_s": 5291.85,
+      "start": "01:27:59.550",
+      "end": "01:28:11.850",
+      "duration_s": 12.3,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Extendible Hashing (4)",
+      "screen_title_ocr": "Extendible Hashing (4)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "7",
+      "slide_text_ocr": "Extendible Hashing (4)\n\nif the depth cannot be increased, the table is doubled\n\nother buckets are unaffected\n\nentries are duplicated, resulting in new sharing\n\nnew buckets are linked as usual\n\n00\n\nSLA]\n\naft",
+      "initial_frame_s": 5280.55,
+      "annotated_frame_s": 5291.45,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/036-extendible-hashing-4-036-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/036-extendible-hashing-4-036-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 5280.55,
+          "timestamp": "01:28:00.550",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/036-extendible-hashing-4-036-initial.jpg"
+        },
+        {
+          "timestamp_s": 5291.45,
+          "timestamp": "01:28:11.450",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/036-extendible-hashing-4-036-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.8,
+      "boundary_reason": "cropped deck visual state changed; footer unavailable"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-037",
+      "canonical_slide_id": "extendible-hashing-5-037",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 37,
+      "start_s": 5291.85,
+      "end_s": 5351.95,
+      "start": "01:28:11.850",
+      "end": "01:29:11.950",
+      "duration_s": 60.1,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Extendible Hashing (5)",
+      "screen_title_ocr": "Extendible Hashing (5)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "",
+      "slide_text_ocr": "Extendible Hashing (5)\n\ne once a maximum table size is reached start chaining\n\ne ideally occurs rarely, traversing chains is expensive\n\ne optionally one can balance chaining vs. table growth via load factor\n\n00\n\nSLA]\n\n10\n\n|B]",
+      "initial_frame_s": 5292.85,
+      "annotated_frame_s": 5351.55,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/037-extendible-hashing-5-037-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/037-extendible-hashing-5-037-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 5292.85,
+          "timestamp": "01:28:12.850",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/037-extendible-hashing-5-037-initial.jpg"
+        },
+        {
+          "timestamp_s": 5351.55,
+          "timestamp": "01:29:11.550",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/037-extendible-hashing-5-037-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.8,
+      "boundary_reason": "cropped deck visual state changed; footer unavailable"
+    },
+    {
+      "occurrence_id": "dbimpl-06-access-eh-038",
+      "canonical_slide_id": "extendible-hashing-6-038",
+      "video_id": "dbimpl-06-access-eh",
+      "source_file": "dbimpl-06-access-eh.mp4",
+      "sequence": 38,
+      "start_s": 5351.95,
+      "end_s": 5453.733,
+      "start": "01:29:11.950",
+      "end": "01:30:53.733",
+      "duration_s": 101.783,
+      "truncated_start": false,
+      "truncated_end": false,
+      "slide_number": null,
+      "deck_total": null,
+      "screen_kind": "slide",
+      "screen_kind_confidence": 0.99,
+      "deck_layout_score": 1.0,
+      "title": "Extendible Hashing (6)",
+      "screen_title_ocr": "Extendible Hashing (6)",
+      "chapter_header": "The Classical Architecture Access",
+      "counter_ocr": "Oo",
+      "slide_text_ocr": "Extendible Hashing (6)\n\nAdvantages:\n\ne ideally exactly two page accesses per lookup\n\ne less than in a B-tree\n\ne table can grow independent of existing buckets\n\ne no need for re-hashing\n\nDisadvantages:\n\ne table growth is a very invasive operation",
+      "initial_frame_s": 5352.95,
+      "annotated_frame_s": 5453.333,
+      "initial_image": "assets/slides/dbimpl-06-access-eh/038-extendible-hashing-6-038-initial.jpg",
+      "annotated_image": "assets/slides/dbimpl-06-access-eh/038-extendible-hashing-6-038-annotated.jpg",
+      "evidence_frames": [
+        {
+          "timestamp_s": 5352.95,
+          "timestamp": "01:29:12.950",
+          "role": "initial",
+          "image": "assets/slides/dbimpl-06-access-eh/038-extendible-hashing-6-038-initial.jpg"
+        },
+        {
+          "timestamp_s": 5453.333,
+          "timestamp": "01:30:53.333",
+          "role": "final",
+          "image": "assets/slides/dbimpl-06-access-eh/038-extendible-hashing-6-038-annotated.jpg"
+        }
+      ],
+      "boundary_confidence": 0.8,
+      "boundary_reason": "cropped deck visual state changed; footer unavailable"
+    }
+  ]
+}
