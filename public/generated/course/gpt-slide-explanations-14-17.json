@@ -1,0 +1,894 @@
+{
+  "records": {
+    "dbimpl-12-operators-024": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A DBMS translates queries into relational algebra, so it needs an executable implementation for every algebraic operator—and often several alternatives for the same operator. The best implementation depends on physical properties of the input. For example, grouping by an attribute is almost free when the input is already ordered by that attribute, but otherwise requires additional work. The same principle applies to joins. As a rule of thumb, pipelining operators tend to be simple because they immediately pass tuples onward, whereas pipeline breakers such as joins and grouping must retain state and are therefore much more complex."
+      ],
+      "source_transcript_word_count": 336,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-025": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A table scan conceptually emits every tuple in a relation, but its physical implementation must navigate extents and pages: fix each page in the buffer, iterate through its tuples, pass them to the consumer, and unfix the page. A real scan also enforces transaction visibility, merges deferred updates, and may evaluate predicates itself. Pushing a predicate into the scan can be valuable when the physical layout lets the system skip pages or tuples that cannot qualify. Thus the algebraic operation is simple, while storage layout, concurrency, and filtering make the implementation nontrivial."
+      ],
+      "source_transcript_word_count": 532,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-026": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Selection keeps only tuples satisfying predicate p. In a produce/consume engine, produce delegates to the input; consume evaluates p for each incoming tuple and forwards only successful tuples. Because this logic is so small, many systems do not create a separate selection operator. They attach the predicate to the preceding operator—often a scan—so filtering happens as early as possible. A separate operator can still be reasonable when tuple passing is sufficiently cheap, so predicate pushdown is an implementation choice rather than an absolute rule."
+      ],
+      "source_transcript_word_count": 167,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-027": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Map derives a new attribute by evaluating a function f on every input tuple. Its produce method asks the input for tuples; when consume receives one, it evaluates f, attaches the resulting value under the new attribute, and forwards the extended tuple. Like selection, map may be fused into the operator below it, although systems do this less often. The important distinction is that selection changes which tuples survive, whereas map changes the tuple’s schema and values by computing an additional column."
+      ],
+      "source_transcript_word_count": 135,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-028": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "No single join algorithm covers every useful case efficiently. If the right input depends on the current left tuple—for example, a correlated subquery—the system needs a nested-loop join unless the optimizer can decorrelate the query. For an equi-join with a predicate such as R.a = S.b, a hash join is usually the fastest choice. If the inputs are independent but the predicate is not equality, the system needs nested loops or, preferably, a blockwise nested-loop join. Consequently, a practical engine normally provides at least nested-loop, blockwise nested-loop, and hash join implementations; sophisticated decorrelation can sometimes eliminate the first."
+      ],
+      "source_transcript_word_count": 726,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-029": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A nested-loop join evaluates the entire right input once for every tuple from the left. Each right tuple is concatenated with the current left tuple, tested against the join predicate, and forwarded if it matches. This makes the algorithm extremely flexible: it can evaluate arbitrary predicates and dependent right-hand plans. Its cost is the product of the input sizes, however, and the right plan may itself be expensive. With database-scale inputs, this quadratic behavior is usually unacceptable, so nested-loop join should be reserved for cases where dependency or a very small input leaves no better alternative."
+      ],
+      "source_transcript_word_count": 252,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-030": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Blockwise nested-loop join preserves the predicate flexibility of ordinary nested loops but processes many left tuples together. It fills an in-memory buffer with as many left tuples as possible, scans the right input once against that whole batch, and repeats with the next batch. This does not change the quadratic number of tuple comparisons, but it can reduce expensive passes over the right input by a factor proportional to the buffer capacity. It is therefore the practical fallback for non-equality predicates that cannot use a hash join."
+      ],
+      "source_transcript_word_count": 151,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-031": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "The expensive part of ordinary nested-loop join is not merely comparing tuple pairs: the right-hand plan is re-executed for every left tuple. That plan might contain a scan, grouping, or another costly operator rather than a single table access. Repeating it once per left tuple is why the algorithm can become prohibitively slow."
+      ],
+      "source_transcript_word_count": 77,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-032": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Blockwise nested-loop join still compares every left tuple with every right tuple, so its asymptotic cost remains quadratic. Its practical advantage is I/O reuse: if the memory buffer holds m left tuples, the algorithm needs roughly m times fewer complete evaluations of the right input than ordinary nested loops. A buffer holding thousands of tuples can therefore improve runtime by orders of magnitude. The operator fills the buffer, scans and joins the right side, clears the processed batch, and repeats; after the left side ends, it performs one final right-side pass for any remaining buffered tuples."
+      ],
+      "source_transcript_word_count": 417,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-033": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "The blockwise join’s consume logic controls batching. An incoming left tuple is materialized in the buffer while space remains. If the buffer is full, the operator runs the right input; each right tuple is compared with every buffered left tuple, matching pairs are emitted, and the now-processed buffer is cleared before accepting more left tuples. In the professor’s example, a left relation three times larger than the buffer requires three right-side passes instead of one right-side evaluation per left tuple. More buffer memory therefore directly reduces the number of expensive rescans."
+      ],
+      "source_transcript_word_count": 438,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-034": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "This three-second interval only begins the transition from blockwise nested loops to sort-merge join; the substantive explanation starts in the following sort-merge interval."
+      ],
+      "source_transcript_word_count": 5,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-035": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "Blockwise nested-loop join remains quadratic in the input sizes. Its improvement over ordinary nested loops is a much smaller constant factor because it reuses each scan of the right input across a batch of left tuples."
+      ],
+      "source_transcript_word_count": 12,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-036": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Sort-merge join handles an equality predicate by scanning two inputs already ordered on their join attributes. It repeatedly advances the side with the smaller key and emits matches when the keys agree, giving a linear, memory-light merge phase. The expensive part may be producing the sorted inputs, which costs roughly n log n unless their order is already available. Duplicate key groups make many-to-many matches harder because an input position may need to be revisited. This is straightforward in an iterator engine, but awkward in a push engine; the presented implementation simplifies control flow by materializing the smaller left side."
+      ],
+      "source_transcript_word_count": 746,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-037": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "The push-based sort-merge implementation first allocates a temporary spool and fully materializes the sorted left input. It then initializes an iterator at the beginning of that spool and asks the right input to produce tuples. Consuming a left tuple therefore performs no join work; it simply appends the tuple to the temporary relation. The actual matching logic runs when right tuples arrive. This design trades extra materialization for simpler control flow in the produce/consume model."
+      ],
+      "source_transcript_word_count": 185,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-038": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "For each right tuple, the merge join advances the left iterator past keys smaller than the right key. It then scans the entire equal-key block and emits every matching concatenation. The main iterator is deliberately left at the start of that block so a duplicate right key can match the same left duplicates again; this produces the required Cartesian product within each equal-key group. Materializing all left tuples makes this many-to-many case easy but is not ideal. An iterator implementation can scan both sides in parallel and temporarily copy only the current duplicate group, avoiding full-side materialization at the cost of substantially more complex control flow."
+      ],
+      "source_transcript_word_count": 841,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-039": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "This one-word interval is only the visual transition to hash join. Its algorithm is explained in the following intervals."
+      ],
+      "source_transcript_word_count": 1,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-12-operators-040": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "Although sort-merge join was historically the first efficient commercial join algorithm, the professor considers it less important on modern many-core machines. Its merge control flow is naturally sequential and is difficult to parallelize well. On a 64-core system, strong parallel execution matters more than excellent single-thread performance, which often makes hash join the more relevant implementation."
+      ],
+      "source_transcript_word_count": 124,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-041": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "An in-memory hash join builds a hash table from the smaller left input and probes it with tuples from the right input. It supports equi-joins and is usually the preferred join implementation. Real systems begin in memory and fall back to an external-memory strategy if the build side exceeds available space. Expected runtime is proportional to |L| + |R| + |L join R|: both inputs must be read, and every result tuple must be produced. The output term matters because no algorithm can run faster than the potentially large result it is required to emit."
+      ],
+      "source_transcript_word_count": 493,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-12-operators-042": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "During the build phase, each left tuple is stored under the hash of its join key; multiple tuples may share a key. During probing, a right tuple retrieves the candidate bucket for its key and tests the original join predicate before emitting concatenated matches. That final comparison is necessary because distinct key values can collide to the same hash. A hybrid implementation also checks available memory before inserting build tuples. If the hash table would overflow, it switches to the external-memory path rather than failing or silently exceeding its budget."
+      ],
+      "source_transcript_word_count": 349,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-043": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Grace hash join handles a build input that does not fit in memory by partitioning the hash-value domain. Both inputs are divided using identical boundaries, so possible matches occur only between corresponding partitions. Each build partition is chosen small enough to load into an in-memory hash table; its matching probe partition can then be scanned normally. Because input cardinalities and tuple sizes are estimates, a build partition may still be too large and require recursive repartitioning. The operator buffers writes before spilling to temporary segments and must finish partitioning both inputs before joining partitions, so external hash join breaks both input pipelines."
+      ],
+      "source_transcript_word_count": 1233,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-12-operators-044": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "While partitioning the left input, tuples are accumulated in an in-memory spool. When it fills, the system sorts buffered tuples by hash value and writes them to their corresponding disk partitions. Sorting is not required for correctness; it groups each partition’s tuples so the spill uses long sequential writes rather than many scattered writes, improving locality on both disks and SSDs. The operator records partition sizes and tuple statistics, clears the buffer, inserts the tuple that triggered the flush, and continues."
+      ],
+      "source_transcript_word_count": 352,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-045": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "After partitioning the build side, every partition is checked against the memory budget. An oversized partition containing several hash values can be split using finer boundaries and repartitioned recursively until each piece fits. An oversized partition with only one hash value cannot be improved this way: identical join keys—and, less commonly, true hash collisions—will always go to the same partition. Such a partition is marked as overflow and handled by a special algorithm later. This distinction prevents endless repartitioning under extreme duplicate-key skew."
+      ],
+      "source_transcript_word_count": 518,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-046": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "The probe input is partitioned with the same buffered spill procedure as the build input, but it no longer needs to estimate boundaries. The finalized build-side boundaries are already known, so every right tuple can be assigned to the correct matching partition. When the buffer fills, its tuples are sorted by hash, written sequentially to their partitions, and the buffer is reused. Only build partitions must fit in memory; probe partitions may remain large because they can be streamed."
+      ],
+      "source_transcript_word_count": 134,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-047": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "This brief transition introduces the final phase of external hash join: after both inputs have been partitioned, corresponding partitions must be joined to produce results."
+      ],
+      "source_transcript_word_count": 20,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-048": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "At this point both inputs are partitioned with identical boundaries. Every build-side partition is guaranteed to fit in memory, while its corresponding probe-side partition may be larger and can be streamed through the in-memory hash table."
+      ],
+      "source_transcript_word_count": 41,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-049": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "The output phase processes corresponding build and probe partitions pairwise, because equality matches cannot cross partition boundaries. Normal partitions use the regular in-memory partition join. Partitions marked as overflow—typically because too many tuples share one key—need separate handling. Restricting work to matching partition pairs is the central Grace hash join property: once the inputs are partitioned consistently, all off-diagonal combinations can be ignored."
+      ],
+      "source_transcript_word_count": 124,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-050": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A normal build partition is loaded completely into an in-memory hash table; recursive repartitioning has already guaranteed that this succeeds. The matching probe partition is then streamed page by page. Each probe tuple looks up candidate build tuples by hash, verifies the actual equality predicate to reject collisions, and emits matches. External hash join has therefore reduced a too-large global problem to a sequence of ordinary in-memory hash joins over bounded build partitions."
+      ],
+      "source_transcript_word_count": 244,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-12-operators-051": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "An overflow partition cannot fit in memory and cannot be split further because its tuples share the same hash value. The system therefore loads one memory-sized build chunk at a time, constructs a hash table for it, and rescans the corresponding probe partition. It repeats until every build chunk has been processed. This resembles blockwise nested-loop join because the probe side is read multiple times, but hashing still accelerates candidate lookup. The number of probe passes is roughly the overflow build-partition size divided by available memory."
+      ],
+      "source_transcript_word_count": 236,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-12-operators-052": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "This one-word interval is only the transition from the standard join algorithms to the singleton-join optimization."
+      ],
+      "source_transcript_word_count": 1,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-053": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "The core join toolbox consists of nested-loop, blockwise nested-loop, sort-merge, and hash join. Most database systems implement several or all of them because their applicability and performance differ by dependency, predicate type, ordering, memory, and input size."
+      ],
+      "source_transcript_word_count": 63,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-054": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A singleton join exploits a guarantee that the left input contains at most one tuple, as can happen after a primary-key lookup, scalar subquery, or global aggregation. Although nested-loop join would be correct, a specialized operator is simpler and cheaper. It produces and stores the optional left tuple once, then streams the right input. Each right tuple is concatenated with that stored tuple, tested against the predicate, and emitted if it matches. The cardinality guarantee removes the need for buffering, hashing, or repeated evaluation of the left side."
+      ],
+      "source_transcript_word_count": 354,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-12-operators-055": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Non-inner joins change what is emitted when matches exist or are absent. Outer joins must preserve unmatched tuples and pad the missing side with NULL. A semi-join emits a left tuple once if at least one right match exists, regardless of how many matches there are. An anti-join emits a left tuple once only when no right match exists. The underlying matching algorithm can still resemble an inner join, but it needs bookkeeping that records whether each relevant tuple found any partner."
+      ],
+      "source_transcript_word_count": 346,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-12-operators-056": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A general implementation marks tuples when they find a join partner. After an outer join’s normal matching pass, a second scan emits every unmarked preserved-side tuple with NULLs. A semi-join emits a tuple only on the first successful mark, suppressing further matches; in parallel code, checking and setting this bit must be atomic. An anti-join emits no matches during joining and later scans for unmarked tuples. The remaining design question is where those marker bits can be stored efficiently."
+      ],
+      "source_transcript_word_count": 529,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-057": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Marking build-side tuples is easy because they already reside in a hash table or memory block; the operator can reserve one additional bit per tuple and inspect it before releasing the block. A probe tuple also needs only a local flag when the probe side is scanned once. Repeated probe-side scans are harder because match state must survive across passes. The professor proposes a separate structure keyed by tuple identity and compressed into marked intervals. Workloads often produce long runs where either all tuples match or none do, so interval compression—and merging adjacent intervals in a B-tree—can use far less space than storing every marked tuple ID."
+      ],
+      "source_transcript_word_count": 651,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-058": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "This interval closes the lecture after the join algorithms and announces that sorting, grouping, and the remaining operators will be covered in the next recording. It does not yet explain the sort algorithm shown on screen."
+      ],
+      "source_transcript_word_count": 69,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-001": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "The new lecture briefly recaps that the preceding recording covered inner and non-inner join implementations, then transitions to the remaining relational operators."
+      ],
+      "source_transcript_word_count": 31,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-13-codegen-002": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Sorting is a versatile foundation for merge join, aggregation, and duplicate elimination, although hashing is often faster. External sorting repeatedly fills memory, sorts that chunk, and writes a sorted run to disk. It then reads the runs together and repeatedly emits the smallest current item to create larger sorted runs. If memory or device limits prevent merging every run at once, the system performs several merge levels. Implementing one strong sorter can therefore simplify many other operators, at the cost of potentially lower performance than specialized hash-based implementations."
+      ],
+      "source_transcript_word_count": 400,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-003": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "In the push interface, sort consumes tuples into an in-memory buffer. If the next tuple does not fit, it flushes the current buffer as a sorted run and begins filling memory again. Once the input ends, produce flushes the final partial buffer, merges the runs until a single sorted stream remains, and forwards that stream to its consumer. The essential implementation choices are therefore how to create each run efficiently and how to merge many runs within the available memory and I/O fan-out."
+      ],
+      "source_transcript_word_count": 259,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-004": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "The simple run-generation strategy fills memory, quicksorts the tuples, writes one memory-sized run, and clears the buffer. Replacement selection instead maintains a heap: it repeatedly emits the smallest eligible tuple and inserts the next input tuple. A new value smaller than the last emitted value is deferred to the next run, so the current heap gradually shrinks while the next-run heap grows. This produces runs averaging about twice the memory size and can produce one run for already sorted input, reducing later merge work. The trade-off is implementation complexity, especially for variable-length records, where quicksort’s simpler memory management may be preferable."
+      ],
+      "source_transcript_word_count": 1140,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-005": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Run merging reads all feasible input runs in parallel and repeatedly outputs the smallest current head. Scanning every head for each output is too expensive; a priority queue gives logarithmic selection, while a loser tree reduces comparison overhead further for the replace-min pattern. The number of runs that can be merged at once is limited by buffers, devices, and efficient I/O fan-out. When there are too many, the sorter performs partial merges to reduce the run count, repeating merge levels until one final merge is feasible."
+      ],
+      "source_transcript_word_count": 594,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-006": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Group-by can be implemented by sorting or hashing. With input ordered on the grouping attributes, equal groups are contiguous and their aggregates can be computed in one sequential pass; the cost lies in obtaining that order. Hash aggregation instead maintains one aggregate state per group in a hash table and is usually faster when it fits in memory. If it overflows, the input is partitioned by hash and spilled, then each partition is read again and combined—closely mirroring the external-memory strategy used for hash join."
+      ],
+      "source_transcript_word_count": 268,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-007": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "In-memory hash aggregation creates a hash-table entry the first time a group key appears and updates that entry for every later tuple with the same key. After consuming the input, it scans the table and emits one result per group. Fixed-size states such as count, numeric sum, min, and max are straightforward. Variable-length aggregates need careful storage: a later minimum or maximum string may be longer than the first. The system can reserve the schema’s maximum length or relocate and resize group state, trading memory usage against implementation complexity."
+      ],
+      "source_transcript_word_count": 593,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-008": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "SQL set operations include UNION, INTERSECT, and EXCEPT, each with a distinct ALL variant. Without ALL, the result has set semantics and duplicates are removed. With ALL, bag semantics preserve multiplicities. Although INTERSECT resembles a semi-join and EXCEPT resembles an anti-join, multiplicity rules make them different enough to require explicit handling. The following implementations therefore focus on counting and duplicate elimination rather than treating every set operation as an ordinary join."
+      ],
+      "source_transcript_word_count": 191,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-009": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "UNION ALL is the only trivial set operation because it preserves every occurrence. The operator simply emits the complete left stream followed by the complete right stream. Apart from reconciling attribute names or schemas, it requires almost no processing, buffering, matching, or duplicate elimination. Repeated tuples in either input therefore remain repeated in the output."
+      ],
+      "source_transcript_word_count": 136,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-010": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "UNION differs from UNION ALL by removing duplicates. One implementation concatenates both inputs and then groups by every output attribute, leaving one tuple per distinct value. A slightly more direct version inserts tuples from both inputs into one hash table and emits its distinct keys. These approaches are nearly equivalent: ordinary UNION is essentially UNION ALL followed by duplicate elimination, and duplicate elimination is a group-by with no aggregate values."
+      ],
+      "source_transcript_word_count": 206,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-011": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "INTERSECT is similar to a semi-join only after duplicates have been removed: each value present on both sides must appear once. A hash build can detect and discard duplicate build values, then mark and emit each matching value only on its first probe match. This specialized approach is efficient, but a system may instead reuse the INTERSECT ALL implementation and normalize multiplicities, reducing implementation effort at a small performance cost."
+      ],
+      "source_transcript_word_count": 296,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-13-codegen-012": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "INTERSECT ALL preserves bag multiplicities. For each value, its output count is the minimum of its occurrence counts on the left and right. The system can label the source of each tuple, concatenate both inputs, group by the tuple value, and maintain separate left and right counts; it then emits the tuple min(left_count, right_count) times. This reuses ordinary group-by machinery, including external-memory partitioning. When the counting table fits in memory, a right-side value absent from the left table can be discarded immediately because its final minimum is necessarily zero."
+      ],
+      "source_transcript_word_count": 870,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-013": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "EXCEPT returns distinct values present on the left but absent from the right, making it analogous to an anti-join once the left side is duplicate-free. A hash table over the left can both remove duplicates and mark values that find a right-side match; unmarked entries form the result. Alternatively, EXCEPT can be derived from the multiplicity-counting strategy used for EXCEPT ALL, favoring implementation reuse over a slightly more efficient specialized path."
+      ],
+      "source_transcript_word_count": 177,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-13-codegen-014": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "EXCEPT ALL counts occurrences on both sides and emits each value max(0, left_count − right_count) times. Right-side copies cancel the same number of left-side copies, but cannot make multiplicity negative. Its implementation is therefore almost identical to INTERSECT ALL: concatenate source-labelled inputs, group by value, and compute two counts; only the final count formula changes. In memory, right-side values with no existing left group can be ignored immediately because they can never contribute to the result."
+      ],
+      "source_transcript_word_count": 241,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-015": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "The standard operator set described so far is sufficient to express basic SQL queries. The lecture now moves from deciding which relational operators execute a query to producing efficient executable code for those operators and their scalar expressions."
+      ],
+      "source_transcript_word_count": 123,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-016": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Performance-sensitive operator expressions should be compiled into bytecode or native machine code; native code executes faster but is harder to generate directly and historically caused portability problems. Modern code-generation frameworks solve that problem by targeting multiple processors and providing optimizations. LLVM is the professor’s recommended mature option, with alternatives such as libjit and GNU Lightning. The DBMS should generate through such a framework rather than maintain architecture-specific machine-code emitters itself."
+      ],
+      "source_transcript_word_count": 462,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-017": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "LLVM provides a low-level, assembly-like intermediate representation while hiding physical-register allocation. Values are strongly typed and written in static single-assignment form: each virtual register is assigned exactly once, which simplifies optimization and data-flow analysis. Control-flow joins and loops use phi nodes to select a value according to the predecessor block—for example, an initial loop value when entering from before the loop and the incremented value on the back edge. LLVM later maps the unlimited virtual registers to real registers and stack slots and compiles the typed IR for the target machine."
+      ],
+      "source_transcript_word_count": 1034,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-13-codegen-018": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "The factorial example uses a phi node at the merge block to choose between the recursive branch’s computed product and the base case value one. That selected SSA value is returned. Although SSA and phi nodes initially feel unfamiliar, their immutable definitions make control-flow analysis and optimization substantially easier."
+      ],
+      "source_transcript_word_count": 160,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-13-codegen-019": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Simple scalar expressions—arithmetic, comparisons, and Boolean operations—map directly to a few LLVM instructions, with an additional register when SQL NULL status must be tracked. Large query-independent operations such as pattern matching should remain in reusable C++ routines that generated code calls, rather than being regenerated for every query. The compiler balances execution speed against compilation cost, aiming to minimize branches and function calls without emitting unnecessary code. Scalar compilation is straightforward; integrating it efficiently with set-oriented operators is the real challenge."
+      ],
+      "source_transcript_word_count": 285,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-020": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "LLVM operates on scalar values, so relational operators need an execution organization around it. Iterator engines mirror the algebraic operator tree, but repeatedly pass tuples across arbitrary operator boundaries. Data-centric execution instead organizes code around a tuple’s path: read it as rarely as possible, keep values in CPU registers, and perform all available work before storing them again. This improves cache and register locality and reduces branches and function calls. Operator structure still describes data flow, but it no longer dictates the shape of the hot execution loop."
+      ],
+      "source_transcript_word_count": 422,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-021": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Pipeline breakers divide a plan into data-centric code fragments. In the example, one fragment scans and filters R1 before building a hash table. A second scans and filters R2 into an aggregation table, another transfers aggregation results into a join table, and the final fragment scans R3 and probes the prepared tables. Within each fragment, tuples are pushed continuously through every nonblocking operator. Materialization occurs only at the breaker separating one fragment from the next."
+      ],
+      "source_transcript_word_count": 280,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-13-codegen-022": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "The generated plan becomes a small set of tight loops rather than one function per algebra operator. One loop scans R1, filters, and builds its hash table; another scans R2, filters, and aggregates; a third converts aggregate state into another hash table; and the last scans R3, probes both tables, and emits results. Each loop follows a complete pipeline and touches each tuple only as needed. Compared with iterator execution, this avoids jumping among operator methods and repeatedly moving tuple values through memory."
+      ],
+      "source_transcript_word_count": 247,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-13-codegen-023": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A producing operator loops over materialized input and loads the current tuple into registers. Every pipelining ancestor then operates on those register values within the same tight loop. The tuple is written back only when it reaches the next pipeline breaker. This maximizes code and data locality and minimizes memory traffic. The resulting code intentionally blurs operator boundaries: logical operators remain useful for planning, but they are fused during execution."
+      ],
+      "source_transcript_word_count": 110,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-024": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "A single logical join can contribute code to several pipeline fragments—for example, build logic in one loop and probe logic in another. That makes the generated program harder to map visually back to the operator tree, but improves performance because work happens where the relevant data is already available instead of moving data merely to preserve neat operator boundaries."
+      ],
+      "source_transcript_word_count": 140,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-025": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "The central principle is concise: generated execution code is organized around the data’s path through a pipeline, not around separate operator objects."
+      ],
+      "source_transcript_word_count": 14,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-026": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "The code generator uses the familiar produce/consume interface only as a compile-time protocol. An operator’s produce logic emits instructions that will produce tuples at runtime; its consume logic emits instructions that will process an incoming tuple. The generated machine code contains neither virtual method call. Once generation is finished, those conceptual calls have been fused into the tight pipeline loops, so the abstraction guides construction without imposing runtime operator-boundary overhead."
+      ],
+      "source_transcript_word_count": 173,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-027": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "The generated data-centric loops implement push execution, but no produce or consume calls remain visible. Those methods exist only while constructing the program; their emitted fragments have already been assembled into direct runtime control flow."
+      ],
+      "source_transcript_word_count": 38,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-13-codegen-028": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "This short interval poses the implementation question that the following C++ sketches answer: how does an operator translator generate those fused code fragments?"
+      ],
+      "source_transcript_word_count": 9,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-029": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A hash-join translator’s produce method asks the left and right child plans to generate their own pipeline functions under the attributes required by the join condition. It then emits a call into the join’s runtime support code. This is meta-programming: the C++ method executes during compilation and constructs functions that will execute later. Separating generated tuple-processing code from reusable C++ runtime helpers keeps the emitted code focused while retaining complex storage and spill behavior in ordinary compiled code."
+      ],
+      "source_transcript_word_count": 114,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-13-codegen-030": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "This brief continuation moves from the hash-join translator’s produce logic to its compile-time consume logic."
+      ],
+      "source_transcript_word_count": 12,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-13-codegen-031": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "When compile-time consume receives a left-side tuple, it identifies the required attribute values, emits instructions to compute the tuple’s materialized size and join-key hash, and emits a call that reserves space in the hash table or spill structure. That runtime helper returns the destination address. The translator then emits stores that materialize the register values at that address. The vectors and helper calls in the translator describe code generation; they are not the per-tuple work executed during the query."
+      ],
+      "source_transcript_word_count": 225,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-13-codegen-032": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "The translator ultimately emits the compact pipeline action shown earlier: materialize the current left tuple into the join’s hash table. The longer C++ translator code is the machinery that constructs this small runtime fragment."
+      ],
+      "source_transcript_word_count": 42,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-033": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "For an external hash join, a right-side tuple is also materialized so it can spill to disk with its partition when necessary. An in-memory hash join would instead probe immediately and avoid storing the probe input. Generated code therefore depends on the chosen physical implementation, not only on the logical join."
+      ],
+      "source_transcript_word_count": 94,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-13-codegen-034": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "The generated join routine loads the candidate left and right tuples into registers, verifies the equality keys to reject hash collisions, and then evaluates any residual predicates that hashing could not enforce. Failure branches jump to a common no-match block. If every condition succeeds, the translator invokes its parent’s consume method at compile time, causing the parent operator’s processing instructions to be emitted directly after the match. Even the illustrated conditional is a code-generation construct that creates runtime branches rather than executing the test during compilation."
+      ],
+      "source_transcript_word_count": 306,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-13-codegen-035": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "This interval closes the code-generation section and explains the course transition: with limited lecture time remaining, the professor chooses to cover parallel query execution as the final major topic."
+      ],
+      "source_transcript_word_count": 133,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-036": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Parallelism is necessary both to serve concurrent users and to exploit modern many-core CPUs and high-bandwidth storage. Inter-query parallelism assigns separate queries to threads and relies on concurrency control; it is comparatively straightforward. Intra-query parallelism accelerates one query. Running independent plan subtrees concurrently is limited because many expensive plans do not contain balanced independent branches. The powerful case is vertical parallelism: parallelize the relational operators themselves so even a simple scan–filter–group-by pipeline over terabytes can use all available cores."
+      ],
+      "source_transcript_word_count": 811,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-037": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Exchange operators encapsulate parallelism between otherwise single-threaded operator instances. The optimizer fixes a thread count, splits R into partitions, runs the same filter and local group-by independently, and uses a many-to-one exchange before a final group-by combines partial aggregates for keys appearing in several partitions. This preserves existing operator implementations and generalizes to distributed machines. It assumes local aggregation shrinks the streams enough that the final serial combination is cheap; if not, the exchange becomes a bottleneck."
+      ],
+      "source_transcript_word_count": 531,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-13-codegen-038": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "An exchange maps N input pipelines to M output pipelines. Useful specializations include unioning many streams into one, dynamically distributing one stream across workers, hash- or range-partitioning tuples so related keys reach the same consumer, and broadcasting every tuple to all consumers. The optimizer chooses a routing rule that preserves the correctness requirements of the downstream operator."
+      ],
+      "source_transcript_word_count": 130,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-039": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Parallel aggregation has three exchange patterns. Local group-by followed by a many-to-one exchange and final group-by is best when local aggregation produces very few groups. Hash-partitioning filtered tuples before grouping sends every copy of a key to exactly one worker, eliminating final re-aggregation and favoring many-group workloads. A hybrid first performs local pre-aggregation, then hash-partitions the reduced partial groups and aggregates once more. The optimizer should choose according to how much local aggregation is expected to shrink each stream."
+      ],
+      "source_transcript_word_count": 495,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-13-codegen-040": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A join can be parallelized by hash-partitioning both inputs on their join keys using the same worker mapping. Each worker then runs an ordinary local join over its two partitions; any matching pair is guaranteed to arrive at the same worker. A final many-to-one exchange concatenates the independent result streams. Correct co-partitioning removes the need for cross-worker lookup during the join itself."
+      ],
+      "source_transcript_word_count": 126,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-13-codegen-041": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "Exchange keeps relational operators unaware of parallelism and also works across machines, but the professor argues that its static execution structure is poorly suited to modern shared-memory servers. The most important limitation is that the chosen degree of parallelism is baked into the compiled plan."
+      ],
+      "source_transcript_word_count": 92,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-042": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A plan compiled for three workers cannot easily expand to four or surrender capacity when another query arrives. On a 64-core server with changing concurrent load, this rigidity prevents the scheduler from reallocating cores dynamically. Running several plan instances on fewer threads is possible, but does not solve the fundamental mismatch between a fixed exchange topology and a workload whose available resources change during execution."
+      ],
+      "source_transcript_word_count": 107,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-13-codegen-043": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "Static input partitions also create load imbalance. If filters eliminate almost everything in two partitions but retain most tuples in the third, two workers finish quickly while one performs nearly all remaining work. The supposedly parallel operator then spends its dominant phase effectively single-threaded."
+      ],
+      "source_transcript_word_count": 93,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-13-codegen-044": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "Exchange adds execution overhead as well as rigidity: hash repartitioning, buffering, and communication copy tuples between worker streams. These costs may exceed the benefit, especially when partitions are imbalanced. For modern shared-memory execution, the professor therefore regards exchange-centric parallelism as largely obsolete."
+      ],
+      "source_transcript_word_count": 72,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-045": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "The alternative is to make each relational operator explicitly parallel. Multiple workers then share operator state such as hash tables, which requires careful synchronization, but algorithms can be designed for the actual shared-memory machine rather than connected through fixed exchange boundaries. Operator-aware parallelism gives the scheduler more flexibility and can avoid unnecessary tuple redistribution and copying."
+      ],
+      "source_transcript_word_count": 108,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-046": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Morsel-driven execution divides an input into many moderate, fixed-size work units rather than one partition per worker or one scheduling event per tuple. A dispatcher assigns the next morsel to each hardware thread, allowing work to be redistributed frequently without excessive scheduling overhead. Workers read shared immutable structures but write results into thread-local memory to avoid synchronization. The dispatcher can prefer NUMA-local morsels so a core processes nearby memory. Morsels therefore balance scheduler flexibility, locality, and low coordination cost."
+      ],
+      "source_transcript_word_count": 584,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-13-codegen-047": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Parallel runtime is determined by the last worker to finish. Static partitions cannot predict skew from predicates, data distribution, operating-system interference, or heterogeneous memory access. Dynamic scheduling instead places small morsel jobs in a synchronized queue. When a worker finishes, it takes another job; faster workers naturally perform more morsels and compensate for slower ones. This work-stealing behavior reduces stragglers without having to know the cost of each partition in advance."
+      ],
+      "source_transcript_word_count": 179,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-048": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "Morsels are assigned by completion rather than fixed ownership. If one worker slows because its data produces more matches, another worker can process several subsequent morsels. Since each unit is small, the remaining work becomes evenly distributed and all workers tend to finish at roughly the same time."
+      ],
+      "source_transcript_word_count": 100,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-13-codegen-049": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "The resulting balance removes the single-straggler bottleneck. A high-level parallel-for abstraction, such as the one provided by Intel Threading Building Blocks, can expose this model while its runtime performs the dynamic dispatch and work stealing."
+      ],
+      "source_transcript_word_count": 88,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-050": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A parallel in-memory hash join first lets workers consume build-side morsels and materialize tuples in private memory without synchronization. Once all build tuples are known, the system allocates a correctly sized shared hash directory, avoiding the complexity of resizing a concurrent hash table. Workers then insert pointers to their materialized tuples using atomic compare-and-swap at bucket heads. During probing, the completed table is read-only, so all workers can probe without synchronization; only optional match markers for semi-, anti-, or outer joins require atomic updates."
+      ],
+      "source_transcript_word_count": 595,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-051": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "This interval ends the parallel-execution discussion. The professor notes that time is exhausted and that the explanation was necessarily compressed."
+      ],
+      "source_transcript_word_count": 27,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-052": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "The slide begins an optional main-memory database section, but the lecture does not proceed into its technical content."
+      ],
+      "source_transcript_word_count": 6,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-053": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "The professor explicitly decides not to cover the remaining main-memory material because the scheduled lecture content has already run over time."
+      ],
+      "source_transcript_word_count": 13,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-13-codegen-054": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "The remaining main-memory slides are provided only for optional reading and will not be examined. The professor closes the course by emphasizing the practical value of the exercises and warns that similar material will appear in the final graded exercise. No technical explanation of the displayed row-store versus column-store slide is given in this interval."
+      ],
+      "source_transcript_word_count": 172,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    }
+  }
+}

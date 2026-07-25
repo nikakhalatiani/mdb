@@ -28,6 +28,27 @@ type StudyNotes = {
   quotes?: Quote[];
 };
 
+type SlideExplanation = {
+  method: string;
+  status: "substantive" | "brief" | "transition" | "silent";
+  explanation: string[];
+  source_transcript_word_count: number;
+  selected_sentence_count: number;
+  ocr_warning: boolean;
+};
+
+type SlideExplanationCollection = {
+  method: string;
+  notice: string;
+  coverage: {
+    interval_count: number;
+    explanation_count: number;
+    gpt_edited_count: number;
+    statuses: Record<string, number>;
+  };
+  records: Record<string, SlideExplanation>;
+};
+
 type VisualRecord = {
   occurrence_id: string;
   recording_id: string;
@@ -49,6 +70,7 @@ type VisualRecord = {
   evidence_frames?: EvidenceFrame[];
   transcript?: Transcript;
   notes?: StudyNotes;
+  study?: SlideExplanation;
 };
 
 type SourceRange = {
@@ -119,6 +141,7 @@ type LoadedGuide = {
   guide: CourseGuide;
   records: VisualRecord[];
   studyBriefs: StudyBriefCollection;
+  slideExplanations: SlideExplanationCollection;
 };
 
 type Filter = "all" | "slide" | "board";
@@ -135,21 +158,27 @@ async function loadJson<T>(path: string): Promise<T> {
 }
 
 async function loadGuide(): Promise<LoadedGuide> {
-  const [guide, evidence, notes, studyBriefs] = await Promise.all([
+  const [guide, evidence, notes, studyBriefs, slideExplanations] =
+    await Promise.all([
     loadJson<CourseGuide>(`${COURSE_ROOT}/chapters.json`),
     loadJson<{ evidence: VisualRecord[] }>(`${COURSE_ROOT}/evidence-index.json`),
     loadJson<{ records: Record<string, StudyNotes> }>(
       `${COURSE_ROOT}/notes.json`,
     ),
     loadJson<StudyBriefCollection>(`${COURSE_ROOT}/study-briefs.json`),
+    loadJson<SlideExplanationCollection>(
+      `${COURSE_ROOT}/slide-explanations.json`,
+    ),
   ]);
   return {
     guide,
     records: evidence.evidence.map((record) => ({
       ...record,
       notes: notes.records[record.occurrence_id],
+      study: slideExplanations.records[record.occurrence_id],
     })),
     studyBriefs,
+    slideExplanations,
   };
 }
 
@@ -229,6 +258,7 @@ function RecordCard({
   const isBoard = recordKind(record) === "board";
   const spoken = record.transcript?.text?.trim();
   const notes = record.notes;
+  const study = record.study;
   return (
     <article className="atlas-card" id={record.occurrence_id}>
       <header className="atlas-card-header">
@@ -262,38 +292,54 @@ function RecordCard({
           <VisualEvidence record={record} />
         </div>
         <div className="atlas-notes">
-          {notes?.key_points?.length ? (
-            <section className="atlas-note-block">
-              <h4>Slide facts and lecture cues</h4>
-              <ul>
-                {notes.key_points.map((point, index) => (
-                  <li key={`${record.occurrence_id}-point-${index}`}>{point}</li>
-                ))}
-              </ul>
-              <p className="atlas-study-hint">
-                Use the chapter study synthesis above for the clean explanation;
-                use this card to connect it to the professor’s exact visual.
-              </p>
-            </section>
-          ) : (
-            <section className="atlas-note-block">
-              <h4>How to use this interval</h4>
-              <p>
-                Follow the visual state and timestamp as source evidence for the
-                chapter explanation above.
-              </p>
-            </section>
-          )}
+          <section
+            className="atlas-note-block atlas-slide-teaching"
+            data-status={study?.status ?? "silent"}
+          >
+            <div className="atlas-slide-teaching-header">
+              <div>
+                <p className="atlas-card-study-label">
+                  {isBoard
+                    ? "Teaching explanation · this whiteboard interval"
+                    : "Teaching explanation · this slide"}
+                </p>
+                <h4>What the professor is explaining</h4>
+              </div>
+              <span className="atlas-coverage-badge">
+                {study?.status === "transition"
+                  ? "brief transition"
+                  : study?.status === "silent"
+                    ? "visual only"
+                    : `${study?.source_transcript_word_count ?? 0} spoken words`}
+              </span>
+            </div>
+            {(study?.explanation?.length
+              ? study.explanation
+              : [
+                  "No clarified explanation is available for this interval yet. Open the source evidence below to inspect the aligned speech.",
+                ]
+            ).map((paragraph, index) => (
+              <p key={`${record.occurrence_id}-study-${index}`}>{paragraph}</p>
+            ))}
+            <p className="atlas-synthesis-note">
+              Clarified from the speech aligned to exactly{" "}
+              {compactTimestamp(record.start)}–
+              {compactTimestamp(record.end)}. Repetition and obvious
+              transcription errors are removed; the visual remains the reference
+              for diagrams and notation.
+            </p>
+          </section>
           <section className="atlas-note-block atlas-source-evidence">
             <details>
               <summary>
-                Lecture evidence · uncorrected transcript and OCR
+                Check the source · transcript, OCR, and evidence details
               </summary>
               <div className="atlas-source-evidence-body">
                 <p className="atlas-source-warning">
                   This material is preserved for traceability. It can contain
                   speech repetition, incomplete sentences, and transcription
-                  errors; it is not the study explanation.
+                  errors. Mathematical OCR can be especially unreliable: read
+                  notation from the slide image, not from the OCR text.
                 </p>
                 <h4>Extractive transcript highlights</h4>
                 {notes?.professor_explanation?.length ? (
@@ -455,13 +501,17 @@ function ChapterStudyGuide({
     <section className="atlas-study-guide" aria-labelledby="study-guide-title">
       <header className="atlas-study-guide-header">
         <div>
-          <p className="atlas-study-label">Primary learning resource</p>
-          <h2 id="study-guide-title">Learn the chapter</h2>
+          <p className="atlas-study-label">Chapter orientation</p>
+          <h2 id="study-guide-title">Chapter roadmap</h2>
         </div>
-        <p>{notice}</p>
+        <p>
+          Use this overview to see the chapter’s structure. The complete teaching
+          sequence is below, where every slide and whiteboard interval has its own
+          explanation derived from the speech at that timestamp. {notice}
+        </p>
       </header>
       <div className="atlas-study-core">
-        <h3>Clean study explanation</h3>
+        <h3>Chapter-level synthesis</h3>
         {brief.core_idea.map((paragraph) => (
           <p key={paragraph}>{paragraph}</p>
         ))}
@@ -492,7 +542,7 @@ function ChapterStudyGuide({
           </ul>
         </section>
         <section className="atlas-study-test">
-          <h3>Self-test before opening the evidence</h3>
+          <h3>Questions to answer after the teaching sequence</h3>
           <ol>
             {brief.self_test.map((item) => (
               <li key={item}>{item}</li>
@@ -570,6 +620,7 @@ export function StudyGuideApp() {
         record.chapter_header,
         record.slide_text_ocr,
         record.transcript?.text,
+        record.study?.explanation?.join(" "),
         record.notes?.professor_explanation?.join(" "),
         record.notes?.key_points?.join(" "),
         record.start,
@@ -612,9 +663,9 @@ export function StudyGuideApp() {
         <label className="atlas-search">
           <span className="sr-only">Search this chapter</span>
           <input
-            aria-label="Search slides, board work, and transcript"
+            aria-label="Search slides, board work, teaching explanations, and transcript"
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search this chapter’s slides and spoken explanations…"
+            placeholder="Search this chapter’s slides and teaching explanations…"
             type="search"
             value={query}
           />
@@ -671,27 +722,29 @@ export function StudyGuideApp() {
           ) : null}
           {chapter ? (
             <section className="atlas-method-note">
-              <strong>How to use this page.</strong> Learn from the clean chapter
-              synthesis first. Then use the slide and whiteboard timeline below
-              as traceable evidence. Transcript selections remain uncorrected
-              and are collapsed by default.
+              <strong>How to study this chapter.</strong> Use the roadmap for
+              orientation, then work through the teaching sequence below. Every
+              visual interval now explains what the professor taught while that
+              exact slide or board state was on screen. Raw transcript and OCR
+              remain collapsed for source checking.
             </section>
           ) : null}
           <section className="atlas-evidence-heading">
             <div>
-              <p className="atlas-study-label">Source-traceable appendix</p>
-              <h2>Lecture evidence timeline</h2>
+              <p className="atlas-study-label">Primary learning sequence</p>
+              <h2>Slide-by-slide teaching guide</h2>
             </div>
             <p>
-              Exact visuals, board progress, timestamps, transcript, and OCR for
-              checking the study synthesis against the recording.
+              Each card combines the exact visual with a clean explanation
+              derived from the professor’s speech during that interval. Source
+              transcript and OCR stay available inside the card for verification.
             </p>
           </section>
           <section className="atlas-controls" aria-label="Timeline filters">
             <div className="atlas-filter-group">
               {(
                 [
-                  ["all", "All evidence"],
+                  ["all", "All learning units"],
                   ["slide", "Slides"],
                   ["board", "Board work"],
                 ] as const

@@ -673,13 +673,81 @@ a {
   margin-top: 0.72rem;
 }
 
-.atlas-study-hint {
-  margin-top: 0.8rem !important;
-  padding: 0.7rem 0.8rem;
-  border-left: 3px solid var(--pine);
-  background: var(--pine-soft);
-  color: #3b5148 !important;
-  font-size: 0.78rem !important;
+.atlas-slide-teaching {
+  position: relative;
+  padding: 1.05rem 1.05rem 1rem;
+  border: 1px solid #bfd1c6;
+  border-radius: 0.9rem;
+  background:
+    linear-gradient(145deg, rgba(224, 236, 228, 0.82), rgba(255, 253, 248, 0.96)),
+    var(--surface);
+}
+
+.atlas-slide-teaching[data-status="transition"],
+.atlas-slide-teaching[data-status="brief"] {
+  border-color: #dfcfb7;
+  background:
+    linear-gradient(145deg, rgba(255, 244, 225, 0.76), rgba(255, 253, 248, 0.96)),
+    var(--surface);
+}
+
+.atlas-slide-teaching[data-status="silent"] {
+  border-style: dashed;
+  background: #f8f6ef;
+}
+
+.atlas-slide-teaching-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 0.8rem;
+}
+
+.atlas-card-study-label {
+  margin: 0 0 0.28rem !important;
+  color: var(--amber) !important;
+  font-size: 0.65rem !important;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  line-height: 1.35 !important;
+  text-transform: uppercase;
+}
+
+.atlas-slide-teaching h4 {
+  margin-bottom: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.atlas-slide-teaching > p:not(.atlas-synthesis-note) {
+  color: #2f3e37;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 0.98rem;
+  line-height: 1.68;
+}
+
+.atlas-coverage-badge {
+  flex: 0 0 auto;
+  padding: 0.32rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.82);
+  color: #53615a;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.6rem;
+  white-space: nowrap;
+}
+
+.atlas-synthesis-note {
+  margin-top: 0.95rem !important;
+  padding-top: 0.7rem;
+  border-top: 1px solid rgba(77, 107, 91, 0.18);
+  color: #59645f !important;
+  font-size: 0.7rem !important;
+  line-height: 1.5 !important;
 }
 
 .atlas-note-block ul {

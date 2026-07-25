@@ -1,0 +1,1300 @@
+{
+  "records": {
+    "dbimpl-04-access-btrees-017": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Indexes avoid repeatedly scanning the whole relation for selective conditions. This is essential for enforcing a primary key: checking each new key against every earlier tuple would make loading n tuples require roughly n² comparisons. The two central access patterns are point queries, which bind a complete (possibly compound) key, and range queries, which ask for an interval such as 10 ≤ x ≤ 20. An exam answer should connect the workload to the structure: primary-key checks and highly selective predicates require sublinear point access, while ordered indexes additionally support ranges."],
+      "source_transcript_word_count": 686,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-04-access-btrees-018": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["A B-tree is a balanced multiway search tree designed for external storage. Except for the root, every node is between half full and full, and every leaf has the same depth. Those invariants bound the height logarithmically. The important systems insight is that the branching factor is very large—often hundreds or thousands—because one page stores many separators and child pointers. Consequently, even enormous indexes usually need only a few page levels. On an exam, state both invariants and explain why page-sized nodes turn a logarithmic bound into a very small number of I/O operations."],
+      "source_transcript_word_count": 586,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-04-access-btrees-019": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Although red-black trees and B-trees both have logarithmic lookup complexity, their constants differ dramatically. A binary tree containing one million entries can require roughly 20–40 pointer steps, whereas a B-tree with page-sized nodes and fanout near 1,000 may need only two levels. On disk, each uncached step can become a costly random I/O; the B-tree root is normally cached, leaving perhaps one page fault for a shallow tree. Thus asymptotic notation alone is insufficient: fanout, locality, and the storage hierarchy determine the practical winner."],
+      "source_transcript_word_count": 701,
+      "selected_sentence_count": 4,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-020": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["B-trees combine three useful properties: shallow height, guaranteed logarithmic lookup, and comparatively straightforward balancing logic. The professor contrasts this with red-black trees, whose color invariants and rotations are easy to implement incorrectly. The exam-relevant conclusion is not that B-trees are trivial, but that their split-based, page-oriented organization maps naturally to database storage and is easier to reason about than a binary balancing scheme."],
+      "source_transcript_word_count": 234,
+      "selected_sentence_count": 3,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-021": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["In a classical B-tree, key–TID pairs may appear in both inner and leaf nodes. Lookup compares the search key with separators, follows the interval containing it, and eventually finds the indexed key together with a tuple identifier. The TID is then followed to the base-table page when the query needs non-indexed attributes. Separators partition the key space: each pointer covers a bounded interval, while the rightmost pointer covers values above the largest separator. Be able to trace this path and distinguish finding an index entry from fetching the full tuple."],
+      "source_transcript_word_count": 416,
+      "selected_sentence_count": 4,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-022": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Most DBMSs use B+-trees rather than classical B-trees. Actual key–TID pairs live only in leaves; inner nodes contain separators and child pointers. A separator guides traversal but is not itself a stored data entry and need not occur among the indexed keys. This separation makes inner entries smaller and therefore increases fanout. It also simplifies updates because moving or deleting a data key in a leaf does not necessarily require moving the corresponding payload through the inner levels."],
+      "source_transcript_word_count": 211,
+      "selected_sentence_count": 3,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-023": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["This short interval completes the contrast: a key that occupied an inner node in the classical B-tree is stored in a leaf in the B+-tree."],
+      "source_transcript_word_count": 28,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-024": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["B+-tree separators define boundaries, not necessarily existing keys. For example, an inner separator may route all keys up to a boundary left and larger keys right even when that exact boundary value is absent from the leaves. This flexibility lets the implementation choose convenient routing values without treating them as data."],
+      "source_transcript_word_count": 115,
+      "selected_sentence_count": 2,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-025": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["The professor briefly recalls the classical B-tree boundary convention before returning to the B+-tree comparison."],
+      "source_transcript_word_count": 17,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-026": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["B+-tree routing uses separator intervals such as “up to this value” versus “greater than this value.” A separator may duplicate a leaf key or fall between two stored keys. Although duplication appears wasteful, inner nodes omit TIDs, so their entries are smaller than leaf entries. More separators fit on each inner page, increasing fanout and reducing height. The exam-worthy tradeoff is a small amount of key duplication in exchange for fewer I/Os and simpler update behavior."],
+      "source_transcript_word_count": 221,
+      "selected_sentence_count": 3,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-027": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["The board calculation links entry size to performance: smaller inner entries allow more children per page, which increases fanout and lowers tree height."],
+      "source_transcript_word_count": 28,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-028": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["Higher fanout is the first major B+-tree advantage. The second is operational simplicity: because payload entries remain in leaves and separators need not be actual data values, many changes avoid the complicated value movements required by a classical B-tree."],
+      "source_transcript_word_count": 73,
+      "selected_sentence_count": 2,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-029": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Deleting from a classical B-tree can force several coordinated value movements. If a node becomes underfull, a neighboring data key may be moved in, while another key must move between an inner node and a child to preserve routing. A single deletion can therefore touch multiple pages and alter both payload placement and separators. This example motivates the B+-tree design, where inner entries are only routing information and can often remain valid even when the precise leaf contents change."],
+      "source_transcript_word_count": 187,
+      "selected_sentence_count": 3,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-030": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["A B+-tree separator can remain correct even when its exact value disappears from a leaf: it still defines a valid upper boundary for that child. Likewise, inserting a nearby key may require no inner-node change. This means most ordinary updates remain confined to leaves, while inner nodes change mainly when pages split, merge, or require a different routing boundary. The practical result is both faster and simpler update logic than in a classical B-tree."],
+      "source_transcript_word_count": 155,
+      "selected_sentence_count": 3,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-031": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["The discussion moves from the logical tree to its physical page format. Both inner and leaf pages need recovery metadata, entry counts, and a representation tailored to the kind of references they contain."],
+      "source_transcript_word_count": 83,
+      "selected_sentence_count": 2,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-032": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["An inner page stores separator–child pairs plus one additional pointer for the rightmost interval. Each separator bounds the keys handled by its associated child; values larger than the largest separator follow this extra “upper” pointer. Remember why there is one more child than separator: n ordered boundaries divide the key domain into n+1 ranges. This is a common lookup-tracing question."],
+      "source_transcript_word_count": 146,
+      "selected_sentence_count": 3,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-033": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["A typical inner page contains an LSN for recovery, the rightmost-child pointer, an entry count, and sorted separator–child pairs. A leaf page instead contains an LSN, an entry count, and sorted key–TID pairs. Leaves also carry a next-leaf pointer, which is not required for point lookup but is crucial for efficient ordered scans. The page layouts reflect the distinct roles: inner pages route; leaf pages identify base tuples and support sequential enumeration."],
+      "source_transcript_word_count": 184,
+      "selected_sentence_count": 4,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-034": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Leaf links make a B+-tree efficient for range queries. First descend once to the leaf containing the lower bound. Then scan qualifying entries in sorted order, following each leaf’s next pointer when the page ends. Stop at the first value beyond the upper bound, since every later value is larger. The tree is used only to find the starting position; the rest is a sequential leaf walk. This is the key reason a B+-tree supports both point access and ordered ranges."],
+      "source_transcript_word_count": 373,
+      "selected_sentence_count": 4,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-035": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["The page header also needs a reliable way to distinguish leaves from inner nodes. One implementation places a sentinel value—such as an invalid page number—in the field that would otherwise hold the rightmost child pointer."],
+      "source_transcript_word_count": 95,
+      "selected_sentence_count": 2,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-036": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["A traversal fetches pages by identifier; the identifier itself does not reveal whether the page is inner or leaf. The implementation therefore needs explicit type information or an equivalent invariant before interpreting the bytes. This matters because an inner page contains child pointers while a leaf contains TIDs and leaf links. Confusing the two is a representation error, not merely a search error."],
+      "source_transcript_word_count": 161,
+      "selected_sentence_count": 3,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-037": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["A sentinel marker can reuse the same header position as the inner page’s rightmost-child pointer. If that field holds an impossible page number, the page is a leaf; otherwise it is interpreted as an inner node. This compact encoding avoids a separate type field, but it depends on reserving a value that can never be a valid page reference. The larger lesson is that physical encodings must make page type unambiguous during traversal."],
+      "source_transcript_word_count": 196,
+      "selected_sentence_count": 3,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-038": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Concurrent structural changes make page-type detection more subtle. The tree can grow by creating a new root while existing nodes retain their distance from the leaves. Besides an explicit leaf marker, an implementation can therefore store tree height and count levels relative to the leaves. Counting from the leaves is stable for existing nodes when the root grows; counting only from the root is not. Either approach must remain correct while splits occur."],
+      "source_transcript_word_count": 246,
+      "selected_sentence_count": 3,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-039": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["The takeaway is implementation-oriented: a drawing makes leaf recognition look obvious, but the stored page representation must encode that distinction explicitly and safely."],
+      "source_transcript_word_count": 21,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-040": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["This interval reinforces the gap between a diagram and executable code. During lookup, the DBMS sees page bytes and identifiers, so it must determine the page role from metadata rather than from visual position in the tree."],
+      "source_transcript_word_count": 87,
+      "selected_sentence_count": 2,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-041": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["B+-tree lookup begins at the root and repeats the same decision at each level. If the page is a leaf, locate the key or insertion position there. Otherwise, binary-search the sorted separators for the first boundary greater than or equal to the search key; follow its child, or follow the rightmost child if no such separator exists. Binary search inside a page matters because a real node may contain thousands of separators, not the handful shown in a diagram."],
+      "source_transcript_word_count": 145,
+      "selected_sentence_count": 3,
+      "ocr_warning": false
+    },
+    "dbimpl-04-access-btrees-042": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["A page in the lecture diagram looks tiny, but production pages can hold thousands of entries. Linear scanning inside every visited page would waste much of the advantage of the shallow tree, so per-page search must also be efficient."],
+      "source_transcript_word_count": 81,
+      "selected_sentence_count": 2,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-043": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Because separators are sorted, binary search finds the first boundary that covers the search key. If all separators are smaller, the key belongs to the rightmost interval and lookup follows the upper pointer. Otherwise it follows the child paired with the found separator. This same ordered-search idea is reused at each inner level and again within the target leaf."],
+      "source_transcript_word_count": 127,
+      "selected_sentence_count": 3,
+      "ocr_warning": false
+    },
+    "dbimpl-04-access-btrees-044": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["The worked lookup traces a value through successive separator intervals. At each inner node, choose the first separator not smaller than the search key; if none exists, take the rightmost child. On reaching the leaf, binary-search the key–TID entries for an exact match or the next larger position. The procedure is identical in spirit at every page, but the result at an inner page is a child pointer while the result at a leaf is a tuple reference or absence."],
+      "source_transcript_word_count": 164,
+      "selected_sentence_count": 3,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-045": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["The lookup example concludes and the lecture prepares to discuss update operations."],
+      "source_transcript_word_count": 28,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-046": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["A brief transition indicates that insertion will be the next B+-tree operation."],
+      "source_transcript_word_count": 13,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-047": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["Lookup repeatedly applies the page-level routing rule until it reaches a leaf. The professor then asks whether the binary search performed inside each wide page can itself be optimized."],
+      "source_transcript_word_count": 92,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-04-access-btrees-048": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["This fragment introduces the motivation for faster within-page search."],
+      "source_transcript_word_count": 8,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-049": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Binary search needs only about ten comparisons among 1,000 entries, but those comparisons touch unpredictable positions and branches. Random positions can miss in the CPU cache, and a near-50/50 branch direction is difficult to predict. Thus even logarithmic in-page search has hardware costs. The following optimization removes unpredictable control flow rather than changing the asymptotic number of comparisons."],
+      "source_transcript_word_count": 126,
+      "selected_sentence_count": 3,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-050": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Branch-free binary search replaces the data-dependent branch that chooses the left or right half with arithmetic or a conditional-move instruction. It still halves the candidate range each iteration, but avoids repeated branch mispredictions, which can be costly on out-of-order CPUs. The professor also warns against computing the midpoint as (left+right)/2 because the addition can overflow; use left+(right-left)/2. For page-sized arrays—typically thousands of entries—the branch-free form can outperform conventional binary search despite doing similar logical work."],
+      "source_transcript_word_count": 1149,
+      "selected_sentence_count": 4,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-051": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Interpolation search uses numeric separator bounds learned during traversal to guess where a key should lie within a page. If values are roughly uniform, the proportional position of the search key in the key range predicts its array position. From that guess, exponential search expands outward until it brackets the key, then binary search finishes in the much smaller interval. A good guess beats starting at the midpoint; skew reduces the benefit but preserves logarithmic fallback behavior. This optimization depends on ordered numeric data and is not generally available for arbitrary strings."],
+      "source_transcript_word_count": 850,
+      "selected_sentence_count": 4,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-052": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["If the data distribution is skewed, interpolation gives a poorer initial guess. The subsequent exponential and binary searches still bound the lookup cost, so skew mainly removes the speedup rather than breaking correctness."],
+      "source_transcript_word_count": 29,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-04-access-btrees-053": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["This short interval closes the optimized-lookup example."],
+      "source_transcript_word_count": 7,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-04-access-btrees-054": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["The lecturer notes the time limit and postpones insertion to the next recording."],
+      "source_transcript_word_count": 13,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-04-access-btrees-055": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Lookup deserves disproportionate optimization effort because queries perform it frequently and updates begin by locating the target leaf. A B+-tree limits the number of pages visited, but each page still contains a substantial sorted array. Efficient indexing therefore has two levels: a shallow page hierarchy and fast search within each page. Exam answers should not stop at “B+-trees are logarithmic”; they should also discuss fanout, page size, cache behavior, and the fact that inserts and deletes inherit the lookup cost."],
+      "source_transcript_word_count": 195,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-001": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["The new lecture recaps the B+-tree invariants: a wide multiway tree, equal leaf depth, and at least half-full non-root nodes. It also reconnects to the previous lookup algorithm before moving to updates."],
+      "source_transcript_word_count": 79,
+      "selected_sentence_count": 2,
+      "ocr_warning": true
+    },
+    "dbimpl-05-access-btrees-002": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["Lookup descends from the root and binary-searches the wide pages it encounters. Branch-free search and interpolation are optional micro-optimizations; the underlying routing algorithm remains the same."],
+      "source_transcript_word_count": 86,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-003": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Insertion first performs an ordinary lookup to find the target leaf. If the leaf has room, insert the entry in sorted order. If it is full, split it into two approximately half-full pages, place the new entry on the correct side, and add a separator plus child reference to the parent. If the parent overflows, repeat the split upward. Splitting the root creates a new root and increases the height by one. This recursive split rule preserves both occupancy and equal leaf depth."],
+      "source_transcript_word_count": 751,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-004": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Deletion is harder because removing an entry may leave a non-root page less than half full. If a sibling with the same parent has spare entries, redistribute between the two pages and update the separator. Otherwise merge with that sibling, remove the obsolete parent entry, and repair the parent recursively if it underflows. Restricting repair to a sibling under the same parent keeps navigation local. Some systems tolerate underfull pages except when empty, but adversarial insert/delete patterns can leave permanent waste; full deletion logic preserves the occupancy guarantee."],
+      "source_transcript_word_count": 1199,
+      "selected_sentence_count": 5,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-005": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["A range scan looks up the lower bound once, then enumerates entries in order and follows next-leaf pointers until the upper bound is exceeded. This avoids returning to the root for every page. If logically adjacent leaves are also physically adjacent, the scan becomes sequential I/O and is especially fast; such physical ordering is called clustering. Updates can gradually weaken clustering because a new page created in the middle of the key range may not be allocated next to its neighbors."],
+      "source_transcript_word_count": 441,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-006": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["A compound index treats several attributes as one lexicographically ordered key: compare the first component, then use the next component only when earlier components tie. This creates the left-prefix rule. An index on (A,B,C,D) can directly support bindings on A, (A,B), (A,B,C), or all four. Binding only B or C does not identify one contiguous index range. For example, A=5 becomes the range from (5, minimum) through (5, maximum), while B=5 alone is scattered throughout the ordering."],
+      "source_transcript_word_count": 750,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-007": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["A secondary index may contain many duplicate user keys, which makes deleting one particular tuple difficult if the index stores only that key. The standard solution is to append the tuple identifier as a tie-breaker, indexing (user key, TID). The combined value is unique, so a known tuple can be located and removed in logarithmic time. Prefix lookup by the user key still returns all duplicates as a contiguous range. The extra TID mainly enlarges inner separators, since leaves needed the TID for tuple access anyway."],
+      "source_transcript_word_count": 884,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-008": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Latching only the current page is unsafe: after reading a child pointer and releasing the parent, another thread could split the child before it is latched, moving the target key elsewhere. Lock coupling prevents this race by latching the child before releasing the parent, so parent and child overlap briefly. Traversal always acquires latches from root toward leaves, giving a consistent order that avoids deadlock. Here “latch” means a short-term in-memory synchronization primitive, distinct from a transaction-level logical lock."],
+      "source_transcript_word_count": 906,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-009": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Insertion complicates lock coupling because a leaf split can propagate upward, reversing the usual latch direction and risking deadlock. The safe-page strategy prevents long upward propagation: while descending, split any inner page that lacks room for one more separator while its parent is still latched. Consequently, a later leaf split can affect at most the already-latched parent. The cost is splitting an inner page slightly early and wasting at most one entry of capacity—negligible when a page holds roughly a thousand separators."],
+      "source_transcript_word_count": 696,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-010": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["With variable-length keys, the system cannot know during descent whether an inner page has space for the next separator, so the safe-page test is unreliable. A restart strategy handles this: first descend with ordinary lock coupling. If the insertion would require splitting an inner node, release the latches and restart while retaining the entire root-to-leaf latch path. This greatly reduces concurrency during the retry, but inner splits are rare—roughly multiplicative in page capacity—so the common case stays cheap and the implementation remains simple."],
+      "source_transcript_word_count": 432,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-011": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["The lecture moves from correct lock coupling to techniques that improve its concurrency."],
+      "source_transcript_word_count": 24,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-012": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Lock coupling holds a parent while acquiring its child, but latching a high-level page indirectly blocks access to a vast subtree. If the desired child must be fetched from disk, unrelated traversals can wait behind that parent latch. B-link trees improve concurrency by allowing a traversal to release the parent before latching the child. A concurrent split may then move the target to the right, so every page carries a right link and a high-key boundary. If the target exceeds the page’s range, follow right links until reaching the correct page or proving absence."],
+      "source_transcript_word_count": 717,
+      "selected_sentence_count": 4,
+      "ocr_warning": true
+    },
+    "dbimpl-05-access-btrees-013": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["Right links are needed on inner pages as well as leaves. A split can move the relevant routing interval to a newly created right sibling before the traversal arrives, so the same sideways correction must work at every level."],
+      "source_transcript_word_count": 61,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-014": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["The board sketch illustrates following successive right-sibling pointers after a concurrent split."],
+      "source_transcript_word_count": 24,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-05-access-btrees-015": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["B-link lookup and insertion work because splits move key ranges to the right, exactly the direction covered by sibling links. Proper deletion is much harder: redistribution or merging can move keys left and can retire a page while another thread is approaching it. Correct implementations therefore need an additional safe-reclamation mechanism, such as epochs, ensuring that a page is not removed while an older traversal may still reference it. Systems that avoid full merge-on-delete sidestep much of this complexity at the cost of weaker space maintenance."],
+      "source_transcript_word_count": 211,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-016": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Optimistic lock coupling removes the reader counter that would make a hot root cache line bounce among CPU cores. A reader records the page’s version, reads without taking a shared latch, and then validates that the version is unchanged and no writer is active. Writers set an exclusive bit, modify the page, increment the version, and release it. Failed validation restarts from the root. Because conflicts are uncommon, read-only inner-node traversal becomes cheap; real latches are still appropriate for leaf updates or long scans. Parent and child versions are validated in coupling order before the parent is forgotten."],
+      "source_transcript_word_count": 2191,
+      "selected_sentence_count": 5,
+      "ocr_warning": true
+    },
+    "dbimpl-05-access-btrees-017": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["Optimistic lock coupling targets high-contention inner nodes: readers validate versions instead of updating a shared latch word. The technique is newer than classical B-link or lock-coupling treatments but is important for modern multicore B-tree performance."],
+      "source_transcript_word_count": 91,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-018": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Bulk loading avoids performing millions of independent B-tree inserts. Repeated inserts can touch pages many times, produce random I/O, and—when keys arrive in increasing order—repeatedly split the rightmost leaf into half-full pages. Sorting the incoming data first transforms construction into sequential work. Because the loader knows it is building a new index, it can fill pages directly rather than applying the ordinary online split policy. The goal is both faster construction and dense, well-clustered leaves."],
+      "source_transcript_word_count": 879,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-019": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["To build a fresh B+-tree, sort the records by index key and stream them into fully packed leaf pages, recording each page’s largest key as a separator. Then stream those separators into packed inner pages, again recording their largest keys for the next level. Repeat until a single page remains as the root. Every pass is sequential, nearly every page is full, and logically adjacent leaves are physically clustered. This is the ideal bulk-load outcome: minimal random I/O, high space utilization, and excellent subsequent range-scan locality."],
+      "source_transcript_word_count": 683,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-020": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Bulk-updating an existing tree merges sorted new records with the existing leaf stream and forms replacement pages. A naive merge would shift every later page even after the last new record. To stop rewriting, begin a new unchanged chunk once output would contain only old entries, allowing a locally underfull but valid boundary page. Propagate changed separators similarly through higher levels. This minimizes I/O but can weaken clustering and is complex; a common alternative is to drop the index, load the table, and rebuild the index from scratch."],
+      "source_transcript_word_count": 962,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-021": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["Bulk operations are fast but disruptive because an index being rebuilt may be unavailable or unusable by queries. Partitioned B-trees trade extra query work for keeping the index online during large loads."],
+      "source_transcript_word_count": 62,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-022": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["This interval emphasizes that layer-by-layer bulk construction temporarily leaves no complete index for normal lookup."],
+      "source_transcript_word_count": 31,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-023": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["A partitioned B-tree prepends an artificial partition identifier to the real compound key. Existing data might use partition 0; each new bulk load receives a larger identifier and therefore appends at the right edge of the tree instead of merging into the middle. Prefix compression makes the repeated partition identifier nearly free within a page. New partitions can be created online, and background work can later merge them into older partitions. The design exchanges immediate global order for uninterrupted bulk ingestion."],
+      "source_transcript_word_count": 446,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-024": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Partitioning isolates new bulk-loaded runs so the main index stays online. The system should keep the number of partitions small because a point or range lookup may have to probe every partition. Background merging gradually moves entries from newer partitions into the base partition, reducing read amplification without a long offline rebuild. One or two partitions are manageable; accumulating many defeats the purpose."],
+      "source_transcript_word_count": 156,
+      "selected_sentence_count": 3,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-025": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Lazy merging can run in small background increments: copy a slice from a newer partition into the older one, then repeat until the newer partition disappears. Because each step rewrites only a small region, the index remains queryable throughout. The cost is temporary duplication of logical work and more complicated read reconciliation. Availability improves, but consolidation is delayed."],
+      "source_transcript_word_count": 115,
+      "selected_sentence_count": 3,
+      "ocr_warning": true
+    },
+    "dbimpl-05-access-btrees-026": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Partitioned B-trees lose a single global physical run: to find key x, the DBMS must search all active partitions and merge their results. That cost requires eventually consolidating partitions. Bulk deletions and updates are harder still because the base entry remains in an older partition while the new partition must record a cancellation or replacement. Reads must reconcile these records in partition order. Online availability is therefore purchased with read amplification, background merging, and more complex semantics."],
+      "source_transcript_word_count": 194,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-027": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["A bulk deletion is represented in the newer partition as a tombstone for a tuple that still physically exists in an older partition. This deferred record must override the older value during lookup."],
+      "source_transcript_word_count": 54,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-028": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["The literature calls these cancellation records “antimatter” entries."],
+      "source_transcript_word_count": 7,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-029": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["A query merges results across partitions. If an older partition supplies x and a newer partition supplies a tombstone for x, the two annihilate and x is omitted. An update is handled similarly: the newer record supersedes the older version. This reconciliation is the price of applying bulk changes online. Partition order determines which information wins."],
+      "source_transcript_word_count": 100,
+      "selected_sentence_count": 3,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-030": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Partitioned B-trees make online bulk operations possible, but queries must merge partitions and apply updates or tombstones. That logic adds implementation complexity and runtime overhead. The structure is most attractive where continuous availability is more important than the simplicity and read performance of a single fully merged tree. It is fundamentally an availability-versus-read-cost engineering tradeoff."],
+      "source_transcript_word_count": 120,
+      "selected_sentence_count": 3,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-031": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Fixed-length B-tree keys make occupancy easy to express as an entry count, but real keys may be strings, compressed values, or compound encodings of variable size. Then a page can be full with few long keys or have room for many short ones, and the next separator’s size is unknown. The B-tree often treats keys as opaque byte strings plus a comparison function, so it cannot reason about their internal meaning. Slotted pages can store the bytes, but they do not restore the classical occupancy and height guarantees."],
+      "source_transcript_word_count": 424,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-032": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["The alternating short/long-key example shows why separator choice affects height. If every leaf ends with a long key and the loader promotes that maximum as the separator, inner pages fit very few entries and the tree becomes unnecessarily deep. The leaves may be well packed by bytes, yet the inner fanout collapses. Variable-length B-trees therefore need to optimize not only page fill but also which boundary key is promoted."],
+      "source_transcript_word_count": 395,
+      "selected_sentence_count": 3,
+      "ocr_warning": true
+    },
+    "dbimpl-05-access-btrees-033": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["By shifting leaf boundaries slightly, the loader can arrange for short keys rather than long keys to become separators. In the constructed example, that small change raises inner-node fanout enough to reduce the tree from four levels to two. The lesson is that byte occupancy and entry count are not interchangeable when key lengths vary."],
+      "source_transcript_word_count": 153,
+      "selected_sentence_count": 3,
+      "ocr_warning": true
+    },
+    "dbimpl-05-access-btrees-034": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Naively splitting variable-length pages can lose the familiar logarithmic bound with a useful branching factor because a poor long separator may dominate each inner page. During bulk loading, a practical strategy allows page fill to vary within a small constant range and chooses the shortest separator available in that range. Stronger dynamic algorithms exist but may rebuild parts of the index and cause performance spikes. Database implementations therefore often prefer robust heuristics over theoretically optimal but complicated maintenance."],
+      "source_transcript_word_count": 316,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-035": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["A pragmatic split heuristic first sorts the overflowing page’s entries, then examines a window—such as 20%—around the median. It promotes the shortest key in that window, breaking ties in favor of the candidate closest to the median. This preserves reasonably balanced byte utilization while avoiding pathological long separators. Bulk loading can apply the same principle by varying page boundaries slightly to obtain shorter promoted keys. The method is heuristic, but simple and effective for typical data."],
+      "source_transcript_word_count": 368,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-05-access-btrees-036": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["The lecture pauses after presenting the practical separator-selection heuristic."],
+      "source_transcript_word_count": 47,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-001": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["The next recording recaps the variable-length-key problem: naive page boundaries can promote large separators and destroy fanout. The remaining B+-tree techniques aim to shorten stored keys and recover shallow trees."],
+      "source_transcript_word_count": 56,
+      "selected_sentence_count": 2,
+      "ocr_warning": true
+    },
+    "dbimpl-06-access-eh-002": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["The transition restates the objective: better separators increase inner-node fanout and reduce tree depth."],
+      "source_transcript_word_count": 37,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-003": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Because a B+-tree separator need only fall between the largest key on the left and the smallest key on the right, it can sometimes be replaced by a much shorter value that does not occur in the data. This raises fanout without changing lookup. The difficulty is constructing such a value for arbitrary opaque keys. Even strings become hard under locale-sensitive Unicode collation, where byte order and linguistic order differ and the collation mapping may not be reversible. The technique is powerful when the key domain provides a safe “between” operation, but it is not universal."],
+      "source_transcript_word_count": 838,
+      "selected_sentence_count": 5,
+      "ocr_warning": true
+    },
+    "dbimpl-06-access-eh-004": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Page-prefix compression works for opaque lexicographically ordered byte strings. Neighboring keys often share a long beginning, so store that common prefix once in the page header and keep only each key’s suffix. Lookup compares the search key with the prefix, strips it when it matches, and searches the suffixes. Reconstructing full keys adds cost during output-heavy index-only scans, so some systems compress only inner nodes; nevertheless, the space saving and resulting fanout gain often justify using it in leaves too."],
+      "source_transcript_word_count": 785,
+      "selected_sentence_count": 4,
+      "ocr_warning": true
+    },
+    "dbimpl-06-access-eh-005": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Prefix compression also benefits compound keys because neighboring entries frequently share the leading attributes. It pairs especially well with partitioned B-trees: the artificial partition identifier is repeated across a page and can be stored once, making its per-entry space cost negligible. For numeric keys, the byte encoding should preserve lexicographic order so neighboring numbers share leading bytes."],
+      "source_transcript_word_count": 229,
+      "selected_sentence_count": 3,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-006": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Big-endian encoding places the most significant byte first, so nearby integer values share a prefix: for example, consecutive values may differ only in the final byte. Little-endian encoding places the changing low-order byte first and therefore defeats byte-prefix compression. An index may thus store numeric keys in big-endian order even on a little-endian CPU. The encoding decision is about preserving useful lexicographic structure on disk, not about the machine’s native arithmetic format."],
+      "source_transcript_word_count": 215,
+      "selected_sentence_count": 3,
+      "ocr_warning": true
+    },
+    "dbimpl-06-access-eh-007": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["Most contemporary x86 systems are little-endian, but native byte order need not dictate index-key order. Storage encodings can be chosen for comparison and compression properties."],
+      "source_transcript_word_count": 61,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-008": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["Little-endian has implementation conveniences, such as reading different integer widths at the same address, but those advantages are not central to an ordered index. For prefix compression, big-endian order is the useful choice."],
+      "source_transcript_word_count": 105,
+      "selected_sentence_count": 2,
+      "ocr_warning": true
+    },
+    "dbimpl-06-access-eh-009": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["Even on a little-endian machine, serialize numeric B+-tree keys in big-endian form when lexicographic order and common-prefix compression matter."],
+      "source_transcript_word_count": 41,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-010": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["Converting between little- and big-endian representations is cheap on modern processors, typically using a byte-swap instruction. The compression benefit can therefore outweigh conversion cost."],
+      "source_transcript_word_count": 62,
+      "selected_sentence_count": 2,
+      "ocr_warning": true
+    },
+    "dbimpl-06-access-eh-011": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["This fragment closes the discussion of endian-aware key encoding."],
+      "source_transcript_word_count": 7,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-012": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["The lecture transitions from B+-trees to hash-based indexes."],
+      "source_transcript_word_count": 4,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-013": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["B+-trees are the general-purpose external-memory index, but they are not the only access structure. Hash indexes specialize in exact-key lookup and can outperform trees when ordering is unnecessary."],
+      "source_transcript_word_count": 78,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-014": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["A hash table computes a hash value, maps it to a slot, and aims for expected constant-time point lookup. A search tree instead pays logarithmic cost. The word “expected” is essential: hashing depends on a good distribution and controlled collisions, whereas balanced trees provide a deterministic logarithmic height bound. Hashing is therefore attractive for equality access but comes with weaker worst-case guarantees and no inherent order."],
+      "source_transcript_word_count": 104,
+      "selected_sentence_count": 3,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-015": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["The comparison separates tree height from actual comparisons. A red-black tree may follow dozens of scattered pointers. A B+-tree has only a few levels, but binary-searching thousands of entries on each page still performs roughly ten comparisons per level—far cheaper because of locality, yet not constant. A well-behaved hash table typically examines only one or two entries. Its limitation is specialization: it supports exact keys, not ordered ranges, and its worst case can be linear when many keys collide."],
+      "source_transcript_word_count": 1074,
+      "selected_sentence_count": 5,
+      "ocr_warning": true
+    },
+    "dbimpl-06-access-eh-016": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["A short fragment leads into the qualifications behind hashing’s constant-time promise."],
+      "source_transcript_word_count": 5,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-017": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["Constant-time lookup is conditional on a suitable table size, hash function, and collision behavior. When those assumptions fail, performance can degrade sharply."],
+      "source_transcript_word_count": 34,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-018": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["A chaining hash table stores a pointer per directory slot and follows a short linked list for collisions. Keep the load factor below a chosen threshold so expected chains remain short. Mapping by h mod n is robust when n is prime because it is less likely to share a factor with patterns in a weak hash function, but integer division is costly. Power-of-two tables replace modulo with a bit mask and are fast, provided the hash thoroughly mixes the bits being used. The main lesson is that hash quality, table sizing, and slot reduction must be designed together."],
+      "source_transcript_word_count": 4492,
+      "selected_sentence_count": 6,
+      "ocr_warning": true
+    },
+    "dbimpl-06-access-eh-019": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["The professor pauses while recalling the multiplicative constant used in Fibonacci hashing; the exact constant is not the conceptual point."],
+      "source_transcript_word_count": 30,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-020": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["This one-word continuation completes the aside about the large hashing constant."],
+      "source_transcript_word_count": 1,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-021": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Fibonacci hashing is cheap but concentrates quality in the high bits, so the implementation must select those bits according to table size. Identity hashing is unsafe, while full cryptographic hashing is unnecessarily expensive. Hardware-supported CRC32 or a few AES rounds can provide a practical speed/quality compromise; portable software hashes such as MurmurHash cost more instructions. Seed the hash randomly per process or table so an attacker cannot easily construct colliding inputs. No finite hash can eliminate collisions, but good mixing and an unknown seed make pathological sets unlikely."],
+      "source_transcript_word_count": 1329,
+      "selected_sentence_count": 6,
+      "ocr_warning": true
+    },
+    "dbimpl-06-access-eh-022": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["Production hashing requires more care than the textbook picture suggests. Hash-function selection, reduction to a slot, and hardware behavior are part of the data-structure design, not incidental details."],
+      "source_transcript_word_count": 106,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-023": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Chaining often incurs two cache misses: one for the slot and another for the pointed-to entry. A compact fingerprint derived from unused hash bits can be stored in otherwise unused pointer bits, allowing many unsuccessful lookups to stop before following the pointer. Open addressing stores entries directly in the table and avoids that indirection. Robin Hood hashing controls probe length by swapping in an entry that is farther from its ideal slot than the current occupant. It improves locality but is more complex, especially for parallel construction; well-engineered chaining remains a strong baseline."],
+      "source_transcript_word_count": 1292,
+      "selected_sentence_count": 6,
+      "ocr_warning": true
+    },
+    "dbimpl-06-access-eh-024": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["In-memory hash-table techniques transfer poorly to disk. Every link in a collision chain can require another random page read, and growing a table by conventional rehashing rewrites all entries to unrelated locations. The table size is not known when a relation is created, so growth is unavoidable. External-memory hashing therefore needs a directory that can expand while preserving most existing bucket pages, avoiding a full random-I/O rebuild."],
+      "source_transcript_word_count": 604,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-025": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Hash indexes normally support equality only, not useful range access. This also complicates duplicate secondary keys: appending the TID makes entries unique, but querying only the original key would require a range over all TID suffixes, which hashing cannot provide. Consequently, disk hash indexes are most natural for unique keys. A hybrid can replace a long duplicate chain with a tree, but that adds substantial complexity. When duplicate or range behavior matters, a B+-tree is usually the safer choice."],
+      "source_transcript_word_count": 601,
+      "selected_sentence_count": 5,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-026": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Extendible hashing addresses unknown disk-table size. A too-small directory creates long collision chains; a too-large one wastes space; rebuilding every bucket is prohibitive. Instead, directory entries may share bucket pages, and overflowing buckets are split locally by considering additional hash bits. The directory can grow without relocating all existing records. Only the affected hash range is reorganized."],
+      "source_transcript_word_count": 185,
+      "selected_sentence_count": 3,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-027": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["An extendible-hashing directory has a power-of-two number of entries. The global depth says how many hash bits index the directory; each bucket has a local depth saying how many bits actually distinguish it. When local depth is smaller than global depth, several systematic “buddy” entries point to the same bucket. This sharing is what permits one part of the hash space to split without changing unrelated buckets."],
+      "source_transcript_word_count": 494,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-028": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["The example reaches a full bucket and prepares to split it."],
+      "source_transcript_word_count": 17,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-029": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["On bucket overflow, allocate a second bucket, increase the overflowing bucket’s local depth, and redistribute its records using one additional hash bit. Directory entries that formerly shared the old bucket are divided between the two pages. If the directory already has enough global depth, this is only a local update: other buckets and their records remain untouched."],
+      "source_transcript_word_count": 231,
+      "selected_sentence_count": 3,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-030": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["Before the split, multiple directory entries shared the same physical bucket. The split removes some of that sharing."],
+      "source_transcript_word_count": 14,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-031": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["The larger example shows repeated local growth: split only the bucket that overflowed, redistribute its contents with another hash bit, and redirect only the directory entries that referenced it. An unrelated bucket remains unchanged. If no additional directory bit is available, the global directory must be expanded before this local split can occur. Local depth determines which case applies."],
+      "source_transcript_word_count": 280,
+      "selected_sentence_count": 3,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-032": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["The next case handles a split when local depth already equals global depth."],
+      "source_transcript_word_count": 8,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-033": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["If the overflowing bucket is no longer shared, its local depth equals the directory’s global depth; the directory cannot distinguish another bit without growing."],
+      "source_transcript_word_count": 43,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-034": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["When local depth equals global depth, double the directory and duplicate its pointers. Then split only the overflowing bucket using the new hash bit. Buckets unaffected by the split continue to be shared by paired directory entries and are not rewritten. Directory copying is invasive, but it is far cheaper than rehashing all bucket pages because the directory contains pointers while each bucket page contains many records."],
+      "source_transcript_word_count": 270,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-035": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["The discussion now considers the practical limit on repeated directory doubling."],
+      "source_transcript_word_count": 7,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-036": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["Exponential directory growth cannot continue indefinitely, so the implementation needs a fallback once the maximum directory depth is reached."],
+      "source_transcript_word_count": 33,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-037": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["At maximum depth, extendible hashing may fall back to overflow chaining. This should be rare with a good hash function, but true hash collisions or adversarial inputs cannot be resolved by looking at more bits: the values remain indistinguishable. Chaining preserves correctness, though each extra page hurts disk performance. Directory growth cannot separate identical hashes."],
+      "source_transcript_word_count": 167,
+      "selected_sentence_count": 3,
+      "ocr_warning": false
+    },
+    "dbimpl-06-access-eh-038": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["In the ideal case, extendible hashing needs two page accesses: one directory page and one bucket page. It grows buckets locally and avoids full rehashing. The costs are abrupt directory doubling, large jumps in space consumption, and special handling for genuine collisions. Compared with a B+-tree it can provide faster equality lookup, but it is less versatile and more dependent on hash distribution."],
+      "source_transcript_word_count": 311,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-001": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["The recap states extendible hashing’s core idea: a hash-bit directory can gain resolution without relocating every bucket. When a bucket overflows, use another bit to split only that portion of the hash space. Directory entries may continue sharing unaffected buckets, so growth rewrites pointers and the overflowing page rather than all stored records. This contrasts with full rehashing."],
+      "source_transcript_word_count": 146,
+      "selected_sentence_count": 3,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-002": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["Doubling introduces one more directory bit. Existing bucket pages can remain in place because duplicated directory entries initially point to the same buckets; only the overflowing bucket is redistributed."],
+      "source_transcript_word_count": 78,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-003": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["This fragment closes the extendible-hashing recap."],
+      "source_transcript_word_count": 3,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-004": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["The lecture turns to the abrupt-growth disadvantage of extendible hashing."],
+      "source_transcript_word_count": 14,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-005": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Directory doubling has acceptable amortized cost but poor latency: long quiet periods are punctuated by an operation that copies the entire directory and doubles its space. At large scales, one such step can stall the system for seconds or longer. Linear hashing is motivated by smoothing this staircase into incremental growth rather than improving the final asymptotic size."],
+      "source_transcript_word_count": 238,
+      "selected_sentence_count": 3,
+      "ocr_warning": true
+    },
+    "dbimpl-07-transactions-006": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Linear hashing retains a directory of buckets but grows it one entry at a time. Instead of doubling every slot at once, it progresses through buckets in a fixed split order. The total structure eventually reaches the same sizes as an ordinary power-of-two table, but each growth step is small, reducing disruptive latency. Growth is smoother, not ultimately smaller."],
+      "source_transcript_word_count": 187,
+      "selected_sentence_count": 3,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-007": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["An overflowing bucket first receives an overflow page. Short chains temporarily absorb skew until a load-factor or chain-length threshold triggers the next scheduled split."],
+      "source_transcript_word_count": 74,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-008": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Linear hashing maintains a split pointer. When growth is triggered, it splits the bucket at that pointer—not necessarily the bucket that just overflowed—using one additional hash bit, appends the partner bucket at the end, and advances the pointer. After every bucket in the current round has split, the table has a regular doubled size and a new round begins with another bit. Thus each step adds exactly one directory entry while gradually converting all buckets to the next hash depth."],
+      "source_transcript_word_count": 626,
+      "selected_sentence_count": 5,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-009": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["Once the split pointer reaches the end, every original bucket has been split once. The table is regular again, and the next round begins at the first bucket with one more hash bit."],
+      "source_transcript_word_count": 50,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-010": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Lookup computes a bucket using the current higher hash depth. If that result lies in the part of the round not yet split, fold it back to its old-depth bucket. This requires only a boundary test and simple arithmetic. The directory can therefore be in a mixed state—some buckets using one more bit—without making lookup complicated."],
+      "source_transcript_word_count": 105,
+      "selected_sentence_count": 3,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-011": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Linear hashing replaces extendible hashing’s doubling spikes with steady one-bucket growth and good amortized space use. Its main cost is temporary chaining. An overflowing bucket cannot be split immediately unless it is next in the prescribed order, so its overflow pages may remain until the split pointer eventually arrives. This yields smoother maintenance but potentially slower lookups during a round."],
+      "source_transcript_word_count": 238,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-012": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["The example prepares to show that the overflowing bucket may not be the next legal split target."],
+      "source_transcript_word_count": 9,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-013": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["If a later bucket overflows while the split pointer is still near the beginning, linear hashing must first split each preceding bucket. Those splits may free no space in the overflowing chain. Correctness is preserved by overflow pages, but performance can remain degraded until the scheduled sequence reaches the hot bucket. This explains why chaining is integral to linear hashing rather than an exceptional last resort."],
+      "source_transcript_word_count": 182,
+      "selected_sentence_count": 3,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-014": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["The tradeoff is explicit: linear growth avoids directory-doubling pauses, while temporary overflow chains increase lookup cost. A second practical issue is allocating a directory that can grow at its end."],
+      "source_transcript_word_count": 34,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-015": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["A conceptually contiguous, indefinitely growing directory is difficult to place on disk because later extents may already be occupied. The practical solution is a chunked directory with geometrically increasing chunks. A hash-derived position first selects the chunk—efficiently using bit operations such as counting leading zeros—then computes the offset inside it. Chunking removes the relocation problem but adds an indirection and several instructions. That overhead is negligible compared with disk I/O, though visible for an in-memory table."],
+      "source_transcript_word_count": 983,
+      "selected_sentence_count": 5,
+      "ocr_warning": true
+    },
+    "dbimpl-07-transactions-016": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["The board calculation notes that chunk-address computation is acceptable for disk-resident hashing but comparatively expensive in a purely in-memory lookup."],
+      "source_transcript_word_count": 29,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-07-transactions-017": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Linear hashing is viable for external storage, but its elegant diagram hides an allocation decision. A contiguous directory wastes reserved space or eventually needs relocation; a chunked directory costs indirection and computation. Implementations must choose a point on that space/performance tradeoff, in addition to managing overflow chains and scheduled splits. The physical representation affects the promised performance."],
+      "source_transcript_word_count": 150,
+      "selected_sentence_count": 3,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-018": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["A flat extendible-hashing directory works well under uniform hashes, but skew can make it enormous relative to the number of buckets. Repeatedly splitting one hot prefix doubles the whole directory while most entries continue pointing to a few shared cold buckets. Skew may come from a poor hash function or from true duplicate values, which no hash function can separate. When directory space dominates bucket space, the flat structure has failed to adapt locally."],
+      "source_transcript_word_count": 603,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-019": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["Multi-level extendible hashing replaces the single flat directory with a tree of hash directories, allocating additional hash-bit resolution only along overflowing paths."],
+      "source_transcript_word_count": 65,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-020": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["The overflowing prefix alone needs more bits; cold directory regions should not grow with it."],
+      "source_transcript_word_count": 38,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-021": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["When one bucket overflows, replace only that directory entry with another directory page and consume more hash bits on that path. If the child directory fills, add another level. This sacrifices strict constant depth, but each directory page contains thousands of pointers, so fanout is enormous and the tree remains shallow. Only skewed regions pay the extra page access; uniformly sparse regions stay close to the root."],
+      "source_transcript_word_count": 338,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-022": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["A naive directory tree wastes space under uniform input. Nearly every root entry eventually overflows and receives a child page, but each child may use only one bit and remain mostly empty. Those sparse pages also pollute the buffer pool. Thus the scheme solves skewed flat-directory growth but needs sharing to avoid making uniform data its worst case."],
+      "source_transcript_word_count": 220,
+      "selected_sentence_count": 3,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-023": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["The fix is to let buddy ranges share an inner directory page rather than allocate one sparse child per overflowing root entry."],
+      "source_transcript_word_count": 22,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-024": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["The example returns to the initial directory and follows a single overflowing prefix into a shared lower-level page."],
+      "source_transcript_word_count": 61,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-07-transactions-025": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["When one buddy overflows, all buddies in the aligned group may point to the same new inner page. The overflowing range uses an additional bit, while the other ranges still effectively ignore that bit because their entries share a bucket. As more buddies overflow, they can occupy previously unused slots on the same page. Sharing therefore provides local growth without immediately allocating many nearly empty pages."],
+      "source_transcript_word_count": 234,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-026": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["The shared inner page can itself be subdivided as a hot prefix needs still more hash bits."],
+      "source_transcript_word_count": 10,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-027": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["A repeatedly overflowing bucket advances from five to six relevant hash bits, requiring a finer partition inside the shared page."],
+      "source_transcript_word_count": 32,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-028": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["The next operation splits the shared page’s range."],
+      "source_transcript_word_count": 7,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-029": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["The inner directory is divided into aligned halves so the hot range can gain another distinguishing bit while preserving buddy boundaries."],
+      "source_transcript_word_count": 26,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-030": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Splitting the inner page gives the hot bucket six effective hash bits, while cold buddies may still map to one shared bucket and therefore ignore the extra bits in practice. The process can repeat locally until the current hash value has consumed all pointer capacity, at which point another directory level is added. Growth follows data skew rather than a global depth."],
+      "source_transcript_word_count": 167,
+      "selected_sentence_count": 3,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-031": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["The structure can also fold redundant buddy pages back upward."],
+      "source_transcript_word_count": 9,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-032": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["If every entry in a child page ultimately points to the same bucket, that page contributes no distinguishing information. The parent can bypass it and point directly to the bucket, reclaiming the redundant page. This folding operation prevents cold regions from retaining unnecessary levels after buddy sharing changes. It is the inverse of local expansion."],
+      "source_transcript_word_count": 114,
+      "selected_sentence_count": 3,
+      "ocr_warning": true
+    },
+    "dbimpl-07-transactions-033": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["Folding collapses the redundant child, leaving only the one additional page that contains useful local distinctions."],
+      "source_transcript_word_count": 18,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-034": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["Because buddy boundaries are powers of two, the effective bit width and sharing group can be derived from the pointer layout rather than stored as separate metadata."],
+      "source_transcript_word_count": 49,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-035": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["The pointer array encodes its own buddy structure. By checking increasingly distant power-of-two neighbors, lookup can determine how many entries share the same child page and therefore how many hash bits the next level receives. This needs only logarithmically many pointer checks and no per-entry depth field. Nearly the entire page can hold pointers, giving fanout close to page size divided by pointer size—higher than a typical B+-tree inner node."],
+      "source_transcript_word_count": 474,
+      "selected_sentence_count": 4,
+      "ocr_warning": true
+    },
+    "dbimpl-07-transactions-036": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Multi-level extendible hashing adapts naturally to skew, grows pages locally instead of doubling a global directory, and achieves very high fanout because sharing metadata is implicit. Its price is an extra page access for each directory level, though the tree is normally shallow. Conceptually it combines the local adaptability of a trie with page-sized hash fanout."],
+      "source_transcript_word_count": 183,
+      "selected_sentence_count": 3,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-037": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["The structure is elegant but implementation-sensitive. Splitting, sharing, and folding must preserve aligned buddy ranges across millions of operations; a small boundary error can remain latent for a long time. This is a useful exam distinction: conceptual simplicity and small code size do not imply easy correctness when invariants are encoded implicitly. Subtle bugs may surface only after extensive growth."],
+      "source_transcript_word_count": 139,
+      "selected_sentence_count": 3,
+      "ocr_warning": true
+    },
+    "dbimpl-07-transactions-038": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["The topic shifts to bitmap indexes, which target combinations of individually unselective predicates rather than unique point lookups."],
+      "source_transcript_word_count": 52,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-039": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["A B+-tree on a low-cardinality attribute is often worse than a table scan because each value returns a large fraction of the relation. Yet combining several such predicates can be highly selective. Building a compound index for every possible attribute combination is infeasible because the number of combinations grows exponentially and query patterns may vary. Bitmap indexes solve this composability problem by indexing each low-cardinality value separately in a form that can be combined cheaply at query time."],
+      "source_transcript_word_count": 495,
+      "selected_sentence_count": 4,
+      "ocr_warning": true
+    },
+    "dbimpl-07-transactions-040": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Traditional index intersection retrieves large TID lists and must sort or hash them before fetching tuples, making it expensive for unselective predicates. Disjunction requires union plus duplicate elimination, and negation often becomes two broad ranges. Bitmap indexes instead support conjunction, disjunction, and negation with direct bit operations. Their benefit is not a faster single unselective lookup; it is inexpensive logical composition before any base tuples are fetched."],
+      "source_transcript_word_count": 522,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-041": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["For each value in a small attribute domain, store one bitmap with one bit per tuple: 1 means that tuple has the value. Predicates combine using word-sized operations—AND for conjunction, OR for disjunction, and bitwise NOT before AND for negation. A 64-bit CPU tests 64 tuples per operation, so complex filters can be evaluated as fast sequential passes over compact bit vectors. Only the surviving tuple positions need base-table access."],
+      "source_transcript_word_count": 569,
+      "selected_sentence_count": 4,
+      "ocr_warning": true
+    },
+    "dbimpl-07-transactions-042": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["The base representation costs one bit per tuple per indexed value. If tuple identifiers are not dense positions, the bitmaps also need a shared position-to-TID directory."],
+      "source_transcript_word_count": 35,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-043": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["Dense TIDs allow bitmap position i to mean tuple i directly. Otherwise, one common array maps bitmap positions to actual TIDs and can be reused across all bitmaps."],
+      "source_transcript_word_count": 63,
+      "selected_sentence_count": 2,
+      "ocr_warning": true
+    },
+    "dbimpl-07-transactions-044": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Bitmap vectors are often sparse and compress well with run-length encoding. Query processing can intersect the compressed runs directly: skip ranges known to be all zero and apply bit operations only to literal blocks. There is no need to decompress the entire vector first. This makes arbitrary combinations of low-cardinality predicates efficient, especially in analytical workloads; selective unique keys still belong in conventional tree or hash indexes."],
+      "source_transcript_word_count": 523,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-045": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["A small materialized aggregate stores tiny summaries—such as minimum, maximum, sum, and count—for each physical chunk. Before scanning, the DBMS may prove that no tuple qualifies and skip the chunk, prove that all qualify and omit predicate checks, or even answer a block-level aggregate directly. The method works well because physical order often follows insertion order, so dates and increasing IDs cluster naturally, and older chunks change rarely. Updates can invalidate the summary; the next scan recomputes it lazily while reading the chunk anyway."],
+      "source_transcript_word_count": 1310,
+      "selected_sentence_count": 6,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-046": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Chunk summaries are checked before reading detailed values. If min/max settle the predicate, the chunk is skipped or accepted; otherwise normal scanning proceeds. On modification, marking the summary invalid is often cheaper than eagerly maintaining every aggregate. The first later query rebuilds it during a scan it already had to perform. This low implementation cost and potentially large I/O saving explain its popularity in analytical systems."],
+      "source_transcript_word_count": 185,
+      "selected_sentence_count": 4,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-047": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": ["Even when a summary cannot prune a chunk, checking a few metadata values is almost free. When it can prune, it avoids reading or evaluating a large block, giving an excellent cost/benefit ratio."],
+      "source_transcript_word_count": 63,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-048": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": ["Multidimensional indexes answer predicates over several independent dimensions, using structures such as R-trees, grid files, or KD-trees. Their fundamental limitation is the curse of dimensionality: as dimension count grows, point distances become less discriminative and a scan can beat the index. A compound B+-tree on (A,B) is still one-dimensional because lexicographic order creates one total order and supports the left-prefix rule; a true multidimensional index can constrain B independently of A. Low dimensions can work well, but high-dimensional performance requires additional distribution or workload assumptions."],
+      "source_transcript_word_count": 1470,
+      "selected_sentence_count": 6,
+      "ocr_warning": true
+    },
+    "dbimpl-07-transactions-049": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": ["The storage-and-indexing unit concludes. The next unit revisits transaction and recovery definitions briefly, then focuses on how a DBMS implements them."],
+      "source_transcript_word_count": 170,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    }
+  }
+}

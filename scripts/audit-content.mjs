@@ -6,11 +6,13 @@ async function loadJson(name) {
   return JSON.parse(await readFile(new URL(name, courseRoot), "utf8"));
 }
 
-const [guide, notesFile, evidenceFile, studyBriefs] = await Promise.all([
+const [guide, notesFile, evidenceFile, studyBriefs, slideExplanations] =
+  await Promise.all([
   loadJson("chapters.json"),
   loadJson("notes.json"),
   loadJson("evidence-index.json"),
   loadJson("study-briefs.json"),
+  loadJson("slide-explanations.json"),
 ]);
 
 const notes = Object.values(notesFile.records);
@@ -31,6 +33,19 @@ const audit = {
     .length,
   self_test_questions: briefs.flatMap((brief) => brief.self_test).length,
   evidence_intervals: evidenceFile.evidence.length,
+  slide_specific_explanations: Object.keys(slideExplanations.records).length,
+  gpt_edited_slide_explanations: Object.values(
+    slideExplanations.records,
+  ).filter((record) => record.method === "gpt_clarified_from_aligned_speech")
+    .length,
+  slide_explanation_paragraphs: Object.values(
+    slideExplanations.records,
+  ).flatMap((record) => record.explanation).length,
+  suspicious_default_explanation_ocr: Object.values(
+    slideExplanations.records,
+  )
+    .flatMap((record) => record.explanation)
+    .filter((value) => /[©€\\]{2,}/.test(value)).length,
   note_records: notes.length,
   extractive_paragraphs: explanations.length,
   lowercase_extractive_fragments: explanations.filter((value) =>
@@ -76,9 +91,64 @@ for (const [id, brief] of Object.entries(studyBriefs.chapters)) {
 
 if (
   evidenceFile.evidence.length !== notes.length ||
-  evidenceFile.evidence.length !== guide.stats.visual_interval_count
+  evidenceFile.evidence.length !== guide.stats.visual_interval_count ||
+  evidenceFile.evidence.length !==
+    Object.keys(slideExplanations.records).length
 ) {
-  throw new Error("Evidence, notes, and guide interval counts do not match");
+  throw new Error(
+    "Evidence, slide explanations, notes, and guide interval counts do not match",
+  );
+}
+
+const evidenceIds = new Set(
+  evidenceFile.evidence.map((record) => record.occurrence_id),
+);
+const evidenceById = new Map(
+  evidenceFile.evidence.map((record) => [record.occurrence_id, record]),
+);
+const allowedExplanationStatuses = new Set([
+  "substantive",
+  "brief",
+  "transition",
+  "silent",
+]);
+for (const [id, record] of Object.entries(slideExplanations.records)) {
+  if (!evidenceIds.has(id)) {
+    throw new Error(`Slide explanation has unknown occurrence id: ${id}`);
+  }
+  if (record.method !== "gpt_clarified_from_aligned_speech") {
+    throw new Error(`Slide explanation has unexpected method: ${id}`);
+  }
+  if (!allowedExplanationStatuses.has(record.status)) {
+    throw new Error(`Slide explanation has invalid status: ${id}`);
+  }
+  if (
+    !Array.isArray(record.explanation) ||
+    record.explanation.length === 0 ||
+    record.explanation.some(
+      (value) => typeof value !== "string" || value.trim().length === 0,
+    )
+  ) {
+    throw new Error(`Slide explanation is empty: ${id}`);
+  }
+  if (record.explanation.some((value) => /[©€\\]{2,}/.test(value))) {
+    throw new Error(`Slide explanation contains malformed OCR-like text: ${id}`);
+  }
+  if (
+    record.source_transcript_word_count !==
+    evidenceById.get(id)?.transcript?.word_count
+  ) {
+    throw new Error(`Slide explanation word count does not match source: ${id}`);
+  }
+  if (
+    !Number.isInteger(record.selected_sentence_count) ||
+    record.selected_sentence_count < 0
+  ) {
+    throw new Error(`Slide explanation has invalid sentence count: ${id}`);
+  }
+  if (typeof record.ocr_warning !== "boolean") {
+    throw new Error(`Slide explanation has invalid OCR warning: ${id}`);
+  }
 }
 
 console.log(JSON.stringify(audit, null, 2));

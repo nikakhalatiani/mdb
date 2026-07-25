@@ -7,6 +7,7 @@
     "audit": "node scripts/audit-content.mjs",
     "build": "vite build",
     "dev": "vite --host 127.0.0.1",
+    "merge:slide-explanations": "node scripts/merge-gpt-slide-explanations.mjs",
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {

@@ -1,0 +1,1274 @@
+{
+  "records": {
+    "dbimpl-07-transactions-050": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Transaction support groups several reads and writes into one logical operation with a defined beginning and end. Recovery gives that operation meaning even when the DBMS, operating system, machine, or network fails at an arbitrary instant: after restart, committed work must remain and incomplete work must not leave the database inconsistent.",
+        "These topics must be designed together. A crash can occur after only part of a transaction has executed, so recovery needs to know which work committed and which work was still in flight. For exam questions, connect transactions to the user-visible promise and recovery to the internal machinery that preserves that promise."
+      ],
+      "source_transcript_word_count": 353,
+      "selected_sentence_count": 6,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-051": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A bank transfer illustrates why a sequence of individually valid writes must be treated as one unit. Debiting account A and crediting account B are separate physical actions, but logically they must either both happen or neither happen. A crash between them would otherwise destroy money.",
+        "Concurrency adds a second risk: another transaction may read or update the same balance while the transfer is in progress. ACID transactions let application code state the intended unit of work while the DBMS handles failure, interference, and persistence. In an exam, identify the invariant—here, conservation of the transferred amount—and show how a partial or interleaved execution can violate it."
+      ],
+      "source_transcript_word_count": 254,
+      "selected_sentence_count": 7,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-052": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A transaction begins explicitly with BEGIN or implicitly when a session starts work. COMMIT requests that all of its changes become permanent; success is the durability boundary. ROLLBACK or abort instead removes every change made by the transaction, restoring the observable state as if it had never run.",
+        "Commit is requested by the client and may fail—for example because of a constraint violation or insufficient storage. Abort may also be forced externally by a lost connection, cancellation, or error, so the DBMS cannot refuse it: rollback must always be implementable. That asymmetry is an important design requirement for recovery."
+      ],
+      "source_transcript_word_count": 376,
+      "selected_sentence_count": 7,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-053": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "ACID separates four guarantees. Atomicity means all-or-nothing execution. Consistency means a correct transaction preserves declared invariants. Isolation gives each transaction the illusion that it runs alone despite real concurrency. Durability means a successful commit survives later failures.",
+        "Do not treat these as four synonyms. Atomicity and durability primarily concern what survives failure; isolation concerns interference among concurrent transactions; consistency is the application- and schema-level correctness condition that the other mechanisms help preserve. This decomposition is useful when an exam asks which guarantee a particular anomaly or crash violates."
+      ],
+      "source_transcript_word_count": 195,
+      "selected_sentence_count": 8,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-054": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Recovery must protect both the DBMS data structures and the transaction guarantees when a crash occurs at any point. On restart, partially executed transactions must be undone for atomicity, the recovered state must satisfy consistency requirements, and every acknowledged commit must be retained for durability.",
+        "Durability is subtle because committed pages may still be only in the buffer pool when power fails. The system therefore needs persistent recovery information before it can safely acknowledge commit. Recovery is internal and normally invisible to users, but its design is inseparable from transaction semantics; some systems even reuse recovery mechanisms to help implement isolation."
+      ],
+      "source_transcript_word_count": 438,
+      "selected_sentence_count": 6,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-055": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "The user-facing ideas of transactions and recovery are implemented through two interacting technical areas. Concurrency control mainly protects isolation and consistency by regulating conflicting operations. Logging mainly supports atomicity and durability by retaining enough information to undo incomplete work and redo committed work.",
+        "This mapping is deliberately approximate: the components are not completely independent, and some systems use logging or versioning techniques to provide isolation as well. For exam answers, start with the usual responsibility of each component, then mention that practical implementations interleave them."
+      ],
+      "source_transcript_word_count": 148,
+      "selected_sentence_count": 6,
+      "ocr_warning": true
+    },
+    "dbimpl-07-transactions-056": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Running transactions strictly one after another is easy to reason about but wastes resources. A transaction may pause for disk I/O, execute a long query, or wait minutes for a person; serial execution would make every other user wait during that idle time.",
+        "Concurrent execution overlaps those delays and is therefore essential for throughput and responsiveness. The difficulty is that interleaved reads and writes can change results or corrupt data. Concurrency control must retain the performance benefit while making executions obey safe transaction semantics."
+      ],
+      "source_transcript_word_count": 363,
+      "selected_sentence_count": 6,
+      "ocr_warning": false
+    },
+    "dbimpl-07-transactions-057": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A lost update occurs when two transactions read the same old value, compute different replacements, and then write them in sequence. The later write overwrites the earlier one without incorporating it. Two withdrawals of 10 and 20, for example, should reduce a balance by 30, but an unsafe interleaving may retain only one reduction.",
+        "The professor then contrasts this with a dirty read: one transaction uses a value written by another transaction that has not committed. If the writer later aborts, the reader has based durable work on a value that conceptually never existed. Lost update discards a committed effect; dirty read creates a dependency on uncommitted work."
+      ],
+      "source_transcript_word_count": 514,
+      "selected_sentence_count": 7,
+      "ocr_warning": true
+    },
+    "dbimpl-07-transactions-058": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A non-repeatable read occurs when one transaction reads the same existing item twice and obtains different committed values because another transaction updated it between the reads. Even though neither observed value is dirty, the first transaction can no longer behave as if it were alone.",
+        "The effect is more serious than a surprising display. A query plan may read the same relation at different points—for example in two branches of a join—and combine snapshots that never coexisted. The result can therefore be logically inconsistent even though every individual read returned committed data."
+      ],
+      "source_transcript_word_count": 339,
+      "selected_sentence_count": 6,
+      "ocr_warning": true
+    },
+    "dbimpl-07-transactions-059": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "A phantom occurs when a transaction repeats a predicate or range query and a newly committed tuple now satisfies it, so the result set gains a row. Repeating COUNT(*) can therefore return a larger number after another transaction inserts. The following slides distinguish this from rereading an existing item whose value changed."
+      ],
+      "source_transcript_word_count": 131,
+      "selected_sentence_count": 3,
+      "ocr_warning": true
+    },
+    "dbimpl-07-transactions-060": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "This brief return to the non-repeatable-read diagram begins the comparison with phantoms. The distinction is completed on the next slides."
+      ],
+      "source_transcript_word_count": 3,
+      "selected_sentence_count": 2,
+      "ocr_warning": true
+    },
+    "dbimpl-07-transactions-061": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "The professor poses the key comparison: although both anomalies change the result of a repeated query, a phantom is not simply a non-repeatable read. The next two intervals define the difference."
+      ],
+      "source_transcript_word_count": 14,
+      "selected_sentence_count": 2,
+      "ocr_warning": true
+    },
+    "dbimpl-07-transactions-062": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "In a non-repeatable read, the object already existed at the first access. Reading that same tuple or attribute again yields a different value because another transaction changed it. The identity of the item is stable; its contents are not."
+      ],
+      "source_transcript_word_count": 40,
+      "selected_sentence_count": 3,
+      "ocr_warning": true
+    },
+    "dbimpl-07-transactions-063": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A phantom is a newly appearing tuple, not a changed value of a tuple that was already read. A repeated point lookup of an existing key can be protected by locking that row, but a repeated range query may see a row inserted later that now satisfies its predicate.",
+        "This makes phantoms technically difficult: at the first query, the future tuple does not exist and therefore cannot be locked with an ordinary row lock. Preventing the anomaly requires protection of the searched key range or predicate, not merely the rows currently returned. That is why phantom prevention is often more expensive even when the anomaly seems less dramatic."
+      ],
+      "source_transcript_word_count": 348,
+      "selected_sentence_count": 6,
+      "ocr_warning": true
+    },
+    "dbimpl-07-transactions-064": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Strictly serial execution eliminates concurrency anomalies because only one transaction can affect the database at a time, but its performance is unacceptable. The goal is therefore serializability: allow operations to interleave physically while ensuring the overall outcome is equivalent to some serial ordering of the transactions.",
+        "The phrase “some serial ordering” matters. Transactions need not execute in their arrival order, and their individual operations need not be contiguous; the DBMS only has to prevent interleavings whose observable result cannot be explained by any serial schedule. Achieving that property requires concurrency-control bookkeeping."
+      ],
+      "source_transcript_word_count": 167,
+      "selected_sentence_count": 6,
+      "ocr_warning": false
+    },
+    "dbimpl-10-recovery-001": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Recovery is the DBMS component that preserves data and transaction guarantees across errors, especially a crash that destroys volatile state. Its two high-level sources are a database snapshot, which captures a known past state, and a sequential log, which records the changes made after that snapshot.",
+        "Recovery combines these sources rather than taking a new full copy after every transaction. The snapshot supplies a restart baseline; the log supplies the history needed to reconstruct a later correct state. The remainder of the chapter explains how that simple idea handles partial writes, committed and uncommitted transactions, and uncertain disk contents."
+      ],
+      "source_transcript_word_count": 163,
+      "selected_sentence_count": 6,
+      "ocr_warning": false
+    },
+    "dbimpl-10-recovery-002": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A snapshot is a complete copy at one point in time; the log is the ordered protocol of changes afterward. Restoring the snapshot and replaying the relevant logged changes reconstructs a newer database state.",
+        "These recovery materials must not share the same failure domain as the primary database. A second disk in the same machine is insufficient against machine destruction, and a second machine in the same room may be insufficient against fire. Keeping backups and archived logs on separate systems—and ideally at another site—turns logical recoverability into practical disaster tolerance."
+      ],
+      "source_transcript_word_count": 308,
+      "selected_sentence_count": 6,
+      "ocr_warning": false
+    },
+    "dbimpl-10-recovery-003": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Media recovery starts from a surviving backup of an earlier state and rolls the database forward using the log. It does not literally rerun the original transaction programs, because they may be nondeterministic or depend on unavailable inputs. Instead, the DBMS reapplies the recorded writes or state changes.",
+        "The important distinction is between re-executing application logic and redoing its effects. A correct log contains enough information to reproduce the latter deterministically, moving the restored snapshot toward the state that existed before the medium was lost."
+      ],
+      "source_transcript_word_count": 357,
+      "selected_sentence_count": 6,
+      "ocr_warning": true
+    },
+    "dbimpl-10-recovery-004": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "After a power failure, the disk image may contain an unpredictable subset of recent buffer-pool changes. Some write requests may have completed, others may not, and uncommitted updates may already have been evicted to disk. Recovery therefore cannot assume that disk equals either the old or the newest logical state.",
+        "The required restart state contains every effect of transactions that committed before the crash and none from transactions that were still active. Recovery must redo committed changes that might be missing and undo uncommitted changes that might be present. This uncertainty is the reason the log needs both transaction status and change information."
+      ],
+      "source_transcript_word_count": 540,
+      "selected_sentence_count": 6,
+      "ocr_warning": true
+    },
+    "dbimpl-10-recovery-005": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "The same log information used to remove uncommitted work after a crash can implement an ordinary transaction abort. Whether rollback is requested explicitly, triggered by an error, or required during restart, the logical task is identical: reverse every effect of the transaction while leaving other transactions unchanged.",
+        "This reuse is important because rollback is not an exceptional add-on. A correct recovery design already needs a dependable undo procedure, so normal ROLLBACK can invoke that established mechanism."
+      ],
+      "source_transcript_word_count": 175,
+      "selected_sentence_count": 5,
+      "ocr_warning": false
+    },
+    "dbimpl-10-recovery-006": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Failure classes differ by what was lost and therefore by the repair required. R1 is a local abort: undo one noncommitted transaction. After volatile memory is lost, R2 restores effects of committed transactions that may be missing from disk, while R3 removes effects of noncommitted transactions that may already be on disk.",
+        "R4, or media recovery, handles loss of external storage by restoring a backup and archived log. Local aborts are routine, system crashes are occasional, and media loss should be rare but must still be planned for. A particular buffer policy can make one phase unnecessary, but the classification describes the full logical obligations."
+      ],
+      "source_transcript_word_count": 424,
+      "selected_sentence_count": 7,
+      "ocr_warning": false
+    },
+    "dbimpl-10-recovery-007": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "The buffer pool separates the current logical database from the durable page image. Dirty pages are written asynchronously, so a crash can occur after a write was submitted but before the DBMS learns whether it completed. On restart, the system cannot infer from timing alone which version of a page reached disk.",
+        "A recovery algorithm must therefore be correct for both possibilities: the change may already be present or may still be absent. Later mechanisms such as log sequence numbers make redo conditional and repeatable rather than relying on uncertain I/O completion."
+      ],
+      "source_transcript_word_count": 191,
+      "selected_sentence_count": 5,
+      "ocr_warning": true
+    },
+    "dbimpl-10-recovery-008": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A no-steal buffer policy never writes a page containing an active transaction’s update. Disk therefore contains no uncommitted changes, so crash recovery does not need an undo phase for those pages. Its cost is severe: all dirty pages of active transactions must stay in memory, so a transaction cannot safely update more data than the buffer can hold.",
+        "A steal policy permits eviction of such pages and supports larger workloads with better buffer utilization. Because uncommitted data may reach disk, recovery must be able to undo it. Production systems usually accept this extra recovery complexity for performance and scalability."
+      ],
+      "source_transcript_word_count": 192,
+      "selected_sentence_count": 6,
+      "ocr_warning": false
+    },
+    "dbimpl-10-recovery-009": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A force policy writes every page changed by a transaction to durable storage before acknowledging its commit. Recovery then knows that committed data is already present, but commit may require many expensive random page writes.",
+        "With no-force, commit can succeed while changed pages remain in the buffer and are flushed later. This greatly improves performance, but a crash may erase committed updates from memory. The recovery log must therefore support redo. Do not confuse no-force with weak durability: durability is still promised; it is achieved through the log rather than immediate data-page writes."
+      ],
+      "source_transcript_word_count": 114,
+      "selected_sentence_count": 6,
+      "ocr_warning": false
+    },
+    "dbimpl-10-recovery-010": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Buffer policy determines recovery work. Force eliminates redo because committed pages were flushed; no-force requires redo because committed changes may remain only in volatile memory. No-steal eliminates undo because uncommitted pages never reach disk; steal requires undo because they may.",
+        "The common high-performance combination is steal plus no-force, which requires both undo and redo. It decouples page replacement from transaction completion and makes commit cheap, but shifts the burden to logging and restart. In an exam, derive the required phase directly from the possibility each policy allows."
+      ],
+      "source_transcript_word_count": 182,
+      "selected_sentence_count": 7,
+      "ocr_warning": true
+    },
+    "dbimpl-10-recovery-011": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Update-in-place overwrites each page at its fixed disk location, saving space but making recovery responsible for old and new states. Twin-block storage keeps two complete copies and switches which copy is current at commit; shadow paging copies only changed pages, reducing duplication but complicating pointer management and clustering.",
+        "Update-in-place also risks a torn write: a crash may leave one page partly old and partly new. Hardware with protected write caches can provide atomic page writes. Software alternatives detect mismatched page markers and request media recovery, or first force a recoverable copy of the intended write elsewhere and then update the real page. The latter survives a partial write but doubles I/O."
+      ],
+      "source_transcript_word_count": 1438,
+      "selected_sentence_count": 8,
+      "ocr_warning": true
+    },
+    "dbimpl-10-recovery-012": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "The remainder of the recovery discussion assumes the demanding but performant configuration used by many DBMSs: steal, no-force, update-in-place, and fine-grained locking. Because uncommitted changes may reach disk and committed pages may remain only in memory, the protocol must support both undo and redo."
+      ],
+      "source_transcript_word_count": 65,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-10-recovery-013": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "ARIES is a widely used recovery protocol that records database changes sequentially. Each relevant log record carries enough information to redo a change during restart and to undo it when a transaction aborts or is found uncommitted after a crash.",
+        "The professor highlights an intentional asymmetry called physiological logging: redo identifies the affected page and repeats the concrete change, while undo describes how to reverse the operation logically. This lets recovery reproduce page state efficiently while still reversing actions correctly even as physical organization evolves."
+      ],
+      "source_transcript_word_count": 326,
+      "selected_sentence_count": 5,
+      "ocr_warning": false
+    },
+    "dbimpl-10-recovery-014": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Every database change is reflected in both the buffer pool and a log buffer. The log buffer is flushed to the local log file, which supports fast transaction rollback and system-crash recovery. The data pages themselves can be written independently under the buffer manager’s policy.",
+        "For catastrophic media loss, local files are not enough. Database backups and archived copies of the log must be stored safely elsewhere; recovery restores the backup and replays the archived history. Local recovery is optimized for speed, whereas archive recovery prioritizes survival of an entire machine or storage device."
+      ],
+      "source_transcript_word_count": 295,
+      "selected_sentence_count": 6,
+      "ocr_warning": true
+    },
+    "dbimpl-10-recovery-015": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "The in-memory log is naturally a ring buffer: transactions append records at one position while a flusher writes older records to disk and releases that space. The writer must never catch the flusher, because that would overwrite log data that has not yet become durable.",
+        "Wraparound complicates serialization when one variable-length record crosses the physical end of the array. A useful implementation maps the same physical memory twice into adjacent virtual-address ranges. Code can then write the record contiguously across the apparent boundary, while both ranges still refer to the same underlying ring. Only the final pointer needs to be normalized."
+      ],
+      "source_transcript_word_count": 879,
+      "selected_sentence_count": 6,
+      "ocr_warning": true
+    },
+    "dbimpl-10-recovery-016": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Write-ahead logging imposes two ordering rules. Before acknowledging a transaction’s commit, every log record needed to reproduce its changes must be durable. Before writing a dirty data page, every log record describing changes already represented on that page must also be durable.",
+        "A normal write system call may return while data remains in an operating-system or device cache. “Forcing” the log therefore requires a durability barrier such as write followed by fsync, not merely submitting the bytes. If power fails afterward, recovery can always redo a committed change or undo an uncommitted page update from the surviving log."
+      ],
+      "source_transcript_word_count": 411,
+      "selected_sentence_count": 6,
+      "ocr_warning": false
+    },
+    "dbimpl-10-recovery-017": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Storage devices write fixed-size sectors or blocks rather than arbitrary individual bytes. Appending a short log fragment may therefore rewrite the final sector, and a crash during that rewrite could destroy older, already durable log records in the same sector. Padding a forced log write to a complete device block avoids exposing committed history to that partial overwrite.",
+        "The block size should come from the device interface or be covered conservatively by aligned power-of-two writes. Hardware with power-protected caches can make sector writes atomic; otherwise the software must anticipate and test this rare failure path. Recovery correctness depends on these low-level details precisely because crashes can occur at the worst possible instruction."
+      ],
+      "source_transcript_word_count": 812,
+      "selected_sentence_count": 7,
+      "ocr_warning": false
+    },
+    "dbimpl-10-recovery-018": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "At the crash boundary, a winner transaction is one whose commit record became durable before failure; its effects must be present after restart. A loser transaction was still active or had not durably committed, so its effects must be removed.",
+        "Recovery must leave the database observationally equivalent to a history in which all winners completed and all losers never happened. Whether some of their pages happened to reach disk before the crash does not change this classification."
+      ],
+      "source_transcript_word_count": 185,
+      "selected_sentence_count": 5,
+      "ocr_warning": true
+    },
+    "dbimpl-10-recovery-019": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "ARIES restart has three phases. Analysis scans forward to reconstruct transaction state and identify winners and losers. Redo then “repeats history,” replaying necessary actions from both groups so that pages and structural changes match the instant of the crash. Undo finally walks losers backward and reverses their logical effects.",
+        "Redoing losers is essential because their physical actions may have enabled later committed work. An uncommitted B-tree insert might trigger a page split, after which a winner inserts into the new page. Skipping the loser’s split would make the winner’s logged action impossible to place correctly. Repeating history first repairs the physical structure; logical undo can then remove only the loser’s data."
+      ],
+      "source_transcript_word_count": 565,
+      "selected_sentence_count": 7,
+      "ocr_warning": false
+    },
+    "dbimpl-10-recovery-020": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "The restart order is fixed: analyze the log forward, redo needed changes from winners and losers forward, then undo only loser transactions backward. The direction of each pass follows its purpose—chronological reconstruction first, reverse-order rollback last."
+      ],
+      "source_transcript_word_count": 56,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-10-recovery-021": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A change log record identifies its position with a monotonically increasing LSN, the responsible transaction, the affected page, redo and undo information, and that transaction’s previous LSN. Implementations often use the record’s byte offset as its implicit LSN. PrevLSN forms a per-transaction backward chain, avoiding a full log scan during rollback.",
+        "ARIES favors page-oriented redo and logical undo. Redo can describe a whole after-image or a smaller modification, but each record affects one known page. Undo expresses the inverse operation, such as removing an inserted key wherever it now resides. That distinction matters when later structural changes move a record to another B-tree page."
+      ],
+      "source_transcript_word_count": 920,
+      "selected_sentence_count": 7,
+      "ocr_warning": false
+    },
+    "dbimpl-10-recovery-022": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "During redo, cross-page structures may still be inconsistent because recovery has not yet repaired every page. A redo operation must therefore be executable using one identified page without trusting an index traversal or another page that might still be stale.",
+        "After redo has repeated history, the physical database structures are valid again even though loser data remains. Undo can then use logical operations—such as traversing a B-tree to find and remove a key—because the index is safe to navigate. This timing explains why ARIES requires physical or physiological redo but permits logical undo."
+      ],
+      "source_transcript_word_count": 173,
+      "selected_sentence_count": 6,
+      "ocr_warning": false
+    },
+    "dbimpl-10-recovery-023": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "The LSN uniquely orders log records and is commonly represented by the record’s byte offset, which grows naturally as the log is appended. The transaction ID associates each record with its transaction so analysis and undo can reconstruct that transaction’s history."
+      ],
+      "source_transcript_word_count": 62,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-10-recovery-024": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "PageID names the single page affected by a redo record. A multi-page operation such as a B-tree split must therefore emit one record per page, allowing restart to repair each page independently without assuming the structure is already navigable.",
+        "PrevLSN points directly to the preceding record of the same transaction. It is logically redundant because a backward scan could eventually find that record, but the pointer makes rollback proportional to the transaction’s own number of changes instead of the size of the interleaved global log. This supports fast logical undo while redo remains page-local."
+      ],
+      "source_transcript_word_count": 197,
+      "selected_sentence_count": 6,
+      "ocr_warning": false
+    },
+    "dbimpl-10-recovery-025": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "The example turns transaction actions into log records. BEGIN records establish each transaction; reads generate no record because they do not change persistent state. Each write records its LSN, transaction, page, forward action, inverse action, and PrevLSN—for example, decreasing A by 50 is undone by increasing A by 50.",
+        "A COMMIT record marks a transaction as a winner. If analysis reaches the end without a durable commit for another transaction, that transaction is a loser and its chain must be undone. The example also shows why the global log can interleave transactions while PrevLSN preserves each transaction’s private backward history."
+      ],
+      "source_transcript_word_count": 442,
+      "selected_sentence_count": 7,
+      "ocr_warning": true
+    },
+    "dbimpl-10-recovery-026": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Analysis scans the log in chronological order and reconstructs the set and state of transactions. Seeing BEGIN makes a transaction active; a durable COMMIT makes it a winner. An explicit abort or reaching the crash without commit makes it a loser.",
+        "This classification drives the later phases: winner effects must survive, while loser effects must ultimately be removed. The decisive evidence is the durable log, not what the client may have intended or what data pages happen to contain."
+      ],
+      "source_transcript_word_count": 128,
+      "selected_sentence_count": 6,
+      "ocr_warning": false
+    },
+    "dbimpl-10-recovery-027": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Redo scans forward and repairs the database to its exact crash-time physical state. Because the system uses no-force, committed changes may be missing; because updates can span pages, a structural operation may be only partly present. The log contains the complete ordered history needed to finish those changes.",
+        "Each data page stores the LSN of its newest applied change. For a log record with LSN r, recovery applies it only when the page’s LSN is older than r, then advances the page LSN. This test makes redo idempotent: a change already on disk is skipped, while a missing change is applied exactly once."
+      ],
+      "source_transcript_word_count": 267,
+      "selected_sentence_count": 7,
+      "ocr_warning": false
+    },
+    "dbimpl-10-recovery-028": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "A redo action such as “decrease A by 50” is not safe to repeat blindly. If the page LSN is below the action’s LSN, the update is missing and must be applied; if the page LSN is equal or newer, the page already incorporates it and recovery skips it."
+      ],
+      "source_transcript_word_count": 103,
+      "selected_sentence_count": 2,
+      "ocr_warning": true
+    },
+    "dbimpl-10-recovery-029": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "When redo finishes, the database has been physically reconstructed to the state at the crash: every data structure is valid and every logged action that had occurred is represented. Processing can now rely on indexes and other structures while the undo phase removes loser transactions."
+      ],
+      "source_transcript_word_count": 48,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-10-recovery-030": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Undo removes every remaining effect of loser transactions. Analysis remembers each active transaction’s last LSN; rollback follows PrevLSN links backward, reversing one operation at a time. Transactions whose abort completed before the crash need no further work.",
+        "Each reversal is itself logged as a compensation log record. That record describes how to redo the undo if another crash occurs, so recovery never forgets rollback progress. Logging the repair is what makes restart safe under repeated failures rather than assuming recovery will run uninterrupted."
+      ],
+      "source_transcript_word_count": 211,
+      "selected_sentence_count": 6,
+      "ocr_warning": false
+    },
+    "dbimpl-10-recovery-031": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Restart must be idempotent: rerunning redo or undo after another failure must converge to the same correct database state. Repeated crashes are realistic when the underlying fault—such as an unstable power supply—persists while the DBMS repeatedly attempts recovery.",
+        "ARIES also bounds the amount of recovery logging. A failed restart must not append the same undo work indefinitely, because that could fill the log volume and create a second failure. Page LSN tests and compensation records record which repairs are already reflected and where undo should resume."
+      ],
+      "source_transcript_word_count": 410,
+      "selected_sentence_count": 6,
+      "ocr_warning": true
+    },
+    "dbimpl-10-recovery-032": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "When undo reverses a loser’s action, it appends a compensation log record (CLR) containing the positive action that performs that reversal. The CLR also stores UndoNextLSN, pointing past the action just compensated to the next original action that still needs undo.",
+        "If recovery crashes, the next redo pass reapplies the CLR only if needed, and the next undo pass follows UndoNextLSN rather than undoing the same original action again. Thus one CLR is created per reversed action, with fresh increasing LSNs, and repeated restart does not cause unbounded log growth."
+      ],
+      "source_transcript_word_count": 447,
+      "selected_sentence_count": 6,
+      "ocr_warning": true
+    },
+    "dbimpl-10-recovery-033": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "After restart, the original interleaved log is followed by CLRs for each loser action that was reversed. A CLR states the redoable compensating change—for example, increasing A by 100 to reverse an earlier decrease—and identifies the next original LSN to undo.",
+        "A CLR has no inverse operation because recovery never undoes an undo. On a subsequent crash, it may redo the compensating change, then resume with UndoNextLSN. A final completion record indicates that the loser has been fully removed and no earlier operation remains."
+      ],
+      "source_transcript_word_count": 229,
+      "selected_sentence_count": 6,
+      "ocr_warning": true
+    },
+    "dbimpl-10-recovery-034": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A CLR contains a new LSN, transaction ID, affected page, redo information for the compensating action, and UndoNextLSN. It deliberately contains no undo information: compensation is durable progress and must never itself be rolled back.",
+        "PrevLSN may also be retained to preserve the complete transaction-log chain and simplify debugging, although UndoNextLSN is the field recovery actually needs to continue rollback. An implementation can combine the roles, but keeping both makes log validation and traversal clearer."
+      ],
+      "source_transcript_word_count": 199,
+      "selected_sentence_count": 5,
+      "ocr_warning": false
+    },
+    "dbimpl-10-recovery-035": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Compensation records also support partial rollback within a live transaction. The transaction can establish a savepoint, perform several later operations, then reverse only the operations after that savepoint and continue with new work. Earlier effects remain part of the transaction.",
+        "The log therefore preserves both the original actions and CLRs for the reversed subset. Logically, only the surviving prefix and later replacement actions matter, but retaining the full history makes the process restart-safe. SQL ROLLBACK TO SAVEPOINT is an application-visible use of the same undo machinery."
+      ],
+      "source_transcript_word_count": 275,
+      "selected_sentence_count": 6,
+      "ocr_warning": true
+    },
+    "dbimpl-10-recovery-036": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Without checkpoints, analysis and redo may scan the entire log and touch many pages after every crash. A checkpoint records enough current state—especially active transactions and later, dirty-page information—to let restart begin from a more recent safe position.",
+        "A checkpoint is an interval rather than an instantaneous event because collecting and writing its metadata takes time while transactions may change state. Recovery distinguishes the checkpoint’s beginning and end, then examines only transactions whose lifetimes or changes could cross the relevant boundary."
+      ],
+      "source_transcript_word_count": 350,
+      "selected_sentence_count": 5,
+      "ocr_warning": true
+    },
+    "dbimpl-10-recovery-037": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A transaction-consistent checkpoint waits until no transaction is active and flushes dirty pages. Restart can begin analysis, redo, and undo after that point, but finding a globally idle moment may stall a busy system.",
+        "An action-consistent checkpoint briefly pauses all transactions, records which are active, and flushes dirty pages. Analysis and redo can start at the checkpoint, but undo may need to follow an active transaction’s history farther back to its minimum LSN. This reduces restart work while still imposing a stop-the-world pause, motivating fuzzy checkpoints."
+      ],
+      "source_transcript_word_count": 413,
+      "selected_sentence_count": 7,
+      "ocr_warning": true
+    },
+    "dbimpl-10-recovery-038": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "This one-word interval completes the preceding point: action-consistent checkpoints can be difficult to implement without disrupting a continuously busy system."
+      ],
+      "source_transcript_word_count": 1,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-10-recovery-039": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "A fuzzy checkpoint begins by recording the current recovery state while normal transaction processing continues. Dirty pages may be written during the checkpoint, but new updates may also occur, so the checkpoint summarizes a moving system rather than freezing an instantaneous database image."
+      ],
+      "source_transcript_word_count": 89,
+      "selected_sentence_count": 2,
+      "ocr_warning": true
+    },
+    "dbimpl-10-recovery-040": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "With a fuzzy checkpoint, analysis can start at the checkpoint because it records the transactions active there. Redo starts from the minimum recLSN among dirty pages: the earliest logged change that might not yet be reflected on disk. Undo may need to reach the minimum LSN of any active loser transaction.",
+        "This increases restart bookkeeping compared with a quiescent checkpoint, but the DBMS never has to stop normal work. Commercial systems accept the more complex recovery boundaries because avoiding a global pause is far more important during normal operation."
+      ],
+      "source_transcript_word_count": 190,
+      "selected_sentence_count": 6,
+      "ocr_warning": true
+    },
+    "dbimpl-10-recovery-041": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A fuzzy checkpoint need not force every dirty page. It records the dirty-page table, including the earliest LSN whose change for each page may still be absent from disk. The minimum of those recLSNs bounds how far redo must scan backward.",
+        "A frequently modified page can keep that minimum very old and make restart expensive. The DBMS may proactively flush such a page—not for correctness of the checkpoint, but to advance its recorded page LSN and shorten future recovery. Fuzzy therefore means “not necessarily forced,” not “never written.”"
+      ],
+      "source_transcript_word_count": 284,
+      "selected_sentence_count": 6,
+      "ocr_warning": false
+    },
+    "dbimpl-10-recovery-042": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "This interval closes the recovery chapter and introduces set-oriented query processing. The focus now moves from preserving correct storage and transactions to executing analytical queries efficiently."
+      ],
+      "source_transcript_word_count": 140,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-10-recovery-043": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Record-at-a-time code is easy to write but can produce quadratic work. A naive intersection that compares every element of one million-row list with every element of another examines an impossible number of pairs.",
+        "Set-oriented processing sees the complete inputs and can invest in global organization. Sorting both lists costs O(n log n), after which a merge-style intersection is linear. Database operators use this perspective because the cost of preprocessing is amortized across millions or billions of tuples, transforming a simple but unscalable nested loop into a scalable algorithm."
+      ],
+      "source_transcript_word_count": 420,
+      "selected_sentence_count": 6,
+      "ocr_warning": true
+    },
+    "dbimpl-10-recovery-044": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Working on a whole relation makes preprocessing worthwhile: an operator can sort, hash, build an index-like structure, partition data that exceeds memory, or distribute partitions across workers. The setup cost would be wasteful for one tuple but is amortized over a large input.",
+        "The tradeoff is implementation complexity. The concise nested loop is easy to understand, whereas scalable algorithms require memory management and richer control flow. Database execution engines deliberately accept that complexity once so every query can reuse the efficient operator."
+      ],
+      "source_transcript_word_count": 229,
+      "selected_sentence_count": 6,
+      "ocr_warning": false
+    },
+    "dbimpl-10-recovery-045": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A query plan is represented as relational-algebra operators. A scan produces tuples from a stored relation, a selection filters them, and a join combines two inputs. Each operator consumes zero or more relations and conceptually produces one relation, allowing plans to form trees.",
+        "SQL execution is actually bag-oriented rather than pure set-oriented because relations may contain duplicate tuples unless a constraint removes them. Operators must preserve or eliminate duplicates according to SQL semantics. This difference often changes both correctness rules and algorithmic cost."
+      ],
+      "source_transcript_word_count": 214,
+      "selected_sentence_count": 6,
+      "ocr_warning": true
+    },
+    "dbimpl-10-recovery-046": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "This brief interval poses the implementation question: how can generic relational-algebra operators execute efficiently when the future query and its data types are not yet known?"
+      ],
+      "source_transcript_word_count": 5,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-10-recovery-047": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "The lecture pauses after introducing the algebraic model. Before continuing, students are expected to review the meanings of the standard relational-algebra operators; the next lecture focuses on how those familiar logical operators are implemented efficiently."
+      ],
+      "source_transcript_word_count": 83,
+      "selected_sentence_count": 2,
+      "ocr_warning": true
+    },
+    "dbimpl-11-setoriented-001": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "The new recording resumes the discussion of set-oriented query processing introduced at the end of the recovery lecture."
+      ],
+      "source_transcript_word_count": 20,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-11-setoriented-002": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "The core motivation is scale: processing a relation as a large set lets the DBMS choose algorithms that exploit global structure, instead of repeatedly handling isolated items with expensive pairwise logic."
+      ],
+      "source_transcript_word_count": 44,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-11-setoriented-003": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "Sorting, hashing, and indexing have setup costs, so they pay off only when reused across many tuples. Set-oriented execution amortizes that investment and is the foundation for scalable database algorithms."
+      ],
+      "source_transcript_word_count": 43,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-11-setoriented-004": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "SQL is compiled into a tree of relational-algebra operators. In the example, scans read base relations, a selection keeps lectures with the desired title, and joins connect students, attendance records, and lectures. Intermediate relations are conceptual interfaces; the engine need not materialize every one.",
+        "Each operator consumes relations and produces a relation, which makes operators composable. Because SQL normally uses bag semantics, equal tuples can occur multiple times and multiplicity must be respected. An exam answer should distinguish the logical operator tree from the physical choice of how each operator is executed."
+      ],
+      "source_transcript_word_count": 318,
+      "selected_sentence_count": 7,
+      "ocr_warning": true
+    },
+    "dbimpl-11-setoriented-005": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "The lecture now moves from the logical algebra to reusable implementation strategies. Before studying individual operators, it establishes how one operator implementation can remain valid for arbitrary future queries."
+      ],
+      "source_transcript_word_count": 61,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-11-setoriented-006": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "The board separates three times: the DBMS software is compiled, a particular SQL query is compiled much later, and that query is executed later still. At DBMS-build time, developers cannot know the customer’s future schemas, types, predicates, or tuple layouts.",
+        "Physical operators must therefore be query-agnostic frameworks. Query compilation supplies the missing query-specific behavior, and execution invokes that behavior on actual tuples. Keeping these times distinct explains why operators use callbacks or generated code instead of hard-coding a particular comparison or field access."
+      ],
+      "source_transcript_word_count": 254,
+      "selected_sentence_count": 6,
+      "ocr_warning": false
+    },
+    "dbimpl-11-setoriented-007": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A generic intersection operator can be parameterized by subscripts: functions that supply the left input, supply the right input, and compare one element from each side. With comparison alone, it can sort both sides and merge them without knowing whether tuples contain integers, strings, or many attributes. A hash-based version would additionally receive compatible hash functions.",
+        "Even tuple size can sometimes remain unknown by sorting arrays of pointers rather than moving tuple bytes. The operator owns the reusable data and control flow; the subscripts supply query-specific meaning. This separation lets one tested implementation handle arbitrary schemas."
+      ],
+      "source_transcript_word_count": 757,
+      "selected_sentence_count": 7,
+      "ocr_warning": false
+    },
+    "dbimpl-11-setoriented-008": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "An algebraic operator defines abstract control and data flow: when to request input, how to organize it, and when to call helper functions. It treats tuple contents as opaque. Query-specific details—attribute access, predicates, comparison, hashing, and result construction—live in subscripts attached during query compilation.",
+        "This abstraction produces fully generic operators that work for varied schemas and types. Specialized variants may use metadata such as fixed tuple width to improve sorting or copying, but the engine still needs a fallback that assumes almost nothing. EXPLAIN VERBOSE exposes these otherwise hidden parameters in a concrete plan."
+      ],
+      "source_transcript_word_count": 794,
+      "selected_sentence_count": 7,
+      "ocr_warning": false
+    },
+    "dbimpl-11-setoriented-009": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Intersection of two sorted inputs uses two cursors. Compare the current tuples: if they are equal, emit the value; if the left value is smaller, advance only the left cursor; otherwise advance only the right. No value skipped on the smaller side could match the larger current value.",
+        "The algorithm is linear after sorting and remains schema-independent. The input providers and three-way comparison are supplied as subscripts, so the loop need not know tuple width, attribute count, or data type. Its correctness follows from sorted order, not from the representation of the values."
+      ],
+      "source_transcript_word_count": 529,
+      "selected_sentence_count": 7,
+      "ocr_warning": true
+    },
+    "dbimpl-11-setoriented-010": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Operators exchange a common abstraction: a relation, bag, or—most generally—an ordered stream of tuples. Stream is the broadest term because operations such as ORDER BY and LIMIT make tuple order observable, while ordinary SQL also permits duplicate values.",
+        "An operator assumes only that its children can produce the expected tuple stream, not whether that stream comes from a table scan, filter, join, grouping, or another subtree. This loose coupling permits arbitrary composition into large execution plans. The implementation challenge is designing an interface that preserves that generality efficiently."
+      ],
+      "source_transcript_word_count": 371,
+      "selected_sentence_count": 6,
+      "ocr_warning": false
+    },
+    "dbimpl-11-setoriented-011": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "With full materialization, every operator consumes complete stored inputs and writes its entire result to a temporary relation before its parent starts. This interface is simple, exposes actual intermediate sizes, and makes adaptive choices, parallel partitioning, and sharing a result among consumers straightforward.",
+        "Its cost is repeatedly writing and rereading intermediates. A join may produce a huge relation that the next selective filter immediately discards, and an intermediate larger than memory spills to storage. Materialization therefore trades flexible inspection and reuse for memory bandwidth and I/O; despite its simplicity, most engines avoid making it the universal interface."
+      ],
+      "source_transcript_word_count": 1334,
+      "selected_sentence_count": 7,
+      "ocr_warning": false
+    },
+    "dbimpl-11-setoriented-012": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "In the iterator model, an operator asks its child for one tuple at a time and pipelines that tuple upward without materializing the complete intermediate result. It can stop early—for example after satisfying LIMIT 1—and supports fine-grained control over which child to read next.",
+        "The cost is paid per tuple. Each request commonly uses an indirect virtual-function call because the child’s concrete operator type is unknown, and control repeatedly bounces through the plan tree. Millions of indirect calls, instruction-cache disruption, and lost register locality make a conceptually elegant interface expensive on modern CPUs."
+      ],
+      "source_transcript_word_count": 894,
+      "selected_sentence_count": 7,
+      "ocr_warning": false
+    },
+    "dbimpl-11-setoriented-013": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "The classic iterator contract is open–next–close. Open allocates state and opens resources; repeated next calls yield one tuple or signal exhaustion; close releases files and memory. Only three methods are needed to compose complicated plans.",
+        "Simplicity at the boundary shifts complexity inside each operator. An operator must suspend after producing one tuple and later resume exactly where it stopped, even in the middle of a join or aggregation. That state machine increases implementation complexity and often harms optimization and locality."
+      ],
+      "source_transcript_word_count": 411,
+      "selected_sentence_count": 6,
+      "ocr_warning": false
+    },
+    "dbimpl-11-setoriented-014": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "Having defined open–next–close, the lecture turns to the concrete representation of the tuple returned by next."
+      ],
+      "source_transcript_word_count": 22,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-11-setoriented-015": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "This short return to the iterator slide emphasizes the open question: when next succeeds, how does an operator make an otherwise opaque tuple available to its parent?"
+      ],
+      "source_transcript_word_count": 18,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-11-setoriented-016": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "One interface returns a pointer to tuple data that remains on its page, avoiding a copy. This works well for stored columns but becomes awkward for computed expressions whose values have no existing page location.",
+        "A more general design returns only success or exhaustion and passes values through a query-local register space as a side effect. A scan loads fields into assigned registers; predicates and projections read or overwrite those registers; operators themselves need not understand the values. Computed columns simply receive new register slots. The “registers” are software memory, commonly thread-local, but they provide a uniform location for both stored and derived data."
+      ],
+      "source_transcript_word_count": 1294,
+      "selected_sentence_count": 8,
+      "ocr_warning": false
+    },
+    "dbimpl-11-setoriented-017": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "The professor adds a minor variation to the standard open–next–close iterator interface, motivated by work that occurs only before the first output tuple."
+      ],
+      "source_transcript_word_count": 28,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-11-setoriented-018": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Some systems separate first from next because producing the first tuple may require one-time work such as constructing a hash table. Without a separate method, every hot next call must test whether initialization has already occurred.",
+        "The extra method is not semantically necessary: a boolean state inside next can perform initialization once. Historically, removing that per-tuple branch sometimes improved performance; modern branch prediction makes the gain smaller because the condition is almost always false. This is an interface-level micro-optimization, not a different execution model."
+      ],
+      "source_transcript_word_count": 361,
+      "selected_sentence_count": 6,
+      "ocr_warning": false
+    },
+    "dbimpl-11-setoriented-019": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "The professor concludes that a dedicated first method is usually not worthwhile on modern hardware, then returns to the broader operator-interface comparison."
+      ],
+      "source_transcript_word_count": 3,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-11-setoriented-020": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Blockwise processing requests a vector of perhaps hundreds or thousands of tuples per call. Compared with tuple-at-a-time iteration, it amortizes virtual-call overhead and lets each operator run a tight loop with better instruction and data locality.",
+        "The vector must be materialized between operators, consuming bandwidth and reducing fine-grained control. Choosing blocks that fit in CPU cache makes this much cheaper than full-result materialization, but it is not zero-copy and deep pipelines may copy several vectors. Most operators tolerate the coarser control; merge-style joins are a notable exception because they naturally alternate between inputs."
+      ],
+      "source_transcript_word_count": 1349,
+      "selected_sentence_count": 7,
+      "ocr_warning": false
+    },
+    "dbimpl-11-setoriented-021": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "The push model reverses control: a child scans in a tight loop and sends each produced tuple to its consumer. Operator logic becomes concentrated in a few loops, values can stay in a shared register space, and long chains of filters need not copy tuples between stages. A produced tuple can also be pushed to multiple parents, naturally supporting shared subplans represented as DAGs.",
+        "Push execution cannot freely alternate requests between two children because each source tends to deliver a run of tuples. Merge joins may therefore materialize one side or need special handling. Code generation is more involved, but strong locality, pipelining, and result sharing often outweigh that implementation cost."
+      ],
+      "source_transcript_word_count": 1585,
+      "selected_sentence_count": 8,
+      "ocr_warning": false
+    },
+    "dbimpl-11-setoriented-022": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Full materialization makes the example operators almost trivial. Scan returns the already stored relation. Selection allocates a temporary relation, appends every tuple satisfying the predicate, and returns it. Cross product allocates another temporary relation and appends every left–right tuple pair.",
+        "This simplicity is the model’s appeal, but the code also exposes its cost: every operator constructs a complete result. Cross product can be enormous, and even selection copies all surviving tuples before its parent can inspect one. The interface avoids execution state by paying in intermediate storage."
+      ],
+      "source_transcript_word_count": 436,
+      "selected_sentence_count": 7,
+      "ocr_warning": true
+    },
+    "dbimpl-11-setoriented-023": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "An iterator scan stores the input relation, a current tuple position, and an end position during open. Each next call first tests exhaustion; otherwise it loads the tuple at the current position into the query’s registers, advances the position, and returns success.",
+        "Repeated calls expose the relation as a tuple stream without copying the whole relation into an intermediate. The persistent tuple position is the minimal example of the state every iterator operator must preserve between calls."
+      ],
+      "source_transcript_word_count": 352,
+      "selected_sentence_count": 5,
+      "ocr_warning": false
+    },
+    "dbimpl-11-setoriented-024": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Iterator selection stores its child and predicate. On next, it repeatedly asks the child for tuples and evaluates the predicate over the current registers. It returns success at the first match and returns exhaustion only after the child itself is exhausted.",
+        "The loop is essential. A rejected tuple does not mean the selection has no later result; returning false after one failed predicate would tell the parent to stop permanently. This distinction between “current tuple rejected” and “stream exhausted” is a common implementation and exam pitfall."
+      ],
+      "source_transcript_word_count": 497,
+      "selected_sentence_count": 6,
+      "ocr_warning": false
+    },
+    "dbimpl-11-setoriented-025": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "An iterator cross product must remember whether to fetch a new left tuple and where the right child currently stands. For each left tuple, it reopens or rewinds the right input and emits one pair per next call. When the right side is exhausted, it advances the left side and starts the right side again.",
+        "Because execution suspends after every emitted pair, a flag and child states encode the nested loops across calls. Even this elementary binary operator becomes a state machine; real joins and outer joins require substantially more bookkeeping."
+      ],
+      "source_transcript_word_count": 544,
+      "selected_sentence_count": 6,
+      "ocr_warning": true
+    },
+    "dbimpl-11-setoriented-026": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A blockwise scan resembles the iterator scan but returns up to a fixed number of tuples at once. It computes the smaller of the desired block size and remaining tuple count, fills a reusable output array in a tight loop, advances its cursor by the number loaded, and returns that array.",
+        "The buffer should be reused rather than allocated for every call, and its size should be chosen to fit a useful CPU-cache level. The design turns many per-tuple calls into one sequential copy loop."
+      ],
+      "source_transcript_word_count": 364,
+      "selected_sentence_count": 6,
+      "ocr_warning": true
+    },
+    "dbimpl-11-setoriented-027": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Blockwise selection repeatedly requests an input block until it finds matches or reaches true exhaustion. It compacts matching tuples in place at the front of the block, then shortens the logical length. An empty filtered block cannot be returned as end-of-stream while more input may remain.",
+        "The compacting loop can avoid an unpredictable branch: write each candidate at the current output position and advance that position by 1 for true or 0 for false. This predicated execution performs steady arithmetic instead of a branch whose outcome may be near 50–50. It can be slightly slower for perfectly predictable predicates but much faster when branch mispredictions would repeatedly flush the CPU pipeline."
+      ],
+      "source_transcript_word_count": 1983,
+      "selected_sentence_count": 8,
+      "ocr_warning": true
+    },
+    "dbimpl-11-setoriented-028": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "The blockwise cross product begins by storing both children and several cursors for the current left block, current right block, and output buffer. Each call must produce at most one fixed-size result block while remembering exactly where the nested product should resume."
+      ],
+      "source_transcript_word_count": 209,
+      "selected_sentence_count": 2,
+      "ocr_warning": true
+    },
+    "dbimpl-11-setoriented-029": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "This interval starts the cross-product state machine: if the current right block has been consumed—or no right block has yet been loaded—the operator must advance its left-side state before producing more pairs."
+      ],
+      "source_transcript_word_count": 87,
+      "selected_sentence_count": 2,
+      "ocr_warning": true
+    },
+    "dbimpl-11-setoriented-030": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "The professor notes that all cursors are initialized to zero, so the first invocation deliberately enters the same path used whenever a block boundary is reached."
+      ],
+      "source_transcript_word_count": 11,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-11-setoriented-031": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "When a left block is exhausted, the operator loads another; when the entire left input ends, it returns any partially filled output block. For each left position it scans right-side blocks, rewinding the right child when needed. Each step appends the current left–right pair and returns as soon as the output block is full.",
+        "The edge cases preserve already produced pairs and distinguish block exhaustion from stream exhaustion. The many cursors are the price of suspending a nested-loop product at an arbitrary output-block boundary."
+      ],
+      "source_transcript_word_count": 585,
+      "selected_sentence_count": 6,
+      "ocr_warning": true
+    },
+    "dbimpl-11-setoriented-032": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "The collection of cursor and limit fields is the persistent state of the blockwise cross product. Outer joins and other binary operators need still more states because they must remember matches, unmatched rows, and which phase of output is active."
+      ],
+      "source_transcript_word_count": 63,
+      "selected_sentence_count": 2,
+      "ocr_warning": true
+    },
+    "dbimpl-11-setoriented-033": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "silent",
+      "explanation": [
+        "No aligned professor speech occurs during this interval; the slide continues displaying the blockwise cross-product pseudocode."
+      ],
+      "source_transcript_word_count": 0,
+      "selected_sentence_count": 0,
+      "ocr_warning": true
+    },
+    "dbimpl-11-setoriented-034": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "The lecture stops before working through the push-model examples. The next recording resumes with a push scan, where a source loops over its relation and calls its consumer for each tuple."
+      ],
+      "source_transcript_word_count": 39,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-001": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "The new lecture resumes the comparison of operator interfaces: different contracts determine how otherwise composable relational operators exchange their results."
+      ],
+      "source_transcript_word_count": 33,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-002": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "Full materialization is the simplest interface because every operator receives complete stored inputs and writes a complete new relation. Its clarity comes from avoiding suspension state, at the cost of copying every intermediate."
+      ],
+      "source_transcript_word_count": 35,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-003": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "The iterator model produces one tuple on demand. It avoids complete intermediates but introduces per-tuple calls and scattered control flow, which can reduce CPU efficiency."
+      ],
+      "source_transcript_word_count": 17,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-004": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "This brief slide change continues the recap by moving from tuple-at-a-time iteration toward blockwise execution."
+      ],
+      "source_transcript_word_count": 5,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-12-operators-005": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "Blockwise execution returns chunks rather than individual tuples, amortizing call overhead and improving locality. Its compromise is that tuples must be written into intermediate vectors, so it consumes more memory bandwidth than a truly pipelined design."
+      ],
+      "source_transcript_word_count": 39,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-006": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "The push model reverses demand: leaf operators drive execution and send produced tuples upward to consumers. This concentrates work in source loops rather than repeatedly pulling through the entire operator tree."
+      ],
+      "source_transcript_word_count": 27,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-007": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "The recap now returns to the small scan, selection, and cross-product implementations used to compare the execution models."
+      ],
+      "source_transcript_word_count": 9,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-12-operators-008": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "This interval bridges the previously completed materialization, iterator, and blockwise examples to the push implementations that follow."
+      ],
+      "source_transcript_word_count": 12,
+      "selected_sentence_count": 1,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-009": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A push scan remembers the relation and a consumer callback. When produce is invoked, it loops sequentially over the relation and calls consumer.consume for every tuple. The source controls the loop and sends data upward as it becomes available.",
+        "This is much simpler than the blockwise cross-product state machine still shown during the transition. Scan needs no cursor that survives after each emitted tuple because its produce call runs the loop directly until completion."
+      ],
+      "source_transcript_word_count": 155,
+      "selected_sentence_count": 5,
+      "ocr_warning": true
+    },
+    "dbimpl-12-operators-010": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "The slide advances to push-based selection; the explanation begins in the following intervals."
+      ],
+      "source_transcript_word_count": 2,
+      "selected_sentence_count": 1,
+      "ocr_warning": true
+    },
+    "dbimpl-12-operators-011": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "brief",
+      "explanation": [
+        "A scan is a leaf in the execution plan, so it only produces tuples and never consumes them. Its absence of an input callback distinguishes it from unary and binary operators."
+      ],
+      "source_transcript_word_count": 26,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-012": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A push selection participates in both directions. Its produce method starts its child; its consume callback receives each tuple, evaluates the predicate, forwards matching tuples to its own consumer, and discards nonmatches.",
+        "Unlike an iterator selection, it does not loop while trying to find one acceptable tuple or preserve a suspended state between matches. The child’s loop supplies tuples continuously, and selection is a small callback on that path."
+      ],
+      "source_transcript_word_count": 73,
+      "selected_sentence_count": 5,
+      "ocr_warning": true
+    },
+    "dbimpl-12-operators-013": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A push cross product starts the left producer. For each left tuple, its left-consume callback stores that tuple and runs the right producer; every right-consume callback combines the current right tuple with the stored left tuple and forwards the pair.",
+        "The nested-loop structure appears directly in the call flow, so the operator does not encode an explicit suspended-state machine as the iterator version does. More sophisticated joins still require additional state, but push execution makes the elementary product concise."
+      ],
+      "source_transcript_word_count": 180,
+      "selected_sentence_count": 5,
+      "ocr_warning": true
+    },
+    "dbimpl-12-operators-014": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Close releases an operator’s files and memory, but reusable plans need richer lifecycle operations. Rewind prepares a child to be read again while reusing query-independent work; this is useful for the inner side of a nested-loop join. Rebind also prepares re-execution but recomputes state because an outer value used by a correlated inner plan has changed.",
+        "Operators also participate in memory-pressure handling and may spool intermediates to storage. These facilities are omitted from minimal pseudocode, yet they determine whether a real engine can reuse results safely, execute dependent joins correctly, and survive inputs larger than memory."
+      ],
+      "source_transcript_word_count": 524,
+      "selected_sentence_count": 7,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-015": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Generic operators know only control and data flow, while subscripts encode every query-specific action: reading an attribute, testing a predicate, comparing keys, or computing an expression such as an adjusted sum. Query compilation must create an implementation for each such expression.",
+        "There may be many distinct subscripts across queries, but their primitive operations are simpler than stateful relational operators. The engineering question is therefore how to evaluate numerous small, query-specific expression trees without letting dispatch overhead dominate execution."
+      ],
+      "source_transcript_word_count": 330,
+      "selected_sentence_count": 5,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-016": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Interpreter objects represent an expression as a tree of reusable node types. For A = B, an equality node evaluates two attribute-access children; more complex arithmetic simply adds nodes. This design is flexible, easy to extend, and requires little code per primitive.",
+        "Its weakness is dispatch overhead. Even the simple equality performs virtual calls for the root and both leaves, plus temporary value handling. Because a predicate may be evaluated for every tuple, those indirect calls accumulate. Interpreter objects optimize developer simplicity and expressiveness rather than peak execution speed."
+      ],
+      "source_transcript_word_count": 537,
+      "selected_sentence_count": 7,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-017": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "A virtual-machine approach compiles an expression into a compact sequence of bytecode instructions. An execution loop dispatches each opcode—for example, load two integer attributes into VM registers and compare them—rather than traversing a heap of interpreter objects.",
+        "The tight instruction loop is usually faster, especially with efficient dispatch techniques, but query compilation must now translate the expression tree into ordered bytecode and allocate its registers. This is a middle ground: more engineering than object interpretation, less architecture-specific work than native machine-code generation."
+      ],
+      "source_transcript_word_count": 405,
+      "selected_sentence_count": 6,
+      "ocr_warning": true
+    },
+    "dbimpl-12-operators-018": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Precompiled fragments provide a function for each primitive operation over an entire vector. Instead of calling equality once per tuple, a fragment compares two integer columns in a loop and writes a Boolean result vector. Call overhead is amortized, and the loop can exploit SIMD instructions.",
+        "This vectorized approach is fast when data already arrives in contiguous, type-homogeneous columns, especially in analytical column stores. It is less general for row-oriented or irregular data because assembling suitable vectors can cost more than the fragment saves."
+      ],
+      "source_transcript_word_count": 335,
+      "selected_sentence_count": 6,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-019": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Runtime code generation compiles each subscript directly into native machine instructions. Attribute loads and a comparison can become only a handful of instructions, eliminating interpreter dispatch and exposing the expression to normal compiler optimization.",
+        "This is generally the fastest alternative but also the hardest to build. The engine needs a code generator, executable-code management, and separate support for instruction-set architectures such as x86 and ARM. The tradeoff is maximum specialization versus implementation complexity and portability."
+      ],
+      "source_transcript_word_count": 250,
+      "selected_sentence_count": 6,
+      "ocr_warning": true
+    },
+    "dbimpl-12-operators-020": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Pipelining passes tuples between operators without copying them into an intermediate. Selection can inspect a tuple and immediately forward the same data, so it preserves the pipeline. A pipeline breaker materializes at least one input; a full breaker must consume all relevant input before producing anything.",
+        "Sort is a full breaker because the final input tuple might be the smallest and therefore the first output. A hash join breaks its build side while probe tuples can flow through immediately; some joins break only one side or only partially. This classification affects latency, copying, pointer lifetime, and the boundaries at which the execution plan can be scheduled."
+      ],
+      "source_transcript_word_count": 595,
+      "selected_sentence_count": 7,
+      "ocr_warning": true
+    },
+    "dbimpl-12-operators-021": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Across a pipeline break, references to the original input may no longer remain valid. Techniques such as lazy attribute loading, tuple-ID joins, and non-owning string representations must materialize or copy required data before that boundary.",
+        "A full pipeline breaker also decouples the plan into execution fragments: everything needed to materialize its input can finish independently of consumers that run afterward. Those fragments become units for scheduling or parallel execution. Code generation must therefore know exactly which operator breaks which input pipeline, rather than treating pipelining as an informal optimization."
+      ],
+      "source_transcript_word_count": 278,
+      "selected_sentence_count": 6,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-022": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "substantive",
+      "explanation": [
+        "Inter-query parallelism simply runs independent queries on different cores. Intra-query parallelism is harder but essential when one large analytical query should use the whole machine. Independent fragments separated by full pipeline breakers are easy to schedule concurrently.",
+        "Parallelizing one operator usually requires partitioning its input. For grouped aggregation, each worker processes a disjoint partition and produces a partial aggregate; a later step merges those partials into the final groups. The design must balance partitions and coordinate the merge, so operator-level parallelism is more than merely starting additional threads."
+      ],
+      "source_transcript_word_count": 462,
+      "selected_sentence_count": 6,
+      "ocr_warning": false
+    },
+    "dbimpl-12-operators-023": {
+      "method": "gpt_clarified_from_aligned_speech",
+      "status": "transition",
+      "explanation": [
+        "This interval closes the overview of execution infrastructure. Having used scan, selection, and cross product as interface examples, the lecture now turns to the algorithms for the full set of relational-algebra operators."
+      ],
+      "source_transcript_word_count": 69,
+      "selected_sentence_count": 2,
+      "ocr_warning": false
+    }
+  }
+}
