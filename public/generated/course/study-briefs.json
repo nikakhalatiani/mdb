@@ -1,0 +1,448 @@
+{
+  "method": "curated_teaching_synthesis_from_chapter_slides_transcript_and_board_evidence",
+  "notice": "These explanations are study-oriented syntheses, not quotations. Use the evidence timeline and timestamps to verify the professor's exact wording.",
+  "chapters": {
+    "01-foundations-and-relational-model": {
+      "core_idea": [
+        "A DBMS turns a declarative question into a physical computation over data that may be far larger than memory. The user describes the desired result; the system chooses storage layouts, access paths, algorithms, and an execution order that preserve relational semantics while controlling I/O, CPU work, memory use, reliability, and concurrency.",
+        "Relational algebra supplies the logical vocabulary—selection, projection, joins, grouping, and set operations—while implementation supplies the algorithms. The motivating intersection example is therefore not merely a query-writing exercise: its best algorithm changes when both inputs fit in memory, only one fits, or neither fits."
+      ],
+      "mental_model": [
+        "Start from the logical operator and its required semantics.",
+        "Estimate data size relative to memory and identify the expensive resource.",
+        "Choose a physical algorithm and data structure that match those constraints.",
+        "Check that hardware trends such as larger memory and more CPU cores do not invalidate the traditional design assumptions."
+      ],
+      "exam_patterns": [
+        "Translate a query into relational-algebra operators and distinguish logical from physical choices.",
+        "Compare algorithms for the same operation under different memory assumptions.",
+        "Explain why scalability, reliability, and concurrency make a DBMS more than a collection of data structures."
+      ],
+      "common_mistakes": [
+        "Treating SQL syntax as the implementation rather than as the declarative input.",
+        "Naming an algorithm without stating the data-size and hardware assumptions that make it appropriate."
+      ],
+      "self_test": [
+        "Why can two equivalent relational-algebra plans have very different runtimes?",
+        "How would you intersect two inputs when neither fits in memory?",
+        "Which traditional DBMS assumptions are challenged by large RAM and multicore processors?"
+      ]
+    },
+    "02-storage-architecture-and-memory-hierarchy": {
+      "core_idea": [
+        "The storage manager presents stable pages and records to the rest of the DBMS while hiding device-specific details. Its layers translate logical requests into page access, manage persistent allocation, and move data through a memory hierarchy whose levels differ dramatically in latency, bandwidth, capacity, and persistence.",
+        "For rotating disks, a random access combines seek time, rotational delay, and transfer time. Seek and rotation dominate small random requests, whereas sequential access amortizes positioning and approaches transfer bandwidth. This cost asymmetry explains why database algorithms work with pages, prefer locality, and batch I/O."
+      ],
+      "mental_model": [
+        "Locate the requested data in the storage hierarchy.",
+        "Separate positioning cost from transfer cost.",
+        "Ask whether access is random or sequential and whether requests can be batched.",
+        "Identify which storage-layer component owns allocation, addressing, caching, and persistence."
+      ],
+      "exam_patterns": [
+        "Draw the storage stack and state the contract of each layer.",
+        "Estimate disk-access cost from seek, rotation, and transfer components.",
+        "Explain how page size trades fewer I/Os against wasted transfer and cache space."
+      ],
+      "common_mistakes": [
+        "Comparing devices only by bandwidth while ignoring latency.",
+        "Assuming a logical page identifier is the same thing as a physical byte address."
+      ],
+      "self_test": [
+        "Why does sequential I/O outperform many small random I/Os even for the same byte count?",
+        "Which hierarchy levels are volatile, and why does that matter after a crash?",
+        "What abstraction allows upper DBMS layers to ignore the exact storage device?"
+      ]
+    },
+    "03-buffer-management": {
+      "core_idea": [
+        "The buffer manager is the boundary between persistent pages and in-memory frames. It locates a resident page through a page table, loads missing pages, pins frames that active operators are using, records whether a page is dirty, and chooses an unpinned victim when space is needed. A dirty victim must be written before its frame can be reused.",
+        "Replacement policies approximate future usefulness from past behavior. FIFO is cheap but ignores reuse; LRU tracks recency but is vulnerable to scans; LFU tracks frequency but adapts slowly; second chance approximates LRU with a reference bit; 2Q separates one-time accesses from repeatedly reused pages. A DBMS can outperform generic policies by using knowledge about scans and operator lifetimes."
+      ],
+      "mental_model": [
+        "On every request, check whether the page is already resident.",
+        "If it is resident, pin and return its frame; otherwise select an unpinned victim.",
+        "Flush the victim first if it is dirty, then read the requested page and update the page table.",
+        "Unpin after use and provide workload hints when the operator knows future reuse."
+      ],
+      "exam_patterns": [
+        "Simulate a reference string under FIFO, LRU, second chance, or 2Q.",
+        "Explain the roles of pin count, dirty flag, and page-table entry.",
+        "Construct a workload where a sequential scan pollutes an LRU buffer."
+      ],
+      "common_mistakes": [
+        "Evicting a pinned frame or reusing a dirty frame without a write.",
+        "Claiming one replacement policy is universally optimal without describing the workload."
+      ],
+      "self_test": [
+        "What state changes occur on a buffer hit versus a buffer miss?",
+        "Why can LRU behave badly during a scan larger than the buffer?",
+        "How can an operator tell the buffer manager something the access history cannot?"
+      ]
+    },
+    "04-segments-space-and-update-strategies": {
+      "core_idea": [
+        "A segment is a logical collection of pages belonging to one database object, even when its physical blocks are noncontiguous. The segment layer grows and shrinks objects, maps logical page identifiers to storage, and uses free-space metadata to find pages that can accept new records without scanning the entire object.",
+        "Update strategies trade locality, write amplification, and recovery complexity. In-place update overwrites the existing location and therefore needs logging or another recovery mechanism. Shadow paging writes a new version and atomically switches a root reference. Delta approaches keep changes separately and merge them later. The correct comparison must include reads, writes, crash behavior, and long-term fragmentation."
+      ],
+      "mental_model": [
+        "Separate an object's logical page sequence from the physical blocks allocated to it.",
+        "Use allocation and free-space inventories to choose a target page.",
+        "For an update, identify which old and new versions exist before and after commit.",
+        "Trace what a crash can expose and which metadata switch or log record restores consistency."
+      ],
+      "exam_patterns": [
+        "Draw the mapping from segment pages to noncontiguous physical storage.",
+        "Trace an update under in-place, shadow, and delta strategies.",
+        "Explain how a free-space inventory narrows the search for an insertion page."
+      ],
+      "common_mistakes": [
+        "Assuming a segment must occupy one contiguous disk extent.",
+        "Comparing update strategies only by foreground write cost and ignoring recovery or later merge work."
+      ],
+      "self_test": [
+        "Why can a segment grow without relocating all of its existing pages?",
+        "What atomic action makes shadow paging commit-safe?",
+        "How does free-space metadata avoid inspecting every page during insertion?"
+      ]
+    },
+    "05-slotted-pages-and-record-layout": {
+      "core_idea": [
+        "A slotted page separates stable record identifiers from movable record bytes. A slot stores the current offset and state of a record; the tuple identifier names the page and slot rather than the tuple's byte position. Records can therefore move during compaction without invalidating references, as long as the slot is updated.",
+        "Inside a record, fixed-width attributes can use predetermined offsets, while variable-width attributes require lengths or an offset table. A NULL bitmap distinguishes absence from an ordinary value. Good layouts balance compactness against direct attribute access, update cost, alignment, and the need to follow forwarding pointers when a record no longer fits."
+      ],
+      "mental_model": [
+        "Resolve a tuple identifier to its page and slot.",
+        "Use the slot to locate the current record bytes.",
+        "Interpret fixed fields directly and variable fields through lengths or offsets.",
+        "On update, compact locally, forward the record, or move it while keeping the logical identifier stable."
+      ],
+      "exam_patterns": [
+        "Draw a page header, slot directory, free-space region, and tuple area.",
+        "Trace insert, delete, compaction, and record movement.",
+        "Design a record layout that supports NULL and fast access to a chosen variable field."
+      ],
+      "common_mistakes": [
+        "Using a raw byte offset as a stable tuple identifier.",
+        "Forgetting that NULL requires metadata; it is not automatically represented by zero."
+      ],
+      "self_test": [
+        "Why does compaction not change a slotted-page tuple identifier?",
+        "When is an offset table preferable to storing only field lengths?",
+        "What choices exist when an updated tuple no longer fits on its page?"
+      ]
+    },
+    "06-compression-and-long-records": {
+      "core_idea": [
+        "Database compression removes predictable redundancy at the value, record, page, or column level. Smaller data reduces I/O and improves cache utilization, but encoding and decoding consume CPU and may make random access or updates harder. Compression is beneficial when saved movement and memory traffic outweigh that processing cost.",
+        "A record larger than the convenient page payload needs indirection. The page can retain a small descriptor while overflow pages or a separate large-object area hold the remaining bytes. The design must define how to follow chunks, update them, reclaim space, and avoid turning every small attribute access into a full long-value read."
+      ],
+      "mental_model": [
+        "Identify the redundancy being removed and the scope of the encoding.",
+        "Determine whether attributes remain directly addressable or require decoding predecessors.",
+        "Compare bytes saved with CPU, update, and random-access cost.",
+        "For long values, keep a stable descriptor and trace the overflow or indirection chain."
+      ],
+      "exam_patterns": [
+        "Choose dictionary, prefix, or value-level compression for a stated distribution.",
+        "Explain how an encoding affects random attribute access.",
+        "Draw the primary record and overflow representation for a long value."
+      ],
+      "common_mistakes": [
+        "Assuming a higher compression ratio always means faster query execution.",
+        "Ignoring how updates and garbage collection affect compressed or overflow data."
+      ],
+      "self_test": [
+        "When can compression improve CPU performance as well as I/O performance?",
+        "Why can prefix-style encoding complicate random access?",
+        "What metadata is needed to retrieve and update a multi-page value?"
+      ]
+    },
+    "07-btree-fundamentals-and-operations": {
+      "core_idea": [
+        "B-tree families keep all leaves at the same depth and maintain bounded node occupancy, so lookup, insertion, and deletion take logarithmic page accesses. Internal separator keys guide navigation. In a B+-tree, record payloads reside in leaves and linked leaves support efficient ordered scans; internal pages primarily route searches.",
+        "Insertion descends to a leaf and splits overflowing nodes, possibly propagating a separator toward the root. Deletion may redistribute entries from a sibling or merge underfull nodes, possibly shrinking the root. Composite and non-unique indexes require carefully defined key ordering, often extending a non-unique key with a tuple identifier."
+      ],
+      "mental_model": [
+        "At each internal page, choose the child interval containing the search key.",
+        "Apply the operation at the leaf.",
+        "Restore occupancy by split, redistribution, or merge.",
+        "Propagate separator changes upward while preserving sorted order and equal leaf depth."
+      ],
+      "exam_patterns": [
+        "Execute a sequence of inserts or deletes and draw every structural change.",
+        "Compare B-tree and B+-tree payload placement and scan behavior.",
+        "Determine which predicates can exploit the prefix of a composite key."
+      ],
+      "common_mistakes": [
+        "Promoting or copying a separator without respecting the exact B-tree variant.",
+        "Forgetting that a composite index is primarily ordered by its leading attributes."
+      ],
+      "self_test": [
+        "Why are B+-tree leaf links useful for range scans?",
+        "What conditions trigger redistribution instead of a merge?",
+        "How can a DBMS make duplicate index keys unique internally?"
+      ]
+    },
+    "08-advanced-btree-techniques": {
+      "core_idea": [
+        "Advanced B-tree techniques preserve ordered access while improving concurrency, construction cost, or space use. B-link trees add right-sibling links and high-key boundaries so a search can recover when a concurrent split moves its target to the right, reducing the need to hold locks across an entire root-to-leaf path.",
+        "Bulk loading builds densely packed leaves from sorted input and constructs upper levels from their separators, avoiding repeated random insertions and splits. Prefix compression stores only enough of a separator to distinguish adjacent key ranges; with variable-length keys, the shortest correct separator is preferable to blindly copying a full key."
+      ],
+      "mental_model": [
+        "Use page boundaries and right links to reason about concurrent splits.",
+        "For bulk loading, sort once, fill leaves sequentially, then build parents bottom-up.",
+        "For separator compression, compare the largest key on the left with the smallest key on the right.",
+        "Retain enough prefix bytes to route every possible lookup correctly."
+      ],
+      "exam_patterns": [
+        "Trace a search that encounters a concurrent B-link split.",
+        "Compare the I/O pattern of bulk loading with repeated insertion.",
+        "Compute a shortest distinguishing separator between neighboring pages."
+      ],
+      "common_mistakes": [
+        "Treating a right link as an ordinary child pointer.",
+        "Compressing a separator so aggressively that the routing boundary becomes ambiguous."
+      ],
+      "self_test": [
+        "How does a high key tell a B-link search to move right?",
+        "Why does sorted input make bulk loading efficient?",
+        "What property must a compressed separator preserve?"
+      ]
+    },
+    "09-hash-and-specialized-indexes": {
+      "core_idea": [
+        "Hash indexes route equality lookups to buckets and do not preserve key order. Extendible hashing uses a directory indexed by a global-depth prefix; each bucket has a local depth, and splitting may or may not require doubling the directory. Linear hashing grows without a directory by advancing a split pointer and gradually moving from one hash level to the next.",
+        "Specialized indexes target specialized predicates. Bitmap indexes make low-cardinality analytic filtering cheap through bitwise operations. Small materialized aggregates trade update work for fast repeated summaries. Multidimensional structures preserve spatial or multi-attribute locality that a one-dimensional ordering or hash cannot represent well."
+      ],
+      "mental_model": [
+        "Start with the predicate: equality, ordered range, low-cardinality combination, aggregate, or multidimensional search.",
+        "For extendible hashing, compute the directory prefix, global depth, and bucket local depth.",
+        "For linear hashing, compute the current level and decide whether the split pointer changes the bucket choice.",
+        "Account for both lookup behavior and the cost of maintaining the structure."
+      ],
+      "exam_patterns": [
+        "Update an extendible-hash directory after inserts, splits, or merges.",
+        "Trace the level and split pointer of linear hashing.",
+        "Choose an index type for a workload and justify unsupported predicates as well as supported ones."
+      ],
+      "common_mistakes": [
+        "Using a hash index for an ordered range query.",
+        "Confusing extendible hashing's global depth with a bucket's local depth."
+      ],
+      "self_test": [
+        "When does an extendible-hash bucket split force directory doubling?",
+        "How can linear hashing grow one bucket at a time?",
+        "Why are bitmap indexes attractive for analytic combinations of low-cardinality attributes?"
+      ]
+    },
+    "10-transaction-foundations": {
+      "core_idea": [
+        "A transaction groups operations into one logical unit with ACID guarantees: atomicity prevents partial effects, consistency preserves declared rules when transactions are correct, isolation controls interference among concurrent transactions, and durability preserves committed results after failure.",
+        "Concurrency anomalies are best understood as schedules. A lost update overwrites another transaction's change; a non-repeatable read returns a different version of the same item; a phantom changes the set of rows matching a predicate. Serial execution avoids these anomalies but sacrifices concurrency, so practical systems aim for serializable or explicitly weaker controlled behavior."
+      ],
+      "mental_model": [
+        "Write each transaction's reads and writes in time order.",
+        "Interleave them to form the observed schedule.",
+        "Identify conflicting operations or changed predicate results.",
+        "Compare the schedule with a serial order and name the violated guarantee."
+      ],
+      "exam_patterns": [
+        "Classify a schedule as lost update, non-repeatable read, or phantom.",
+        "Relate an observed failure to the relevant ACID property.",
+        "Explain why serial execution is correct and why a DBMS still needs concurrency control."
+      ],
+      "common_mistakes": [
+        "Treating consistency as a synonym for isolation.",
+        "Looking only at individual reads instead of the order of operations across transactions."
+      ],
+      "self_test": [
+        "What distinguishes a phantom from a non-repeatable read?",
+        "Why does atomicity matter even when only one transaction is running?",
+        "What must be true for a concurrent schedule to be equivalent to a serial one?"
+      ]
+    },
+    "11-recovery-and-aries": {
+      "core_idea": [
+        "Write-ahead logging makes page updates recoverable by requiring the relevant log record to reach stable storage before the changed page and requiring a transaction's commit record to become durable before commit is acknowledged. Each page records a pageLSN so recovery can decide whether a logged action is already reflected on that page.",
+        "ARIES restarts in three phases. Analysis reconstructs transaction and dirty-page state; redo repeats history from the earliest necessary recLSN; undo rolls back loser transactions. Compensation log records describe undo work and point to the next action to undo, which makes recovery restartable even if another crash occurs during rollback. Fuzzy checkpoints capture a usable starting point without stopping normal updates."
+      ],
+      "mental_model": [
+        "Use analysis to reconstruct winners, losers, and dirty pages.",
+        "Redo only when the log record may be missing from the page, using pageLSN tests.",
+        "Undo loser actions in reverse LSN order and write compensation log records.",
+        "After every step, ask whether another crash would leave enough durable information to resume safely."
+      ],
+      "exam_patterns": [
+        "Determine redo and undo actions from a log, transaction table, dirty-page table, and pageLSNs.",
+        "Apply both write-ahead logging rules to a proposed page flush or commit.",
+        "Explain how compensation log records prevent an undo from being undone again."
+      ],
+      "common_mistakes": [
+        "Saying ARIES redoes only committed transactions; it repeats history first.",
+        "Confusing a dirty page's recLSN with its current pageLSN."
+      ],
+      "self_test": [
+        "Why is repeating history useful before undo?",
+        "What test lets redo skip an update already present on a page?",
+        "How can recovery continue correctly after a crash during recovery?"
+      ]
+    },
+    "12-set-oriented-execution-models": {
+      "core_idea": [
+        "A physical plan is a tree of operators that must exchange data and control. Full materialization computes and stores every intermediate result. The iterator model lets a parent pull one tuple at a time through open/next/close calls. Blockwise execution amortizes call overhead across batches. Push or produce/consume models let a producer send data into downstream code and expose whole pipelines for optimization.",
+        "The models implement the same relational semantics but differ in memory use, function-call overhead, cache behavior, vectorization opportunities, and where pipelines break. Blocking operators such as a full sort must consume substantial input before producing output; selections and projections can usually stream."
+      ],
+      "mental_model": [
+        "Draw the physical operator tree and mark the direction of control calls.",
+        "Mark the direction and granularity of data movement: result, tuple, block, or pushed pipeline.",
+        "Identify operators that can stream and operators that require state or full materialization.",
+        "Compare overhead and locality without changing the logical result."
+      ],
+      "exam_patterns": [
+        "Write or trace an iterator operator's open/next/close contract.",
+        "Partition a plan into pipelines and identify pipeline breakers.",
+        "Compare tuple-at-a-time, blockwise, materialized, and push execution for the same plan."
+      ],
+      "common_mistakes": [
+        "Confusing the direction of control with the direction of tuple flow.",
+        "Calling every stateful operator a full pipeline breaker."
+      ],
+      "self_test": [
+        "Why does blockwise execution reduce overhead relative to an iterator?",
+        "Which common operators cannot produce their first result immediately?",
+        "How does a push model help code generation see across operator boundaries?"
+      ]
+    },
+    "13-pipelining-and-parallelization": {
+      "core_idea": [
+        "Pipelining keeps tuples moving through compatible operators without writing a complete intermediate relation. It reduces memory traffic and latency, but it stops where an operator needs global input state, repartitioning, or reuse. Subqueries and nested computations introduce dependencies that may be evaluated once, per outer tuple, or through a transformed join-like plan.",
+        "Parallelism can occur within one operator by partitioning its input and state, or between operators by running connected stages concurrently. A correct design must specify data partitioning, shared state, synchronization, and how skew affects worker utilization—not merely state that multiple threads are used."
+      ],
+      "mental_model": [
+        "Mark streaming edges and pipeline breakers in the plan.",
+        "Identify values that a subquery depends on and how often it must be evaluated.",
+        "Choose a partitioning rule for each parallel stage.",
+        "Account for shared state, synchronization, and imbalance before estimating speedup."
+      ],
+      "exam_patterns": [
+        "Draw pipeline boundaries around sort, hash-build, aggregation, or materialization stages.",
+        "Explain decorrelated versus repeated subquery evaluation.",
+        "Propose an intra-operator or inter-operator parallel plan and identify its bottleneck."
+      ],
+      "common_mistakes": [
+        "Assuming pipelining means an operator stores no state.",
+        "Predicting linear speedup without considering skew or serial pipeline breakers."
+      ],
+      "self_test": [
+        "Why does a hash join normally place a pipeline boundary between build and probe?",
+        "When can a subquery be evaluated only once?",
+        "What limits parallel speedup even when enough cores are available?"
+      ]
+    },
+    "14-relational-operators-and-joins": {
+      "core_idea": [
+        "Physical operators implement relational semantics under concrete resource constraints. For joins, nested-loop is simple and useful when one side is tiny or indexed; block nested-loop reduces repeated I/O by buffering multiple outer tuples; sort-merge exploits ordering and supports range-like merge behavior; hash join targets equi-joins and uses memory to partition or build a lookup table.",
+        "Choosing a join requires cardinalities, tuple widths, available memory, existing order or indexes, predicate type, and expected skew. Outer, semi, and anti joins change result production: unmatched tuples or existence information must be preserved rather than treated as ordinary inner-join output."
+      ],
+      "mental_model": [
+        "State the exact join semantics and predicate.",
+        "Choose build/outer and probe/inner roles from size and access-path information.",
+        "Trace the algorithm's passes, state, and result production.",
+        "Estimate I/O, CPU, memory, and sensitivity to skew or duplicates."
+      ],
+      "exam_patterns": [
+        "Compare nested-loop, block nested-loop, sort-merge, and hash join for a stated workload.",
+        "Trace partitioned hash join when the build input does not fit in memory.",
+        "Modify result production for outer, semi, or anti semantics."
+      ],
+      "common_mistakes": [
+        "Choosing hash join for a non-equality predicate without explaining an adaptation.",
+        "Comparing join algorithms without assigning input roles or stating memory."
+      ],
+      "self_test": [
+        "When can an index nested-loop join beat a hash join?",
+        "Why is the smaller equi-join input usually chosen as the hash-build side?",
+        "How does an anti join differ from returning unmatched outer-join rows?"
+      ]
+    },
+    "15-sort-group-and-set-operations": {
+      "core_idea": [
+        "External sorting handles inputs larger than memory by creating sorted runs and merging them in passes. More buffer pages increase initial run length and merge fan-in, reducing the number of passes. Sorting can then support ordered output, duplicate elimination, grouping, and merge-based set operations.",
+        "Grouping can stream when input is already ordered by the group key, sort first and then aggregate, or hash groups into an in-memory table with partitioning when necessary. Set operations must respect whether the algebra uses set or bag semantics: duplicate counts change the output of union, intersection, and difference."
+      ],
+      "mental_model": [
+        "Estimate how many records or pages fit in memory.",
+        "Form initial runs and compute merge fan-in and number of passes.",
+        "For grouping or set operations, choose sort, hash, or streaming from ordering and memory.",
+        "Track duplicate multiplicities explicitly when bag semantics apply."
+      ],
+      "exam_patterns": [
+        "Calculate external-sort passes and total I/O.",
+        "Choose streaming, sort-based, or hash-based aggregation.",
+        "Trace union, intersection, or difference under both set and bag semantics."
+      ],
+      "common_mistakes": [
+        "Counting only the final merge and forgetting run-formation I/O.",
+        "Applying set duplicate rules to a bag operation."
+      ],
+      "self_test": [
+        "How does one additional buffer page affect merge fan-in?",
+        "When can grouping produce results without materializing all groups?",
+        "What multiplicity should bag intersection output for a value seen m and n times?"
+      ]
+    },
+    "16-query-compilation": {
+      "core_idea": [
+        "When data is memory-resident, interpretation, virtual calls, tuple materialization, and generic operator interfaces can dominate useful work. Query compilation specializes the hot path for one plan and schema: scalar expressions become native operations, unnecessary branches disappear, and values can remain in registers across operator boundaries.",
+        "Data-centric produce/consume execution organizes generated code around pipelines. A producer asks its child to emit tuples; each emitted tuple is consumed by parent logic until a pipeline breaker requires a new loop or materialized state. LLVM or a similar compiler backend then turns the specialized intermediate representation into machine code."
+      ],
+      "mental_model": [
+        "Identify the pipeline and the loop that drives its input.",
+        "Inline selections, projections, and expression evaluation into that loop.",
+        "Keep attributes in native values or registers where possible.",
+        "End generated code at a pipeline breaker and start the next stage from its materialized state."
+      ],
+      "exam_patterns": [
+        "Contrast iterator interpretation with compiled data-centric execution.",
+        "Trace produce and consume calls through a small operator tree.",
+        "Identify generated loops, materialization points, and specialization opportunities."
+      ],
+      "common_mistakes": [
+        "Claiming compilation changes relational semantics rather than execution overhead.",
+        "Assuming the compiler can eliminate a true pipeline breaker."
+      ],
+      "self_test": [
+        "Why can function-call overhead matter for in-memory queries?",
+        "Where is the main loop generated in a produce/consume pipeline?",
+        "Which tuple materializations can specialization remove?"
+      ]
+    },
+    "17-parallel-query-execution": {
+      "core_idea": [
+        "Exchange operators make data routing explicit in a parallel plan. They can repartition by key, broadcast, or gather streams, enabling parallel aggregation and joins. Horizontal parallelism processes different partitions of the same operator; vertical parallelism overlaps different pipeline stages.",
+        "Static partitioning can suffer from skew and uneven operator cost. Morsel-driven execution breaks input into small chunks and lets workers request more work dynamically, improving load balance and keeping cores busy. Parallel in-memory hash join must coordinate build-table construction and probing while avoiding contention and preserving partition ownership."
+      ],
+      "mental_model": [
+        "Insert exchanges where data must change ownership or partitioning.",
+        "Define the partitioning function required by the next operator.",
+        "Separate local work from global merge or coordination work.",
+        "Use small schedulable morsels when static partitions would create imbalance."
+      ],
+      "exam_patterns": [
+        "Place exchanges in a parallel aggregation or join plan.",
+        "Compare static partitions with dynamic morsel scheduling under skew.",
+        "Trace parallel hash-table build, synchronization, and probe work."
+      ],
+      "common_mistakes": [
+        "Treating an exchange as free; it moves data and may synchronize workers.",
+        "Assuming equal input byte counts imply equal processing time."
+      ],
+      "self_test": [
+        "Why must equal join keys reach compatible partitions?",
+        "How does morsel size trade scheduling overhead against load balance?",
+        "Which parts of a parallel aggregation can be local and which require merging?"
+      ]
+    }
+  }
+}

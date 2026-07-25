@@ -80,6 +80,20 @@ type Chapter = {
   };
 };
 
+type ChapterStudyBrief = {
+  core_idea: string[];
+  mental_model: string[];
+  exam_patterns: string[];
+  common_mistakes: string[];
+  self_test: string[];
+};
+
+type StudyBriefCollection = {
+  method: string;
+  notice: string;
+  chapters: Record<string, ChapterStudyBrief>;
+};
+
 type CourseGuide = {
   title: string;
   subtitle: string;
@@ -104,6 +118,7 @@ type CourseGuide = {
 type LoadedGuide = {
   guide: CourseGuide;
   records: VisualRecord[];
+  studyBriefs: StudyBriefCollection;
 };
 
 type Filter = "all" | "slide" | "board";
@@ -120,12 +135,13 @@ async function loadJson<T>(path: string): Promise<T> {
 }
 
 async function loadGuide(): Promise<LoadedGuide> {
-  const [guide, evidence, notes] = await Promise.all([
+  const [guide, evidence, notes, studyBriefs] = await Promise.all([
     loadJson<CourseGuide>(`${COURSE_ROOT}/chapters.json`),
     loadJson<{ evidence: VisualRecord[] }>(`${COURSE_ROOT}/evidence-index.json`),
     loadJson<{ records: Record<string, StudyNotes> }>(
       `${COURSE_ROOT}/notes.json`,
     ),
+    loadJson<StudyBriefCollection>(`${COURSE_ROOT}/study-briefs.json`),
   ]);
   return {
     guide,
@@ -133,6 +149,7 @@ async function loadGuide(): Promise<LoadedGuide> {
       ...record,
       notes: notes.records[record.occurrence_id],
     })),
+    studyBriefs,
   };
 }
 
@@ -156,6 +173,12 @@ function durationLabel(seconds: number) {
   const minutes = Math.floor(seconds / 60);
   const remainder = Math.round(seconds % 60);
   return `${minutes}m ${String(remainder).padStart(2, "0")}s`;
+}
+
+function isGenericExamPrompt(value: string) {
+  return /^Explain .+ in your own words and reproduce the central example\.$/.test(
+    value,
+  );
 }
 
 function VisualEvidence({ record }: { record: VisualRecord }) {
@@ -212,6 +235,8 @@ function RecordCard({
   const isBoard = recordKind(record) === "board";
   const spoken = record.transcript?.text?.trim();
   const notes = record.notes;
+  const specificExamFocus =
+    notes?.exam_focus?.filter((item) => !isGenericExamPrompt(item)) ?? [];
   return (
     <article className="atlas-card" id={record.occurrence_id}>
       <header className="atlas-card-header">
@@ -245,87 +270,105 @@ function RecordCard({
           <VisualEvidence record={record} />
         </div>
         <div className="atlas-notes">
-          <section className="atlas-note-block">
-            <h4>Professor’s explanation · extractive</h4>
-            {notes?.professor_explanation?.length ? (
-              notes.professor_explanation.map((paragraph, index) => (
-                <p key={`${record.occurrence_id}-explanation-${index}`}>
-                  {paragraph}
-                </p>
-              ))
-            ) : (
-              <p>
-                {spoken ||
-                  "No spoken words were detected during this visual interval."}
-              </p>
-            )}
-          </section>
           {notes?.key_points?.length ? (
             <section className="atlas-note-block">
-              <h4>Slide and transcript insights</h4>
+              <h4>Slide facts and lecture cues</h4>
               <ul>
                 {notes.key_points.map((point, index) => (
                   <li key={`${record.occurrence_id}-point-${index}`}>{point}</li>
                 ))}
               </ul>
+              <p className="atlas-study-hint">
+                Use the chapter study synthesis above for the clean explanation;
+                use this card to connect it to the professor’s exact visual.
+              </p>
             </section>
-          ) : null}
-          {notes?.exam_focus?.length ? (
+          ) : (
+            <section className="atlas-note-block">
+              <h4>How to use this interval</h4>
+              <p>
+                Follow the visual state and timestamp as source evidence for the
+                chapter explanation above.
+              </p>
+            </section>
+          )}
+          {specificExamFocus.length ? (
             <section className="atlas-note-block atlas-exam-block">
-              <h4>Exam focus</h4>
+              <h4>Specific exam angle</h4>
               <ul>
-                {notes.exam_focus.map((point, index) => (
+                {specificExamFocus.map((point, index) => (
                   <li key={`${record.occurrence_id}-exam-${index}`}>{point}</li>
                 ))}
               </ul>
             </section>
           ) : null}
-          {notes?.quotes?.length ? (
-            <section className="atlas-note-block">
-              <h4>Timestamped transcript quote</h4>
-              {notes.quotes.map((quote, index) => (
-                <blockquote
-                  key={`${record.occurrence_id}-quote-${index}`}
-                >
-                  <p>“{quote.text}”</p>
-                  <cite>
-                    {compactTimestamp(quote.start)}–
-                    {compactTimestamp(quote.end)}
-                    {quote.mean_word_confidence
-                      ? ` · ${Math.round(quote.mean_word_confidence * 100)}% mean word confidence`
-                      : ""}
-                  </cite>
-                </blockquote>
-              ))}
-            </section>
-          ) : null}
-          <section className="atlas-note-block">
-            <h4>Evidence status</h4>
-            <p>
-              {isBoard
-                ? `The full drawing surface is preserved over ${durationLabel(record.duration_s)}; footer visibility is not required for detection.`
-                : "The final annotated frame is retained together with the initial state and exact recording interval."}
-            </p>
+          <section className="atlas-note-block atlas-source-evidence">
+            <details>
+              <summary>
+                Lecture evidence · uncorrected transcript and OCR
+              </summary>
+              <div className="atlas-source-evidence-body">
+                <p className="atlas-source-warning">
+                  This material is preserved for traceability. It can contain
+                  speech repetition, incomplete sentences, and transcription
+                  errors; it is not the study explanation.
+                </p>
+                <h4>Extractive transcript highlights</h4>
+                {notes?.professor_explanation?.length ? (
+                  notes.professor_explanation.map((paragraph, index) => (
+                    <p key={`${record.occurrence_id}-explanation-${index}`}>
+                      {paragraph}
+                    </p>
+                  ))
+                ) : (
+                  <p>
+                    {spoken ||
+                      "No spoken words were detected during this visual interval."}
+                  </p>
+                )}
+                {notes?.quotes?.length ? (
+                  <>
+                    <h4>Timestamped quotation candidate</h4>
+                    {notes.quotes.map((quote, index) => (
+                      <blockquote
+                        key={`${record.occurrence_id}-quote-${index}`}
+                      >
+                        <p>“{quote.text}”</p>
+                        <cite>
+                          {compactTimestamp(quote.start)}–
+                          {compactTimestamp(quote.end)}
+                          {quote.mean_word_confidence
+                            ? ` · ${Math.round(quote.mean_word_confidence * 100)}% mean word confidence`
+                            : ""}
+                        </cite>
+                      </blockquote>
+                    ))}
+                  </>
+                ) : null}
+                {spoken ? (
+                  <>
+                    <h4>
+                      Full aligned transcript ·{" "}
+                      {record.transcript?.word_count ?? 0} words
+                    </h4>
+                    <pre>{spoken}</pre>
+                  </>
+                ) : null}
+                {record.slide_text_ocr ? (
+                  <>
+                    <h4>Printed slide OCR</h4>
+                    <pre>{record.slide_text_ocr}</pre>
+                  </>
+                ) : null}
+                <h4>Evidence status</h4>
+                <p>
+                  {isBoard
+                    ? `The full drawing surface is preserved over ${durationLabel(record.duration_s)}; footer visibility is not required for detection.`
+                    : "The final annotated frame is retained together with the initial state and exact recording interval."}
+                </p>
+              </div>
+            </details>
           </section>
-          {spoken ? (
-            <section className="atlas-note-block">
-              <details>
-                <summary>
-                  Full aligned interval transcript ·{" "}
-                  {record.transcript?.word_count ?? 0} words
-                </summary>
-                <pre>{spoken}</pre>
-              </details>
-            </section>
-          ) : null}
-          {record.slide_text_ocr ? (
-            <section className="atlas-note-block">
-              <details>
-                <summary>Printed slide OCR</summary>
-                <pre>{record.slide_text_ocr}</pre>
-              </details>
-            </section>
-          ) : null}
         </div>
       </div>
     </article>
@@ -419,6 +462,66 @@ function ChapterOverview({
   );
 }
 
+function ChapterStudyGuide({
+  brief,
+  notice,
+}: {
+  brief: ChapterStudyBrief;
+  notice: string;
+}) {
+  return (
+    <section className="atlas-study-guide" aria-labelledby="study-guide-title">
+      <header className="atlas-study-guide-header">
+        <div>
+          <p className="atlas-study-label">Primary learning resource</p>
+          <h2 id="study-guide-title">Learn the chapter</h2>
+        </div>
+        <p>{notice}</p>
+      </header>
+      <div className="atlas-study-core">
+        <h3>Clean study explanation</h3>
+        {brief.core_idea.map((paragraph) => (
+          <p key={paragraph}>{paragraph}</p>
+        ))}
+      </div>
+      <div className="atlas-study-grid">
+        <section>
+          <h3>Mental model</h3>
+          <ol>
+            {brief.mental_model.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ol>
+        </section>
+        <section>
+          <h3>How it appears on the exam</h3>
+          <ul>
+            {brief.exam_patterns.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
+        <section className="atlas-study-mistakes">
+          <h3>Common mistakes</h3>
+          <ul>
+            {brief.common_mistakes.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
+        <section className="atlas-study-test">
+          <h3>Self-test before opening the evidence</h3>
+          <ol>
+            {brief.self_test.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ol>
+        </section>
+      </div>
+    </section>
+  );
+}
+
 export function StudyGuideApp() {
   const [loaded, setLoaded] = useState<LoadedGuide | null>(null);
   const [error, setError] = useState("");
@@ -457,6 +560,9 @@ export function StudyGuideApp() {
   }, []);
 
   const chapter = loaded?.guide.chapters.find((item) => item.id === chapterId);
+  const studyBrief = chapter
+    ? loaded?.studyBriefs.chapters[chapter.id]
+    : undefined;
   const chapterRecords = useMemo(() => {
     if (!loaded || !chapter) return [];
     const byId = new Map(
@@ -575,14 +681,30 @@ export function StudyGuideApp() {
               localSources={localSources}
             />
           ) : null}
+          {studyBrief && loaded ? (
+            <ChapterStudyGuide
+              brief={studyBrief}
+              notice={loaded.studyBriefs.notice}
+            />
+          ) : null}
           {chapter ? (
             <section className="atlas-method-note">
-              <strong>Evidence policy.</strong>{" "}
-              {loaded?.guide.methodology.board_capture} Professor explanations
-              and quotations are extractive machine-transcript selections; use
-              the timestamp link to verify exact wording.
+              <strong>How to use this page.</strong> Learn from the clean chapter
+              synthesis first. Then use the slide and whiteboard timeline below
+              as traceable evidence. Transcript selections remain uncorrected
+              and are collapsed by default.
             </section>
           ) : null}
+          <section className="atlas-evidence-heading">
+            <div>
+              <p className="atlas-study-label">Source-traceable appendix</p>
+              <h2>Lecture evidence timeline</h2>
+            </div>
+            <p>
+              Exact visuals, board progress, timestamps, transcript, and OCR for
+              checking the study synthesis against the recording.
+            </p>
+          </section>
           <section className="atlas-controls" aria-label="Timeline filters">
             <div className="atlas-filter-group">
               {(
