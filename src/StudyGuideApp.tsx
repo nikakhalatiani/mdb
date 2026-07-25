@@ -175,12 +175,6 @@ function durationLabel(seconds: number) {
   return `${minutes}m ${String(remainder).padStart(2, "0")}s`;
 }
 
-function isGenericExamPrompt(value: string) {
-  return /^Explain .+ in your own words and reproduce the central example\.$/.test(
-    value,
-  );
-}
-
 function VisualEvidence({ record }: { record: VisualRecord }) {
   const isBoard = recordKind(record) === "board";
   const frames = record.evidence_frames ?? [];
@@ -235,8 +229,6 @@ function RecordCard({
   const isBoard = recordKind(record) === "board";
   const spoken = record.transcript?.text?.trim();
   const notes = record.notes;
-  const specificExamFocus =
-    notes?.exam_focus?.filter((item) => !isGenericExamPrompt(item)) ?? [];
   return (
     <article className="atlas-card" id={record.occurrence_id}>
       <header className="atlas-card-header">
@@ -292,16 +284,6 @@ function RecordCard({
               </p>
             </section>
           )}
-          {specificExamFocus.length ? (
-            <section className="atlas-note-block atlas-exam-block">
-              <h4>Specific exam angle</h4>
-              <ul>
-                {specificExamFocus.map((point, index) => (
-                  <li key={`${record.occurrence_id}-exam-${index}`}>{point}</li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
           <section className="atlas-note-block atlas-source-evidence">
             <details>
               <summary>

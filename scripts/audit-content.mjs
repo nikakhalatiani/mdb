@@ -36,6 +36,9 @@ const audit = {
   lowercase_extractive_fragments: explanations.filter((value) =>
     /^[a-z]/.test(value),
   ).length,
+  hidden_rule_based_interval_exam_prompts: notes.flatMap(
+    (record) => record.exam_focus ?? [],
+  ).length,
   generic_interval_exam_prompts: notes
     .flatMap((record) => record.exam_focus ?? [])
     .filter((value) => genericExamPrompt.test(value)).length,

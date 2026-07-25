@@ -692,15 +692,6 @@ a {
   line-height: 1.55;
 }
 
-.atlas-exam-block {
-  margin-right: -0.25rem;
-  margin-left: -0.25rem;
-  padding: 1rem !important;
-  border: 1px solid #ead4b7 !important;
-  border-radius: 0.75rem;
-  background: #fff8ed;
-}
-
 .atlas-note-block blockquote {
   margin: 0;
   padding-left: 0.95rem;
