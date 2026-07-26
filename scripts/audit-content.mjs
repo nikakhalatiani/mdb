@@ -14,6 +14,7 @@ const [
   slideExplanations,
   examBank,
   exerciseLabs,
+  course2026,
 ] =
   await Promise.all([
   loadJson("chapters.json"),
@@ -23,6 +24,7 @@ const [
   loadJson("slide-explanations.json"),
   loadJson("exam-practice.json"),
   loadJson("exercise-labs.json"),
+  loadJson("course-2026.json"),
 ]);
 
 const notes = Object.values(notesFile.records);
@@ -86,6 +88,21 @@ const audit = {
   exercise_lecture_anchors: exerciseLabs.labs
     .flatMap((lab) => lab.lecture_links)
     .reduce((count, link) => count + link.occurrence_ids.length, 0),
+  current_2026_decks: course2026.decks.length,
+  current_2026_study_slides: course2026.decks.flatMap((deck) => deck.slides)
+    .length,
+  current_2026_new_slides: course2026.decks
+    .flatMap((deck) => deck.slides)
+    .filter((slide) => slide.classification === "new").length,
+  current_2026_coverage_gap_slides: course2026.decks
+    .flatMap((deck) => deck.slides)
+    .filter((slide) => slide.classification === "coverage_gap").length,
+  current_annotation_study_views: course2026.decks
+    .flatMap((deck) => deck.slides)
+    .filter((slide) => slide.classification === "annotation").length,
+  current_supplementary_study_views: course2026.decks
+    .flatMap((deck) => deck.slides)
+    .filter((slide) => slide.classification === "supplementary").length,
 };
 
 const chapterIds = new Set(guide.chapters.map((chapter) => chapter.id));
@@ -328,6 +345,139 @@ for (const lab of exerciseLabs.labs) {
       }
     }
   }
+}
+
+if (
+  !course2026.title?.trim() ||
+  !course2026.warning?.trim() ||
+  !course2026.baseline_note?.trim() ||
+  !course2026.methodology?.length ||
+  !course2026.decks?.length
+) {
+  throw new Error("2026 course comparison metadata is incomplete");
+}
+
+const currentDeckIds = new Set();
+const currentSlideIds = new Set();
+for (const deck of course2026.decks) {
+  if (
+    !deck.id?.trim() ||
+    !deck.title?.trim() ||
+    !deck.source_file?.trim() ||
+    !Number.isInteger(deck.source_year) ||
+    !deck.coverage_basis?.trim() ||
+    deck.official_exam_scope !== "unknown" ||
+    !deck.verdict?.trim() ||
+    !deck.study_treatment?.length ||
+    !deck.findings?.length
+  ) {
+    throw new Error(`2026 deck metadata is incomplete: ${deck.id}`);
+  }
+  if (currentDeckIds.has(deck.id)) {
+    throw new Error(`Duplicate 2026 deck id: ${deck.id}`);
+  }
+  currentDeckIds.add(deck.id);
+  for (const chapterId of deck.chapter_ids) {
+    if (!chapterIds.has(chapterId)) {
+      throw new Error(
+        `2026 deck ${deck.id} references unknown chapter ${chapterId}`,
+      );
+    }
+  }
+  for (const finding of deck.findings) {
+    for (const occurrenceId of finding.occurrence_ids ?? []) {
+      if (!evidenceIds.has(occurrenceId)) {
+        throw new Error(
+          `2026 deck ${deck.id} finding cites unknown occurrence ${occurrenceId}`,
+        );
+      }
+    }
+  }
+  for (const annotation of deck.annotations) {
+    if (!annotation.description?.trim() || !annotation.interpretation?.trim()) {
+      throw new Error(`2026 deck ${deck.id} has an incomplete annotation`);
+    }
+    if (annotation.image) {
+      await access(new URL(annotation.image.replace("./generated/course/", ""), courseRoot));
+    }
+  }
+  for (const slide of deck.slides) {
+    if (
+      !slide.id?.trim() ||
+      !slide.title?.trim() ||
+      !slide.image?.trim() ||
+      !slide.content_layer?.trim() ||
+      !slide.comparison_basis?.trim() ||
+      !chapterIds.has(slide.chapter_id) ||
+      !slide.explanation?.length ||
+      !slide.key_points?.length ||
+      !slide.exam_signal?.points?.length ||
+      !slide.exam_signal?.evidence_basis?.trim() ||
+      slide.exam_signal?.official_scope !== "unknown" ||
+      !slide.self_test?.length
+    ) {
+      throw new Error(`2026 deck ${deck.id} has an incomplete slide`);
+    }
+    if (currentSlideIds.has(slide.id)) {
+      throw new Error(`Duplicate 2026 slide id: ${slide.id}`);
+    }
+    currentSlideIds.add(slide.id);
+    if (
+      slide.content_layer === "handwriting" &&
+      (slide.classification !== "annotation" || slide.deck_slide !== null)
+    ) {
+      throw new Error(
+        `Handwriting-only study view ${slide.id} is presented as a printed deck slide`,
+      );
+    }
+    if (
+      slide.content_layer === "annotated_printed" &&
+      (slide.classification !== "annotation" ||
+        !Number.isInteger(slide.deck_slide))
+    ) {
+      throw new Error(
+        `Annotated printed study view ${slide.id} has inconsistent provenance`,
+      );
+    }
+    for (const occurrenceId of slide.baseline_occurrence_ids) {
+      if (!evidenceIds.has(occurrenceId)) {
+        throw new Error(
+          `2026 slide ${slide.id} cites unknown occurrence ${occurrenceId}`,
+        );
+      }
+    }
+    await access(new URL(slide.image.replace("./generated/course/", ""), courseRoot));
+  }
+}
+
+const qsortDeck = course2026.decks.find((deck) => deck.id === "qsort");
+if (
+  !qsortDeck ||
+  qsortDeck.source_year !== 2020 ||
+  qsortDeck.coverage_basis !== "supplement" ||
+  qsortDeck.slides.some(
+    (slide) =>
+      slide.classification !== "supplementary" ||
+      slide.content_layer !== "printed",
+  )
+) {
+  throw new Error(
+    "Q-sort must remain a dated 2020 supplement, not a claimed 2026 addition",
+  );
+}
+
+const mainMemoryDeck = course2026.decks.find(
+  (deck) => deck.id === "chapter8",
+);
+if (
+  !mainMemoryDeck ||
+  mainMemoryDeck.status !== "user_reported_covered" ||
+  mainMemoryDeck.coverage_basis !== "user_report" ||
+  mainMemoryDeck.official_exam_scope !== "unknown"
+) {
+  throw new Error(
+    "Main-memory coverage must remain user-reported with official exam scope unknown",
+  );
 }
 
 const allowedExplanationStatuses = new Set([

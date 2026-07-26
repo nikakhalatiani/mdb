@@ -1,0 +1,1427 @@
+{
+  "schema_version": 1,
+  "generated_date": "2026-07-26",
+  "title": "Site-ready 2026 supplements for audited lecture chapters 1–3",
+  "source_audit": "analysis/lecture-2026/chapters-1-3.json",
+  "scope": {
+    "logical_supplement_count": 27,
+    "printed_coverage_gap_count": 19,
+    "useful_handwritten_teaching_view_count": 8,
+    "progressive_build_states_consolidated": true,
+    "site_edits_performed": false
+  },
+  "editorial_policy": [
+    "Absence from captured 2021 recordings is described as a coverage gap, not automatically as a 2026 curriculum change.",
+    "Printed coverage-gap explanations are grounded in the current printed slide and make no claim that a 2021 professor explanation exists.",
+    "Handwriting is included only when it adds a distinct algorithm, decision rule, process view, or course-study map.",
+    "Incidental underlining, one-word labels, numeric scribbles, and lecture-end markers are excluded from learner-facing explanations.",
+    "Past-exam recollections and exercise correspondence influence priority labels but are never treated as guarantees."
+  ],
+  "items": [
+    {
+      "id": "ch3-slide23-fsst",
+      "deck_id": "chapter3_260717_153137",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter3_260717_153137.pdf",
+      "source_pdf_physical_pages": [
+        23
+      ],
+      "printed_slide_number": 23,
+      "printed_slide_title": "Compression (6)",
+      "teaching_view_title": "Compression (6): FSST",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter3/page-23.png"
+      ],
+      "classification": "coverage-gap",
+      "audit_page_classification": "new",
+      "curriculum_change_claim": "not-established",
+      "coverage_interpretation": "Absent from the captured 2021 recordings. This establishes a baseline coverage gap, not automatically a 2026 curriculum change.",
+      "exact_baseline_occurrence_ids": [],
+      "teaching_explanation": [
+        "FSST compresses strings with a shared symbol table. The table assigns short codes to common byte sequences such as URL prefixes, suffixes, or recurring domain fragments. A string is then represented as a sequence of those codes instead of repeating the original byte sequences.",
+        "The slide emphasizes three operational properties: even short strings can benefit, decoding is fast, and the encoding still permits random access within compressed data. For study purposes, separate the symbol table from the compressed corpus: the table defines what each code means, while the corpus stores only the code stream."
+      ],
+      "key_points": [
+        "A shared symbol table maps recurring strings or byte sequences to compact codes.",
+        "The compressed corpus is a code stream interpreted through that table.",
+        "The design targets short strings, fast decompression, and random access."
+      ],
+      "exam_focus": {
+        "priority": "medium",
+        "status": "current-coverage-without-past-exam-confirmation",
+        "rationale": "Compression is core chapter material, but no supplied past-exam protocol specifically names FSST."
+      },
+      "self_test": {
+        "prompt": "Why can a shared symbol table compress a short URL, and what must be available to decode code 6?",
+        "expected_answer_points": [
+          "The URL reuses common fragments that can be replaced by short codes.",
+          "The symbol table must be available.",
+          "Code 6 is decoded by looking up the byte sequence assigned to entry 6."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": false,
+        "display_note": "No material handwritten teaching note is included.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "06-compression-and-long-records",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "One printed deck slide and one physical PDF page; no duplicate build state remains."
+      }
+    },
+    {
+      "id": "ch3-slide64-linear-hashing",
+      "deck_id": "chapter3_260717_153137",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter3_260717_153137.pdf",
+      "source_pdf_physical_pages": [
+        68
+      ],
+      "printed_slide_number": 64,
+      "printed_slide_title": "Linear Hashing",
+      "teaching_view_title": "Linear Hashing",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter3/page-68.png"
+      ],
+      "classification": "coverage-gap",
+      "audit_page_classification": "new",
+      "curriculum_change_claim": "not-established",
+      "coverage_interpretation": "Absent from the captured 2021 recordings. This establishes a baseline coverage gap, not automatically a 2026 curriculum change.",
+      "exact_baseline_occurrence_ids": [],
+      "teaching_explanation": [
+        "Linear hashing begins with an ordinary bucketed hash table but avoids a single exponentially growing directory. The diagram shows keys distributed across the current bucket range; growth will happen by adding buckets incrementally rather than replacing the directory all at once.",
+        "The central comparison is with extendible hashing. Extendible hashing addresses buckets through a directory whose size can double. Linear hashing instead keeps a split position and expands one bucket at a time, which makes structural growth gradual."
+      ],
+      "key_points": [
+        "Start with a regular hash table organized into buckets.",
+        "Growth is incremental rather than a whole-directory doubling event.",
+        "A split position will determine which bucket grows next."
+      ],
+      "exam_focus": {
+        "priority": "medium",
+        "status": "current-coverage-without-past-exam-confirmation",
+        "rationale": "Hash indexing is exam-relevant, but the supplied recollections specifically name extendible hashing rather than linear hashing."
+      },
+      "self_test": {
+        "prompt": "What structural cost of extendible hashing is linear hashing designed to avoid?",
+        "expected_answer_points": [
+          "The disruptive, exponential growth or doubling of a flat directory.",
+          "Linear hashing adds buckets progressively instead."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": false,
+        "display_note": "No material handwritten teaching note is included.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "09-hash-and-specialized-indexes",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "One printed deck slide and one physical PDF page; no duplicate build state remains."
+      }
+    },
+    {
+      "id": "ch3-slide65-linear-hashing-overflow",
+      "deck_id": "chapter3_260717_153137",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter3_260717_153137.pdf",
+      "source_pdf_physical_pages": [
+        69
+      ],
+      "printed_slide_number": 65,
+      "printed_slide_title": "Linear Hashing (2)",
+      "teaching_view_title": "Linear Hashing (2): Overflow Chaining",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter3/page-69.png"
+      ],
+      "classification": "coverage-gap",
+      "audit_page_classification": "new",
+      "curriculum_change_claim": "not-established",
+      "coverage_interpretation": "Absent from the captured 2021 recordings. This establishes a baseline coverage gap, not automatically a 2026 curriculum change.",
+      "exact_baseline_occurrence_ids": [],
+      "teaching_explanation": [
+        "Before its bucket is split, an overflowing linear-hash bucket uses an overflow chain. The structure remains correct because all entries that hash to the bucket are still reachable, but a lookup may need to follow extra pages or links.",
+        "Chaining is therefore a temporary performance compromise. Short chains are tolerable, while long chains motivate a split policy based on load factor or chain length. The next slides show how those chains are absorbed back into regular buckets."
+      ],
+      "key_points": [
+        "Overflow does not immediately force a global reorganization.",
+        "An overflow chain preserves correctness but increases lookup cost.",
+        "Load factor or chain length can trigger the next split."
+      ],
+      "exam_focus": {
+        "priority": "medium",
+        "status": "current-coverage-without-past-exam-confirmation",
+        "rationale": "Understanding overflow handling helps compare hashing schemes, although this exact mechanism is not named in a supplied protocol."
+      },
+      "self_test": {
+        "prompt": "Why is overflow chaining correct but potentially slow?",
+        "expected_answer_points": [
+          "All matching entries remain reachable through the chain.",
+          "A probe may require extra pointer traversals and page accesses."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": false,
+        "display_note": "No material handwritten teaching note is included.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "09-hash-and-specialized-indexes",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "One printed deck slide and one physical PDF page; no duplicate build state remains."
+      }
+    },
+    {
+      "id": "ch3-slide66-linear-hashing-split",
+      "deck_id": "chapter3_260717_153137",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter3_260717_153137.pdf",
+      "source_pdf_physical_pages": [
+        70
+      ],
+      "printed_slide_number": 66,
+      "printed_slide_title": "Linear Hashing (3)",
+      "teaching_view_title": "Linear Hashing (3): Split One Bucket",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter3/page-70.png"
+      ],
+      "classification": "coverage-gap",
+      "audit_page_classification": "new",
+      "curriculum_change_claim": "not-established",
+      "coverage_interpretation": "Absent from the captured 2021 recordings. This establishes a baseline coverage gap, not automatically a 2026 curriculum change.",
+      "exact_baseline_occurrence_ids": [],
+      "teaching_explanation": [
+        "When the split policy fires, linear hashing splits exactly the next bucket in a fixed order rather than necessarily splitting the bucket that just overflowed. Entries from that bucket and its overflow chain are rehashed with one additional address bit and redistributed between the old and new bucket.",
+        "At any moment, part of the bucket range has already been split and the rest has not. The split pointer records that boundary. Address calculation must therefore recognize whether the initially selected bucket lies before the split pointer and, if so, apply the larger hash range."
+      ],
+      "key_points": [
+        "Split buckets in a fixed linear order.",
+        "Reintegrate the selected bucket's overflow chain during its split.",
+        "Use the split pointer to distinguish already-split from unsplit buckets.",
+        "Rehash the selected entries with one additional address bit."
+      ],
+      "exam_focus": {
+        "priority": "medium-high",
+        "status": "current-coverage-without-past-exam-confirmation",
+        "rationale": "The split-pointer rule is a plausible pseudocode or trace question even though no supplied protocol confirms it."
+      },
+      "self_test": {
+        "prompt": "A key hashes to a bucket that has already been passed by the split pointer. What must lookup do?",
+        "expected_answer_points": [
+          "Re-evaluate the address with the expanded bucket range or additional bit.",
+          "Use the resulting old-or-new bucket address."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": false,
+        "display_note": "No material handwritten teaching note is included.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "09-hash-and-specialized-indexes",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "One printed deck slide and one physical PDF page; no duplicate build state remains."
+      }
+    },
+    {
+      "id": "ch3-slide67-linear-hashing-round",
+      "deck_id": "chapter3_260717_153137",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter3_260717_153137.pdf",
+      "source_pdf_physical_pages": [
+        71
+      ],
+      "printed_slide_number": 67,
+      "printed_slide_title": "Linear Hashing (3)",
+      "teaching_view_title": "Linear Hashing (3): Complete a Split Round",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter3/page-71.png"
+      ],
+      "classification": "coverage-gap",
+      "audit_page_classification": "new",
+      "curriculum_change_claim": "not-established",
+      "coverage_interpretation": "Absent from the captured 2021 recordings. This establishes a baseline coverage gap, not automatically a 2026 curriculum change.",
+      "exact_baseline_occurrence_ids": [],
+      "teaching_explanation": [
+        "Repeated splits move the split pointer through the entire original bucket range. Each split adds one new bucket and redistributes only the selected old bucket. This keeps each individual growth step small.",
+        "When every bucket from the current round has been split once, the table has reached the next address level. The split pointer returns to the beginning and a new round starts, now expanding the larger bucket range in the same linear order."
+      ],
+      "key_points": [
+        "One split adds one bucket.",
+        "A round ends after every bucket in the old range has been split once.",
+        "The next round restarts the split pointer over the expanded range."
+      ],
+      "exam_focus": {
+        "priority": "medium",
+        "status": "current-coverage-without-past-exam-confirmation",
+        "rationale": "A round-by-round trace tests whether the learner understands gradual growth rather than only the overflow rule."
+      },
+      "self_test": {
+        "prompt": "What event ends one linear-hashing split round, and what happens next?",
+        "expected_answer_points": [
+          "Every bucket in the old range has been split once.",
+          "The address level advances, the split pointer resets, and a new round begins."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": false,
+        "display_note": "No material handwritten teaching note is included.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "09-hash-and-specialized-indexes",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "One printed deck slide and one physical PDF page; no duplicate build state remains."
+      }
+    },
+    {
+      "id": "ch3-slide68-linear-hashing-tradeoffs",
+      "deck_id": "chapter3_260717_153137",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter3_260717_153137.pdf",
+      "source_pdf_physical_pages": [
+        72
+      ],
+      "printed_slide_number": 68,
+      "printed_slide_title": "Linear Hashing (4)",
+      "teaching_view_title": "Linear Hashing (4): Trade-offs",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter3/page-72.png"
+      ],
+      "classification": "coverage-gap",
+      "audit_page_classification": "new",
+      "curriculum_change_claim": "not-established",
+      "coverage_interpretation": "Absent from the captured 2021 recordings. This establishes a baseline coverage gap, not automatically a 2026 curriculum change.",
+      "exact_baseline_occurrence_ids": [],
+      "teaching_explanation": [
+        "Linear hashing's main advantage is smooth growth. It avoids a disruptive directory-doubling step and increases the index approximately one bucket or page at a time, so the reorganization cost is amortized over ordinary operations.",
+        "The price is temporary overflow chaining and more involved page management. A chain may remain until the split pointer eventually reaches that bucket, and an implementation must allocate the growing bucket area without undermining the intended incremental behavior."
+      ],
+      "key_points": [
+        "Growth is linear and incremental.",
+        "No full flat-directory doubling is required.",
+        "Overflow chains can hurt lookups until their bucket is split.",
+        "Incremental directory or bucket-page allocation is an implementation concern."
+      ],
+      "exam_focus": {
+        "priority": "medium",
+        "status": "current-coverage-without-past-exam-confirmation",
+        "rationale": "Trade-off comparisons are common exam forms, but this exact comparison is not confirmed by a supplied protocol."
+      },
+      "self_test": {
+        "prompt": "Give one advantage and one disadvantage of linear hashing compared with extendible hashing.",
+        "expected_answer_points": [
+          "Advantage: incremental growth without disruptive directory doubling.",
+          "Disadvantage: overflow chains may persist and add accesses."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": false,
+        "display_note": "No material handwritten teaching note is included.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "09-hash-and-specialized-indexes",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "One printed deck slide and one physical PDF page; no duplicate build state remains."
+      }
+    },
+    {
+      "id": "ch3-slide69-multilevel-eh-skew",
+      "deck_id": "chapter3_260717_153137",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter3_260717_153137.pdf",
+      "source_pdf_physical_pages": [
+        73
+      ],
+      "printed_slide_number": 69,
+      "printed_slide_title": "Multi-Level Extendible Hashing",
+      "teaching_view_title": "Multi-Level Extendible Hashing: Skew Problem",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter3/page-73.png"
+      ],
+      "classification": "coverage-gap",
+      "audit_page_classification": "new",
+      "curriculum_change_claim": "not-established",
+      "coverage_interpretation": "Absent from the captured 2021 recordings. This establishes a baseline coverage gap, not automatically a 2026 curriculum change.",
+      "exact_baseline_occurrence_ids": [],
+      "teaching_explanation": [
+        "A flat extendible-hashing directory works well when the data uses the hash space uniformly. Under skew, a small hot prefix can force additional directory bits even though most other prefixes do not need them. Because every added global bit doubles the whole directory, many entries become redundant.",
+        "The important diagnosis is that directory size follows the deepest split anywhere, not the average need across buckets. A local concentration of values can therefore cause poor global space utilization."
+      ],
+      "key_points": [
+        "Uniform use makes a flat directory attractive.",
+        "Skew can force extra global-depth bits for only one hot region.",
+        "Global directory doubling duplicates many unaffected pointers."
+      ],
+      "exam_focus": {
+        "priority": "medium-high",
+        "status": "current-coverage-without-past-exam-confirmation",
+        "rationale": "Extendible-hashing depth is explicitly exam-relevant; this slide adds the reason for a multi-level variant."
+      },
+      "self_test": {
+        "prompt": "Why can one skewed hash prefix make a flat extendible-hashing directory explode?",
+        "expected_answer_points": [
+          "Splitting that region can require another global-depth bit.",
+          "The entire directory doubles even though most regions do not need more resolution."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": false,
+        "display_note": "No material handwritten teaching note is included.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "09-hash-and-specialized-indexes",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "One printed deck slide and one physical PDF page; no duplicate build state remains."
+      }
+    },
+    {
+      "id": "ch3-slide70-multilevel-eh-tree",
+      "deck_id": "chapter3_260717_153137",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter3_260717_153137.pdf",
+      "source_pdf_physical_pages": [
+        74
+      ],
+      "printed_slide_number": 70,
+      "printed_slide_title": "Multi-Level Extendible Hashing (2)",
+      "teaching_view_title": "Multi-Level Extendible Hashing (2): Tree of Hash Tables",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter3/page-74.png"
+      ],
+      "classification": "coverage-gap",
+      "audit_page_classification": "new",
+      "curriculum_change_claim": "not-established",
+      "coverage_interpretation": "Absent from the captured 2021 recordings. This establishes a baseline coverage gap, not automatically a 2026 curriculum change.",
+      "exact_baseline_occurrence_ids": [],
+      "teaching_explanation": [
+        "Multi-level extendible hashing replaces the single flat directory with a tree of page-sized hash tables. The root consumes an initial group of hash bits; only a branch that needs more resolution allocates a child table, which then consumes the next group of bits.",
+        "This localizes growth to heavily used parts of the hash space. A lookup may perform another page access at each level, but the fanout of a page-sized table is large, so the resulting tree is expected to remain shallow."
+      ],
+      "key_points": [
+        "Each internal node is a page-sized hash table.",
+        "Successive levels consume successive groups of hash bits.",
+        "Only hot branches become deeper.",
+        "The trade-off is extra page accesses for a much smaller sparse directory."
+      ],
+      "exam_focus": {
+        "priority": "medium-high",
+        "status": "current-coverage-without-past-exam-confirmation",
+        "rationale": "This is a natural extension question after ordinary global/local depth, although the supplied protocol does not name the multi-level form."
+      },
+      "self_test": {
+        "prompt": "Which hash bits should a child table use, and why are only some branches given children?",
+        "expected_answer_points": [
+          "The child uses the next group of hash bits after those consumed above it.",
+          "Only branches needing more resolution allocate another level."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": false,
+        "display_note": "No material handwritten teaching note is included.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "09-hash-and-specialized-indexes",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "One printed deck slide and one physical PDF page; no duplicate build state remains."
+      }
+    },
+    {
+      "id": "ch3-slide71-multilevel-eh-utilization",
+      "deck_id": "chapter3_260717_153137",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter3_260717_153137.pdf",
+      "source_pdf_physical_pages": [
+        75
+      ],
+      "printed_slide_number": 71,
+      "printed_slide_title": "Multi-Level Extendible Hashing (2)",
+      "teaching_view_title": "Multi-Level Extendible Hashing (2): Naive Space Utilization",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter3/page-75.png"
+      ],
+      "classification": "coverage-gap",
+      "audit_page_classification": "new",
+      "curriculum_change_claim": "not-established",
+      "coverage_interpretation": "Absent from the captured 2021 recordings. This establishes a baseline coverage gap, not automatically a 2026 curriculum change.",
+      "exact_baseline_occurrence_ids": [],
+      "teaching_explanation": [
+        "A naive tree of hash tables introduces a new worst case. With uniform data, many first-level buckets approach capacity together. They may all allocate second-level tables at roughly the same time, even though each new table initially contains only a small number of entries.",
+        "The result is many nearly empty pages and extra pointer traversals. The multi-level idea fixes skew, but a useful implementation must also avoid allocating one mostly empty child page independently for every buddy region."
+      ],
+      "key_points": [
+        "Uniform data can make many buckets overflow together.",
+        "One child table per overflowing region can create many nearly empty pages.",
+        "Poor occupancy also implies avoidable lookup page accesses."
+      ],
+      "exam_focus": {
+        "priority": "medium",
+        "status": "current-coverage-without-past-exam-confirmation",
+        "rationale": "This slide is useful for design critique and trade-off reasoning rather than a confirmed past-exam task."
+      },
+      "self_test": {
+        "prompt": "Why can uniform data be the worst case for a naive multi-level directory?",
+        "expected_answer_points": [
+          "Many sibling buckets overflow at nearly the same time.",
+          "Each allocates an underfilled child table, wasting pages and adding levels."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": false,
+        "display_note": "No material handwritten teaching note is included.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "09-hash-and-specialized-indexes",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "One printed deck slide and one physical PDF page; no duplicate build state remains."
+      }
+    },
+    {
+      "id": "ch3-slide72-multilevel-eh-share-buddies",
+      "deck_id": "chapter3_260717_153137",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter3_260717_153137.pdf",
+      "source_pdf_physical_pages": [
+        76
+      ],
+      "printed_slide_number": 72,
+      "printed_slide_title": "Multi-Level Extendible Hashing (3)",
+      "teaching_view_title": "Multi-Level Extendible Hashing (3): Share an Inner Page",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter3/page-76.png"
+      ],
+      "classification": "coverage-gap",
+      "audit_page_classification": "new",
+      "curriculum_change_claim": "not-established",
+      "coverage_interpretation": "Absent from the captured 2021 recordings. This establishes a baseline coverage gap, not automatically a 2026 curriculum change.",
+      "exact_baseline_occurrence_ids": [],
+      "teaching_explanation": [
+        "The utilization fix is to let buddy regions share an inner directory page. Buddies differ only in the next relevant hash bit and already belong to a power-of-two partitioning structure, so their additional routing entries can coexist in one page.",
+        "Sharing delays page allocation and raises occupancy. The directory still provides enough information to route a key, but it avoids committing a separate sparse child table to every overflowing parent entry."
+      ],
+      "key_points": [
+        "Buddy regions are natural sharing partners.",
+        "One inner page can hold routing entries for multiple buddies.",
+        "Sharing increases occupancy and reduces sparse child pages."
+      ],
+      "exam_focus": {
+        "priority": "medium",
+        "status": "current-coverage-without-past-exam-confirmation",
+        "rationale": "The buddy-sharing optimization is advanced current coverage with no independent protocol support."
+      },
+      "self_test": {
+        "prompt": "What resource is saved when buddy regions share an inner page?",
+        "expected_answer_points": [
+          "Directory pages or child-table allocations.",
+          "The saved pages also avoid unnecessary pointer traversals."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": false,
+        "display_note": "No material handwritten teaching note is included.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "09-hash-and-specialized-indexes",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "One printed deck slide and one physical PDF page; no duplicate build state remains."
+      }
+    },
+    {
+      "id": "ch3-slide73-multilevel-eh-split-inner",
+      "deck_id": "chapter3_260717_153137",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter3_260717_153137.pdf",
+      "source_pdf_physical_pages": [
+        77
+      ],
+      "printed_slide_number": 73,
+      "printed_slide_title": "Multi-Level Extendible Hashing (4)",
+      "teaching_view_title": "Multi-Level Extendible Hashing (4): Split an Inner Page",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter3/page-77.png"
+      ],
+      "classification": "coverage-gap",
+      "audit_page_classification": "new",
+      "curriculum_change_claim": "not-established",
+      "coverage_interpretation": "Absent from the captured 2021 recordings. This establishes a baseline coverage gap, not automatically a 2026 curriculum change.",
+      "exact_baseline_occurrence_ids": [],
+      "teaching_explanation": [
+        "When a shared inner page needs more routing capacity, it can itself be split. The split reveals additional hash bits and divides the page's routing responsibility along a power-of-two boundary.",
+        "This is the directory analogue of splitting a data bucket: only the affected portion gains more resolution. Other branches retain their current structure, which preserves the goal of adapting locally to skew."
+      ],
+      "key_points": [
+        "Inner directory pages can split when routing capacity is exhausted.",
+        "The split consumes additional hash bits.",
+        "Only the affected directory region gains another distinction."
+      ],
+      "exam_focus": {
+        "priority": "medium",
+        "status": "current-coverage-without-past-exam-confirmation",
+        "rationale": "This can support a structural trace question but is not directly confirmed by past protocols."
+      },
+      "self_test": {
+        "prompt": "What changes when an inner directory page splits?",
+        "expected_answer_points": [
+          "Its routing range is divided using additional hash bits.",
+          "Unaffected branches do not need to grow."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": false,
+        "display_note": "No material handwritten teaching note is included.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "09-hash-and-specialized-indexes",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "One printed deck slide and one physical PDF page; no duplicate build state remains."
+      }
+    },
+    {
+      "id": "ch3-slide74-multilevel-eh-move-buddies-up",
+      "deck_id": "chapter3_260717_153137",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter3_260717_153137.pdf",
+      "source_pdf_physical_pages": [
+        78
+      ],
+      "printed_slide_number": 74,
+      "printed_slide_title": "Multi-Level Extendible Hashing (5)",
+      "teaching_view_title": "Multi-Level Extendible Hashing (5): Move Buddies Up",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter3/page-78.png"
+      ],
+      "classification": "coverage-gap",
+      "audit_page_classification": "new",
+      "curriculum_change_claim": "not-established",
+      "coverage_interpretation": "Absent from the captured 2021 recordings. This establishes a baseline coverage gap, not automatically a 2026 curriculum change.",
+      "exact_baseline_occurrence_ids": [],
+      "teaching_explanation": [
+        "After reorganizing an inner page, some buddy pointers may no longer need the deeper level and can be represented at the parent again. Moving them upward removes an unnecessary layer for those ranges.",
+        "The principle is to keep only the depth that each portion of the hash space actually needs. This is the same adaptive goal as local depth in ordinary extendible hashing, now applied to a tree of directory pages."
+      ],
+      "key_points": [
+        "Not every buddy must remain at the deepest directory level.",
+        "Pointers can move upward when the parent can distinguish their ranges.",
+        "Per-region depth should track actual need."
+      ],
+      "exam_focus": {
+        "priority": "medium-low",
+        "status": "current-coverage-without-past-exam-confirmation",
+        "rationale": "This is an optimization detail with no supplied past-exam confirmation."
+      },
+      "self_test": {
+        "prompt": "Why move a buddy pointer back to a parent page when possible?",
+        "expected_answer_points": [
+          "To remove an unnecessary directory level.",
+          "To save space and reduce lookup page accesses for that range."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": false,
+        "display_note": "No material handwritten teaching note is included.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "09-hash-and-specialized-indexes",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "One printed deck slide and one physical PDF page; no duplicate build state remains."
+      }
+    },
+    {
+      "id": "ch3-slide75-multilevel-eh-properties",
+      "deck_id": "chapter3_260717_153137",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter3_260717_153137.pdf",
+      "source_pdf_physical_pages": [
+        79
+      ],
+      "printed_slide_number": 75,
+      "printed_slide_title": "Multi-Level Extendible Hashing (6)",
+      "teaching_view_title": "Multi-Level Extendible Hashing (6): Properties",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter3/page-79.png"
+      ],
+      "classification": "coverage-gap",
+      "audit_page_classification": "new",
+      "curriculum_change_claim": "not-established",
+      "coverage_interpretation": "Absent from the captured 2021 recordings. This establishes a baseline coverage gap, not automatically a 2026 curriculum change.",
+      "exact_baseline_occurrence_ids": [],
+      "teaching_explanation": [
+        "The final multi-level design uses buddy-system boundaries, so region sizes and bit widths follow powers of two. The pointer structure itself carries enough routing information that those widths do not need a separate explicit directory entry for every possible prefix.",
+        "The structure adapts naturally to skew and avoids a single exploding directory. Its cost is additional page accesses, but page-sized nodes provide large fanout and keep the tree shallow."
+      ],
+      "key_points": [
+        "Buddy boundaries are powers of two.",
+        "Routing widths can be derived from the pointer structure.",
+        "The tree adapts locally to skew.",
+        "Large fanout keeps the extra directory levels shallow."
+      ],
+      "exam_focus": {
+        "priority": "medium-high",
+        "status": "current-coverage-without-past-exam-confirmation",
+        "rationale": "This summary supports a compare-and-contrast answer around an exam-relevant hashing family."
+      },
+      "self_test": {
+        "prompt": "State the central space-versus-I/O trade-off of multi-level extendible hashing.",
+        "expected_answer_points": [
+          "It avoids a huge flat directory and adapts to skew.",
+          "Lookups may pay additional page accesses through directory levels."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": false,
+        "display_note": "No material handwritten teaching note is included.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "09-hash-and-specialized-indexes",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "One printed deck slide and one physical PDF page; no duplicate build state remains."
+      }
+    },
+    {
+      "id": "ch3-slide76-bitmap-indexes",
+      "deck_id": "chapter3_260717_153137",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter3_260717_153137.pdf",
+      "source_pdf_physical_pages": [
+        80
+      ],
+      "printed_slide_number": 76,
+      "printed_slide_title": "Bitmap Indexes",
+      "teaching_view_title": "Bitmap Indexes",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter3/page-80.png"
+      ],
+      "classification": "coverage-gap",
+      "audit_page_classification": "new",
+      "curriculum_change_claim": "not-established",
+      "coverage_interpretation": "Absent from the captured 2021 recordings. This establishes a baseline coverage gap, not automatically a 2026 curriculum change.",
+      "exact_baseline_occurrence_ids": [],
+      "teaching_explanation": [
+        "A conventional index can be unattractive for an unselective predicate because it returns many tuple identifiers and performs many scattered accesses. Yet several individually weak predicates can become selective when combined, including expressions with AND, OR, and NOT.",
+        "Bitmap indexes are motivated by this combination problem. They represent predicate results in a form that can be combined directly with fast bit operations before touching the qualifying tuples."
+      ],
+      "key_points": [
+        "Unselective conventional-index probes may cost more than a scan.",
+        "Several unselective predicates can be selective when combined.",
+        "Boolean combinations motivate a bit-oriented representation."
+      ],
+      "exam_focus": {
+        "priority": "medium",
+        "status": "current-coverage-without-past-exam-confirmation",
+        "rationale": "Index selection and predicate combination are plausible conceptual questions, but bitmap indexes are not named in the supplied protocols."
+      },
+      "self_test": {
+        "prompt": "Why might two individually unselective predicates still benefit from indexes?",
+        "expected_answer_points": [
+          "Their combination can be selective.",
+          "A bitmap representation can combine their result sets before fetching tuples."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": false,
+        "display_note": "No material handwritten teaching note is included.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "09-hash-and-specialized-indexes",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "One printed deck slide and one physical PDF page; no duplicate build state remains."
+      }
+    },
+    {
+      "id": "ch3-slide77-bitmap-index-encoding",
+      "deck_id": "chapter3_260717_153137",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter3_260717_153137.pdf",
+      "source_pdf_physical_pages": [
+        81
+      ],
+      "printed_slide_number": 77,
+      "printed_slide_title": "Bitmap Indexes (2)",
+      "teaching_view_title": "Bitmap Indexes (2): Encoding and Boolean Operations",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter3/page-81.png"
+      ],
+      "classification": "coverage-gap",
+      "audit_page_classification": "new",
+      "curriculum_change_claim": "not-established",
+      "coverage_interpretation": "Absent from the captured 2021 recordings. This establishes a baseline coverage gap, not automatically a 2026 curriculum change.",
+      "exact_baseline_occurrence_ids": [],
+      "teaching_explanation": [
+        "For an attribute with a small domain, maintain one bitmap per value. Bit position i corresponds to tuple i, and the bit is one exactly when that tuple has the indexed value. A query such as equality on one value selects the corresponding bitmap.",
+        "Conjunction, disjunction, and negation become bitwise AND, OR, and NOT. The one bits in the final bitmap identify qualifying tuple positions. This makes index intersection a dense machine-word operation rather than a tuple-identifier merge."
+      ],
+      "key_points": [
+        "Use one bitmap for each value in a small attribute domain.",
+        "Each bit position corresponds to a tuple position or TID.",
+        "Boolean query logic becomes bitwise logic.",
+        "Remaining one bits identify the matches."
+      ],
+      "exam_focus": {
+        "priority": "medium-high",
+        "status": "current-coverage-without-past-exam-confirmation",
+        "rationale": "The representation and bit-operation trace are compact, exam-friendly tasks despite no direct past-protocol confirmation."
+      },
+      "self_test": {
+        "prompt": "Given bitmaps for a=2, b=5, and c=1, how do you compute (a=2 OR b=5) AND c≠1?",
+        "expected_answer_points": [
+          "OR the first two bitmaps.",
+          "Negate the c=1 bitmap within the valid tuple range.",
+          "AND the two resulting bit vectors."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": false,
+        "display_note": "No material handwritten teaching note is included.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "09-hash-and-specialized-indexes",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "One printed deck slide and one physical PDF page; no duplicate build state remains."
+      }
+    },
+    {
+      "id": "ch3-slide78-bitmap-compression",
+      "deck_id": "chapter3_260717_153137",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter3_260717_153137.pdf",
+      "source_pdf_physical_pages": [
+        82
+      ],
+      "printed_slide_number": 78,
+      "printed_slide_title": "Bitmap Indexes (3)",
+      "teaching_view_title": "Bitmap Indexes (3): Compression",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter3/page-82.png"
+      ],
+      "classification": "coverage-gap",
+      "audit_page_classification": "new",
+      "curriculum_change_claim": "not-established",
+      "coverage_interpretation": "Absent from the captured 2021 recordings. This establishes a baseline coverage gap, not automatically a 2026 curriculum change.",
+      "exact_baseline_occurrence_ids": [],
+      "teaching_explanation": [
+        "A raw bitmap needs one bit per tuple for each indexed value, plus a mapping to tuple identifiers when physical positions are not sufficient. Real bitmaps are often sparse or contain long runs of identical bits, so they compress well.",
+        "Run-length encoding is especially attractive because intersections can operate on runs without first expanding every bit. This preserves much of the speed of bitwise filtering while reducing the memory and I/O footprint."
+      ],
+      "key_points": [
+        "Raw cost is approximately one bit per tuple per indexed value.",
+        "Sparse bitmaps and long runs compress well.",
+        "Run-length-encoded intersections can operate on compressed runs.",
+        "Bitmap indexes can outperform conventional indexes on unselective attributes."
+      ],
+      "exam_focus": {
+        "priority": "medium",
+        "status": "current-coverage-without-past-exam-confirmation",
+        "rationale": "Compression and logical operations are useful implementation concepts but are not specifically named in supplied exam recollections."
+      },
+      "self_test": {
+        "prompt": "Why is run-length encoding a good match for bitmap indexes?",
+        "expected_answer_points": [
+          "Bitmaps often contain long runs of equal bits.",
+          "Logical intersections can be evaluated over runs without full decompression."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": false,
+        "display_note": "No material handwritten teaching note is included.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "09-hash-and-specialized-indexes",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "One printed deck slide and one physical PDF page; no duplicate build state remains."
+      }
+    },
+    {
+      "id": "ch3-slide79-small-materialized-aggregates",
+      "deck_id": "chapter3_260717_153137",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter3_260717_153137.pdf",
+      "source_pdf_physical_pages": [
+        83
+      ],
+      "printed_slide_number": 79,
+      "printed_slide_title": "Small Materialized Aggregates",
+      "teaching_view_title": "Small Materialized Aggregates",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter3/page-83.png"
+      ],
+      "classification": "coverage-gap",
+      "audit_page_classification": "new",
+      "curriculum_change_claim": "not-established",
+      "coverage_interpretation": "Absent from the captured 2021 recordings. This establishes a baseline coverage gap, not automatically a 2026 curriculum change.",
+      "exact_baseline_occurrence_ids": [],
+      "teaching_explanation": [
+        "Data is stored in pages or larger chunks, and older chunks often stop changing. The system can cache a very small summary for each chunk, such as minimum, maximum, sum, or count.",
+        "These summaries are not full indexes over individual tuples. They are chunk metadata: compact facts that may prove a chunk irrelevant or answer part of an aggregate without reading all of its rows."
+      ],
+      "key_points": [
+        "Maintain compact summaries per physical chunk.",
+        "Typical summaries are min, max, sum, and count.",
+        "Older, stable chunks are especially suitable.",
+        "The summary describes the chunk, not each tuple."
+      ],
+      "exam_focus": {
+        "priority": "medium",
+        "status": "current-coverage-without-past-exam-confirmation",
+        "rationale": "This is current access-path material with no direct protocol confirmation; min/max reasoning is nevertheless easy to test."
+      },
+      "self_test": {
+        "prompt": "What does a per-chunk minimum and maximum tell you that a tuple index would tell you differently?",
+        "expected_answer_points": [
+          "Min/max only bounds the values in the whole chunk.",
+          "It can reject a chunk but does not identify the exact matching tuple positions."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": false,
+        "display_note": "No material handwritten teaching note is included.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "09-hash-and-specialized-indexes",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "One printed deck slide and one physical PDF page; no duplicate build state remains."
+      }
+    },
+    {
+      "id": "ch3-slide80-small-materialized-aggregates-pruning",
+      "deck_id": "chapter3_260717_153137",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter3_260717_153137.pdf",
+      "source_pdf_physical_pages": [
+        84
+      ],
+      "printed_slide_number": 80,
+      "printed_slide_title": "Small Materialized Aggregates (2)",
+      "teaching_view_title": "Small Materialized Aggregates (2): Chunk Pruning",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter3/page-84.png"
+      ],
+      "classification": "coverage-gap",
+      "audit_page_classification": "new",
+      "curriculum_change_claim": "not-established",
+      "coverage_interpretation": "Absent from the captured 2021 recordings. This establishes a baseline coverage gap, not automatically a 2026 curriculum change.",
+      "exact_baseline_occurrence_ids": [],
+      "teaching_explanation": [
+        "Before scanning a chunk, evaluate the query against its summary. If the summary proves that no tuple can match—for example, the query range lies outside the chunk's minimum and maximum—the entire chunk can be skipped. Stored sum or count values may also be reused directly when the query covers the whole chunk.",
+        "Updates turn the summary into a cache-coherence problem. The system may update it eagerly, recompute lazily, or mark it invalid and fall back to scanning until it is refreshed. Correctness requires that a stale summary never be used to skip data unsafely."
+      ],
+      "key_points": [
+        "Use the summary before touching the chunk.",
+        "Skip only when the summary proves that no tuple can qualify.",
+        "Some aggregate answers can reuse stored sum or count.",
+        "Eager update, lazy recomputation, or invalidation can handle changes."
+      ],
+      "exam_focus": {
+        "priority": "medium-high",
+        "status": "current-coverage-without-past-exam-confirmation",
+        "rationale": "Chunk-pruning and invalidation rules form a concise correctness question, though no protocol confirms it."
+      },
+      "self_test": {
+        "prompt": "A chunk has min=10 and max=20. Which of x>30 and x=15 can be decided without scanning?",
+        "expected_answer_points": [
+          "x>30 can be rejected for the entire chunk.",
+          "x=15 cannot be confirmed from min/max alone, so the chunk still needs inspection."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": false,
+        "display_note": "No material handwritten teaching note is included.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "09-hash-and-specialized-indexes",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "One printed deck slide and one physical PDF page; no duplicate build state remains."
+      }
+    },
+    {
+      "id": "ch3-slide81-multidimensional-indexing",
+      "deck_id": "chapter3_260717_153137",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter3_260717_153137.pdf",
+      "source_pdf_physical_pages": [
+        85
+      ],
+      "printed_slide_number": 81,
+      "printed_slide_title": "Multi-Dimensional Indexing",
+      "teaching_view_title": "Multi-Dimensional Indexing",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter3/page-85.png"
+      ],
+      "classification": "coverage-gap",
+      "audit_page_classification": "new",
+      "curriculum_change_claim": "not-established",
+      "coverage_interpretation": "Absent from the captured 2021 recordings. This establishes a baseline coverage gap, not automatically a 2026 curriculum change.",
+      "exact_baseline_occurrence_ids": [],
+      "teaching_explanation": [
+        "Multi-dimensional indexing covers structures such as R-trees, grid files, pyramid schemes, and index intersection. The slide intentionally does not teach one full algorithm; its main lesson is that indexing several dimensions is a large design space.",
+        "The limiting principle is the curse of dimensionality. As dimensions increase, data and query regions cease to separate effectively, so range or proximity searches touch a large fraction of the data. Beyond some point, scanning can be cheaper than navigating an index."
+      ],
+      "key_points": [
+        "There are many specialized multi-dimensional index families.",
+        "They are effective only for a relatively small number of dimensions.",
+        "High-dimensional range and proximity queries lose selectivity.",
+        "A scan can beat an index when dimensional pruning collapses."
+      ],
+      "exam_focus": {
+        "priority": "low-medium",
+        "status": "current-coverage-without-past-exam-confirmation",
+        "rationale": "The slide signals a conceptual boundary rather than an implementation required in the supplied protocols."
+      },
+      "self_test": {
+        "prompt": "What does the curse of dimensionality do to an index's pruning power?",
+        "expected_answer_points": [
+          "Query regions overlap many index regions.",
+          "The search visits much of the structure or data.",
+          "A scan may become cheaper."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": false,
+        "display_note": "Exclude the handwritten 'End 05/19' mark from learner-facing content; retain it only as internal evidence that the current lecture reached this slide.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "09-hash-and-specialized-indexes",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "One printed deck slide and one physical PDF page; no duplicate build state remains."
+      }
+    },
+    {
+      "id": "ch1-study-map-implementation-assignments",
+      "deck_id": "chapter1_260717_153205",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter1_260717_153205.pdf",
+      "source_pdf_physical_pages": [
+        23
+      ],
+      "printed_slide_number": 19,
+      "printed_slide_title": "Overview",
+      "teaching_view_title": "Implementation Assignment Study Map",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter1/page-23.png"
+      ],
+      "classification": "useful-handwritten-teaching-view",
+      "audit_page_classification": "unchanged",
+      "curriculum_change_claim": "none",
+      "coverage_interpretation": "Selected because the handwriting adds a distinct learner-facing procedure or visual. It is supplemental classroom evidence, not a printed curriculum change.",
+      "exact_baseline_occurrence_ids": [
+        "dbimpl-00-introduction-021"
+      ],
+      "baseline_mapping_note": "Exact baseline occurrence IDs refer to the underlying printed slide.",
+      "teaching_explanation": [
+        "The handwritten map turns the course overview into a study plan. Storage is practiced through external sorting; access paths through the buffer manager, slotted pages, and B-tree; set-oriented execution through algebraic operators; and code generation through LLVM or expression evaluation.",
+        "Use the map bidirectionally. When reviewing a chapter, open the linked implementation exercise to see the invariant in executable form. When reviewing code, return to the chapter explanation and state which lecture abstraction the code realizes."
+      ],
+      "key_points": [
+        "External sort operationalizes external-memory storage constraints.",
+        "Buffer manager, slotted pages, and B-tree operationalize access paths.",
+        "Algebraic operators operationalize set-oriented execution.",
+        "LLVM/expression evaluation operationalizes code generation."
+      ],
+      "exam_focus": {
+        "priority": "high",
+        "status": "explicit-lecture-study-priority",
+        "rationale": "The professor's course overview explicitly links these implementation assignments to the corresponding lecture areas. This is strong study guidance, not an exam guarantee."
+      },
+      "self_test": {
+        "prompt": "For each implementation exercise, name the lecture abstraction it is meant to make concrete.",
+        "expected_answer_points": [
+          "External sort → storage/external-memory algorithms.",
+          "Buffer manager, slotted pages, B-tree → access paths.",
+          "Algebraic operators → set-oriented execution.",
+          "LLVM/expression evaluation → code generation."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": true,
+        "display_note": "Show the handwritten map as a study-roadmap callout next to the course overview. Transcribe it cleanly and keep the original image available for provenance.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "01-foundations-and-relational-model",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "Use this page as one supplemental teaching view attached to the existing topic; do not duplicate the underlying canonical slide."
+      }
+    },
+    {
+      "id": "ch2-second-chance-clock-view",
+      "deck_id": "chapter2_260717_153153",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter2_260717_153153.pdf",
+      "source_pdf_physical_pages": [
+        22
+      ],
+      "printed_slide_number": 22,
+      "printed_slide_title": "Buffer Replacement - Second Chance",
+      "teaching_view_title": "Buffer Replacement — Second Chance Clock",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter2/page-22.png"
+      ],
+      "classification": "useful-handwritten-teaching-view",
+      "audit_page_classification": "unchanged",
+      "curriculum_change_claim": "none",
+      "coverage_interpretation": "Selected because the handwriting adds a distinct learner-facing procedure or visual. It is supplemental classroom evidence, not a printed curriculum change.",
+      "exact_baseline_occurrence_ids": [
+        "dbimpl-01-storage-030"
+      ],
+      "baseline_mapping_note": "Exact baseline occurrence IDs refer to the underlying printed slide.",
+      "teaching_explanation": [
+        "The clock drawing makes second-chance replacement procedural. Frames form a circular sequence with a reference bit. The hand inspects one frame at a time: a referenced frame has its bit cleared and receives another round; the first unreferenced eligible frame becomes the victim.",
+        "This approximates LRU without maintaining a globally ordered recency list. Recently touched pages tend to survive one pass, while repeated sweeps eventually evict pages that stop being referenced."
+      ],
+      "key_points": [
+        "Frames are visited cyclically by the clock hand.",
+        "Reference bit 1 becomes 0 and grants a second chance.",
+        "Reference bit 0 identifies the next eligible victim.",
+        "The method approximates recency with low bookkeeping cost."
+      ],
+      "exam_focus": {
+        "priority": "high",
+        "status": "corroborated-past-practice",
+        "rationale": "Buffer-replacement algorithms and trade-offs appear in the supplied exam-practice evidence."
+      },
+      "self_test": {
+        "prompt": "The clock hand sees reference bits 1, 1, 0 on three consecutive eligible frames. Which frame is evicted?",
+        "expected_answer_points": [
+          "The first two bits are cleared and those frames survive.",
+          "The third frame, already at 0, is selected as the victim."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": true,
+        "display_note": "Use the wheel sketch beside the clean algorithm steps. Do not treat the drawing as a revised replacement-policy definition.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "03-buffer-management",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "Use this page as one supplemental teaching view attached to the existing topic; do not duplicate the underlying canonical slide."
+      }
+    },
+    {
+      "id": "ch3-btree-delete-redistribute-or-merge",
+      "deck_id": "chapter3_260717_153137",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter3_260717_153137.pdf",
+      "source_pdf_physical_pages": [
+        36
+      ],
+      "printed_slide_number": 36,
+      "printed_slide_title": "Operations - Delete",
+      "teaching_view_title": "B+-Tree Deletion: Redistribute or Merge",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter3/page-36.png"
+      ],
+      "classification": "useful-handwritten-teaching-view",
+      "audit_page_classification": "unchanged",
+      "curriculum_change_claim": "none",
+      "coverage_interpretation": "Selected because the handwriting adds a distinct learner-facing procedure or visual. It is supplemental classroom evidence, not a printed curriculum change.",
+      "exact_baseline_occurrence_ids": [
+        "dbimpl-05-access-btrees-004"
+      ],
+      "baseline_mapping_note": "Exact baseline occurrence IDs refer to the underlying printed slide.",
+      "teaching_explanation": [
+        "After deleting a key, a node may fall below its minimum occupancy. First inspect a sibling. If the sibling has more than the minimum, redistribute one entry through the parent and update the separating key.",
+        "If no sibling can lend an entry, merge the underfull node with a sibling and remove the obsolete separator and child pointer from the parent. That parent deletion can itself underflow, so repair may propagate upward; an empty root is replaced by its only child."
+      ],
+      "key_points": [
+        "Delete locally, then check minimum occupancy.",
+        "Prefer redistribution when a sibling can lend.",
+        "Otherwise merge and delete the parent separator.",
+        "Repair may propagate toward the root."
+      ],
+      "exam_focus": {
+        "priority": "medium-high",
+        "status": "core-btree-operation",
+        "rationale": "B+-tree operations are central course material; the supplied protocol emphasizes concurrency more than deletion, so this is core preparation rather than a confirmed exact task."
+      },
+      "self_test": {
+        "prompt": "A leaf underflows and its right sibling is exactly half full. Redistribute or merge?",
+        "expected_answer_points": [
+          "The sibling cannot lend without underflowing.",
+          "Merge the two leaves.",
+          "Remove the corresponding separator/pointer from the parent and repair upward if needed."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": true,
+        "display_note": "Use the handwritten decision rule as an overlay on the canonical deletion slide. Preserve the distinction between 'sibling can lend' and 'sibling is merely present.'",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "07-btree-fundamentals-and-operations",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "Use this page as one supplemental teaching view attached to the existing topic; do not duplicate the underlying canonical slide."
+      }
+    },
+    {
+      "id": "ch3-btree-lock-coupling-sequence",
+      "deck_id": "chapter3_260717_153137",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter3_260717_153137.pdf",
+      "source_pdf_physical_pages": [
+        40
+      ],
+      "printed_slide_number": 40,
+      "printed_slide_title": "Concurrent Access",
+      "teaching_view_title": "B+-Tree Lock Coupling",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter3/page-40.png"
+      ],
+      "classification": "useful-handwritten-teaching-view",
+      "audit_page_classification": "unchanged",
+      "curriculum_change_claim": "none",
+      "coverage_interpretation": "Selected because the handwriting adds a distinct learner-facing procedure or visual. It is supplemental classroom evidence, not a printed curriculum change.",
+      "exact_baseline_occurrence_ids": [
+        "dbimpl-05-access-btrees-008"
+      ],
+      "baseline_mapping_note": "Exact baseline occurrence IDs refer to the underlying printed slide.",
+      "teaching_explanation": [
+        "Lock coupling descends the tree while never exposing a gap in protection. Acquire the child latch before releasing the parent latch: hold parent, acquire child, verify that the child is the correct and safe continuation, then release parent.",
+        "The top-down acquisition order prevents two traversals from forming a simple parent-child cycle. Updates still need a safe-node or restart rule because a split can propagate upward; code that releases the parent before acquiring the child is not lock coupling."
+      ],
+      "key_points": [
+        "Acquire child before releasing parent.",
+        "Always retain protection on at least one node during descent.",
+        "Use one consistent top-down acquisition order.",
+        "For updates, release ancestors only when the child is safe or restart is possible."
+      ],
+      "exam_focus": {
+        "priority": "very-high",
+        "status": "corroborated-past-exam-recall",
+        "rationale": "A supplied recollection specifically names B+-tree lock coupling, deadlock prevention, and correction of flawed traversal code."
+      },
+      "self_test": {
+        "prompt": "What is wrong with unlock(parent); lock(child), and what is the correct order?",
+        "expected_answer_points": [
+          "The gap allows the child relationship or contents to change without protection.",
+          "Correct order: lock child, validate/safety-check it, then unlock parent."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": true,
+        "display_note": "Feature the handwritten parent→child→release sequence prominently, but pair it with clean safety/restart text so the shorthand cannot be misread.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "08-advanced-btree-techniques",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "Use this page as one supplemental teaching view attached to the existing topic; do not duplicate the underlying canonical slide."
+      }
+    },
+    {
+      "id": "ch3-partitioned-btree-online-bulkload",
+      "deck_id": "chapter3_260717_153137",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter3_260717_153137.pdf",
+      "source_pdf_physical_pages": [
+        47
+      ],
+      "printed_slide_number": 47,
+      "printed_slide_title": "Partitioned B-Tree",
+      "teaching_view_title": "Partitioned B-Tree: Online Bulk-Load and Merge",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter3/page-47.png"
+      ],
+      "classification": "useful-handwritten-teaching-view",
+      "audit_page_classification": "unchanged",
+      "curriculum_change_claim": "none",
+      "coverage_interpretation": "Selected because the handwriting adds a distinct learner-facing procedure or visual. It is supplemental classroom evidence, not a printed curriculum change.",
+      "exact_baseline_occurrence_ids": [
+        "dbimpl-05-access-btrees-021",
+        "dbimpl-05-access-btrees-023",
+        "dbimpl-05-access-btrees-025",
+        "dbimpl-05-access-btrees-027",
+        "dbimpl-05-access-btrees-029"
+      ],
+      "baseline_mapping_note": "Exact baseline occurrence IDs refer to the underlying printed slide.",
+      "teaching_explanation": [
+        "A partitioned B-tree buffers updates in sorted partitions instead of immediately inserting every item into one monolithic tree. New data can be bulk-loaded into a fresh partition while lookups remain online by consulting all currently active partitions.",
+        "Background merging gradually consolidates partitions and restores efficient lookup. The design trades cheaper batched writes for read amplification: until merging catches up, a point or range query may need to inspect several partitions."
+      ],
+      "key_points": [
+        "Bulk-load new updates into sorted partitions.",
+        "Keep lookups correct by searching every active relevant partition.",
+        "Merge partitions over time.",
+        "Trade write efficiency for temporary read amplification."
+      ],
+      "exam_focus": {
+        "priority": "medium",
+        "status": "current-core-without-specific-recall",
+        "rationale": "Bulk-loading and advanced B-tree maintenance are course material, but no supplied protocol names partitioned B-trees."
+      },
+      "self_test": {
+        "prompt": "What must a lookup do before background merging has consolidated all partitions?",
+        "expected_answer_points": [
+          "Search every active partition that could contain the key or range.",
+          "Combine or reconcile the results according to update semantics."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": true,
+        "display_note": "Use the handwritten online/bulk-load/merge sequence as a process diagram attached to the existing partitioned-B-tree explanation.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "08-advanced-btree-techniques",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "Use this page as one supplemental teaching view attached to the existing topic; do not duplicate the underlying canonical slide."
+      }
+    },
+    {
+      "id": "ch3-variable-keys-balanced-split",
+      "deck_id": "chapter3_260717_153137",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter3_260717_153137.pdf",
+      "source_pdf_physical_pages": [
+        54
+      ],
+      "printed_slide_number": 52,
+      "printed_slide_title": "Variable Length Records (4)",
+      "teaching_view_title": "Variable-Length Keys: Choose a Separator by Space",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter3/page-54.png"
+      ],
+      "classification": "useful-handwritten-teaching-view",
+      "audit_page_classification": "unchanged",
+      "curriculum_change_claim": "none",
+      "coverage_interpretation": "Selected because the handwriting adds a distinct learner-facing procedure or visual. It is supplemental classroom evidence, not a printed curriculum change.",
+      "exact_baseline_occurrence_ids": [
+        "dbimpl-05-access-btrees-035",
+        "dbimpl-05-access-btrees-036",
+        "dbimpl-06-access-eh-002"
+      ],
+      "baseline_mapping_note": "Exact baseline occurrence IDs refer to the underlying printed slide.",
+      "teaching_explanation": [
+        "With variable-length keys, splitting by entry count can produce badly unbalanced byte occupancy. Sort the candidate separators as usual, then choose a split position near the median whose byte totals keep both resulting pages within capacity.",
+        "The handwritten median-window sketch is a search heuristic, not permission to violate key order. The separator must preserve the B+-tree routing invariant while balancing occupied space rather than merely the number of keys."
+      ],
+      "key_points": [
+        "Entry count is not a reliable proxy for byte occupancy.",
+        "Candidate split positions must preserve sorted key order.",
+        "Choose a position near the median that balances bytes.",
+        "Both pages must satisfy capacity and occupancy constraints."
+      ],
+      "exam_focus": {
+        "priority": "medium-high",
+        "status": "core-implementation-detail",
+        "rationale": "Variable-length B-tree layout is implementation-relevant, though it is not singled out in the supplied exam protocols."
+      },
+      "self_test": {
+        "prompt": "Why can a 50/50 split by key count still overflow one side?",
+        "expected_answer_points": [
+          "Keys have different byte lengths.",
+          "A few long keys can consume more space than many short keys.",
+          "Balance must therefore consider bytes as well as order."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": true,
+        "display_note": "Show the sorted-list/median-window sketch with a clean caption that the optimization target is byte occupancy, not arbitrary separator choice.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "08-advanced-btree-techniques",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "Use this page as one supplemental teaching view attached to the existing topic; do not duplicate the underlying canonical slide."
+      }
+    },
+    {
+      "id": "ch3-hash-function-board",
+      "deck_id": "chapter3_260717_153137",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter3_260717_153137.pdf",
+      "source_pdf_physical_pages": [
+        58
+      ],
+      "printed_slide_number": null,
+      "printed_slide_title": null,
+      "teaching_view_title": "Hash Functions and Bucket Addressing",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter3/page-58.png"
+      ],
+      "classification": "useful-handwritten-teaching-view",
+      "audit_page_classification": "uncertain",
+      "curriculum_change_claim": "none",
+      "coverage_interpretation": "Selected because the handwriting adds a distinct learner-facing procedure or visual. It is supplemental classroom evidence, not a printed curriculum change.",
+      "exact_baseline_occurrence_ids": [
+        "dbimpl-06-access-eh-018",
+        "dbimpl-06-access-eh-021"
+      ],
+      "baseline_mapping_note": "These are related 2021 professor-board occurrences, not exact printed-slide matches.",
+      "teaching_explanation": [
+        "The board connects a logical hash table to actual bucket addressing. A key is transformed by a hash function and then reduced to the current table range. Chaining handles multiple keys that land in the same bucket, but a poor hash function can create systematic clustering that chaining cannot hide cheaply.",
+        "Identity hashing is dangerous when keys already contain patterns aligned with the table size. Multiply-and-shift or similar bit-mixing schemes spread structured input before selecting address bits. The goal is not a collision-free mapping—finite tables make that impossible—but a distribution that keeps bucket loads balanced for the expected keys."
+      ],
+      "key_points": [
+        "Hash first, then reduce to the active bucket range.",
+        "Chaining preserves correctness under collisions.",
+        "Structured keys make identity hashing risky.",
+        "Bit mixing should spread expected inputs across buckets.",
+        "The quality target is balanced distribution, not zero collisions."
+      ],
+      "exam_focus": {
+        "priority": "high",
+        "status": "supports-exam-relevant-hashing",
+        "rationale": "Hashing and extendible-hashing depths are confirmed study priorities; this board supplies the hash-function foundation beneath those tasks."
+      },
+      "self_test": {
+        "prompt": "Why can H(x)=x perform badly when the bucket count is a power of two?",
+        "expected_answer_points": [
+          "Bucket selection may depend on only low-order bits.",
+          "Structured keys can share those bits and cluster.",
+          "A mixing step should distribute information from across the key before selecting bucket bits."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": true,
+        "display_note": "Treat this as a full 2026 board-note view. Link the two baseline board occurrences as related evidence, not as exact printed-slide matches.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "09-hash-and-specialized-indexes",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "Use this page as one supplemental teaching view attached to the existing topic; do not duplicate the underlying canonical slide."
+      }
+    },
+    {
+      "id": "ch3-like-string-search-board",
+      "deck_id": "chapter3_260717_153137",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter3_260717_153137.pdf",
+      "source_pdf_physical_pages": [
+        59
+      ],
+      "printed_slide_number": null,
+      "printed_slide_title": null,
+      "teaching_view_title": "LIKE, Substring Search, and Leading Wildcards",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter3/page-59.png"
+      ],
+      "classification": "useful-handwritten-teaching-view",
+      "audit_page_classification": "uncertain",
+      "curriculum_change_claim": "none",
+      "coverage_interpretation": "Selected because the handwriting adds a distinct learner-facing procedure or visual. It is supplemental classroom evidence, not a printed curriculum change.",
+      "exact_baseline_occurrence_ids": [],
+      "baseline_mapping_note": "No exact 2021 occurrence was found.",
+      "teaching_explanation": [
+        "The board separates exact or prefix-friendly string search from general substring matching. Algorithms such as KMP or two-way search avoid restarting comparison from scratch after a mismatch, so they can scan one string in linear time.",
+        "A leading wildcard changes the access-path problem: the match may begin anywhere, so an ordinary ordered index on the full string cannot jump to one contiguous key range. The system usually needs a scan or a specialized substring index; a fast in-string matcher improves each comparison but does not restore ordinary index selectivity."
+      ],
+      "key_points": [
+        "Linear-time string matching avoids redundant character comparisons.",
+        "A fixed prefix can map to an ordered-index range.",
+        "A leading wildcard removes the fixed starting position.",
+        "A fast matcher and an index solve different parts of the problem."
+      ],
+      "exam_focus": {
+        "priority": "low-medium",
+        "status": "no-past-exam-confirmation",
+        "rationale": "This is a useful complete board lesson, but no exact 2021 occurrence or supplied exam protocol confirms it."
+      },
+      "self_test": {
+        "prompt": "Why can an index support LIKE 'abc%' more directly than LIKE '%abc'?",
+        "expected_answer_points": [
+          "'abc%' defines a contiguous range of strings sharing a known prefix.",
+          "'%abc' can match strings with any beginning, so the ordinary lexical index cannot seek to one range."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": true,
+        "display_note": "Treat as a standalone 2026 board-note supplement. Do not invent a 2021 occurrence or present it as confirmed exam scope.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "09-hash-and-specialized-indexes",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "Use this page as one supplemental teaching view attached to the existing topic; do not duplicate the underlying canonical slide."
+      }
+    }
+  ]
+}

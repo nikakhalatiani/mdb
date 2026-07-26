@@ -1,0 +1,1010 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-07-26",
+  "scope": {
+    "source_pdfs": [
+      "/Users/nkhalatiani/Downloads/chapter7_260717_153118.pdf",
+      "/Users/nkhalatiani/Downloads/chapter8_260717_153116.pdf",
+      "/Users/nkhalatiani/Downloads/qsort_260717_153127.pdf"
+    ],
+    "comparison_corpus": "/Users/nkhalatiani/Desktop/mdb/mdb-lecture-atlas-pages/public/generated/course",
+    "pages_rendered_and_visually_inspected": 79,
+    "classification_vocabulary": [
+      "unchanged",
+      "cosmetic/reordered",
+      "clarified/updated",
+      "new",
+      "removed/de-emphasized",
+      "uncertain"
+    ]
+  },
+  "methodology": {
+    "printed_content": "Extracted with pypdf, then checked against a 144 dpi rendering of every physical PDF page.",
+    "handwriting": "Catalogued separately and never used as evidence of a curriculum change.",
+    "matching": "An exact occurrence match requires the same printed slide in the 2021 recording corpus. Canonical deck-position inference is recorded separately and is not promoted to an exact occurrence.",
+    "exam_status": "A slide's presence in a 2026 PDF does not by itself establish examinability."
+  },
+  "decks": [
+    {
+      "id": "chapter7",
+      "file": "/Users/nkhalatiani/Downloads/chapter7_260717_153118.pdf",
+      "physical_page_count": 24,
+      "printed_logical_slide_count": 24,
+      "deck_assessment": {
+        "classification": "unchanged",
+        "confidence": "high",
+        "evidence": "All 24 printed slides have exact 2021 visual occurrences in dbimpl-13-codegen, in the same section order. Revisited 2021 occurrences are retained where the same slide reappeared.",
+        "mapped_site_chapters": [
+          "16-query-compilation",
+          "17-parallel-query-execution"
+        ],
+        "removed_or_deemphasized": [],
+        "recommended_site_treatment": "Keep the existing chapter 16 and 17 teaching sequence. Attach the cleaner 2026 slide images as alternate evidence where useful; do not create a duplicate chapter. Keep the two handwritten pages as optional annotation views."
+      },
+      "pages": [
+        {
+          "pdf_page": 1,
+          "printed_page": "1 / 24",
+          "title": "Code Generation",
+          "printed_summary": "Section title.",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-015"],
+          "site_chapter_ids": ["16-query-compilation"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "recommended_site_treatment": "retain-core"
+        },
+        {
+          "pdf_page": 2,
+          "printed_page": "2 / 24",
+          "title": "Motivation",
+          "printed_summary": "Generate byte or machine code; libraries include LLVM, libjit, and GNU lightning.",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-016"],
+          "site_chapter_ids": ["16-query-compilation"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "recommended_site_treatment": "retain-core"
+        },
+        {
+          "pdf_page": 3,
+          "printed_page": "3 / 24",
+          "title": "LLVM",
+          "printed_summary": "Typed SSA values and a factorial example.",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-017", "dbimpl-13-codegen-018"],
+          "site_chapter_ids": ["16-query-compilation"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "recommended_site_treatment": "retain-core"
+        },
+        {
+          "pdf_page": 4,
+          "printed_page": "4 / 24",
+          "title": "Compiling Scalar Expressions",
+          "printed_summary": "Expression compilation into generated code.",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-019"],
+          "site_chapter_ids": ["16-query-compilation"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "recommended_site_treatment": "retain-core"
+        },
+        {
+          "pdf_page": 5,
+          "printed_page": "5 / 24",
+          "title": "Data-Centric Query Execution",
+          "printed_summary": "Data-centric execution introduction.",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-020"],
+          "site_chapter_ids": ["16-query-compilation"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "recommended_site_treatment": "retain-core"
+        },
+        {
+          "pdf_page": 6,
+          "printed_page": "6 / 24",
+          "title": "Data-Centric Query Execution (2)",
+          "printed_summary": "Pipeline boundaries in an operator plan.",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-021"],
+          "site_chapter_ids": ["16-query-compilation"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "recommended_site_treatment": "retain-core"
+        },
+        {
+          "pdf_page": 7,
+          "printed_page": "7 / 24",
+          "title": "Data-Centric Query Execution (3)",
+          "printed_summary": "Pipeline code-fragment illustration.",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-022", "dbimpl-13-codegen-024", "dbimpl-13-codegen-027"],
+          "site_chapter_ids": ["16-query-compilation"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "recommended_site_treatment": "retain-core"
+        },
+        {
+          "pdf_page": 8,
+          "printed_page": "8 / 24",
+          "title": "Data-Centric Query Execution (4)",
+          "printed_summary": "Data-centric compilation strategy.",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-023", "dbimpl-13-codegen-025", "dbimpl-13-codegen-032"],
+          "site_chapter_ids": ["16-query-compilation"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "recommended_site_treatment": "retain-core"
+        },
+        {
+          "pdf_page": 9,
+          "printed_page": "9 / 24",
+          "title": "Producing the Code",
+          "printed_summary": "Translator/code-production introduction.",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-026", "dbimpl-13-codegen-028"],
+          "site_chapter_ids": ["16-query-compilation"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "recommended_site_treatment": "retain-core"
+        },
+        {
+          "pdf_page": 10,
+          "printed_page": "10 / 24",
+          "title": "Producing the Code (2)",
+          "printed_summary": "HJTranslatorInner::produce structure.",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-029", "dbimpl-13-codegen-030"],
+          "site_chapter_ids": ["16-query-compilation"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "recommended_site_treatment": "retain-core"
+        },
+        {
+          "pdf_page": 11,
+          "printed_page": "11 / 24",
+          "title": "Producing the Code (3)",
+          "printed_summary": "Hash-join code generation for the left/build side.",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-031"],
+          "site_chapter_ids": ["16-query-compilation"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "recommended_site_treatment": "retain-core"
+        },
+        {
+          "pdf_page": 12,
+          "printed_page": "12 / 24",
+          "title": "Producing the Code (4)",
+          "printed_summary": "Hash-join code generation for the right/probe side.",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-033"],
+          "site_chapter_ids": ["16-query-compilation"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "recommended_site_treatment": "retain-core"
+        },
+        {
+          "pdf_page": 13,
+          "printed_page": "13 / 24",
+          "title": "Producing the Code (5)",
+          "printed_summary": "Generated join logic.",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-034"],
+          "site_chapter_ids": ["16-query-compilation"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "recommended_site_treatment": "retain-core"
+        },
+        {
+          "pdf_page": 14,
+          "printed_page": "14 / 24",
+          "title": "Parallel Query Execution",
+          "printed_summary": "Section title.",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-035"],
+          "site_chapter_ids": ["17-parallel-query-execution"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "recommended_site_treatment": "retain-core"
+        },
+        {
+          "pdf_page": 15,
+          "printed_page": "15 / 24",
+          "title": "Parallelism",
+          "printed_summary": "Parallel query execution motivation and plan-level parallelism.",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-036"],
+          "site_chapter_ids": ["17-parallel-query-execution"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "recommended_site_treatment": "retain-core"
+        },
+        {
+          "pdf_page": 16,
+          "printed_page": "16 / 24",
+          "title": "Vertical Parallelism: Exchange Operator",
+          "printed_summary": "Exchange operators encapsulate threads and buffering while preserving relational operators.",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-037"],
+          "site_chapter_ids": ["17-parallel-query-execution"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "handwriting_ids": ["chapter7-p16-h1"],
+          "recommended_site_treatment": "retain-core-with-optional-annotation"
+        },
+        {
+          "pdf_page": 17,
+          "printed_page": "17 / 24",
+          "title": "Exchange Operator Variants",
+          "printed_summary": "Broadcast, split, merge, and hash exchange variants.",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-038"],
+          "site_chapter_ids": ["17-parallel-query-execution"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "recommended_site_treatment": "retain-core"
+        },
+        {
+          "pdf_page": 18,
+          "printed_page": "18 / 24",
+          "title": "Aggregation with Exchange Operators",
+          "printed_summary": "Parallel aggregation plan with exchanges.",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-039", "dbimpl-13-codegen-043"],
+          "site_chapter_ids": ["17-parallel-query-execution"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "recommended_site_treatment": "retain-core"
+        },
+        {
+          "pdf_page": 19,
+          "printed_page": "19 / 24",
+          "title": "Join with Exchange Operators",
+          "printed_summary": "Parallel join plan with partitioning exchanges.",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-040", "dbimpl-13-codegen-042"],
+          "site_chapter_ids": ["17-parallel-query-execution"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "recommended_site_treatment": "retain-core"
+        },
+        {
+          "pdf_page": 20,
+          "printed_page": "20 / 24",
+          "title": "Disadvantages of Exchange Operators",
+          "printed_summary": "Static thread count and materialization/synchronization costs.",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-041", "dbimpl-13-codegen-044"],
+          "site_chapter_ids": ["17-parallel-query-execution"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "recommended_site_treatment": "retain-core"
+        },
+        {
+          "pdf_page": 21,
+          "printed_page": "21 / 24",
+          "title": "Parallel Query Engine",
+          "printed_summary": "Parallel engine architecture.",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-045"],
+          "site_chapter_ids": ["17-parallel-query-execution"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "recommended_site_treatment": "retain-core"
+        },
+        {
+          "pdf_page": 22,
+          "printed_page": "22 / 24",
+          "title": "Morsel-Driven Query Execution",
+          "printed_summary": "Constant-sized morsels, worker threads, and a dispatcher.",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-046", "dbimpl-13-codegen-048"],
+          "site_chapter_ids": ["17-parallel-query-execution"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "handwriting_ids": ["chapter7-p22-h1"],
+          "recommended_site_treatment": "retain-core-with-optional-annotation"
+        },
+        {
+          "pdf_page": 23,
+          "printed_page": "23 / 24",
+          "title": "Dynamic Scheduling",
+          "printed_summary": "Dynamic morsel assignment balances non-uniform work.",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-047", "dbimpl-13-codegen-049"],
+          "site_chapter_ids": ["17-parallel-query-execution"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "recommended_site_treatment": "retain-core"
+        },
+        {
+          "pdf_page": 24,
+          "printed_page": "24 / 24",
+          "title": "Parallel In-Memory Hash Join",
+          "printed_summary": "Thread-local build materialization, shared hash-table construction, and parallel probe.",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-050"],
+          "site_chapter_ids": ["17-parallel-query-execution"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "recommended_site_treatment": "retain-core"
+        }
+      ]
+    },
+    {
+      "id": "chapter8",
+      "file": "/Users/nkhalatiani/Downloads/chapter8_260717_153116.pdf",
+      "physical_page_count": 33,
+      "printed_logical_slide_count": 29,
+      "deck_assessment": {
+        "classification": "uncertain",
+        "confidence": "high for corpus comparison and 2026 coverage; low for official current exam status",
+        "evidence": "The 2021 deck had 375 canonical slides. Logical chapter-8 slides 1-25 align to canonical positions 351-375, but the recording captured only positions 351, 352, 353, and 357. The professor then explicitly stopped before the section and said it would not be asked in the 2021 exam. The user directly reports that the full section was taught in 2026, so the old non-exam label is stale as a description of current teaching coverage. Logical slides 26-29 are beyond the old deck total and are demonstrably new to that deck.",
+        "mapped_site_chapters": [
+          "17-parallel-query-execution"
+        ],
+        "removed_or_deemphasized": [
+          {
+            "period": "2021 recording",
+            "scope": "Main-Memory Databases section",
+            "classification": "removed/de-emphasized",
+            "evidence_occurrence_id": "dbimpl-13-codegen-054",
+            "evidence": "The professor stopped before teaching the section and explicitly said the main-memory slides would not be asked in the exam."
+          }
+        ],
+        "recommended_site_treatment": "Create a clearly labeled 2026 supplement after chapter 17, not a silent extension of the old examined material. Show a status banner: 'Fully covered in the 2026 course (user report). The 2021 recording's non-exam statement is historical; no official 2026 exam guarantee is present in the supplied sources.' Treat Data Blocks (logical 26-29) as a new subsection."
+      },
+      "pages": [
+        {
+          "pdf_page": 1,
+          "printed_page": "1 / 29",
+          "title": "Main-Memory Databases",
+          "printed_summary": "Section title.",
+          "inferred_2021_canonical_slide_id": "slide-0351",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-051"],
+          "site_chapter_ids": ["17-parallel-query-execution"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "recommended_site_treatment": "supplement-status-banner"
+        },
+        {
+          "pdf_page": 2,
+          "printed_page": "2 / 29",
+          "title": "Motivation",
+          "printed_summary": "Large memory, many-core CPUs, SIMD, HTM, accelerators, and in-memory system trends.",
+          "inferred_2021_canonical_slide_id": "slide-0352",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-052"],
+          "site_chapter_ids": ["17-parallel-query-execution"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "recommended_site_treatment": "supplement-status-banner"
+        },
+        {
+          "pdf_page": 3,
+          "printed_page": "3 / 29",
+          "title": "Recap: Database Workloads",
+          "printed_summary": "Contrasts analytical and transaction-processing workloads.",
+          "inferred_2021_canonical_slide_id": "slide-0353",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-053"],
+          "site_chapter_ids": ["17-parallel-query-execution"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "recommended_site_treatment": "supplement-status-banner"
+        },
+        {
+          "pdf_page": 4,
+          "printed_page": "4 / 29",
+          "title": "Online Transaction Processing",
+          "printed_summary": "OLTP workload and architecture considerations.",
+          "inferred_2021_canonical_slide_id": "slide-0354",
+          "exact_2021_occurrence_ids": [],
+          "classification": "uncertain",
+          "confidence": "medium",
+          "evidence": "Strong deck-position evidence that the slide existed in 2021, but no recorded 2021 visual occurrence.",
+          "recommended_site_treatment": "supplement-status-banner"
+        },
+        {
+          "pdf_page": 5,
+          "printed_page": "5 / 29",
+          "title": "Online Transaction Processing (2)",
+          "printed_summary": "Traditional overhead from ARIES, 2PL, latching, and the buffer manager.",
+          "inferred_2021_canonical_slide_id": "slide-0355",
+          "exact_2021_occurrence_ids": [],
+          "classification": "uncertain",
+          "confidence": "medium",
+          "evidence": "Strong deck-position evidence that the slide existed in 2021, but no recorded 2021 visual occurrence.",
+          "recommended_site_treatment": "supplement-status-banner"
+        },
+        {
+          "pdf_page": 6,
+          "printed_page": "6 / 29",
+          "title": "Physical Data Layout in Main Memory",
+          "printed_summary": "Introduces row, column, and hybrid physical layouts.",
+          "inferred_2021_canonical_slide_id": "slide-0356",
+          "exact_2021_occurrence_ids": [],
+          "classification": "uncertain",
+          "confidence": "medium",
+          "evidence": "Strong deck-position evidence that the slide existed in 2021, but no recorded 2021 visual occurrence.",
+          "recommended_site_treatment": "supplement-status-banner"
+        },
+        {
+          "pdf_page": 7,
+          "printed_page": "7 / 29",
+          "title": "Physical Data Layout in Main Memory (2)",
+          "printed_summary": "Row-store strengths for OLTP; column-store locality, compression, vectorization, and OLAP strengths.",
+          "inferred_2021_canonical_slide_id": "slide-0357",
+          "exact_2021_occurrence_ids": ["dbimpl-13-codegen-054"],
+          "classification": "unchanged",
+          "confidence": "high",
+          "recommended_site_treatment": "supplement-status-banner"
+        },
+        {
+          "pdf_page": 8,
+          "printed_page": "8 / 29",
+          "title": "New Systems: Examples",
+          "printed_summary": "Examples of modern in-memory database systems.",
+          "inferred_2021_canonical_slide_id": "slide-0358",
+          "exact_2021_occurrence_ids": [],
+          "classification": "uncertain",
+          "confidence": "medium",
+          "recommended_site_treatment": "supplement-status-banner"
+        },
+        {
+          "pdf_page": 9,
+          "printed_page": "9 / 29",
+          "title": "New Systems: OLTP",
+          "printed_summary": "OLTP-oriented in-memory systems.",
+          "inferred_2021_canonical_slide_id": "slide-0359",
+          "exact_2021_occurrence_ids": [],
+          "classification": "uncertain",
+          "confidence": "medium",
+          "recommended_site_treatment": "supplement-status-banner"
+        },
+        {
+          "pdf_page": 10,
+          "printed_page": "10 / 29",
+          "title": "Hekaton",
+          "printed_summary": "Hekaton architecture.",
+          "inferred_2021_canonical_slide_id": "slide-0360",
+          "exact_2021_occurrence_ids": [],
+          "classification": "uncertain",
+          "confidence": "medium",
+          "recommended_site_treatment": "supplement-status-banner"
+        },
+        {
+          "pdf_page": 11,
+          "printed_page": "11 / 29",
+          "title": "New Systems: OLAP",
+          "printed_summary": "OLAP-oriented in-memory systems.",
+          "inferred_2021_canonical_slide_id": "slide-0361",
+          "exact_2021_occurrence_ids": [],
+          "classification": "uncertain",
+          "confidence": "medium",
+          "recommended_site_treatment": "supplement-status-banner"
+        },
+        {
+          "pdf_page": 12,
+          "printed_page": "12 / 29",
+          "title": "New Systems: Hybrid OLTP and OLAP",
+          "printed_summary": "SAP HANA main/delta design and HyPer virtual-memory snapshots.",
+          "inferred_2021_canonical_slide_id": "slide-0362",
+          "exact_2021_occurrence_ids": [],
+          "classification": "uncertain",
+          "confidence": "medium",
+          "handwriting_ids": ["chapter8-p12-h1"],
+          "recommended_site_treatment": "supplement-with-optional-annotation"
+        },
+        {
+          "pdf_page": 13,
+          "printed_page": "13 / 29",
+          "title": "HyPer: Virtual Memory Snapshots",
+          "printed_summary": "Animation state 1: OLTP data before the snapshot.",
+          "inferred_2021_canonical_slide_id": "slide-0363",
+          "exact_2021_occurrence_ids": [],
+          "classification": "uncertain",
+          "confidence": "medium",
+          "recommended_site_treatment": "group-animation-states"
+        },
+        {
+          "pdf_page": 14,
+          "printed_page": "13 / 29",
+          "title": "HyPer: Virtual Memory Snapshots",
+          "printed_summary": "Animation state 2: forked OLAP snapshot.",
+          "inferred_2021_canonical_slide_id": "slide-0363",
+          "exact_2021_occurrence_ids": [],
+          "classification": "uncertain",
+          "confidence": "medium",
+          "recommended_site_treatment": "group-animation-states"
+        },
+        {
+          "pdf_page": 15,
+          "printed_page": "13 / 29",
+          "title": "HyPer: Virtual Memory Snapshots",
+          "printed_summary": "Animation state 3: an OLAP query reads C.",
+          "inferred_2021_canonical_slide_id": "slide-0363",
+          "exact_2021_occurrence_ids": [],
+          "classification": "uncertain",
+          "confidence": "medium",
+          "recommended_site_treatment": "group-animation-states"
+        },
+        {
+          "pdf_page": 16,
+          "printed_page": "13 / 29",
+          "title": "HyPer: Virtual Memory Snapshots",
+          "printed_summary": "Animation state 4: OLTP updates C and copy-on-write preserves the snapshot.",
+          "inferred_2021_canonical_slide_id": "slide-0363",
+          "exact_2021_occurrence_ids": [],
+          "classification": "uncertain",
+          "confidence": "medium",
+          "recommended_site_treatment": "group-animation-states"
+        },
+        {
+          "pdf_page": 17,
+          "printed_page": "13 / 29",
+          "title": "HyPer: Virtual Memory Snapshots",
+          "printed_summary": "Animation state 5: concurrent reads observe snapshot data.",
+          "inferred_2021_canonical_slide_id": "slide-0363",
+          "exact_2021_occurrence_ids": [],
+          "classification": "uncertain",
+          "confidence": "medium",
+          "recommended_site_treatment": "group-animation-states"
+        },
+        {
+          "pdf_page": 18,
+          "printed_page": "14 / 29",
+          "title": "In-Memory Index Structures",
+          "printed_summary": "Hash indexes, search trees, and radix trees in memory.",
+          "inferred_2021_canonical_slide_id": "slide-0364",
+          "exact_2021_occurrence_ids": [],
+          "classification": "uncertain",
+          "confidence": "medium",
+          "recommended_site_treatment": "supplement-status-banner"
+        },
+        {
+          "pdf_page": 19,
+          "printed_page": "15 / 29",
+          "title": "Radix Trees",
+          "printed_summary": "Radix-tree properties and lookup/memory trade-off.",
+          "inferred_2021_canonical_slide_id": "slide-0365",
+          "exact_2021_occurrence_ids": [],
+          "classification": "uncertain",
+          "confidence": "medium",
+          "recommended_site_treatment": "supplement-status-banner"
+        },
+        {
+          "pdf_page": 20,
+          "printed_page": "16 / 29",
+          "title": "Adaptive Radix Trees",
+          "printed_summary": "Node4, Node16, Node48, and Node256 representations.",
+          "inferred_2021_canonical_slide_id": "slide-0366",
+          "exact_2021_occurrence_ids": [],
+          "classification": "uncertain",
+          "confidence": "medium",
+          "recommended_site_treatment": "supplement-status-banner"
+        },
+        {
+          "pdf_page": 21,
+          "printed_page": "17 / 29",
+          "title": "Exploiting HTM for OLTP",
+          "printed_summary": "Hardware transactional memory as a transaction-building block and its capacity limits.",
+          "inferred_2021_canonical_slide_id": "slide-0367",
+          "exact_2021_occurrence_ids": [],
+          "classification": "uncertain",
+          "confidence": "medium",
+          "recommended_site_treatment": "supplement-status-banner"
+        },
+        {
+          "pdf_page": 22,
+          "printed_page": "18 / 29",
+          "title": "Exploiting HTM for OLTP (2)",
+          "printed_summary": "HTM-assisted fine-grained transaction behavior.",
+          "inferred_2021_canonical_slide_id": "slide-0368",
+          "exact_2021_occurrence_ids": [],
+          "classification": "uncertain",
+          "confidence": "medium",
+          "recommended_site_treatment": "supplement-status-banner"
+        },
+        {
+          "pdf_page": 23,
+          "printed_page": "19 / 29",
+          "title": "Implementing DB transactions with HTM",
+          "printed_summary": "TSO plus HTM for latching and conflict detection.",
+          "inferred_2021_canonical_slide_id": "slide-0369",
+          "exact_2021_occurrence_ids": [],
+          "classification": "uncertain",
+          "confidence": "medium",
+          "handwriting_ids": ["chapter8-p23-h1"],
+          "recommended_site_treatment": "supplement-with-optional-annotation"
+        },
+        {
+          "pdf_page": 24,
+          "printed_page": "20 / 29",
+          "title": "NUMA-Aware Data Processing",
+          "printed_summary": "NUMA architectures and the cost difference between local and remote memory access.",
+          "inferred_2021_canonical_slide_id": "slide-0370",
+          "exact_2021_occurrence_ids": [],
+          "classification": "uncertain",
+          "confidence": "medium",
+          "recommended_site_treatment": "supplement-status-banner"
+        },
+        {
+          "pdf_page": 25,
+          "printed_page": "21 / 29",
+          "title": "NUMA-Aware Data Processing: Hash Join",
+          "printed_summary": "NUMA-aware hash-join storage and access pattern.",
+          "inferred_2021_canonical_slide_id": "slide-0371",
+          "exact_2021_occurrence_ids": [],
+          "classification": "uncertain",
+          "confidence": "medium",
+          "recommended_site_treatment": "supplement-status-banner"
+        },
+        {
+          "pdf_page": 26,
+          "printed_page": "22 / 29",
+          "title": "Compaction",
+          "printed_summary": "Shared physical model, scan performance, and snapshot-maintenance costs.",
+          "inferred_2021_canonical_slide_id": "slide-0372",
+          "exact_2021_occurrence_ids": [],
+          "classification": "uncertain",
+          "confidence": "medium",
+          "recommended_site_treatment": "supplement-status-banner"
+        },
+        {
+          "pdf_page": 27,
+          "printed_page": "23 / 29",
+          "title": "Compaction: Hot/Cold Clustering",
+          "printed_summary": "Asynchronous cold-part compression and compact snapshots.",
+          "inferred_2021_canonical_slide_id": "slide-0373",
+          "exact_2021_occurrence_ids": [],
+          "classification": "uncertain",
+          "confidence": "medium",
+          "recommended_site_treatment": "supplement-status-banner"
+        },
+        {
+          "pdf_page": 28,
+          "printed_page": "24 / 29",
+          "title": "Compaction: Hot/Cold Clustering",
+          "printed_summary": "Hot, cooling, cold, and frozen column regions.",
+          "inferred_2021_canonical_slide_id": "slide-0374",
+          "exact_2021_occurrence_ids": [],
+          "classification": "uncertain",
+          "confidence": "medium",
+          "recommended_site_treatment": "supplement-status-banner"
+        },
+        {
+          "pdf_page": 29,
+          "printed_page": "25 / 29",
+          "title": "Compaction: Hot/Cold Clustering",
+          "printed_summary": "Software and hardware temperature detection.",
+          "inferred_2021_canonical_slide_id": "slide-0375",
+          "exact_2021_occurrence_ids": [],
+          "classification": "uncertain",
+          "confidence": "medium",
+          "recommended_site_treatment": "supplement-status-banner"
+        },
+        {
+          "pdf_page": 30,
+          "printed_page": "26 / 29",
+          "title": "Data Blocks",
+          "printed_summary": "Cold-data compression, precomputed SMAs, data skipping, and cloud storage.",
+          "exact_2021_occurrence_ids": [],
+          "classification": "new",
+          "confidence": "high",
+          "evidence": "Logical slide 26 is beyond the 2021 deck total of 375.",
+          "recommended_site_treatment": "new-2026-data-blocks-subsection"
+        },
+        {
+          "pdf_page": 31,
+          "printed_page": "27 / 29",
+          "title": "Data Blocks - Scan Types",
+          "printed_summary": "Interpreted vectorized scans, JIT tuple-at-a-time scans, compressed blocks, and uncompressed chunks.",
+          "exact_2021_occurrence_ids": [],
+          "classification": "new",
+          "confidence": "high",
+          "evidence": "Logical slide 27 is beyond the 2021 deck total of 375.",
+          "recommended_site_treatment": "new-2026-data-blocks-subsection"
+        },
+        {
+          "pdf_page": 32,
+          "printed_page": "28 / 29",
+          "title": "Data Blocks - Layout",
+          "printed_summary": "Tuple count, compression metadata, positional SMA, dictionary, compressed data, and string data.",
+          "exact_2021_occurrence_ids": [],
+          "classification": "new",
+          "confidence": "high",
+          "evidence": "Logical slide 28 is beyond the 2021 deck total of 375.",
+          "recommended_site_treatment": "new-2026-data-blocks-subsection"
+        },
+        {
+          "pdf_page": 33,
+          "printed_page": "29 / 29",
+          "title": "Data Blocks - Vectorized Evaluation",
+          "printed_summary": "Predicate masks, position lookup, and global scan-position updates.",
+          "exact_2021_occurrence_ids": [],
+          "classification": "new",
+          "confidence": "high",
+          "evidence": "Logical slide 29 is beyond the 2021 deck total of 375.",
+          "recommended_site_treatment": "new-2026-data-blocks-subsection"
+        }
+      ]
+    },
+    {
+      "id": "qsort",
+      "file": "/Users/nkhalatiani/Downloads/qsort_260717_153127.pdf",
+      "physical_page_count": 22,
+      "printed_logical_slide_count": 22,
+      "source_date_printed_on_deck": "2020-05-28",
+      "deck_assessment": {
+        "classification": "new",
+        "confidence": "high for corpus comparison; low for curriculum status",
+        "evidence": "No exact slide or title occurrence exists in the 2021 recording corpus. The only close course evidence is dbimpl-13-codegen-004, which briefly recommends carefully implemented quicksort for in-memory run generation; it does not teach this deck's generated partitioner, duplicate handling, or microarchitectural comparison.",
+        "mapped_site_chapters": [
+          "15-sort-group-and-set-operations",
+          "16-query-compilation"
+        ],
+        "removed_or_deemphasized": [],
+        "recommended_site_treatment": "Publish only as an optional '3-Way QuickSort in Umbra' deep dive, primarily under chapter 15 and cross-linked from chapter 16. State that the deck is dated 2020, was absent from the recorded 2021 course sequence, and has no supplied 2026 exam-status statement. Do not mark its code listings or benchmark numbers as core memorization."
+      },
+      "pages": [
+        {
+          "pdf_page": 1,
+          "printed_page": "1 / 22",
+          "title": "3-Way QuickSort in Umbra",
+          "printed_summary": "Standalone deck title, author Thomas Neumann, dated May 28, 2020.",
+          "exact_2021_occurrence_ids": [],
+          "classification": "new",
+          "confidence": "high",
+          "recommended_site_treatment": "optional-deep-dive-metadata"
+        },
+        {
+          "pdf_page": 2,
+          "printed_page": "2 / 22",
+          "title": "Motivation",
+          "printed_summary": "ORDER BY comparison logic is type-dependent and known only at runtime.",
+          "exact_2021_occurrence_ids": [],
+          "related_2021_occurrence_ids": ["dbimpl-13-codegen-004"],
+          "classification": "new",
+          "confidence": "high",
+          "recommended_site_treatment": "optional-deep-dive"
+        },
+        {
+          "pdf_page": 3,
+          "printed_page": "3 / 22",
+          "title": "The Current Situation",
+          "printed_summary": "std::sort calls a query-compiled/JITed comparator for every comparison.",
+          "exact_2021_occurrence_ids": [],
+          "related_2021_occurrence_ids": ["dbimpl-13-codegen-004"],
+          "classification": "new",
+          "confidence": "high",
+          "recommended_site_treatment": "optional-deep-dive"
+        },
+        {
+          "pdf_page": 4,
+          "printed_page": "4 / 22",
+          "title": "The Problem",
+          "printed_summary": "Profile showing comparator-call overhead.",
+          "exact_2021_occurrence_ids": [],
+          "classification": "new",
+          "confidence": "high",
+          "recommended_site_treatment": "optional-deep-dive"
+        },
+        {
+          "pdf_page": 5,
+          "printed_page": "5 / 22",
+          "title": "The Problem (2)",
+          "printed_summary": "Comparator disassembly and per-instruction cost profile.",
+          "exact_2021_occurrence_ids": [],
+          "classification": "new",
+          "confidence": "high",
+          "recommended_site_treatment": "optional-deep-dive"
+        },
+        {
+          "pdf_page": 6,
+          "printed_page": "6 / 22",
+          "title": "The Obvious Solution",
+          "printed_summary": "Weak-heap-sort implementation.",
+          "exact_2021_occurrence_ids": [],
+          "classification": "new",
+          "confidence": "high",
+          "recommended_site_treatment": "optional-code-reference"
+        },
+        {
+          "pdf_page": 7,
+          "printed_page": "7 / 22",
+          "title": "The Obvious Solution - Weak Heap Sort",
+          "printed_summary": "Weak heap sort reduces comparisons but is slower for the measured integer/string workloads.",
+          "exact_2021_occurrence_ids": [],
+          "classification": "new",
+          "confidence": "high",
+          "recommended_site_treatment": "optional-deep-dive"
+        },
+        {
+          "pdf_page": 8,
+          "printed_page": "8 / 22",
+          "title": "New Idea - Generate Quick Sort",
+          "printed_summary": "Generate partitioning code so there is one call per partition rather than per comparison.",
+          "exact_2021_occurrence_ids": [],
+          "related_2021_occurrence_ids": ["dbimpl-13-codegen-004"],
+          "classification": "new",
+          "confidence": "high",
+          "recommended_site_treatment": "optional-deep-dive"
+        },
+        {
+          "pdf_page": 9,
+          "printed_page": "9 / 22",
+          "title": "Full (C++) Code",
+          "printed_summary": "Generated quicksort framework with stack handling, pivot selection, partition calls, and fallback sort.",
+          "exact_2021_occurrence_ids": [],
+          "classification": "new",
+          "confidence": "high",
+          "recommended_site_treatment": "optional-code-reference"
+        },
+        {
+          "pdf_page": 10,
+          "printed_page": "10 / 22",
+          "title": "Partitioning - Traditional",
+          "printed_summary": "Traditional Sedgewick quicksort and the equal-key problem.",
+          "exact_2021_occurrence_ids": [],
+          "classification": "new",
+          "confidence": "high",
+          "recommended_site_treatment": "optional-deep-dive"
+        },
+        {
+          "pdf_page": 11,
+          "printed_page": "11 / 22",
+          "title": "Equal Keys",
+          "printed_summary": "Compares three equal-key handling approaches and their complexity.",
+          "exact_2021_occurrence_ids": [],
+          "classification": "new",
+          "confidence": "high",
+          "recommended_site_treatment": "optional-deep-dive"
+        },
+        {
+          "pdf_page": 12,
+          "printed_page": "12 / 22",
+          "title": "Equal Keys (2)",
+          "printed_summary": "Introduces 3-way partitioning as the fourth equal-key strategy.",
+          "exact_2021_occurrence_ids": [],
+          "classification": "new",
+          "confidence": "high",
+          "recommended_site_treatment": "optional-deep-dive"
+        },
+        {
+          "pdf_page": 13,
+          "printed_page": "13 / 22",
+          "title": "Bentley-McIlroy 3-way Partitioning",
+          "printed_summary": "Partition invariant and equal-key relocation to the center.",
+          "exact_2021_occurrence_ids": [],
+          "classification": "new",
+          "confidence": "high",
+          "recommended_site_treatment": "optional-deep-dive"
+        },
+        {
+          "pdf_page": 14,
+          "printed_page": "14 / 22",
+          "title": "3-Way QuickSort by Sedgewick",
+          "printed_summary": "Sedgewick 3-way quicksort implementation.",
+          "exact_2021_occurrence_ids": [],
+          "classification": "new",
+          "confidence": "high",
+          "recommended_site_treatment": "optional-code-reference"
+        },
+        {
+          "pdf_page": 15,
+          "printed_page": "15 / 22",
+          "title": "3-Way QuickSort - Fixed Version",
+          "printed_summary": "Boundary-case correction after pointers cross.",
+          "exact_2021_occurrence_ids": [],
+          "classification": "new",
+          "confidence": "high",
+          "recommended_site_treatment": "optional-code-reference"
+        },
+        {
+          "pdf_page": 16,
+          "printed_page": "16 / 22",
+          "title": "New Version",
+          "printed_summary": "Profile of the generated partitioning implementation.",
+          "exact_2021_occurrence_ids": [],
+          "classification": "new",
+          "confidence": "high",
+          "recommended_site_treatment": "optional-deep-dive"
+        },
+        {
+          "pdf_page": 17,
+          "printed_page": "17 / 22",
+          "title": "New Version (2)",
+          "printed_summary": "Disassembly and cost profile of the generated version.",
+          "exact_2021_occurrence_ids": [],
+          "classification": "new",
+          "confidence": "high",
+          "recommended_site_treatment": "optional-deep-dive"
+        },
+        {
+          "pdf_page": 18,
+          "printed_page": "18 / 22",
+          "title": "Performance",
+          "printed_summary": "Old versus generated version: fewer instructions/cycles, modest wall-clock gain, more branch misses.",
+          "exact_2021_occurrence_ids": [],
+          "classification": "new",
+          "confidence": "high",
+          "recommended_site_treatment": "optional-benchmark-takeaway"
+        },
+        {
+          "pdf_page": 19,
+          "printed_page": "19 / 22",
+          "title": "Hoare Partitioning",
+          "printed_summary": "Hoare partition loop and lazy construction of the third/equal partition.",
+          "exact_2021_occurrence_ids": [],
+          "classification": "new",
+          "confidence": "high",
+          "recommended_site_treatment": "optional-deep-dive"
+        },
+        {
+          "pdf_page": 20,
+          "printed_page": "20 / 22",
+          "title": "Performance (2)",
+          "printed_summary": "Lazy equal-partition construction reduces instructions and cycles further.",
+          "exact_2021_occurrence_ids": [],
+          "classification": "new",
+          "confidence": "high",
+          "recommended_site_treatment": "optional-benchmark-takeaway"
+        },
+        {
+          "pdf_page": 21,
+          "printed_page": "21 / 22",
+          "title": "Branch-Free Lomuto Partitioning",
+          "printed_summary": "Branch-free Lomuto loop trades pointless swaps for elimination of loop branch misses.",
+          "exact_2021_occurrence_ids": [],
+          "classification": "new",
+          "confidence": "high",
+          "recommended_site_treatment": "optional-deep-dive"
+        },
+        {
+          "pdf_page": 22,
+          "printed_page": "22 / 22",
+          "title": "Performance (3)",
+          "printed_summary": "Final old/new/lazy/branch-free performance comparison.",
+          "exact_2021_occurrence_ids": [],
+          "classification": "new",
+          "confidence": "high",
+          "recommended_site_treatment": "optional-benchmark-takeaway"
+        }
+      ]
+    }
+  ],
+  "handwriting_catalog": [
+    {
+      "id": "chapter7-p16-h1",
+      "deck_id": "chapter7",
+      "pdf_page": 16,
+      "description": "Black handwritten expansion of the exchange tree, including labels resembling Xchg(3:1) and XchgHash(3:3), plus connecting lines over the printed diagram.",
+      "interpretation": "Teaching annotation illustrating exchange fan-in/fan-out and hash repartitioning.",
+      "curriculum_change": false,
+      "confidence": "medium"
+    },
+    {
+      "id": "chapter7-p22-h1",
+      "deck_id": "chapter7",
+      "pdf_page": 22,
+      "description": "Small black handwritten operator tree in the upper-right: a join at the root with T on the left and a nested join over S and R on the right.",
+      "interpretation": "Likely an example plan used while discussing morsel-driven execution.",
+      "curriculum_change": false,
+      "confidence": "medium"
+    },
+    {
+      "id": "chapter8-p12-h1",
+      "deck_id": "chapter8",
+      "pdf_page": 12,
+      "description": "Black handwriting reading approximately 'End 06/30', two upward arrows, and a diagonal scribble.",
+      "interpretation": "Session/date marker and incidental pen strokes.",
+      "curriculum_change": false,
+      "confidence": "high"
+    },
+    {
+      "id": "chapter8-p23-h1",
+      "deck_id": "chapter8",
+      "pdf_page": 23,
+      "description": "Black handwriting reading approximately 'End 7/7', two arrows, and a long diagonal scribble. The red/blue diagram labels are printed content, not handwriting.",
+      "interpretation": "Session/date marker and incidental pen strokes.",
+      "curriculum_change": false,
+      "confidence": "high"
+    }
+  ],
+  "cross_deck_conclusions": [
+    {
+      "claim": "Chapter 7 is a clean restatement of already represented 2021 core material.",
+      "confidence": "high"
+    },
+    {
+      "claim": "Chapter 8 was fully covered in 2026 according to the user's direct report, making the 2021 non-exam label stale for teaching coverage; the supplied evidence still does not establish an official 2026 exam guarantee.",
+      "confidence": "high"
+    },
+    {
+      "claim": "The four Data Blocks slides are new relative to the 2021 375-slide deck.",
+      "confidence": "high"
+    },
+    {
+      "claim": "Q-sort is new to the recorded-course corpus but is a 2020 standalone technical deck and should be supplementary unless a current instructor statement elevates it.",
+      "confidence": "high for corpus status; low for current exam status"
+    }
+  ]
+}

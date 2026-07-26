@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 type ExpandableImageItem = {
   alt: string;
@@ -40,6 +40,7 @@ export function ExpandableImage({
     items.length - 1,
   );
   const [activeIndex, setActiveIndex] = useState(boundedInitialIndex);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const activeItem = items[activeIndex] ?? items[0];
   const hasMultipleItems = items.length > 1;
 
@@ -52,6 +53,7 @@ export function ExpandableImage({
     } else {
       dialog.setAttribute("open", "");
     }
+    setDialogOpen(true);
   }
 
   function closeDialog() {
@@ -62,6 +64,7 @@ export function ExpandableImage({
     } else {
       dialog.removeAttribute("open");
     }
+    setDialogOpen(false);
   }
 
   function moveFrame(delta: number) {
@@ -69,6 +72,31 @@ export function ExpandableImage({
       Math.min(Math.max(current + delta, 0), items.length - 1),
     );
   }
+
+  useEffect(() => {
+    if (!dialogOpen || !hasMultipleItems) return;
+
+    function handleArrowNavigation(event: KeyboardEvent) {
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          target.matches("input, textarea, select, [role='textbox']"))
+      ) {
+        return;
+      }
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        moveFrame(-1);
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        moveFrame(1);
+      }
+    }
+
+    window.addEventListener("keydown", handleArrowNavigation);
+    return () => window.removeEventListener("keydown", handleArrowNavigation);
+  }, [dialogOpen, hasMultipleItems, items.length]);
 
   return (
     <>
@@ -91,17 +119,7 @@ export function ExpandableImage({
         onClick={(event) => {
           if (event.target === event.currentTarget) closeDialog();
         }}
-        onKeyDown={(event) => {
-          if (!hasMultipleItems) return;
-          if (event.key === "ArrowLeft") {
-            event.preventDefault();
-            moveFrame(-1);
-          }
-          if (event.key === "ArrowRight") {
-            event.preventDefault();
-            moveFrame(1);
-          }
-        }}
+        onClose={() => setDialogOpen(false)}
         ref={dialogRef}
       >
         <div className="expandable-image-dialog-panel">
@@ -115,7 +133,7 @@ export function ExpandableImage({
               {hasMultipleItems ? (
                 <>
                   <button
-                    aria-label="Show previous frame"
+                    aria-label="Show previous visual"
                     disabled={activeIndex === 0}
                     onClick={() => moveFrame(-1)}
                     type="button"
@@ -123,7 +141,7 @@ export function ExpandableImage({
                     ← Previous
                   </button>
                   <button
-                    aria-label="Show next frame"
+                    aria-label="Show next visual"
                     disabled={activeIndex === items.length - 1}
                     onClick={() => moveFrame(1)}
                     type="button"

@@ -3,6 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ExpandableImage } from "./ExpandableImage";
+import { Course2026 } from "./current/Course2026";
+import type {
+  Course2026Collection,
+  Course2026Deck,
+} from "./current/types";
 import { ExamPractice } from "./exam/ExamPractice";
 import type { ExamBank } from "./exam/types";
 import { ExerciseLabs } from "./exercises/ExerciseLabs";
@@ -153,10 +158,16 @@ type LoadedGuide = {
   slideExplanations: SlideExplanationCollection;
   examBank: ExamBank;
   exerciseLabs: ExerciseLabCollection;
+  course2026: Course2026Collection;
 };
 
 type Filter = "all" | "slide" | "board";
-type Mode = "lecture" | "exam" | "exercise";
+type Mode = "lecture" | "exam" | "exercise" | "current";
+type ImageGalleryItem = {
+  alt: string;
+  label: string;
+  src: string;
+};
 
 function SearchIcon() {
   return (
@@ -177,12 +188,78 @@ function ChevronDownIcon() {
 
 const COURSE_ROOT = "./generated/course";
 const SOURCE_ROOT = "file:///MDB_SOURCE_FILES";
+const NAVIGATION_STORAGE_KEY = "mdb-lecture-atlas-navigation-v1";
+const SCROLL_STORAGE_KEY = "mdb-lecture-atlas-scroll-v1";
+type PersistedNavigation = {
+  mode?: Mode;
+  chapterId?: string;
+  examChapterId?: string;
+  exerciseId?: string;
+  currentDeckId?: string;
+};
+
+function readPersistedNavigation(): PersistedNavigation {
+  if (typeof window === "undefined") return {};
+  let saved: PersistedNavigation = {};
+  try {
+    saved = JSON.parse(
+      window.localStorage.getItem(NAVIGATION_STORAGE_KEY) ?? "{}",
+    ) as PersistedNavigation;
+  } catch {
+    saved = {};
+  }
+  const params = new URL(window.location.href).searchParams;
+  const requestedMode = params.get("mode");
+  const mode: Mode | undefined = (
+    ["lecture", "exam", "exercise", "current"] as Mode[]
+  ).includes(requestedMode as Mode)
+    ? (requestedMode as Mode)
+    : saved.mode;
+  return {
+    mode,
+    chapterId: params.get("chapter") || saved.chapterId,
+    examChapterId: params.get("exam") || saved.examChapterId,
+    exerciseId: params.get("exercise") || saved.exerciseId,
+    currentDeckId: params.get("deck") || saved.currentDeckId,
+  };
+}
+
+function readPersistedScrollPositions() {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(
+      window.sessionStorage.getItem(SCROLL_STORAGE_KEY) ?? "{}",
+    ) as Record<string, number>;
+  } catch {
+    return {};
+  }
+}
+
+function persistScrollPositions(positions: Record<string, number>) {
+  try {
+    window.sessionStorage.setItem(
+      SCROLL_STORAGE_KEY,
+      JSON.stringify(positions),
+    );
+  } catch {
+    // The UI still works when storage is unavailable.
+  }
+}
+
 const EMPTY_EXERCISE_LABS: ExerciseLabCollection = {
   generated_at: "",
   title: "Implementation Exercise Labs",
   warning: "Exercise lab data is temporarily unavailable.",
   methodology: [],
   labs: [],
+};
+const EMPTY_COURSE_2026: Course2026Collection = {
+  generated_at: "",
+  title: "2026 Course Update",
+  warning: "The current-year comparison is temporarily unavailable.",
+  baseline_note: "",
+  methodology: [],
+  decks: [],
 };
 
 async function loadJson<T>(path: string): Promise<T> {
@@ -202,6 +279,7 @@ async function loadGuide(): Promise<LoadedGuide> {
     slideExplanations,
     examBank,
     exerciseLabs,
+    course2026,
   ] =
     await Promise.all([
     loadJson<CourseGuide>(`${COURSE_ROOT}/chapters.json`),
@@ -217,6 +295,9 @@ async function loadGuide(): Promise<LoadedGuide> {
     loadJson<ExerciseLabCollection>(
       `${COURSE_ROOT}/exercise-labs.json`,
     ).catch(() => EMPTY_EXERCISE_LABS),
+    loadJson<Course2026Collection>(
+      `${COURSE_ROOT}/course-2026.json`,
+    ).catch(() => EMPTY_COURSE_2026),
   ]);
   return {
     guide,
@@ -229,6 +310,7 @@ async function loadGuide(): Promise<LoadedGuide> {
     slideExplanations,
     examBank,
     exerciseLabs,
+    course2026,
   };
 }
 
@@ -254,7 +336,15 @@ function durationLabel(seconds: number) {
   return `${minutes}m ${String(remainder).padStart(2, "0")}s`;
 }
 
-function VisualEvidence({ record }: { record: VisualRecord }) {
+function VisualEvidence({
+  record,
+  slideGallery,
+  slideGalleryIndex,
+}: {
+  record: VisualRecord;
+  slideGallery: ImageGalleryItem[];
+  slideGalleryIndex: number;
+}) {
   const isBoard = recordKind(record) === "board";
   const frames = record.evidence_frames ?? [];
   const frameGallery = frames.map((frame) => ({
@@ -298,6 +388,8 @@ function VisualEvidence({ record }: { record: VisualRecord }) {
       <ExpandableImage
         className="atlas-slide-image"
         alt={`${record.title}, final annotated state`}
+        gallery={slideGallery}
+        initialIndex={slideGalleryIndex}
         loading="lazy"
         src={recordImage(record.annotated_image)}
       />
@@ -308,9 +400,13 @@ function VisualEvidence({ record }: { record: VisualRecord }) {
 function RecordCard({
   record,
   localSources,
+  slideGallery,
+  slideGalleryIndex,
 }: {
   record: VisualRecord;
   localSources: boolean;
+  slideGallery: ImageGalleryItem[];
+  slideGalleryIndex: number;
 }) {
   const isBoard = recordKind(record) === "board";
   const spoken = record.transcript?.text?.trim();
@@ -346,7 +442,11 @@ function RecordCard({
       </header>
       <div className="atlas-card-grid">
         <div className="atlas-visual">
-          <VisualEvidence record={record} />
+          <VisualEvidence
+            record={record}
+            slideGallery={slideGallery}
+            slideGalleryIndex={slideGalleryIndex}
+          />
         </div>
         <div className="atlas-notes">
           <section
@@ -462,16 +562,20 @@ function RecordCard({
 
 function ChapterOverview({
   chapter,
+  currentDecks,
   examQuestionCount,
   relatedExercises,
   localSources,
+  onOpenCurrent,
   onOpenExam,
   onOpenExercise,
 }: {
   chapter: Chapter;
+  currentDecks: Course2026Deck[];
   examQuestionCount: number;
   relatedExercises: ExerciseLab[];
   localSources: boolean;
+  onOpenCurrent: (deckId: string) => void;
   onOpenExam: () => void;
   onOpenExercise: (exerciseId: string) => void;
 }) {
@@ -504,6 +608,20 @@ function ChapterOverview({
                   type="button"
                 >
                   {exercise.title} →
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {currentDecks.length ? (
+            <div className="atlas-current-cta-group">
+              <span>2026 source check:</span>
+              {currentDecks.map((deck) => (
+                <button
+                  key={deck.id}
+                  onClick={() => onOpenCurrent(deck.id)}
+                  type="button"
+                >
+                  {deck.status_label} →
                 </button>
               ))}
             </div>
@@ -644,17 +762,50 @@ function ChapterStudyGuide({
 }
 
 export function StudyGuideApp() {
+  const initialNavigationRef = useRef<PersistedNavigation | null>(null);
+  if (initialNavigationRef.current === null) {
+    initialNavigationRef.current = readPersistedNavigation();
+  }
+  const initialNavigation = initialNavigationRef.current;
   const [loaded, setLoaded] = useState<LoadedGuide | null>(null);
   const [error, setError] = useState("");
-  const [mode, setMode] = useState<Mode>("lecture");
+  const [mode, setMode] = useState<Mode>(
+    initialNavigation.mode ?? "lecture",
+  );
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
-  const [chapterId, setChapterId] = useState("");
-  const [examChapterId, setExamChapterId] = useState("all");
-  const [exerciseId, setExerciseId] = useState("");
+  const [chapterId, setChapterId] = useState(
+    initialNavigation.chapterId ?? "",
+  );
+  const [examChapterId, setExamChapterId] = useState(
+    initialNavigation.examChapterId ?? "all",
+  );
+  const [exerciseId, setExerciseId] = useState(
+    initialNavigation.exerciseId ?? "",
+  );
+  const [currentDeckId, setCurrentDeckId] = useState(
+    initialNavigation.currentDeckId ?? "",
+  );
   const [localSources, setLocalSources] = useState(false);
   const [pendingEvidenceId, setPendingEvidenceId] = useState("");
   const mainRef = useRef<HTMLElement>(null);
+  const scrollPositionsRef = useRef<Record<string, number> | null>(null);
+  if (scrollPositionsRef.current === null) {
+    scrollPositionsRef.current = readPersistedScrollPositions();
+  }
+  const activeScrollKeyRef = useRef("");
+  const skipNextScrollRestoreRef = useRef(false);
+  const selectedContextId =
+    mode === "lecture"
+      ? chapterId
+      : mode === "exam"
+        ? examChapterId
+        : mode === "exercise"
+          ? exerciseId
+          : currentDeckId;
+  const viewContextKey = selectedContextId
+    ? `${mode}:${selectedContextId}`
+    : "";
 
   useEffect(() => {
     let active = true;
@@ -662,8 +813,36 @@ export function StudyGuideApp() {
       .then((data) => {
         if (!active) return;
         setLoaded(data);
-        setChapterId(data.guide.chapters[0]?.id ?? "");
-        setExerciseId(data.exerciseLabs.labs[0]?.id ?? "");
+        setChapterId((current) =>
+          data.guide.chapters.some((chapter) => chapter.id === current)
+            ? current
+            : (data.guide.chapters[0]?.id ?? ""),
+        );
+        setExamChapterId((current) =>
+          current === "all" ||
+          data.guide.chapters.some((chapter) => chapter.id === current)
+            ? current
+            : "all",
+        );
+        setExerciseId((current) =>
+          data.exerciseLabs.labs.some((lab) => lab.id === current)
+            ? current
+            : (data.exerciseLabs.labs[0]?.id ?? ""),
+        );
+        setCurrentDeckId((current) =>
+          data.course2026.decks.some((deck) => deck.id === current)
+            ? current
+            : (data.course2026.decks[0]?.id ?? ""),
+        );
+        setMode((current) => {
+          if (current === "exercise" && !data.exerciseLabs.labs.length) {
+            return "lecture";
+          }
+          if (current === "current" && !data.course2026.decks.length) {
+            return "lecture";
+          }
+          return current;
+        });
       })
       .catch((reason: unknown) => {
         if (active) {
@@ -684,6 +863,102 @@ export function StudyGuideApp() {
       window.location.hostname === "localhost" ||
         window.location.hostname === "127.0.0.1",
     );
+  }, []);
+
+  useEffect(() => {
+    if (!loaded) return;
+    const navigation: PersistedNavigation = {
+      mode,
+      chapterId,
+      examChapterId,
+      exerciseId,
+      currentDeckId,
+    };
+    try {
+      window.localStorage.setItem(
+        NAVIGATION_STORAGE_KEY,
+        JSON.stringify(navigation),
+      );
+    } catch {
+      // URL persistence below still keeps refreshes stable.
+    }
+
+    const url = new URL(window.location.href);
+    url.searchParams.set("mode", mode);
+    if (chapterId) url.searchParams.set("chapter", chapterId);
+    if (examChapterId) url.searchParams.set("exam", examChapterId);
+    if (exerciseId) url.searchParams.set("exercise", exerciseId);
+    if (currentDeckId) url.searchParams.set("deck", currentDeckId);
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${url.pathname}${url.search}${url.hash}`,
+    );
+  }, [
+    chapterId,
+    currentDeckId,
+    examChapterId,
+    exerciseId,
+    loaded,
+    mode,
+  ]);
+
+  useEffect(() => {
+    const previous = window.history.scrollRestoration;
+    window.history.scrollRestoration = "manual";
+    return () => {
+      window.history.scrollRestoration = previous;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!loaded || !viewContextKey) return;
+    const positions = scrollPositionsRef.current ?? {};
+    scrollPositionsRef.current = positions;
+    const previousKey = activeScrollKeyRef.current;
+    if (previousKey && previousKey !== viewContextKey) {
+      positions[previousKey] = window.scrollY;
+    }
+    activeScrollKeyRef.current = viewContextKey;
+
+    if (skipNextScrollRestoreRef.current) {
+      skipNextScrollRestoreRef.current = false;
+      persistScrollPositions(positions);
+      return;
+    }
+
+    const targetY = Math.max(0, positions[viewContextKey] ?? 0);
+    const frame = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: targetY, behavior: "auto" });
+    });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      positions[viewContextKey] = window.scrollY;
+      persistScrollPositions(positions);
+    };
+  }, [loaded, viewContextKey]);
+
+  useEffect(() => {
+    let frame = 0;
+    function rememberScrollPosition() {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        const key = activeScrollKeyRef.current;
+        if (!key) return;
+        const positions = scrollPositionsRef.current ?? {};
+        scrollPositionsRef.current = positions;
+        positions[key] = window.scrollY;
+        persistScrollPositions(positions);
+      });
+    }
+    window.addEventListener("scroll", rememberScrollPosition, {
+      passive: true,
+    });
+    return () => {
+      window.removeEventListener("scroll", rememberScrollPosition);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
   }, []);
 
   const chapter = loaded?.guide.chapters.find((item) => item.id === chapterId);
@@ -708,6 +983,15 @@ export function StudyGuideApp() {
     }
     return exercises;
   }, [loaded]);
+  const currentDecksByChapter = useMemo(() => {
+    const decks = new Map<string, Course2026Deck[]>();
+    for (const deck of loaded?.course2026.decks ?? []) {
+      for (const id of deck.chapter_ids) {
+        decks.set(id, [...(decks.get(id) ?? []), deck]);
+      }
+    }
+    return decks;
+  }, [loaded]);
   const chapterRecords = useMemo(() => {
     if (!loaded || !chapter) return [];
     const byId = new Map(
@@ -717,6 +1001,21 @@ export function StudyGuideApp() {
       .map((occurrenceId) => byId.get(occurrenceId))
       .filter((record): record is VisualRecord => Boolean(record));
   }, [chapter, loaded]);
+  const { slideGallery, slideGalleryIndexById } = useMemo(() => {
+    const slideRecords = chapterRecords.filter(
+      (record) => recordKind(record) === "slide",
+    );
+    return {
+      slideGallery: slideRecords.map((record) => ({
+        alt: `${record.title}, final annotated state`,
+        label: `Slide ${record.slide_number ?? "—"} · ${record.title} · ${compactTimestamp(record.start)}`,
+        src: recordImage(record.annotated_image),
+      })),
+      slideGalleryIndexById: new Map(
+        slideRecords.map((record, index) => [record.occurrence_id, index]),
+      ),
+    };
+  }, [chapterRecords]);
 
   const records = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -756,6 +1055,7 @@ export function StudyGuideApp() {
   }, [chapterId, loaded, mode, pendingEvidenceId]);
 
   function openEvidence(targetChapterId: string, occurrenceId: string) {
+    skipNextScrollRestoreRef.current = true;
     setMode("lecture");
     setChapterId(targetChapterId);
     setQuery("");
@@ -773,7 +1073,13 @@ export function StudyGuideApp() {
     setMode("exercise");
     setExerciseId(targetExerciseId);
     setQuery("");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    focusMain();
+  }
+
+  function openCurrentDeck(targetDeckId: string) {
+    setMode("current");
+    setCurrentDeckId(targetDeckId);
+    setQuery("");
     focusMain();
   }
 
@@ -794,7 +1100,6 @@ export function StudyGuideApp() {
             onClick={() => {
               setMode("lecture");
               setQuery("");
-              window.scrollTo({ top: 0, behavior: "smooth" });
               focusMain();
             }}
             type="button"
@@ -802,18 +1107,23 @@ export function StudyGuideApp() {
             Lecture guide
           </button>
           <button
+            aria-pressed={mode === "current"}
+            data-active={mode === "current"}
+            onClick={() =>
+              openCurrentDeck(
+                currentDeckId || loaded?.course2026.decks[0]?.id || "",
+              )
+            }
+            type="button"
+          >
+            2026 update
+          </button>
+          <button
             aria-pressed={mode === "exam"}
             data-active={mode === "exam"}
             onClick={() => {
               setMode("exam");
               setQuery("");
-              setExamChapterId(
-                chapterId &&
-                  (examQuestionCountByChapter.get(chapterId) ?? 0) > 0
-                  ? chapterId
-                  : "all",
-              );
-              window.scrollTo({ top: 0, behavior: "smooth" });
               focusMain();
             }}
             type="button"
@@ -835,13 +1145,19 @@ export function StudyGuideApp() {
         </nav>
         <label className="atlas-mobile-chapter">
           <span className="atlas-mobile-chapter-label">
-            {mode === "exercise" ? "Exercise" : "Chapter"}
+            {mode === "exercise"
+              ? "Exercise"
+              : mode === "current"
+                ? "Source deck"
+                : "Chapter"}
           </span>
           <span className="atlas-select-control">
             <select
               aria-label={
                 mode === "exercise"
                   ? "Select implementation exercise"
+                  : mode === "current"
+                    ? "Select supplied source deck"
                   : "Select course chapter"
               }
               onChange={(event) => {
@@ -849,6 +1165,8 @@ export function StudyGuideApp() {
                   setExamChapterId(event.target.value);
                 } else if (mode === "exercise") {
                   openExercise(event.target.value);
+                } else if (mode === "current") {
+                  openCurrentDeck(event.target.value);
                 } else {
                   setChapterId(event.target.value);
                 }
@@ -859,11 +1177,19 @@ export function StudyGuideApp() {
                   ? examChapterId
                   : mode === "exercise"
                     ? exerciseId
+                    : mode === "current"
+                      ? currentDeckId
                     : chapterId
               }
             >
               {mode === "exercise" ? (
                 (loaded?.exerciseLabs.labs ?? []).map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {String(item.number).padStart(2, "0")} · {item.title}
+                  </option>
+                ))
+              ) : mode === "current" ? (
+                (loaded?.course2026.decks ?? []).map((item) => (
                   <option key={item.id} value={item.id}>
                     {String(item.number).padStart(2, "0")} · {item.title}
                   </option>
@@ -895,6 +1221,8 @@ export function StudyGuideApp() {
               ? "Search exam tasks"
               : mode === "exercise"
                 ? "Search this exercise"
+                : mode === "current"
+                  ? "Search supplied slides"
                 : "Search this chapter"}
           </span>
           <span className="atlas-search-icon">
@@ -906,7 +1234,9 @@ export function StudyGuideApp() {
                 ? "Search exam practice questions"
                 : mode === "exercise"
                   ? "Search exercise concepts, tests, decisions, and drills"
-                : "Search slides, board work, teaching explanations, and transcript"
+                  : mode === "current"
+                    ? "Search supplied slides, changes, and study explanations"
+                  : "Search slides, board work, teaching explanations, and transcript"
             }
             onChange={(event) => setQuery(event.target.value)}
             placeholder={
@@ -914,7 +1244,9 @@ export function StudyGuideApp() {
                 ? "Search recalled tasks and exercise drills…"
                 : mode === "exercise"
                   ? "Search this exercise’s algorithms, tests, and exam drills…"
-                : "Search this chapter’s slides and teaching explanations…"
+                  : mode === "current"
+                    ? "Search this source deck…"
+                  : "Search this chapter’s slides and teaching explanations…"
             }
             type="search"
             value={query}
@@ -926,6 +1258,8 @@ export function StudyGuideApp() {
               ? `${loaded.examBank.questions.length} audited tasks`
               : mode === "exercise"
                 ? `${loaded.exerciseLabs.labs.length} implementation labs`
+                : mode === "current"
+                  ? `${loaded.course2026.decks.length} audited source decks`
               : `${loaded.guide.stats.recording_count} lectures · ${loaded.records.length} learning units`
             : "Loading evidence…"}
         </div>
@@ -938,6 +1272,8 @@ export function StudyGuideApp() {
               ? "Practice topics"
               : mode === "exercise"
                 ? "Programming assignments"
+                : mode === "current"
+                  ? "Supplied source decks"
                 : "Course chapters"}
           </p>
           <h2>
@@ -945,6 +1281,8 @@ export function StudyGuideApp() {
               ? "Exam Practice Lab"
               : mode === "exercise"
                 ? "Exercise Labs"
+                : mode === "current"
+                  ? "2026 Course Update"
                 : "Database Implementation"}
           </h2>
           <p className="atlas-sidebar-note">
@@ -953,6 +1291,8 @@ export function StudyGuideApp() {
                 ? "Past recollections, exact exercise drills, and lecture-checked answers."
                 : mode === "exercise"
                   ? "Six audited implementations turned into algorithm and pseudocode practice."
+                  : mode === "current"
+                    ? "Supplied course sources compared with the 2021 recording evidence."
                 : `${loaded.guide.stats.duration_hours} hours grouped by concept, not by file.`
               : "Loading semantic chapter map…"}
           </p>
@@ -961,6 +1301,8 @@ export function StudyGuideApp() {
             aria-label={
               mode === "exercise"
                 ? "Programming exercises"
+                : mode === "current"
+                  ? "Supplied source decks"
                 : "Course chapters"
             }
           >
@@ -980,6 +1322,25 @@ export function StudyGuideApp() {
                   </button>
                 ))
               : null}
+            {mode === "current"
+              ? (loaded?.course2026.decks ?? []).map((deck) => (
+                  <button
+                    aria-pressed={deck.id === currentDeckId}
+                    data-active={deck.id === currentDeckId}
+                    key={deck.id}
+                    onClick={() => openCurrentDeck(deck.id)}
+                    type="button"
+                  >
+                    <span className="atlas-nav-code">
+                      {String(deck.number).padStart(2, "0")}
+                    </span>
+                    <span className="atlas-current-nav-copy">
+                      <span>{deck.title}</span>
+                      <small>{deck.status_label}</small>
+                    </span>
+                  </button>
+                ))
+              : null}
             {mode === "exam" ? (
               <button
                 aria-pressed={examChapterId === "all"}
@@ -987,7 +1348,6 @@ export function StudyGuideApp() {
                 onClick={() => {
                   setExamChapterId("all");
                   setQuery("");
-                  window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
                 type="button"
               >
@@ -995,7 +1355,7 @@ export function StudyGuideApp() {
                 <span>All practice topics</span>
               </button>
             ) : null}
-            {mode !== "exercise"
+            {mode !== "exercise" && mode !== "current"
               ? (loaded?.guide.chapters ?? []).map((item) => (
               <button
                 aria-pressed={
@@ -1016,7 +1376,6 @@ export function StudyGuideApp() {
                     setChapterId(item.id);
                   }
                   setQuery("");
-                  window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
                 type="button"
               >
@@ -1036,7 +1395,16 @@ export function StudyGuideApp() {
         </aside>
 
         <main className="atlas-main" ref={mainRef} tabIndex={-1}>
-          {mode === "exercise" && loaded ? (
+          {mode === "current" && loaded ? (
+            <Course2026
+              chapters={loaded.guide.chapters}
+              collection={loaded.course2026}
+              deckId={currentDeckId}
+              evidence={loaded.records}
+              onOpenEvidence={openEvidence}
+              query={query}
+            />
+          ) : mode === "exercise" && loaded ? (
             <ExerciseLabs
               chapters={loaded.guide.chapters}
               collection={loaded.exerciseLabs}
@@ -1059,16 +1427,17 @@ export function StudyGuideApp() {
           {chapter ? (
             <ChapterOverview
               chapter={chapter}
+              currentDecks={currentDecksByChapter.get(chapter.id) ?? []}
               examQuestionCount={
                 examQuestionCountByChapter.get(chapter.id) ?? 0
               }
               relatedExercises={exercisesByChapter.get(chapter.id) ?? []}
               localSources={localSources}
+              onOpenCurrent={openCurrentDeck}
               onOpenExam={() => {
                 setExamChapterId(chapter.id);
                 setMode("exam");
                 setQuery("");
-                window.scrollTo({ top: 0, behavior: "smooth" });
               }}
               onOpenExercise={openExercise}
             />
@@ -1141,6 +1510,10 @@ export function StudyGuideApp() {
                 key={record.occurrence_id}
                 localSources={localSources}
                 record={record}
+                slideGallery={slideGallery}
+                slideGalleryIndex={
+                  slideGalleryIndexById.get(record.occurrence_id) ?? 0
+                }
               />
             ))}
           </section>

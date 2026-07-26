@@ -1,0 +1,399 @@
+{
+  "schema_version": 1,
+  "generated_date": "2026-07-26",
+  "title": "Site-ready 2026 supplements for audited lecture chapters 5–6",
+  "source_audit": "analysis/lecture-2026/chapters-5-6.json",
+  "scope": {
+    "logical_supplement_count": 7,
+    "printed_coverage_gap_count": 0,
+    "useful_handwritten_teaching_view_count": 7,
+    "progressive_build_states_consolidated": true,
+    "site_edits_performed": false
+  },
+  "editorial_policy": [
+    "Printed chapters 5–6 map fully to captured 2021 evidence, so no coverage-gap supplement is needed.",
+    "Handwriting is included only when it adds a distinct invariant, state interpretation, algorithm step, or exam-useful worked explanation.",
+    "Question marks, underlining, lecture-end markers, and ambiguous numeric sketches are excluded.",
+    "Past-exam recollections influence priority labels but are never treated as guarantees."
+  ],
+  "items": [
+    {
+      "id": "ch5-slide16-iterator-scan-state",
+      "deck_id": "chapter5_260717_153122",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter5_260717_153122.pdf",
+      "source_pdf_physical_pages": [
+        16
+      ],
+      "printed_slide_number": 16,
+      "printed_slide_title": "Examples - Iterator Model",
+      "teaching_view_title": "Iterator Scan: State and Register Handoff",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter5/page-16.png"
+      ],
+      "classification": "useful-handwritten-teaching-view",
+      "audit_page_classification": "unchanged",
+      "curriculum_change_claim": "false",
+      "coverage_interpretation": "The printed slide matches captured 2021 evidence. The 2026 handwriting adds a useful explanation but is not a printed curriculum change.",
+      "exact_baseline_occurrence_ids": [
+        "dbimpl-11-setoriented-023",
+        "dbimpl-12-operators-008"
+      ],
+      "teaching_explanation": [
+        "The handwritten labels turn the scan pseudocode into a state machine. `in` names the input relation, `tid` is the current tuple position, and `limit` is the number of tuples available. `open` initializes that state once; each successful `next` advances it exactly once.",
+        "The loaded tuple is placed in the register file rather than returned as a typed value. The Boolean return value says whether a tuple is available, while downstream predicate/accessor code reads the tuple through the shared registers. On an exam, keep these two channels separate: control status travels through the return value; tuple data travels through the operator/register state."
+      ],
+      "key_points": [
+        "`open` initializes persistent iterator state.",
+        "`next` returns availability and advances `tid`.",
+        "Tuple data and control status travel through different channels."
+      ],
+      "exam_focus": {
+        "priority": "high",
+        "status": "study-priority-not-exam-guarantee",
+        "rationale": "Directly supports iterator-model code tracing, a recalled exam form."
+      },
+      "self_test": {
+        "prompt": "After three successful `next()` calls, what changed, and where is the third tuple?",
+        "expected_answer_points": [
+          "`tid` advanced three positions.",
+          "The tuple is in the register file.",
+          "The call returned true to signal availability."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": true,
+        "display_note": "Labels identify `in` as the input relation, `tid` as the current position, `limit` as the tuple count, and the loaded tuple as entering the register file.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "12-set-oriented-execution-models",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "One printed deck slide and one physical PDF page; the handwriting is retained only as a labeled supplementary teaching view."
+      }
+    },
+    {
+      "id": "ch5-slide17-iterator-selection-loop",
+      "deck_id": "chapter5_260717_153122",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter5_260717_153122.pdf",
+      "source_pdf_physical_pages": [
+        17
+      ],
+      "printed_slide_number": 17,
+      "printed_slide_title": "Examples - Iterator Model (2)",
+      "teaching_view_title": "Iterator Selection: Pull Until a Match",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter5/page-17.png"
+      ],
+      "classification": "useful-handwritten-teaching-view",
+      "audit_page_classification": "unchanged",
+      "curriculum_change_claim": "false",
+      "coverage_interpretation": "The printed slide matches captured 2021 evidence. The 2026 handwriting adds a useful explanation but is not a printed curriculum change.",
+      "exact_baseline_occurrence_ids": [
+        "dbimpl-11-setoriented-024"
+      ],
+      "teaching_explanation": [
+        "Selection does not manufacture tuples. Its `next` repeatedly pulls from the child with `in.next()`. Each successful child call loads a candidate into the register file, where predicate `p()` evaluates it.",
+        "If the predicate is true, selection immediately returns true and leaves that candidate available to its parent. If false, it loops and overwrites the registers with the next candidate. It returns false only after the child is exhausted. This explains both the control flow and why selection is a pipelining operator."
+      ],
+      "key_points": [
+        "A selection can consume several input tuples for one output tuple.",
+        "Predicate failure continues the loop; success yields immediately.",
+        "Child exhaustion is the only terminal false result."
+      ],
+      "exam_focus": {
+        "priority": "high",
+        "status": "study-priority-not-exam-guarantee",
+        "rationale": "Directly supports iterator-model pseudocode tracing."
+      },
+      "self_test": {
+        "prompt": "The next four input tuples have predicate outcomes false, false, true, false. What does one call to `Select::next()` consume and return?",
+        "expected_answer_points": [
+          "It consumes the first three input tuples.",
+          "It returns true on the third.",
+          "The third tuple remains the current output."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": true,
+        "display_note": "Notes explain that `in.next()` loads the next tuple into the register file and that selection loops over its input until the predicate succeeds.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "12-set-oriented-execution-models",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "One printed deck slide and one physical PDF page; the handwriting is retained only as a labeled supplementary teaching view."
+      }
+    },
+    {
+      "id": "ch5-slide19-blockwise-scan-chunk",
+      "deck_id": "chapter5_260717_153122",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter5_260717_153122.pdf",
+      "source_pdf_physical_pages": [
+        19
+      ],
+      "printed_slide_number": 19,
+      "printed_slide_title": "Examples - Blockwise Processing",
+      "teaching_view_title": "Blockwise Scan: Deriving the Chunk Size",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter5/page-19.png"
+      ],
+      "classification": "useful-handwritten-teaching-view",
+      "audit_page_classification": "unchanged",
+      "curriculum_change_claim": "false",
+      "coverage_interpretation": "The printed slide matches captured 2021 evidence. The 2026 handwriting adds a useful explanation but is not a printed curriculum change.",
+      "exact_baseline_occurrence_ids": [
+        "dbimpl-11-setoriented-026"
+      ],
+      "teaching_explanation": [
+        "The annotation identifies `C = min(limit - tid, 1000)` as the chunk-size rule. A normal call returns at most 1000 tuples, while the last call shrinks to the number of tuples that remain.",
+        "The loop fills exactly `C` entries and then advances `tid` by `C`. This preserves the iterator invariant without emitting an overfull or partially uninitialized block. It is the blockwise analogue of advancing one tuple at a time."
+      ],
+      "key_points": [
+        "Chunk size is bounded by both capacity and remaining input.",
+        "The final chunk may be smaller.",
+        "`tid += C` prevents overlap or skipped tuples."
+      ],
+      "exam_focus": {
+        "priority": "medium-high",
+        "status": "study-priority-not-exam-guarantee",
+        "rationale": "Useful for blockwise pseudocode and boundary-condition questions."
+      },
+      "self_test": {
+        "prompt": "`tid=2400`, `limit=3100`, and maximum chunk size is 1000. What does the next call return?",
+        "expected_answer_points": [
+          "`C = min(700, 1000) = 700`.",
+          "It returns 700 tuples.",
+          "`tid` becomes 3100."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": true,
+        "display_note": "The annotation identifies `C = min(limit - tid, 1000)` as the chunk-size calculation.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "12-set-oriented-execution-models",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "One printed deck slide and one physical PDF page; the handwriting is retained only as a labeled supplementary teaching view."
+      }
+    },
+    {
+      "id": "ch5-slide20-blockwise-selection-compaction",
+      "deck_id": "chapter5_260717_153122",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter5_260717_153122.pdf",
+      "source_pdf_physical_pages": [
+        20
+      ],
+      "printed_slide_number": 20,
+      "printed_slide_title": "Examples - Blockwise Processing (2)",
+      "teaching_view_title": "Blockwise Selection: In-Place Compaction",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter5/page-20.png"
+      ],
+      "classification": "useful-handwritten-teaching-view",
+      "audit_page_classification": "unchanged",
+      "curriculum_change_claim": "false",
+      "coverage_interpretation": "The printed slide matches captured 2021 evidence. The 2026 handwriting adds a useful explanation but is not a printed curriculum change.",
+      "exact_baseline_occurrence_ids": [
+        "dbimpl-11-setoriented-027"
+      ],
+      "teaching_explanation": [
+        "The write pointer `w` marks the next output slot inside the block. For every input position `i`, the current tuple is copied to `R′[w]`; then `w` increases by the Boolean result of `p(R′[w])` interpreted as 1 for true and 0 for false.",
+        "A passing tuple therefore occupies a permanent output slot. A failing tuple does not advance `w`, so the next candidate overwrites it. Finally `R′.length = w` hides the rejected suffix. The crucial invariant is that `w` always equals the number of accepted tuples seen so far."
+      ],
+      "key_points": [
+        "`w` is both the next destination and the accepted-tuple count.",
+        "False predicates cause overwrite, not a gap.",
+        "The final logical length is exactly `w`."
+      ],
+      "exam_focus": {
+        "priority": "high",
+        "status": "study-priority-not-exam-guarantee",
+        "rationale": "A compact but error-prone code-tracing pattern suitable for exam pseudocode."
+      },
+      "self_test": {
+        "prompt": "For predicate outcomes true, false, true, what are the successive values of `w`?",
+        "expected_answer_points": [
+          "Start at 0.",
+          "After true: 1.",
+          "After false: still 1.",
+          "After true: 2; the compacted block has length 2."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": true,
+        "display_note": "Notes explain the write-pointer compaction: predicate true contributes 1 and keeps the tuple; false contributes 0 so the next accepted tuple overwrites that slot.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "12-set-oriented-execution-models",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "One printed deck slide and one physical PDF page; the handwriting is retained only as a labeled supplementary teaching view."
+      }
+    },
+    {
+      "id": "ch5-slide22-blockwise-cross-state",
+      "deck_id": "chapter5_260717_153122",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter5_260717_153122.pdf",
+      "source_pdf_physical_pages": [
+        22
+      ],
+      "printed_slide_number": 22,
+      "printed_slide_title": "Examples - Blockwise Processing (4)",
+      "teaching_view_title": "Blockwise Cartesian Product: Two Cursors, One Output Block",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter5/page-22.png"
+      ],
+      "classification": "useful-handwritten-teaching-view",
+      "audit_page_classification": "unchanged",
+      "curriculum_change_claim": "false",
+      "coverage_interpretation": "The printed slide matches captured 2021 evidence. The 2026 handwriting adds a useful explanation but is not a printed curriculum change.",
+      "exact_baseline_occurrence_ids": [
+        "dbimpl-11-setoriented-029",
+        "dbimpl-11-setoriented-031",
+        "dbimpl-11-setoriented-033",
+        "dbimpl-12-operators-009"
+      ],
+      "teaching_explanation": [
+        "The sketch shows that every tuple in the current left block must combine with every tuple in the current right block. `cL`/`lL` and `cR`/`lR` are the current positions and limits for the two blocks; advancing the right cursor fastest enumerates one row of the Cartesian product.",
+        "When the right cursor reaches its limit, it resets and the left cursor advances. When the left block is exhausted, the algorithm fetches the next right block or rewinds as required by the surrounding code. Output can pause when `R′` is full, so all cursor state must persist across calls."
+      ],
+      "key_points": [
+        "Two nested cursor dimensions enumerate all tuple pairs.",
+        "Cursor state survives when the output block fills.",
+        "Block boundaries must not duplicate or omit pairs."
+      ],
+      "exam_focus": {
+        "priority": "high",
+        "status": "study-priority-not-exam-guarantee",
+        "rationale": "Supports control-state tracing for blockwise execution."
+      },
+      "self_test": {
+        "prompt": "Why can this operator not restart both cursors after returning a full output block?",
+        "expected_answer_points": [
+          "It would reproduce earlier pairs.",
+          "The saved cursor positions are the continuation point.",
+          "Correctness requires exactly one output per pair."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": true,
+        "display_note": "A diagram visualizes the blockwise Cartesian product, while a label identifies the current position and limit in the right block.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "12-set-oriented-execution-models",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "One printed deck slide and one physical PDF page; the handwriting is retained only as a labeled supplementary teaching view."
+      }
+    },
+    {
+      "id": "ch6-slide15-external-hash-join-phases",
+      "deck_id": "chapter6_260717_153128",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter6_260717_153128.pdf",
+      "source_pdf_physical_pages": [
+        15
+      ],
+      "printed_slide_number": 15,
+      "printed_slide_title": "Hash-Join (3)",
+      "teaching_view_title": "External Hash Join: Partition Until the Build Side Fits",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter6/page-15.png"
+      ],
+      "classification": "useful-handwritten-teaching-view",
+      "audit_page_classification": "unchanged",
+      "curriculum_change_claim": "false",
+      "coverage_interpretation": "The printed slide matches captured 2021 evidence. The 2026 handwriting adds a useful explanation but is not a printed curriculum change.",
+      "exact_baseline_occurrence_ids": [
+        "dbimpl-12-operators-043"
+      ],
+      "teaching_explanation": [
+        "The handwritten arrows expose the phase boundary hidden in `produce`: choose initial hash partition boundaries, partition the left input, and recursively repartition any oversized left partition. The stopping invariant is not “the whole relation fits”; each left partition that will become a build hash table must fit in memory.",
+        "The right input is then partitioned with the same boundaries so matching keys land in corresponding partition pairs. Each pair can be joined independently. Skew is the difficult case: if many tuples share the same hash value, repartitioning may not shrink that partition, so the overflow path is required."
+      ],
+      "key_points": [
+        "Partition the build/left side first to establish boundaries.",
+        "Repartition until each normal build partition fits memory.",
+        "Partition the probe/right side with identical boundaries.",
+        "Handle unsplittable skew with the overflow algorithm."
+      ],
+      "exam_focus": {
+        "priority": "high",
+        "status": "study-priority-not-exam-guarantee",
+        "rationale": "A likely pseudocode/phase-order question and central external-memory invariant."
+      },
+      "self_test": {
+        "prompt": "Why is it incorrect to partition the two inputs using unrelated hash boundaries?",
+        "expected_answer_points": [
+          "Equal join keys could land in different partition pairs.",
+          "Those tuples would never be compared.",
+          "Both sides must use corresponding boundaries."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": true,
+        "display_note": "Notes decompose external hash join into choosing partition bounds, partitioning the left side, recursively refining until build partitions fit, then joining corresponding partitions.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "14-relational-operators-and-joins",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "One printed deck slide and one physical PDF page; the handwriting is retained only as a labeled supplementary teaching view."
+      }
+    },
+    {
+      "id": "ch6-slide18-right-partition-streaming",
+      "deck_id": "chapter6_260717_153128",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter6_260717_153128.pdf",
+      "source_pdf_physical_pages": [
+        18
+      ],
+      "printed_slide_number": 18,
+      "printed_slide_title": "Hash-Join (6)",
+      "teaching_view_title": "External Hash Join: Why the Probe Partition Need Not Fit",
+      "image_source_paths": [
+        "tmp/pdfs/lecture-2026/chapter6/page-18.png"
+      ],
+      "classification": "useful-handwritten-teaching-view",
+      "audit_page_classification": "unchanged",
+      "curriculum_change_claim": "false",
+      "coverage_interpretation": "The printed slide matches captured 2021 evidence. The 2026 handwriting adds a useful explanation but is not a printed curriculum change.",
+      "exact_baseline_occurrence_ids": [
+        "dbimpl-12-operators-046",
+        "dbimpl-12-operators-048"
+      ],
+      "teaching_explanation": [
+        "The note clarifies the asymmetry between build and probe partitions. A left partition must fit because it is loaded into an in-memory hash table. The corresponding right partition does not have to fit all at once: it can be scanned in buffered chunks and probed tuple by tuple.",
+        "This is safe because the partition boundaries are already known from the left-side partitioning phase. Each right tuple can be written to or streamed from the correct partition, and every probe sees the complete in-memory hash table for its left partner partition."
+      ],
+      "key_points": [
+        "Memory-fit is required for the build partition.",
+        "The probe partition may be arbitrarily large and streamed.",
+        "Known shared boundaries preserve partition correspondence."
+      ],
+      "exam_focus": {
+        "priority": "high",
+        "status": "study-priority-not-exam-guarantee",
+        "rationale": "A precise invariant that prevents a common external-hash-join misconception."
+      },
+      "self_test": {
+        "prompt": "Which side must fit in memory during `joinPartition(P)`, and why?",
+        "expected_answer_points": [
+          "The left/build partition.",
+          "It becomes the in-memory hash table.",
+          "The right/probe partition can be scanned incrementally."
+        ]
+      },
+      "handwritten_note_treatment": {
+        "include": true,
+        "display_note": "The note states that the right-side partition need not fit in memory because the partition boundaries are already known and the left build partition is the side loaded into memory.",
+        "use_as_curriculum_change_evidence": false
+      },
+      "intended_existing_site_chapter_id": "14-relational-operators-and-joins",
+      "consolidation": {
+        "logical_slide": true,
+        "note": "One printed deck slide and one physical PDF page; the handwriting is retained only as a labeled supplementary teaching view."
+      }
+    }
+  ]
+}

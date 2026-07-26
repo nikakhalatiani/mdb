@@ -1,0 +1,1153 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-07-26",
+  "purpose": "Clean, source-grounded study content for the 2026 Chapter 8 and Q-sort PDFs. Explanations interpret printed material; they are not transcripts and do not invent professor speech.",
+  "status_policy": {
+    "chapter8": "The user directly reports that all Chapter 8 material was covered in the 2026 course. The 2021 recording's non-exam statement is therefore historical rather than a current coverage label. No official 2026 exam guarantee is present in the supplied sources.",
+    "qsort": "Supplementary material currently discussed in the project context. The source deck is dated 2020, is absent from the 2021 recorded sequence, and has no confirmed exam status."
+  },
+  "decks": [
+    {
+      "id": "chapter8",
+      "title": "Main-Memory Databases",
+      "source_pdf": "/Users/nkhalatiani/Downloads/chapter8_260717_153116.pdf",
+      "coverage_status": "fully-covered-in-2026-user-report",
+      "exam_status": "no-official-2026-guarantee-in-supplied-sources",
+      "logical_slides": [
+        {
+          "logical_slide": 1,
+          "source_pdf_pages": [1],
+          "title": "Main-Memory Databases",
+          "teaching_explanation": [
+            "This section asks what changes when the active database fits in main memory and the processor, rather than the disk, becomes the dominant performance constraint. The answer is not simply to remove buffer-manager calls: algorithms and data structures must be reconsidered around cache behavior, memory bandwidth, NUMA placement, SIMD, and concurrency.",
+            "Use this title slide as the boundary between the earlier parallel-query material and a modern-hardware perspective on database design. The following slides move from workload requirements to systems, indexes, transactional-memory techniques, NUMA-aware execution, compaction, and data-block scans."
+          ],
+          "key_points": [
+            "Main-memory capacity changes the dominant bottlenecks.",
+            "CPU and memory architecture become first-class database concerns.",
+            "The section links OLTP, OLAP, indexing, concurrency, and scanning."
+          ],
+          "review_prompts": [
+            "Why is removing disk I/O not sufficient to obtain a fast main-memory DBMS?",
+            "Name three hardware effects that become more important in memory-resident execution."
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 2,
+          "source_pdf_pages": [2],
+          "title": "Motivation",
+          "teaching_explanation": [
+            "Modern servers combine very large memory capacities with complicated access characteristics. Caches, NUMA, many cores, SIMD, and hardware transactional memory can all improve performance, but only when the database engine exposes enough locality and parallel work. Accelerators and low-latency networking further broaden the design space.",
+            "At the system level, a database that fits in memory no longer needs to organize every operation around avoiding disk I/O. That permits new engines, algorithms, and data structures, but it also invalidates assumptions inherited from disk-oriented systems. The core lesson is architectural: hardware trends justify redesign, not merely parameter tuning."
+          ],
+          "key_points": [
+            "Large memory does not have uniform access cost.",
+            "Many-core, SIMD, and HTM require algorithmic support.",
+            "Memory residency motivates new DBMS architectures."
+          ],
+          "review_prompts": [
+            "How do caches and NUMA complicate the phrase 'the database is in memory'?",
+            "Give one database design change motivated by SIMD or many-core hardware."
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 3,
+          "source_pdf_pages": [3],
+          "title": "Recap: Database Workloads",
+          "teaching_explanation": [
+            "Analytical queries usually run longer, read large fractions of a database, favor scans, and are mostly read-only. Transaction-processing requests are short, combine several point accesses with simple control flow, and modify data. These access patterns place different demands on layout, indexing, concurrency control, and execution.",
+            "The distinction is a design tool rather than a rigid taxonomy. An OLAP engine wants high scan bandwidth and compression; an OLTP engine wants predictable low latency and inexpensive updates. Hybrid systems must support both without letting one workload destroy the other's performance."
+          ],
+          "key_points": [
+            "OLAP favors scans, locality, compression, and throughput.",
+            "OLTP favors point access, low latency, updates, and concurrency.",
+            "Hybrid systems must reconcile conflicting physical requirements."
+          ],
+          "review_prompts": [
+            "Classify a yearly sales aggregation and an account transfer as OLAP or OLTP, and justify each.",
+            "Why does workload shape influence the preferred physical layout?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 4,
+          "source_pdf_pages": [4],
+          "title": "Online Transaction Processing",
+          "teaching_explanation": [
+            "OLTP systems execute many short transactions that read or modify a small number of records. Their success is measured primarily by latency, concurrency, and predictable throughput rather than by the speed of scanning an entire relation. Indexes and record layouts must make the common point-access path short.",
+            "Because transactions interact through shared state, the useful work per request can be small relative to bookkeeping. A main-memory design therefore has to minimize synchronization, logging, latching, and indirection while still preserving correctness. The next slide makes that overhead explicit."
+          ],
+          "key_points": [
+            "OLTP transactions touch few records and must finish quickly.",
+            "Shared-state coordination can dominate useful work.",
+            "Point-access paths should avoid unnecessary indirection."
+          ],
+          "review_prompts": [
+            "Which performance metric matters more for OLTP: full-table scan bandwidth or per-transaction latency?",
+            "Why can coordination overhead dominate an in-memory OLTP transaction?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 5,
+          "source_pdf_pages": [5],
+          "title": "Online Transaction Processing (2)",
+          "teaching_explanation": [
+            "Traditional disk-oriented engines spend substantial effort on ARIES-style recovery, two-phase locking, latching, and buffer management. Those mechanisms are individually justified, but their instruction and synchronization costs can dwarf the application logic when data access itself is only a memory reference.",
+            "The design question is not whether correctness can be discarded; it cannot. The goal is to preserve durability, isolation, and structural safety with mechanisms better suited to resident data and modern processors. Examples include lighter metadata, optimistic techniques, latch avoidance, and separating recovery from the hot execution path."
+          ],
+          "key_points": [
+            "Disk-oriented control paths carry significant per-transaction overhead.",
+            "2PL, latches, logging, and buffering solve different correctness problems.",
+            "Main-memory systems seek cheaper mechanisms, not weaker semantics by default."
+          ],
+          "review_prompts": [
+            "Distinguish a logical transaction lock from a physical latch.",
+            "Why can a buffer manager become unnecessary or too expensive in a memory-resident design?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 6,
+          "source_pdf_pages": [6],
+          "title": "Physical Data Layout in Main Memory",
+          "teaching_explanation": [
+            "Physical layout determines which bytes are fetched together. A row store keeps the attributes of one tuple adjacent, which is helpful when a transaction reads or updates most of that tuple. A column store keeps one attribute from many tuples adjacent, which is helpful when an analytical query reads a few columns from many rows.",
+            "Main memory does not eliminate layout costs because CPUs move data through cache lines and memory channels. Loading unused attributes wastes bandwidth and cache capacity, while reconstructing a wide tuple from many columns costs work. The correct layout follows the dominant access pattern, and hybrid designs can split the difference."
+          ],
+          "key_points": [
+            "Row layout optimizes tuple-oriented access.",
+            "Column layout optimizes attribute-oriented scans.",
+            "Cache-line and bandwidth utilization remain decisive in memory."
+          ],
+          "review_prompts": [
+            "Which layout would you choose for updating one customer's complete record?",
+            "Which layout would you choose for summing one attribute over a billion rows?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 7,
+          "source_pdf_pages": [7],
+          "title": "Physical Data Layout in Main Memory (2)",
+          "teaching_explanation": [
+            "Row stores are beneficial when an operation needs many attributes from the same tuple, which is common in OLTP. Column stores offer strong cache utilization for narrow scans, permit per-column sorting and compression, and work naturally with vectorized processing, making them well suited to OLAP.",
+            "The categories are not exclusive. A hybrid row/column store can maintain update-friendly regions and scan-friendly regions, or choose different layouts for different parts of a relation. For exam reasoning, always connect the layout choice to the bytes touched by the workload rather than memorizing 'row equals OLTP' as an absolute rule."
+          ],
+          "key_points": [
+            "Row stores avoid tuple reconstruction for wide record access.",
+            "Column stores improve narrow-scan locality and compression.",
+            "Hybrid layouts adapt to mixed workloads."
+          ],
+          "review_prompts": [
+            "Explain why compression is usually more effective column by column.",
+            "Give a workload where a hybrid layout is better than a pure row or column layout."
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 8,
+          "source_pdf_pages": [8],
+          "title": "New Systems: Examples",
+          "teaching_explanation": [
+            "The slide uses concrete systems to show that main-memory database design is not one architecture. Some systems specialize in transaction processing, others in analytics, and hybrid systems attempt to serve both. Their choices differ in layout, compilation, indexes, snapshots, and concurrency control.",
+            "Treat each named system as an example of a design point, not as a vocabulary list. A useful comparison asks what workload it targets, where its data is stored, how it exploits modern hardware, and which overheads it removes from the critical path."
+          ],
+          "key_points": [
+            "Main-memory DBMSs make different workload-driven trade-offs.",
+            "Named systems illustrate architectures rather than universal recipes.",
+            "Compare systems by workload, layout, execution, and concurrency."
+          ],
+          "review_prompts": [
+            "What four dimensions would you use to compare two main-memory systems?",
+            "Why is 'in memory' not enough to describe a system's architecture?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 9,
+          "source_pdf_pages": [9],
+          "title": "New Systems: OLTP",
+          "teaching_explanation": [
+            "OLTP-focused main-memory systems shorten the path from a transaction request to the records it touches. Typical techniques include compact indexes, specialized concurrency control, partitioning, and compiled or streamlined execution. Because requests are short, every indirect call, latch, and cache miss matters.",
+            "Specialization can deliver high throughput, but it can also make skew, cross-partition transactions, or analytical scans expensive. When reviewing an OLTP architecture, identify what it assumes about transaction size, access locality, and contention."
+          ],
+          "key_points": [
+            "OLTP engines optimize the critical point-access path.",
+            "Partitioning and specialization reduce coordination when assumptions hold.",
+            "Skew and cross-partition work expose trade-offs."
+          ],
+          "review_prompts": [
+            "Why does function-call and latch overhead matter more for short transactions?",
+            "What happens to a partitioned OLTP design when many transactions span partitions?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 10,
+          "source_pdf_pages": [10],
+          "title": "Hekaton",
+          "teaching_explanation": [
+            "Hekaton is presented as an example of an OLTP engine designed for memory-resident data. Its architecture combines memory-optimized tables and indexes with concurrency and execution mechanisms intended to reduce the overhead of traditional disk-oriented processing.",
+            "The transferable lesson is that a main-memory OLTP engine redesigns the whole transaction path. An exam answer should focus on the architectural motivation—removing buffer-oriented and latch-heavy work from short transactions—unless the question explicitly asks for Hekaton-specific internals shown on the slide."
+          ],
+          "key_points": [
+            "Hekaton exemplifies a memory-optimized OLTP architecture.",
+            "The redesign covers storage, indexing, concurrency, and execution.",
+            "Its value is the architectural pattern, not product-name memorization."
+          ],
+          "review_prompts": [
+            "Which traditional OLTP overheads is a system such as Hekaton trying to reduce?",
+            "Why must storage and concurrency mechanisms be redesigned together?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 11,
+          "source_pdf_pages": [11],
+          "title": "New Systems: OLAP",
+          "teaching_explanation": [
+            "OLAP-oriented in-memory systems prioritize scanning, filtering, grouping, and joining large data volumes. Columnar layouts, compression, vectorized operations, and generated code reduce memory traffic and instruction overhead while keeping execution units busy.",
+            "Even when the full relation is in memory, bandwidth is finite. Good analytical designs therefore avoid reading irrelevant columns and rows, operate on compact encodings when possible, and organize pipelines so that intermediate data stays cache-resident."
+          ],
+          "key_points": [
+            "OLAP performance is often limited by memory bandwidth and CPU efficiency.",
+            "Columnar compression reduces bytes moved.",
+            "Vectorization and compilation reduce per-tuple overhead."
+          ],
+          "review_prompts": [
+            "Why can an in-memory analytical scan still be bandwidth-bound?",
+            "How do compression and vectorized execution reinforce each other?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 12,
+          "source_pdf_pages": [12],
+          "title": "New Systems: Hybrid OLTP and OLAP",
+          "teaching_explanation": [
+            "Traditional mixed systems suffer because OLTP and OLAP prefer different layouts and update behavior, while ETL introduces delay and duplicated state. SAP HANA addresses the tension with an update-friendly delta and a read-optimized main store; OLAP reads both, and periodic merges move delta data into the main representation.",
+            "HyPer uses virtual-memory snapshots so analytical queries can read a transactionally consistent view while OLTP continues. Both designs separate fast updates from efficient scans, but they pay different maintenance costs: HANA merges representations, whereas HyPer relies on operating-system snapshot and copy-on-write behavior."
+          ],
+          "key_points": [
+            "ETL separates workloads but creates stale duplicated data.",
+            "HANA combines a delta store with a read-optimized main store.",
+            "HyPer uses virtual-memory snapshots for concurrent OLTP and OLAP."
+          ],
+          "review_prompts": [
+            "Compare the maintenance cost of HANA's delta merge with HyPer's copy-on-write snapshots.",
+            "Why does a hybrid system need workload isolation?"
+          ],
+          "handwritten_note_treatment": {
+            "present": true,
+            "summary": "The black note approximately says 'End 06/30' and includes arrows and a scribble.",
+            "display": "Do not include in the clean explanation. Preserve only in an optional annotated-source view because it is a session marker, not subject matter."
+          }
+        },
+        {
+          "logical_slide": 13,
+          "source_pdf_pages": [13, 14, 15, 16, 17],
+          "title": "HyPer: Virtual Memory Snapshots",
+          "teaching_explanation": [
+            "The five animation states show one mechanism. The OLTP process owns the current database pages. A fork creates an OLAP snapshot that initially shares those pages. Analytical reads therefore see a stable logical image without copying the entire database at snapshot creation time.",
+            "When OLTP updates a shared page, copy-on-write creates a private updated page for the OLTP side while the snapshot continues to reference the old contents. This provides isolation efficiently when few pages change, but write-heavy workloads can trigger copying and memory pressure. The important invariant is that OLAP observes snapshot values while OLTP advances independently."
+          ],
+          "key_points": [
+            "Fork initially shares virtual-memory pages.",
+            "Copy-on-write duplicates a page only when OLTP modifies it.",
+            "OLAP reads a consistent old view while OLTP sees current values."
+          ],
+          "review_prompts": [
+            "Trace what the OLTP and OLAP processes read after value C is updated to C*.",
+            "Under what workload does copy-on-write become expensive?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none; consolidate all five printed animation pages into one navigable study item"
+          }
+        },
+        {
+          "logical_slide": 14,
+          "source_pdf_pages": [18],
+          "title": "In-Memory Index Structures",
+          "teaching_explanation": [
+            "In-memory hash indexes are simple and fast for equality lookup, but resizing is expensive and range queries are not naturally supported. Search trees support ordered access, yet conventional binary search trees have poor cache behavior and disk-oriented B-trees may still be attractive because their high fan-out reduces pointer chasing.",
+            "Radix trees index successive key fragments. Their height depends on key length rather than the number of entries, and they support ordered/range access. The broader lesson is that asymptotic complexity alone is insufficient: cache lines, node size, fan-out, and supported query types determine the practical choice."
+          ],
+          "key_points": [
+            "Hash indexes favor equality and resist range queries.",
+            "High fan-out can make B-trees useful even without disks.",
+            "Radix trees organize search by key digits/fragments."
+          ],
+          "review_prompts": [
+            "Why can a B-tree outperform a binary search tree in memory?",
+            "Choose an index for equality-only lookup and one for range lookup."
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 15,
+          "source_pdf_pages": [19],
+          "title": "Radix Trees",
+          "teaching_explanation": [
+            "A radix tree descends according to chunks of the key. It needs no rebalancing, insertion order does not change the logical tree, and keys are represented implicitly by the path. The height depends on key length, not relation cardinality.",
+            "A node conceptually has an array of size 2^s when s key bits are consumed per level. Increasing s reduces height but enlarges nodes and wastes space when fan-out is sparse. The design tension is lookup depth versus memory footprint and cache efficiency."
+          ],
+          "key_points": [
+            "Paths encode keys implicitly.",
+            "Tree height follows key length.",
+            "Larger radix steps trade shallower trees for larger sparse nodes."
+          ],
+          "review_prompts": [
+            "What happens to tree height and node size when s increases?",
+            "Why is insertion order irrelevant to a radix tree's shape?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 16,
+          "source_pdf_pages": [20],
+          "title": "Adaptive Radix Trees",
+          "teaching_explanation": [
+            "Adaptive radix trees avoid paying for 256 child pointers at every node. Node4 and Node16 store compact key/pointer arrays, Node48 uses an indirection array to map a key byte to one of at most 48 child slots, and Node256 uses a full pointer array for dense fan-out.",
+            "Nodes grow or shrink between representations as occupancy changes. This preserves radix-tree lookup behavior while matching memory use and search strategy to actual fan-out. SIMD can accelerate comparison in the small sorted-key nodes, making the representation choice hardware-aware."
+          ],
+          "key_points": [
+            "ART adapts node representation to fan-out.",
+            "Node48 separates a 256-entry index from 48 child pointers.",
+            "Small nodes can use SIMD-friendly key comparisons."
+          ],
+          "review_prompts": [
+            "Why is Node48 more compact than a 256-pointer node?",
+            "Describe when an ART node should grow from Node16 to Node48."
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 17,
+          "source_pdf_pages": [21],
+          "title": "Exploiting HTM for OLTP",
+          "teaching_explanation": [
+            "Hardware transactional memory lets a CPU speculatively execute a region and use the cache-coherence mechanism to detect conflicts. If the region commits, its writes become visible atomically; if it aborts, software must retry or take a fallback path.",
+            "HTM is a building block, not a database transaction manager. It does not by itself provide complete ACID semantics and its capacity is limited by the hardware's tracking resources. Transaction size, memory footprint, interrupts, and conflicts can all cause aborts."
+          ],
+          "key_points": [
+            "HTM detects read/write conflicts in hardware.",
+            "Aborts require a software retry or fallback.",
+            "HTM regions are capacity-limited and are not full DB transactions."
+          ],
+          "review_prompts": [
+            "Why can HTM not replace durability logging?",
+            "List two reasons an HTM region may abort."
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 18,
+          "source_pdf_pages": [22],
+          "title": "Exploiting HTM for OLTP (2)",
+          "teaching_explanation": [
+            "The goal is to obtain synchronization similar to fine-grained two-phase locking but with a fast serial-looking implementation. A code region such as transferring an amount between accounts can execute atomically, while the hardware detects interfering memory accesses.",
+            "The apparent simplicity hides operational constraints. The region must remain small enough for HTM, avoid unsupported operations, and define a correct fallback when repeated aborts occur. Correctness reasoning must cover both the speculative fast path and the fallback path."
+          ],
+          "key_points": [
+            "HTM can make fine-grained synchronization look like serial code.",
+            "A correct implementation needs a non-HTM fallback.",
+            "Fast-path and fallback interaction is part of correctness."
+          ],
+          "review_prompts": [
+            "Sketch the control flow after an HTM abort.",
+            "How could a fallback lock conflict with a speculative HTM path if not coordinated?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 19,
+          "source_pdf_pages": [23],
+          "title": "Implementing DB transactions with HTM",
+          "teaching_explanation": [
+            "The diagram nests short HTM regions inside a larger timestamp-ordering transaction. Hardware tracks read/write conflicts for a critical fragment and can elide a physical latch, while software timestamps still determine database-level visibility and validation across the full transaction.",
+            "This hybrid separates concerns: HTM protects brief in-memory structural work; timestamp ordering provides logical transaction semantics beyond one hardware region. Data and index layouts must avoid false conflicts, because unrelated values that share tracked cache lines can cause unnecessary aborts."
+          ],
+          "key_points": [
+            "HTM regions can elide latches inside a larger DB transaction.",
+            "Timestamp ordering remains responsible for logical visibility.",
+            "Layout affects false conflicts and abort rates."
+          ],
+          "review_prompts": [
+            "Why are multiple HTM regions insufficient by themselves for one durable DB transaction?",
+            "Explain how false sharing can reduce HTM performance."
+          ],
+          "handwritten_note_treatment": {
+            "present": true,
+            "summary": "Black handwriting approximately says 'End 7/7' and adds arrows and a long scribble. Red and blue labels inside the diagram are printed.",
+            "display": "Exclude black handwriting from the clean study explanation; preserve only in an optional annotated-source view."
+          }
+        },
+        {
+          "logical_slide": 20,
+          "source_pdf_pages": [24],
+          "title": "NUMA-Aware Data Processing",
+          "teaching_explanation": [
+            "A NUMA server connects processors to different local memory controllers. Access to a socket's local DRAM is cheaper and often has more bandwidth than access to remote DRAM through an inter-socket link. The diagrams show that topology and bandwidth differ across processor generations.",
+            "Database operators should place threads near their data, allocate memory deliberately, and avoid accidental remote traffic. Parallel speedup can collapse when every worker repeatedly crosses the interconnect, even if the total amount of DRAM is large."
+          ],
+          "key_points": [
+            "NUMA memory has location-dependent latency and bandwidth.",
+            "Thread placement and first-touch allocation influence locality.",
+            "Remote traffic can become the parallel bottleneck."
+          ],
+          "review_prompts": [
+            "Why is a NUMA machine not equivalent to one uniform shared-memory pool?",
+            "Give two ways a DBMS can improve NUMA locality."
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 21,
+          "source_pdf_pages": [25],
+          "title": "NUMA-Aware Data Processing: Hash Join",
+          "teaching_explanation": [
+            "The hash-join diagram distributes build-side storage and hash-table work across NUMA regions. Colored paths represent partitions or worker-local flows. The objective is to construct and probe data where it resides instead of forcing all threads through one remote structure.",
+            "A NUMA-aware join commonly partitions tuples by hash, sends each partition to its owning region, builds local hash-table segments, and probes locally. This adds repartitioning work, but it replaces unpredictable remote accesses with structured communication and better cache/memory locality."
+          ],
+          "key_points": [
+            "Partition ownership should align data with NUMA regions.",
+            "Local hash-table build/probe reduces remote random access.",
+            "Repartitioning trades organized communication for locality."
+          ],
+          "review_prompts": [
+            "Why can one shared hash table be inefficient on NUMA hardware?",
+            "Trace the path of a tuple whose hash assigns it to another socket."
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 22,
+          "source_pdf_pages": [26],
+          "title": "Compaction",
+          "teaching_explanation": [
+            "A hybrid system may keep OLTP and OLAP on one physical model, but fast updates prefer a row-like mutable representation while scans prefer compact columnar data. Maintaining analytical snapshots by copying or merging can consume memory, saturate the memory bus, and stall transactions.",
+            "Compaction transforms older, less frequently changed data into a scan-friendly representation while keeping recent data easy to update. The design challenge is to perform that work incrementally and asynchronously so maintenance does not become a global pause."
+          ],
+          "key_points": [
+            "Update and scan performance prefer different representations.",
+            "Snapshot maintenance consumes bandwidth and memory.",
+            "Compaction should minimize interference with active transactions."
+          ],
+          "review_prompts": [
+            "Why can compaction stall OLTP even when it runs on another thread?",
+            "What properties should the mutable and compacted regions have?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 23,
+          "source_pdf_pages": [27],
+          "title": "Compaction: Hot/Cold Clustering",
+          "teaching_explanation": [
+            "The hot/cold model separates frequently updated data from stable data. Compression is applied asynchronously to the cold part, using dictionary or run-length encoding where appropriate. The hot fraction remains update-friendly and small.",
+            "Snapshots can combine ordinary pages for mutable data with huge pages for compact stable data. Keeping updates clustered limits copy-on-write and replication costs: the system avoids duplicating large cold regions just because a few hot values change."
+          ],
+          "key_points": [
+            "Hot data remains mutable; cold data is compressed.",
+            "Compression can run asynchronously.",
+            "Clustering updates reduces snapshot and memory-management costs."
+          ],
+          "review_prompts": [
+            "Why should compression focus on cold data?",
+            "How does hot/cold clustering help copy-on-write snapshots?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 24,
+          "source_pdf_pages": [28],
+          "title": "Compaction: Hot/Cold Clustering",
+          "teaching_explanation": [
+            "A column progresses through hot, cooling, cold, and frozen regions. Hot values are uncompressed and frequently updated; cooling values are still mutable but becoming stable; cold values are rarely accessed by OLTP; frozen values are compressed and stored in large pages.",
+            "Updates to frozen data are not performed in place. Deleted or changed entries are marked invalid, and new versions are placed in the hot region. This preserves a compact scan representation while keeping write paths simple."
+          ],
+          "key_points": [
+            "Temperature reflects update/access behavior, not age alone.",
+            "Frozen data is compact and effectively immutable.",
+            "Versioning/invalidations redirect updates to the hot region."
+          ],
+          "review_prompts": [
+            "Trace an update to a tuple currently stored in the frozen region.",
+            "Why are huge pages suitable for frozen data but not necessarily for hot data?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 25,
+          "source_pdf_pages": [29],
+          "title": "Compaction: Hot/Cold Clustering",
+          "teaching_explanation": [
+            "A system must detect temperature without making every access expensive. Software approaches maintain LRU-like lists or counters. Hardware approaches include revoking access with memory protection or inspecting dirty and young page-table flags.",
+            "Each method trades precision for overhead. Fine-grained counters identify hot records accurately but touch metadata on every access; page-level hardware signals are cheaper but coarser. The chosen signal only needs to be good enough to drive profitable migration and compaction."
+          ],
+          "key_points": [
+            "Temperature detection must be cheaper than the benefit it enables.",
+            "Software counters are precise but intrusive.",
+            "Hardware page signals are cheap but coarse."
+          ],
+          "review_prompts": [
+            "Compare an LRU counter with dirty/young page flags for temperature detection.",
+            "Why is perfect hotness classification unnecessary?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 26,
+          "source_pdf_pages": [30],
+          "title": "Data Blocks",
+          "teaching_explanation": [
+            "Most data eventually becomes cold and changes rarely. A data block can exploit that stability by compressing values and precomputing small materialized aggregates (SMAs), such as minimum and maximum values, that help decide whether a predicate can match.",
+            "Skipping irrelevant blocks saves decompression and scanning work and fits cloud storage particularly well, where reading bytes can be expensive. The block becomes both a storage unit and an execution unit: metadata guides planning, and the payload supports specialized scan paths."
+          ],
+          "key_points": [
+            "Cold stable data is a strong compression target.",
+            "Precomputed SMAs enable block-level data skipping.",
+            "Block-oriented access is attractive for cloud storage."
+          ],
+          "review_prompts": [
+            "How can min/max metadata prove that a block cannot satisfy `x > 100`?",
+            "Why does data skipping matter even for compressed data?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 27,
+          "source_pdf_pages": [31],
+          "title": "Data Blocks - Scan Types",
+          "teaching_explanation": [
+            "Compressed blocks are scanned in vectors. SARGable predicates can often be evaluated directly against compressed values, and non-matching vectors or whole blocks can be skipped with metadata. Vector-at-a-time processing amortizes interpretation overhead.",
+            "Uncompressed chunks may use either an interpreted vectorized scan or a JIT-compiled tuple-at-a-time pipeline. The best path depends on representation and predicate: scanning compressed vectors avoids materialization, while generated code can fuse operations efficiently on mutable uncompressed data."
+          ],
+          "key_points": [
+            "Scan strategy follows block representation.",
+            "SARGable predicates can exploit compressed metadata/encodings.",
+            "Vectorized interpretation and JIT pipelines offer different trade-offs."
+          ],
+          "review_prompts": [
+            "When can a predicate be evaluated without fully decompressing a block?",
+            "Why might JIT tuple-at-a-time execution beat interpretation on an uncompressed chunk?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 28,
+          "source_pdf_pages": [32],
+          "title": "Data Blocks - Layout",
+          "teaching_explanation": [
+            "The block header stores tuple count and offsets to compression, string, SMA, dictionary, and data regions. Per-attribute metadata can identify the encoding and locate the corresponding payload. This lets a scan find only the structures it needs.",
+            "A positional SMA index stores aggregate metadata for subranges of an attribute, not just for the whole block. It can skip finer-grained regions. Dictionaries and strings are separated from encoded data so the hot scan path remains compact and predictable."
+          ],
+          "key_points": [
+            "Offsets make optional regions independently addressable.",
+            "Per-attribute metadata describes compression and payloads.",
+            "Positional SMAs enable sub-block pruning."
+          ],
+          "review_prompts": [
+            "Why store offsets instead of fixed-size regions?",
+            "What extra pruning does a positional SMA provide over one min/max pair per block?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 29,
+          "source_pdf_pages": [33],
+          "title": "Data Blocks - Vectorized Evaluation",
+          "teaching_explanation": [
+            "The scan reads an aligned vector of values, evaluates a predicate, and produces a bit mask. A lookup converts that mask into relative match positions. Adding the current global scan offset yields tuple positions that can be written to the output.",
+            "Alignment and a small unaligned prefix/suffix are handled explicitly so the main loop can use efficient vector operations. Precomputed position tables replace repeated bit-by-bit decoding with a table lookup, trading a little memory for lower control overhead."
+          ],
+          "key_points": [
+            "Vector predicates produce masks rather than one branch per tuple.",
+            "A lookup table maps masks to relative match positions.",
+            "Global offsets turn vector-local positions into tuple IDs."
+          ],
+          "review_prompts": [
+            "Given an 8-bit match mask, describe how output tuple positions are produced.",
+            "Why does aligned data simplify the vectorized hot loop?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        }
+      ]
+    },
+    {
+      "id": "qsort",
+      "title": "3-Way QuickSort in Umbra",
+      "source_pdf": "/Users/nkhalatiani/Downloads/qsort_260717_153127.pdf",
+      "coverage_status": "supplementary-currently-discussed",
+      "exam_status": "unconfirmed",
+      "logical_slides": [
+        {
+          "logical_slide": 1,
+          "source_pdf_pages": [1],
+          "title": "3-Way QuickSort in Umbra",
+          "teaching_explanation": [
+            "This standalone deck studies how Umbra sorts query tuples when the comparison function is generated at query-compilation time. Its central question is not the asymptotic complexity of quicksort, but how to remove expensive boundaries between generic C++ sorting code and query-specific machine code.",
+            "The deck is dated May 28, 2020. Treat it as a technical deep dive that connects sorting with compilation and modern CPU behavior, not as proof of current exam scope."
+          ],
+          "key_points": [
+            "The topic combines sorting, JIT compilation, and CPU-level cost.",
+            "The source context is Umbra.",
+            "The source deck predates the 2026 course."
+          ],
+          "review_prompts": [
+            "What systems problem, beyond ordinary quicksort, does this deck investigate?",
+            "Why should the date and standalone origin be visible in the study UI?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 2,
+          "source_pdf_pages": [2],
+          "title": "Motivation",
+          "teaching_explanation": [
+            "For `SELECT x FROM foo ORDER BY x`, sorting sounds generic, but the ordering rule depends on the runtime type and representation of `x`. It may be an integer, string, nullable value, or compound key. The query compiler knows the exact comparison semantics only when it compiles that query.",
+            "A database therefore wants generic control logic for sorting while specializing the comparison. The performance challenge is arranging that specialization so its benefit is not lost to a function call at every comparison."
+          ],
+          "key_points": [
+            "Comparison semantics are query- and type-specific.",
+            "Compound keys make comparison more than one primitive operation.",
+            "Specialization must avoid excessive call overhead."
+          ],
+          "review_prompts": [
+            "Why can a DBMS not use one hard-coded comparator for every ORDER BY?",
+            "Give two properties of a compound key that generated comparison code may handle."
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 3,
+          "source_pdf_pages": [3],
+          "title": "The Current Situation",
+          "teaching_explanation": [
+            "The current design invokes `std::sort` over tuple pointers and supplies a generated comparator. The comparator is produced at query-compilation time and JIT-compiled for sufficiently large inputs, so the comparison itself is specialized.",
+            "The remaining boundary is that generic C++ sorting code calls into generated code for every comparison. Since comparison occurs many times, even a small indirect-call or ABI cost can become visible. Multi-threading is deliberately excluded from this analysis."
+          ],
+          "key_points": [
+            "Control stays in generic `std::sort`.",
+            "Comparison logic is generated and often JITed.",
+            "The call boundary repeats for every comparison."
+          ],
+          "review_prompts": [
+            "Which part of the current implementation is generic and which part is specialized?",
+            "Why is multi-threading orthogonal to the issue isolated on this slide?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 4,
+          "source_pdf_pages": [4],
+          "title": "The Problem",
+          "teaching_explanation": [
+            "The profile attributes a meaningful fraction of sorting time to the comparator path and its surrounding call machinery. The key evidence is concentration: a tiny function is invoked so often that small per-call costs accumulate into a large total.",
+            "Read the profile comparatively rather than memorizing percentages. It motivates moving more of the partitioning loop into generated code so the comparator can be inlined or directly embedded."
+          ],
+          "key_points": [
+            "High-frequency small costs can dominate a hot loop.",
+            "Profiles identify where optimization effort is justified.",
+            "The desired change is to enlarge the generated region."
+          ],
+          "review_prompts": [
+            "Why can a cheap comparator still be expensive in aggregate?",
+            "What profile pattern suggests a function-call boundary should be removed?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 5,
+          "source_pdf_pages": [5],
+          "title": "The Problem (2)",
+          "teaching_explanation": [
+            "The disassembly shows that the comparator's useful work is only a short sequence of loads and comparisons. Around that work, call/return behavior and register or control-flow effects become a nontrivial fraction of the total cost.",
+            "This is a classic code-generation lesson: specialization is most valuable when it lets the compiler optimize across an abstraction boundary. Generating a leaf function but retaining a call in the inner loop leaves optimization opportunities unused."
+          ],
+          "key_points": [
+            "The useful comparator body is small.",
+            "Boundary overhead is large relative to small useful work.",
+            "Inlining across the partition loop is the opportunity."
+          ],
+          "review_prompts": [
+            "Why does a short comparator make call overhead relatively more important?",
+            "What cross-boundary optimization becomes possible if partitioning is generated too?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 6,
+          "source_pdf_pages": [6],
+          "title": "The Obvious Solution",
+          "teaching_explanation": [
+            "The slide presents weak heap sort as a comparison-efficient alternative with in-place storage and O(n log n) worst-case work. It is attractive when comparisons are very expensive because reducing their count can outweigh more complicated control and data movement.",
+            "The code is implementation evidence, not a required transcription target. Study the design objective: use a generic algorithm that makes fewer calls to the generated comparator while retaining compact memory usage."
+          ],
+          "key_points": [
+            "Weak heap sort is in-place and O(n log n).",
+            "Its main appeal is a low comparison count.",
+            "Algorithm choice depends on the relative cost of comparison."
+          ],
+          "review_prompts": [
+            "Under what cost model would weak heap sort be attractive?",
+            "Why is the number of comparisons not the only performance metric?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 7,
+          "source_pdf_pages": [7],
+          "title": "The Obvious Solution - Weak Heap Sort",
+          "teaching_explanation": [
+            "Despite favorable theoretical and comparison-count properties, the measured weak heap sort is about 15% slower for 100K integers and remains slightly slower for 100K strings. It wins only when string comparisons are unusually expensive, such as long strings sharing a prefix.",
+            "The result illustrates cost-model discipline. Optimizing comparison count helps only when comparisons dominate. Here the generated comparator is cheap enough that the weak-heap algorithm's additional work outweighs the saved comparisons."
+          ],
+          "key_points": [
+            "Fewer comparisons did not imply lower runtime.",
+            "Weak heap sort wins only for sufficiently expensive comparisons.",
+            "Benchmarks must match the target workload."
+          ],
+          "review_prompts": [
+            "Why can weak heap sort lose on integers but win on long common-prefix strings?",
+            "What does this result imply about the comparator's actual cost?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 8,
+          "source_pdf_pages": [8],
+          "title": "New Idea - Generate Quick Sort",
+          "teaching_explanation": [
+            "Instead of replacing quicksort, generate its partitioning loop together with the comparison logic. Partitioning dominates quicksort runtime and is compact enough to generate. The generic driver then calls generated code once per partition rather than once per element comparison.",
+            "This moves the hot loop and comparator into one compilation unit, hides call overhead, and enables direct specialization. The design retains generic recursion or stack management while specializing exactly the performance-critical region."
+          ],
+          "key_points": [
+            "Generate the hot partitioning phase.",
+            "Reduce call frequency from per comparison to per partition.",
+            "Keep cold control logic generic."
+          ],
+          "review_prompts": [
+            "Why is partitioning a good boundary for code generation?",
+            "Which quicksort responsibilities can remain in generic C++?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 9,
+          "source_pdf_pages": [9],
+          "title": "Full (C++) Code",
+          "teaching_explanation": [
+            "The driver manages ranges explicitly, selects pivots, invokes the generated partition function, and handles small or pathological ranges with fallbacks. Its structure limits recursion depth by continuing with one partition and placing the other on a stack.",
+            "The important separation is interface design. Generated code needs a compact contract—partition a range and report boundaries—while the reusable C++ layer handles scheduling and safety. This keeps generation complexity focused on the hot path."
+          ],
+          "key_points": [
+            "The generic driver manages range scheduling.",
+            "Generated code owns partitioning and comparison.",
+            "Fallbacks protect small or difficult cases."
+          ],
+          "review_prompts": [
+            "What information must a generated partition function return to the driver?",
+            "Why process one partition immediately and push the other?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 10,
+          "source_pdf_pages": [10],
+          "title": "Partitioning - Traditional",
+          "teaching_explanation": [
+            "Traditional two-way quicksort chooses a pivot, advances a left pointer over smaller values, advances a right pointer over larger values, swaps misplaced values, and finally places the pivot. Recursive calls then sort the two partitions.",
+            "The subtle case is equality. If many values equal the pivot, a naive rule may perform unnecessary swaps or produce badly unbalanced recursive work. Handling duplicates is therefore part of correctness and performance, not a minor optimization."
+          ],
+          "key_points": [
+            "Two pointers partition values around a pivot.",
+            "Termination and boundary conditions are subtle.",
+            "Equal keys can destroy expected performance."
+          ],
+          "review_prompts": [
+            "State the invariant maintained by the left and right scan pointers.",
+            "What can happen when every input key equals the pivot?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 11,
+          "source_pdf_pages": [11],
+          "title": "Equal Keys",
+          "teaching_explanation": [
+            "Putting all equal keys on one side can create quadratic behavior when every key is equal. Scanning across equal keys avoids some repetition but still has a quadratic case when the input consists of only a few distinct values.",
+            "Stopping both pointers on equality provides an N log N guarantee for small numbers of equal keys without overhead when duplicates are absent. The comparison shows why duplicate behavior must be analyzed by distribution, not only by random distinct-key inputs."
+          ],
+          "key_points": [
+            "One-sided equality handling can produce extreme imbalance.",
+            "Scanning over equals can still repeat work across recursion.",
+            "Stopping on equals improves robustness for modest duplication."
+          ],
+          "review_prompts": [
+            "Construct an all-equal input and explain why one-sided partitioning becomes quadratic.",
+            "Why is duplicate distribution an essential benchmark dimension?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 12,
+          "source_pdf_pages": [12],
+          "title": "Equal Keys (2)",
+          "teaching_explanation": [
+            "Three-way partitioning creates less-than, equal-to, and greater-than regions and puts the entire equal group into final position in one partitioning phase. Recursion then skips the equal region.",
+            "This gives linear work for an all-equal input and can dramatically improve low-cardinality data. Earlier implementations were considered cumbersome or expensive, so the engineering task is to obtain the duplicate benefit with a tight loop."
+          ],
+          "key_points": [
+            "Three-way partitioning isolates equals.",
+            "The equal region needs no recursive sorting.",
+            "Low-cardinality inputs benefit most."
+          ],
+          "review_prompts": [
+            "Why does an all-equal array finish after one three-way partition?",
+            "What extra state does a three-way partitioner maintain?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 13,
+          "source_pdf_pages": [13],
+          "title": "Bentley-McIlroy 3-way Partitioning",
+          "teaching_explanation": [
+            "Bentley-McIlroy partitioning temporarily stores pivot-equal elements at both ends while scanning the middle. The left scan finds a value not less than the pivot; the right scan finds a value not greater; misplaced values are exchanged, and equals are moved outward.",
+            "After the pointers cross, the equal values are swapped inward to form a contiguous middle region. The invariant separates equal, less, unknown, greater, and equal segments. It achieves strong duplicate handling with only limited extra exchanges."
+          ],
+          "key_points": [
+            "Equals are accumulated at both ends during scanning.",
+            "A cleanup phase moves equals to the center.",
+            "The explicit region invariant is the key correctness argument."
+          ],
+          "review_prompts": [
+            "Write the five regions maintained during Bentley-McIlroy scanning.",
+            "Why are equal values stored at the ends before being centralized?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 14,
+          "source_pdf_pages": [14],
+          "title": "3-Way QuickSort by Sedgewick",
+          "teaching_explanation": [
+            "The Sedgewick code realizes the Bentley-McIlroy idea with four indices: two inward scan pointers and two boundaries for pivot-equal values. Equal elements encountered on the left or right are exchanged into the corresponding outer region.",
+            "After partitioning, loops move the accumulated equal values next to the pivot, then recurse only on the less-than and greater-than regions. Study the region invariants and postcondition rather than memorizing variable names."
+          ],
+          "key_points": [
+            "Four indices delimit scans and equal-key buffers.",
+            "Cleanup centralizes equal keys.",
+            "Only the outer unequal regions recurse."
+          ],
+          "review_prompts": [
+            "What does each of the four indices represent?",
+            "State the array postcondition returned by the partition phase."
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 15,
+          "source_pdf_pages": [15],
+          "title": "3-Way QuickSort - Fixed Version",
+          "teaching_explanation": [
+            "The fixed version adds a boundary-sensitive check for the case where the scan stops at the rightmost pivot value as the pointers meet. Without the correction, that equal pivot can be assigned to the wrong region or processed inconsistently.",
+            "This slide is a reminder that partition code is deceptively subtle. A convincing implementation must define pointer ranges, crossing conditions, pivot placement, and behavior for empty, singleton, all-equal, and duplicate-heavy inputs."
+          ],
+          "key_points": [
+            "Pointer-crossing boundary cases can invalidate a partition.",
+            "The fix handles an equal pivot at the right boundary.",
+            "Edge-case tests are part of algorithm validation."
+          ],
+          "review_prompts": [
+            "Which edge-case families should a three-way partition test suite include?",
+            "Why are `<`, `<=`, and pointer-bound checks tightly coupled here?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 16,
+          "source_pdf_pages": [16],
+          "title": "New Version",
+          "teaching_explanation": [
+            "The profile of the generated quicksort version shows less time concentrated in the old comparator-call path. Work has moved into the specialized partition routine, reducing the repeated boundary overhead identified earlier.",
+            "A profile after optimization should be read as validation, not victory. The hot spot moves, and the next optimization target may be branching, data movement, or cache behavior. The deck continues by inspecting generated instructions and measurements."
+          ],
+          "key_points": [
+            "Generation removes much of the repeated call cost.",
+            "Profiles should be repeated after each structural change.",
+            "Optimization moves bottlenecks rather than eliminating all cost."
+          ],
+          "review_prompts": [
+            "What profile change would confirm that per-comparison call overhead fell?",
+            "Why should an optimizer inspect the new hot path rather than stop?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 17,
+          "source_pdf_pages": [17],
+          "title": "New Version (2)",
+          "teaching_explanation": [
+            "The disassembly exposes the generated partition loop directly. Fewer calls and a shorter instruction path support the hypothesis that specializing partitioning reduces front-end and control overhead.",
+            "Instruction counts alone do not determine elapsed time. Branch prediction, memory access, instruction-level parallelism, and processor frequency can make two short loops behave differently. That is why the next slides compare instructions, cycles, wall time, and branch misses."
+          ],
+          "key_points": [
+            "Generated partitioning shortens the hot instruction path.",
+            "Disassembly explains where work was removed.",
+            "Hardware counters and wall time must be interpreted together."
+          ],
+          "review_prompts": [
+            "What does disassembly reveal that source code alone may hide?",
+            "Why can fewer instructions fail to produce proportional wall-clock speedup?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 18,
+          "source_pdf_pages": [18],
+          "title": "Performance",
+          "teaching_explanation": [
+            "For duplicate-free integer and string inputs, the generated version executes fewer instructions and cycles than the old design. The wall-clock improvement is smaller, and branch misses increase slightly. Duplicate-heavy inputs are expected to favor the three-way design more strongly.",
+            "The measured gap demonstrates both success and a limit: removing calls helps, but the comparison was cheaper than expected and sorting still performs other work. Proposed next steps include delayed insertion sort and branch-reduced partitioning."
+          ],
+          "key_points": [
+            "Instructions and cycles improve clearly.",
+            "Wall-clock improvement is modest.",
+            "Branch behavior becomes a new optimization target."
+          ],
+          "review_prompts": [
+            "Why are duplicate-free inputs a conservative test for three-way quicksort?",
+            "How can branch misses offset an instruction-count improvement?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 19,
+          "source_pdf_pages": [19],
+          "title": "Hoare Partitioning",
+          "teaching_explanation": [
+            "Hoare partitioning uses two inward scans and swaps misplaced values. It has a compact instruction path but normally returns only a two-way boundary. The slide asks how to retain a third equal region without burdening every iteration.",
+            "The proposed answer is lazy construction: move encountered pivots toward the middle and stop equal-key handling after a run of non-pivots. This tries to pay duplicate-management cost only when duplicates are actually present."
+          ],
+          "key_points": [
+            "Hoare partitioning has a tight two-pointer loop.",
+            "A third partition can be constructed lazily.",
+            "Adaptive duplicate handling avoids constant overhead."
+          ],
+          "review_prompts": [
+            "State the termination condition of the Hoare loop shown.",
+            "Why is lazy equal-region construction attractive for mostly distinct keys?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 20,
+          "source_pdf_pages": [20],
+          "title": "Performance (2)",
+          "teaching_explanation": [
+            "Adding the lazy variant reduces instruction and cycle counts substantially for both integer and string inputs. Wall-clock time improves, though still less dramatically than the counters, because the workload contains little useful work and branch misses remain influential.",
+            "The result narrows the remaining problem: the algorithmic/control overhead is lower, so branch predictability becomes a larger fraction of execution cost. This motivates evaluating a branch-free partition scheme."
+          ],
+          "key_points": [
+            "Lazy equal handling further reduces work.",
+            "Cycle reductions exceed wall-clock reductions.",
+            "Branch misses are now a prominent residual cost."
+          ],
+          "review_prompts": [
+            "Why can microbenchmark wall time be less responsive than cycle counts?",
+            "Which next experiment follows logically from the branch-miss observation?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 21,
+          "source_pdf_pages": [21],
+          "title": "Branch-Free Lomuto Partitioning",
+          "teaching_explanation": [
+            "The Lomuto loop computes whether each value is below the pivot, performs a swap, and increments the destination pointer by the boolean result. Careful code can avoid unpredictable branches in the main loop at the price of many swaps that do no useful rearrangement.",
+            "A preliminary Hoare round can protect against pathological cases, and lazy third-partition handling can be combined with the branch-free loop. The trade-off is explicit: spend predictable loads/stores to avoid costly branch mispredictions."
+          ],
+          "key_points": [
+            "Boolean arithmetic replaces an inner-loop branch.",
+            "The method performs extra, sometimes pointless, swaps.",
+            "A hybrid design can combine Hoare, lazy equality, and Lomuto."
+          ],
+          "review_prompts": [
+            "Why does the destination pointer advance by `less`?",
+            "On what hardware/workload might extra stores be cheaper than branch misses?"
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        },
+        {
+          "logical_slide": 22,
+          "source_pdf_pages": [22],
+          "title": "Performance (3)",
+          "teaching_explanation": [
+            "The final table compares old, generated, lazy, and branch-free variants. Branch-free execution has slightly more instructions than the lazy form but fewer cycles, illustrating that predictable execution can outperform a nominally shorter instruction stream.",
+            "The right conclusion is not that one partitioner always wins. Performance depends on key type, duplication, branch predictability, and memory behavior. The deck demonstrates an evidence-driven optimization loop: profile, change one boundary, inspect code, measure counters, and refine."
+          ],
+          "key_points": [
+            "Fewer instructions do not always mean fewer cycles.",
+            "Branch-free trades instruction/data movement for predictability.",
+            "Algorithm selection should be distribution- and hardware-aware."
+          ],
+          "review_prompts": [
+            "Why can the branch-free variant use more instructions yet fewer cycles?",
+            "Design a benchmark matrix that would fairly compare the four variants."
+          ],
+          "handwritten_note_treatment": {
+            "present": false,
+            "display": "none"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -353,6 +353,28 @@ a {
   padding-bottom: 2rem;
 }
 
+.atlas-current-nav-copy {
+  display: grid;
+  gap: 0.24rem;
+  min-width: 0;
+}
+
+.atlas-current-nav-copy > span {
+  font-weight: 720;
+  line-height: 1.25;
+}
+
+.atlas-current-nav-copy small {
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 550;
+  line-height: 1.35;
+}
+
+.atlas-nav button[data-active="true"] .atlas-current-nav-copy small {
+  color: #426159;
+}
+
 .atlas-main {
   min-width: 0;
   padding: clamp(2rem, 4vw, 4.4rem) clamp(1.1rem, 4vw, 4.5rem) 6rem;
@@ -441,6 +463,340 @@ a {
 
 .atlas-exercise-cta-group button:hover {
   border-color: var(--amber);
+}
+
+.atlas-current-cta-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  margin-top: 0.7rem;
+}
+
+.atlas-current-cta-group > span {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+
+.atlas-current-cta-group button {
+  padding: 0.52rem 0.68rem;
+  border: 1px solid #aeb8dd;
+  border-radius: 0.62rem;
+  background: #e7e9f7;
+  color: #323b91;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.atlas-current-cta-group button:hover {
+  border-color: var(--blue);
+}
+
+.atlas-current-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(18rem, 0.75fr);
+  gap: clamp(1.5rem, 4vw, 4rem);
+  align-items: end;
+  padding: clamp(1.3rem, 3vw, 2.4rem);
+  overflow: hidden;
+  border: 1px solid #c8cbe8;
+  border-radius: 1.25rem;
+  background:
+    linear-gradient(135deg, rgba(63, 72, 184, 0.09), transparent 55%),
+    var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.atlas-current-hero h1 {
+  max-width: 55rem;
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.2rem, 5vw, 4.75rem);
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  line-height: 0.97;
+}
+
+.atlas-current-status-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+  margin-top: 1.15rem;
+  color: #414b46;
+  font-size: 0.8rem;
+  font-weight: 720;
+}
+
+.atlas-current-badge {
+  display: inline-flex;
+  width: max-content;
+  align-items: center;
+  min-height: 1.65rem;
+  padding: 0.3rem 0.52rem;
+  border: 1px solid #b8cbbf;
+  border-radius: 999px;
+  background: var(--pine-soft);
+  color: var(--pine);
+  font-size: 0.62rem;
+  font-weight: 850;
+  letter-spacing: 0.07em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.atlas-current-badge[data-kind="new"],
+.atlas-current-badge[data-kind="newly_covered"] {
+  border-color: #d1a66d;
+  background: var(--amber-soft);
+  color: #7d4818;
+}
+
+.atlas-current-badge[data-kind="updated"],
+.atlas-current-badge[data-kind="mixed"],
+.atlas-current-badge[data-kind="coverage_gap"] {
+  border-color: #aeb8dd;
+  background: #e7e9f7;
+  color: #323b91;
+}
+
+.atlas-current-badge[data-kind="uncertain"],
+.atlas-current-badge[data-kind="supplementary"] {
+  border-color: #cfcac0;
+  background: #efede7;
+  color: #5f625f;
+}
+
+.atlas-current-source-facts {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+}
+
+.atlas-current-source-facts > div {
+  padding: 0.85rem 0.95rem;
+  border: 1px solid rgba(200, 203, 232, 0.8);
+  border-radius: 0.8rem;
+  background: rgba(255, 253, 248, 0.82);
+}
+
+.atlas-current-source-facts dt {
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.atlas-current-source-facts dd {
+  margin: 0.32rem 0 0;
+  color: #343e39;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.atlas-current-policy,
+.atlas-current-verdict {
+  display: grid;
+  grid-template-columns: minmax(15rem, 0.75fr) minmax(0, 1.25fr);
+  gap: 1.4rem;
+  margin-top: 1rem;
+  padding: 1.2rem 1.3rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: rgba(255, 253, 248, 0.72);
+}
+
+.atlas-current-policy h2,
+.atlas-current-verdict h2,
+.atlas-current-findings h2,
+.atlas-current-annotations h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.35rem, 2.4vw, 2rem);
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+
+.atlas-current-policy > p,
+.atlas-current-verdict p {
+  margin: 0;
+  color: #4d5852;
+  font-size: 0.84rem;
+  line-height: 1.65;
+}
+
+.atlas-current-policy > p + p {
+  padding-left: 1.2rem;
+  border-left: 1px solid var(--line);
+}
+
+.atlas-current-verdict ol {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding-left: 1.2rem;
+  color: #414b46;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.atlas-current-findings,
+.atlas-current-annotations {
+  margin-top: 1.2rem;
+}
+
+.atlas-current-findings > header,
+.atlas-current-annotations > header {
+  margin-bottom: 0.8rem;
+}
+
+.atlas-current-findings > div,
+.atlas-current-annotations > div {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.75rem;
+}
+
+.atlas-current-findings article,
+.atlas-current-annotations article {
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.9rem;
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgba(32, 43, 38, 0.045);
+}
+
+.atlas-current-findings h3,
+.atlas-current-annotations h3 {
+  margin: 0.7rem 0 0.4rem;
+  font-size: 0.92rem;
+}
+
+.atlas-current-findings p,
+.atlas-current-annotations span {
+  color: #505b55;
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.atlas-current-findings article > span {
+  display: block;
+  margin-top: 0.7rem;
+  color: var(--muted);
+  font-size: 0.64rem;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.atlas-current-annotations img {
+  width: 100%;
+  max-height: 13rem;
+  object-fit: contain;
+  border-radius: 0.55rem;
+  background: #f0eee8;
+}
+
+.atlas-current-annotations article > p {
+  margin: 0.65rem 0 0;
+  color: var(--blue);
+  font-size: 0.65rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.atlas-current-slide .atlas-card-header {
+  align-items: center;
+}
+
+.atlas-current-slide .atlas-card-grid {
+  align-items: start;
+}
+
+.atlas-current-source-note {
+  margin: 0.7rem 0 0;
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.atlas-current-study-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin-top: 0.8rem;
+}
+
+.atlas-current-study-grid section,
+.atlas-current-self-test {
+  padding: 0.85rem 0.9rem;
+  border: 1px solid #e2dfd6;
+  border-radius: 0.75rem;
+  background: rgba(245, 243, 236, 0.58);
+}
+
+.atlas-current-study-grid h4,
+.atlas-current-self-test h4,
+.atlas-current-baseline-links h4 {
+  margin: 0 0 0.55rem;
+  color: var(--pine);
+  font-size: 0.7rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.atlas-current-study-grid ul,
+.atlas-current-self-test ol {
+  display: grid;
+  gap: 0.38rem;
+  margin: 0;
+  padding-left: 1.05rem;
+  color: #48524d;
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.atlas-current-self-test {
+  margin-top: 0.7rem;
+}
+
+.atlas-current-handwriting {
+  margin: 0.7rem 0 0;
+  padding: 0.75rem 0.85rem;
+  border-left: 3px solid var(--amber);
+  background: var(--amber-soft);
+  color: #6e451e;
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+.atlas-current-baseline-links {
+  margin-top: 0.8rem;
+}
+
+.atlas-current-baseline-links > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.atlas-current-baseline-links button {
+  padding: 0.45rem 0.58rem;
+  border: 1px solid #b8cbbf;
+  border-radius: 0.55rem;
+  background: var(--pine-soft);
+  color: var(--pine);
+  cursor: pointer;
+  font-size: 0.67rem;
+  font-weight: 760;
+}
+
+.atlas-current-result-count {
+  display: block;
+  margin: 0.8rem 0;
+  text-align: right;
 }
 
 .atlas-chapter-brief {
@@ -2215,6 +2571,19 @@ a {
     grid-template-columns: 1fr;
   }
 
+  .atlas-current-hero,
+  .atlas-current-policy,
+  .atlas-current-verdict {
+    grid-template-columns: 1fr;
+  }
+
+  .atlas-current-policy > p + p {
+    padding-top: 0.8rem;
+    padding-left: 0;
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+
   .atlas-mobile-chapter-label {
     color: var(--muted);
     font-size: 0.7rem;
@@ -2289,7 +2658,7 @@ a {
 
   .atlas-mode-switch {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     width: 100%;
   }
 
@@ -2325,6 +2694,10 @@ a {
   }
 
   .atlas-study-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .atlas-current-study-grid {
     grid-template-columns: 1fr;
   }
 
