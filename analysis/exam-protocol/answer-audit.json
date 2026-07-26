@@ -1,0 +1,731 @@
+{
+  "source": {
+    "pdf": "/Users/nkhalatiani/Downloads/Final Klausur DBImpl.pdf",
+    "extractedText": "/Users/nkhalatiani/Desktop/mdb/tmp/pdfs/final-klausur-dbimpl.txt",
+    "renderedPages": "/Users/nkhalatiani/Desktop/mdb/tmp/pdfs/final-klausur-render",
+    "courseEvidence": [
+      "public/generated/course/chapters.json",
+      "public/generated/course/study-briefs.json",
+      "public/generated/course/evidence-index.json",
+      "public/generated/course/slide-explanations.json"
+    ]
+  },
+  "method": "Each protocol answer was treated as untrusted. The prompt, extracted answer, and visually rendered page were compared with the aligned lecture evidence. Missing red fragments, diagrams, code, traces, and input values were not reconstructed.",
+  "classificationDefinitions": {
+    "verified": "The protocol answer is supported and materially correct under stated assumptions.",
+    "corrected": "The protocol answer contains a material error or misleading claim; a corrected answer is supplied.",
+    "incomplete": "The supplied answer is directionally useful but omits a required part or cannot finish without missing inputs.",
+    "unsupported": "The answer may be standard database knowledge, but the supplied lecture corpus does not establish it.",
+    "not-answerable": "The exact prompt instance, code, diagram, trace, or redacted fragment is absent, so no exact answer can be justified."
+  },
+  "records": [
+    {
+      "id": "protocol-q-001",
+      "pages": [1],
+      "topic": "General",
+      "prompt": "Match supplied terms to supplied questions.",
+      "classification": "not-answerable",
+      "protocolAnswerAssessment": "The protocol contains only a question mark and a few example terms; the actual term bank and questions are absent.",
+      "examReadyAnswer": "No exact matching is possible without the original term list and question list. Do not infer pairings from the examples.",
+      "evidenceBasis": "missing_exact_exam_artifact",
+      "evidence": [],
+      "assumptions": [],
+      "commonTraps": ["Treating illustrative terms such as FSI, byte-wise, or Neumann Plane Memory Space as the complete answer set."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-002",
+      "pages": [1],
+      "topic": "General",
+      "prompt": "Fill missing words in a supplied text.",
+      "classification": "not-answerable",
+      "protocolAnswerAssessment": "Only example words are preserved; the cloze text and blank positions are missing.",
+      "examReadyAnswer": "The exact blanks cannot be answered. Morsel, FSI, pages, and segments are only examples, not a justified sequence.",
+      "evidenceBasis": "missing_exact_exam_artifact",
+      "evidence": [],
+      "assumptions": [],
+      "commonTraps": ["Inventing a sentence that happens to contain the example words."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-003",
+      "pages": [1, 2],
+      "topic": "Buffer Manager",
+      "prompt": "Name four buffer-replacement algorithms and one advantage and disadvantage of each.",
+      "classification": "incomplete",
+      "protocolAnswerAssessment": "The listed algorithms are real, but several trade-offs are too vague: LFU is not merely 'expensive,' exact LRU has synchronization cost and scan pollution, and random's value is its low overhead and lack of deterministic adversarial behavior.",
+      "examReadyAnswer": "Four lecture-grounded choices: (1) LRU - good recency heuristic; exact maintenance requires a hot shared list and sequential scans can pollute it. (2) LFU - retains persistently frequent pages; counters/priority maintenance are costly and old frequency can become stale without aging. (3) Second chance/clock - cheap, concurrent approximation to LRU; keeps only a reference bit and is less precise. (4) 2Q - separates one-touch pages from repeatedly used hot pages and resists scan pollution; uses more state and tuning than clock. Random is also valid: almost no bookkeeping, but ignores locality.",
+      "evidenceBasis": "lecture",
+      "evidence": [
+        {
+          "chapterId": "03-buffer-management",
+          "occurrenceIds": ["dbimpl-01-storage-024", "dbimpl-01-storage-026", "dbimpl-01-storage-029", "dbimpl-01-storage-030", "dbimpl-01-storage-031"],
+          "supportNote": "Replacement goals and the LRU, LFU, second-chance, 2Q, and random trade-offs."
+        }
+      ],
+      "assumptions": ["The examiner accepts any four named policies with accurate trade-offs."],
+      "commonTraps": ["Calling FIFO locality-aware.", "Ignoring LRU scan pollution.", "Giving 'more complex' without explaining the extra metadata or synchronization."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-004",
+      "pages": [2],
+      "topic": "Buffer Manager",
+      "prompt": "Explain the two 2Q queues, eviction order, and advance a supplied access trace by four steps.",
+      "classification": "incomplete",
+      "protocolAnswerAssessment": "The FIFO cold queue and LRU hot queue are described correctly, but the concrete four-step state and access order cannot be checked because the initial queue diagram and subsequent page references are absent.",
+      "examReadyAnswer": "In the lecture's simplified 2Q, a newly loaded page enters the FIFO/cold queue. A second reference while resident promotes it to the LRU/hot queue. Prefer victims from the cold FIFO so one-pass scans do not evict repeatedly reused pages; use the LRU end of the hot queue when the cold side cannot supply a victim. The requested four-step evolution is not answerable without the initial queue state and exact accesses.",
+      "evidenceBasis": "lecture_plus_missing_exact_trace",
+      "evidence": [
+        {
+          "chapterId": "03-buffer-management",
+          "occurrenceIds": ["dbimpl-01-storage-031"],
+          "supportNote": "Simplified two-queue behavior and scan-pollution motivation."
+        }
+      ],
+      "assumptions": ["The exam uses the lecture's simplified two-resident-queue model, not the full original 2Q variant with a ghost queue."],
+      "commonTraps": ["Promoting a page on its first reference.", "Applying LRU ordering to the FIFO queue.", "Inventing the missing trace."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-005",
+      "pages": [2],
+      "topic": "Buffer Manager",
+      "prompt": "Is 2Q always better than random eviction? Give a counterexample.",
+      "classification": "verified",
+      "protocolAnswerAssessment": "The adversarial example is sound: after deterministic 2Q evicts A, immediately requesting A guarantees a miss, whereas random eviction could have retained A.",
+      "examReadyAnswer": "No. No deterministic replacement policy dominates random on every trace. If A and B are resident, a miss on C makes 2Q deterministically evict A, and the next request is A, then 2Q certainly misses. If random chooses uniformly between A and B, A survives with probability 1/2. This is a counterexample, not a claim that random has the better average hit rate.",
+      "evidenceBasis": "lecture_plus_trace_reasoning",
+      "evidence": [
+        {
+          "chapterId": "03-buffer-management",
+          "occurrenceIds": ["dbimpl-01-storage-024", "dbimpl-01-storage-031"],
+          "supportNote": "Random eviction and deterministic 2Q behavior."
+        }
+      ],
+      "assumptions": ["A and B are the only eligible victims and random chooses uniformly."],
+      "commonTraps": ["Generalizing one counterexample into 'random is usually better.'"],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-006",
+      "pages": [3],
+      "topic": "Slotted Pages",
+      "prompt": "Insert A, insert B, delete A; draw and explain the final slotted-page state.",
+      "classification": "verified",
+      "protocolAnswerAssessment": "The answer matches delayed-compaction slotted pages: A's slot is reusable, B's slot still references B, and A's former bytes become reclaimable fragmented free space.",
+      "examReadyAnswer": "Slots and tuple bytes grow from opposite ends. After deleting A, slot A is marked free (for the lecture encoding, offset=0 and length=0); slot B still contains B's offset and length. If compaction is delayed, B remains in place and A's former data area is a hole counted as reclaimable free space. A later insert may reuse slot A, and the page compacts only when it needs a larger contiguous region.",
+      "evidenceBasis": "lecture",
+      "evidence": [
+        {
+          "chapterId": "05-slotted-pages-and-record-layout",
+          "occurrenceIds": ["dbimpl-03-access-tuples-004", "dbimpl-03-access-tuples-005", "dbimpl-03-access-tuples-006"],
+          "supportNote": "Opposing growth, delayed compaction, reusable slots, and the (0,0) free-slot encoding."
+        }
+      ],
+      "assumptions": ["Deletion does not immediately compact the page."],
+      "commonTraps": ["Moving B automatically without stating eager compaction.", "Confusing a free slot with a valid zero-length tuple."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-007",
+      "pages": [3],
+      "topic": "Slotted Pages",
+      "prompt": "Decode three page hexdumps, identify a regular TID, redirect, and redirect target, and read attributes after optimal layout.",
+      "classification": "incomplete",
+      "protocolAnswerAssessment": "The procedure is supported, but the exact hexdumps, CREATE TABLE statement, TIDs, and requested attribute values are missing, so no concrete offsets or values can be verified.",
+      "examReadyAnswer": "Procedure: decode (page,slot); inspect the fixed-size slot; interpret it as either local (offset,length) or a forwarding TID using its tag; follow at most one redirect for point access. A relocated destination stores the tuple plus its original stable TID so scans return the logical identity and do not follow forwarding stubs. Decode fixed fields at schema-defined offsets; place fields by decreasing alignment and variable byte data last. Exact values are not answerable without the pages and TIDs.",
+      "evidenceBasis": "lecture_plus_missing_exact_artifacts",
+      "evidence": [
+        {
+          "chapterId": "05-slotted-pages-and-record-layout",
+          "occurrenceIds": ["dbimpl-03-access-tuples-010", "dbimpl-03-access-tuples-012", "dbimpl-03-access-tuples-015", "dbimpl-03-access-tuples-016", "dbimpl-03-access-tuples-025", "dbimpl-03-access-tuples-027"],
+          "supportNote": "Slot redirection, relocated-record identity, scan behavior, and aligned record layout."
+        }
+      ],
+      "assumptions": ["The hexdump uses the lecture's tagged eight-byte slot format."],
+      "commonTraps": ["Returning the destination's physical TID instead of the original stable TID.", "Following redirects during a sequential scan.", "Guessing absent hexadecimal values."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-008",
+      "pages": [3],
+      "topic": "B+-Tree Buffering",
+      "prompt": "One root, ten uniformly accessed leaves, ten LRU frames; compute page-miss probability for index-only lookup.",
+      "classification": "verified",
+      "protocolAnswerAssessment": "The protocol correctly distinguishes misses per lookup from the miss rate per page reference.",
+      "examReadyAnswer": "After warm-up the root is always resident because every lookup touches it. Nine frames hold nine of the ten leaves, so exactly one leaf is absent. For independent uniform leaf requests, P(at least one miss in a lookup)=1/10=10%, and expected misses per lookup=0.1. Each lookup makes two page references (root and leaf), so the long-run miss rate per page reference is 0.1/2=5%.",
+      "evidenceBasis": "lecture_plus_probability_reasoning",
+      "evidence": [
+        {
+          "chapterId": "07-btree-fundamentals-and-operations",
+          "occurrenceIds": ["dbimpl-04-access-btrees-019", "dbimpl-04-access-btrees-041", "dbimpl-04-access-btrees-044"],
+          "supportNote": "Root-to-leaf lookup and the expectation that the root remains buffered."
+        }
+      ],
+      "assumptions": ["There are ten leaves in addition to the root.", "Leaf choices are independent and uniform.", "No data-page access or competing buffer traffic occurs."],
+      "commonTraps": ["Answering 5% when asked for the probability that a lookup faults.", "Counting the root as a recurring miss."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-009",
+      "pages": [4],
+      "topic": "B+-Tree Buffering",
+      "prompt": "One root, 100 uniformly accessed leaves, ten LRU frames; compute random-lookup page faults.",
+      "classification": "verified",
+      "protocolAnswerAssessment": "The 0.91 expected index-page faults per lookup is correct under the stated uniform, index-only assumptions.",
+      "examReadyAnswer": "The root occupies one frame and remains hot. Nine frames remain for 100 leaves, so 91 leaves are absent. For a uniform random leaf, P(leaf miss)=91/100=0.91; the expected number of index-page faults per lookup is 0.91. Across the two page references per lookup, the page-reference miss rate is 0.91/2=45.5%.",
+      "evidenceBasis": "lecture_plus_probability_reasoning",
+      "evidence": [
+        {
+          "chapterId": "07-btree-fundamentals-and-operations",
+          "occurrenceIds": ["dbimpl-04-access-btrees-019", "dbimpl-04-access-btrees-041", "dbimpl-04-access-btrees-044"],
+          "supportNote": "Shallow root-to-leaf lookup and root caching."
+        }
+      ],
+      "assumptions": ["The 100 leaves are children of the root.", "Leaf choices are independent and uniform.", "The root and leaves are the only pages using these frames."],
+      "commonTraps": ["Reporting 45.5% as faults per lookup rather than the per-reference miss rate."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-010",
+      "pages": [4],
+      "topic": "B+-Tree Concurrency",
+      "prompt": "Explain the concurrent split problem in a B+-tree.",
+      "classification": "verified",
+      "protocolAnswerAssessment": "The protocol correctly identifies the dangerous window: a key has moved right, but the parent still routes searches to the old left page.",
+      "examReadyAnswer": "A page split is not one atomic write: create the right sibling, move part of the key range, and update the parent separator/pointer. A search using the old parent may reach the left page after its key moved right but before the parent learned about the right sibling, producing a false miss. Lock coupling can prevent this but briefly locks parent and child and reduces concurrency.",
+      "evidenceBasis": "lecture",
+      "evidence": [
+        {
+          "chapterId": "07-btree-fundamentals-and-operations",
+          "occurrenceIds": ["dbimpl-05-access-btrees-008", "dbimpl-05-access-btrees-009"],
+          "supportNote": "Why one-page latching is insufficient and how structural changes propagate."
+        },
+        {
+          "chapterId": "08-advanced-btree-techniques",
+          "occurrenceIds": ["dbimpl-05-access-btrees-012"],
+          "supportNote": "The split race motivating B-link trees."
+        }
+      ],
+      "assumptions": [],
+      "commonTraps": ["Describing the issue as corruption only; an incorrect not-found result is already a correctness failure."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-011",
+      "pages": [4],
+      "topic": "B-link Trees",
+      "prompt": "Explain how a B-link tree handles an outdated parent during splits.",
+      "classification": "verified",
+      "protocolAnswerAssessment": "The high key and right-sibling pointer explanation is supported, including repeated rightward correction after nested splits.",
+      "examReadyAnswer": "Each node has a high key delimiting its current key range and a link to its right sibling. A traversal may release the parent before latching the child. If a concurrent split moved the target right and the parent is stale, the search reaches the old node, sees searchKey > highKey, and follows right links until it reaches the correct range or proves absence. The same mechanism is required at inner levels, and several right links may be followed after repeated splits.",
+      "evidenceBasis": "lecture",
+      "evidence": [
+        {
+          "chapterId": "08-advanced-btree-techniques",
+          "occurrenceIds": ["dbimpl-05-access-btrees-012", "dbimpl-05-access-btrees-013", "dbimpl-05-access-btrees-014"],
+          "supportNote": "High-key/right-link correction on leaf and inner pages."
+        }
+      ],
+      "assumptions": ["Splits move ranges rightward; full deletion/merge requires additional reclamation machinery."],
+      "commonTraps": ["Adding right links only to leaves.", "Assuming the parent must be updated before searches can proceed."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-012",
+      "pages": [4, 5],
+      "topic": "B-link Trees",
+      "prompt": "State the advantage of a B-link tree.",
+      "classification": "corrected",
+      "protocolAnswerAssessment": "Improved concurrency and shorter blocking are correct. 'Fewer deadlock risks' is misleading as the principal advantage because top-down lock coupling already has an acyclic acquisition order; B-link primarily avoids holding a parent while waiting for a child.",
+      "examReadyAnswer": "The main advantage is higher concurrency: a search latches at most one page during ordinary descent, so a slow child fetch does not keep a high-level parent latched and block an entire subtree. Right links let a search repair stale routing by moving right. Do not sell B-link primarily as deadlock prevention; its central benefit in this lecture is reduced contention and blocking.",
+      "evidenceBasis": "lecture",
+      "evidence": [
+        {
+          "chapterId": "07-btree-fundamentals-and-operations",
+          "occurrenceIds": ["dbimpl-05-access-btrees-008"],
+          "supportNote": "Top-down lock coupling and its deadlock-free order."
+        },
+        {
+          "chapterId": "08-advanced-btree-techniques",
+          "occurrenceIds": ["dbimpl-05-access-btrees-012", "dbimpl-05-access-btrees-013", "dbimpl-05-access-btrees-015"],
+          "supportNote": "One-page latching, rightward correction, and the deletion caveat."
+        }
+      ],
+      "assumptions": ["The question concerns lookup/insert; deletion is substantially harder."],
+      "commonTraps": ["Claiming B-link makes all deletion races simple.", "Equating reduced contention with a different asymptotic lookup bound."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-013",
+      "pages": [5, 6],
+      "topic": "B+-Tree and Radix Tree Cost",
+      "prompt": "Given page/key/value sizes and tuple count, compute B+-tree height and lookup time; explain radix-tree use, node size, lookup time, and the effect of doubling tuples.",
+      "classification": "corrected",
+      "protocolAnswerAssessment": "The capacity formulas are a useful start, but the protocol omits floors/ceilings and uses maximum fanout to label a worst-case B+-tree height. Maximum fanout gives dense/best-case height; worst legal height must use minimum occupancy. The radix portion is not covered by the supplied lecture corpus.",
+      "examReadyAnswer": "B+-tree: L=floor((P-HL)/(K+V)); inner separator capacity I=floor((P-HI)/(K+C)); maximum fanout Fmax=I+1; leaf count M=ceil(N/L). For a densely packed tree, page levels h=1+ceil(log_Fmax M). A true worst legal height uses the minimum non-root fanout implied by the half-full invariant, plus the root exception. Lookup cost is one page access per visited level plus within-page search, e.g. h*tP + ((h-1)*ceil(log2 I)+ceil(log2 L))*tC when binary search is used. Radix (external/general knowledge): an uncompressed node with s-bit stride has 2^s child pointers, size header+2^s*C; a fixed K-byte key needs ceil(8K/s) levels. Height is bounded by key length, so doubling N does not change that bound, though occupancy/memory use does.",
+      "evidenceBasis": "lecture_for_btree_external_general_db_knowledge_for_radix",
+      "evidence": [
+        {
+          "chapterId": "07-btree-fundamentals-and-operations",
+          "occurrenceIds": ["dbimpl-04-access-btrees-018", "dbimpl-04-access-btrees-019", "dbimpl-04-access-btrees-041", "dbimpl-04-access-btrees-042", "dbimpl-04-access-btrees-043"],
+          "supportNote": "Half-full invariant, fanout/height reasoning, and per-page binary search."
+        }
+      ],
+      "assumptions": ["Fixed-size entries.", "One child pointer more than separators.", "No root pinning or cache hits are included in tP.", "Radix keys have fixed K-byte width and no path compression."],
+      "commonTraps": ["Using log without ceilings.", "Calling the maximum-fanout height the worst case.", "Using 8K/s without a ceiling.", "Assuming doubling tuples never affects compressed or adaptive radix-tree shape."],
+      "confidence": "high_for_btree_medium_for_radix"
+    },
+    {
+      "id": "protocol-q-014",
+      "pages": [6, 7],
+      "topic": "Record Layout",
+      "prompt": "Lay out Int, Int, Char16, Char4, Long, Long, Bool with minimal padding, constant lookup, and alignment.",
+      "classification": "verified",
+      "protocolAnswerAssessment": "The proposed 48-byte layout is correct if Char16 and Char4 are fixed byte arrays with alignment 1 and the record array must align each record to 8 bytes.",
+      "examReadyAnswer": "Order by decreasing alignment: Long at 0..7, Long at 8..15, Int at 16..19, Int at 20..23, Char16 at 24..39, Char4 at 40..43, Bool at 44, then tail padding at 45..47. Total stride=48. Every field has a fixed compile-time offset, all 8- and 4-byte values are aligned, and the 8-byte-aligned stride keeps the next record aligned.",
+      "evidenceBasis": "lecture_plus_layout_arithmetic",
+      "evidence": [
+        {
+          "chapterId": "05-slotted-pages-and-record-layout",
+          "occurrenceIds": ["dbimpl-03-access-tuples-023", "dbimpl-03-access-tuples-025", "dbimpl-03-access-tuples-026", "dbimpl-03-access-tuples-027"],
+          "supportNote": "Decreasing-alignment physical order and constant schema mapping."
+        }
+      ],
+      "assumptions": ["Long is 8-byte size/alignment; Int is 4; Bool and char arrays are byte-aligned.", "Records are stored consecutively and each record base must be 8-byte aligned."],
+      "commonTraps": ["Preserving SQL declaration order and inserting avoidable internal padding.", "Forgetting tail padding in an array of records."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-015",
+      "pages": [7],
+      "topic": "Record Layout",
+      "prompt": "Draw the layout for a supplied CREATE TABLE statement.",
+      "classification": "not-answerable",
+      "protocolAnswerAssessment": "The CREATE TABLE statement is redacted/missing, so no field offsets or NULL/variable-length metadata can be justified.",
+      "examReadyAnswer": "Cannot answer exactly without the schema. Method: separate fixed metadata from variable tails; give fixed-width fields compile-time offsets; store end offsets for variable fields; order fixed items by decreasing alignment; include a NULL bitmap only for nullable attributes; map logical column order to physical positions.",
+      "evidenceBasis": "missing_exact_exam_artifact_with_lecture_method",
+      "evidence": [
+        {
+          "chapterId": "05-slotted-pages-and-record-layout",
+          "occurrenceIds": ["dbimpl-03-access-tuples-018", "dbimpl-03-access-tuples-019", "dbimpl-03-access-tuples-022", "dbimpl-03-access-tuples-025", "dbimpl-03-access-tuples-027", "dbimpl-03-access-tuples-028"],
+          "supportNote": "General record-layout method."
+        }
+      ],
+      "assumptions": [],
+      "commonTraps": ["Inventing the redacted columns.", "Ignoring variable offsets or nullable fields."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-016",
+      "pages": [7, 8],
+      "topic": "Join Algorithms",
+      "prompt": "Mark properties of nested loop, block nested loop, sort-merge, memory hash, and Grace hash for R join S, |R|<|S|, equality on a unique R key.",
+      "classification": "verified",
+      "protocolAnswerAssessment": "The four matrix rows shown in the protocol are correct under standard unsorted-input cost models: only sort-merge has O(|S| log |S|), none has O(|R|^2), only plain nested loop permits a tuple-dependent right plan, and only sort-merge guarantees join-key order.",
+      "examReadyAnswer": "Row O(|S| log |S|): No, No, Yes, No, No. Row O(|R|^2): No for all five. Allows dependent right argument: Yes only for tuple-at-a-time nested loop (unless decorrelation changes the plan). Output sorted by join key: Yes only for sort-merge. Supporting costs: nested loop O(RS); block nested loop still O(RS) comparisons but fewer right scans/I/Os; sort-merge O(R log R+S log S), dominated by S log S because R<S; memory hash and Grace hash are expected linear in R+S under their memory/partition assumptions.",
+      "evidenceBasis": "lecture",
+      "evidence": [
+        {
+          "chapterId": "14-relational-operators-and-joins",
+          "occurrenceIds": ["dbimpl-12-operators-028", "dbimpl-12-operators-029", "dbimpl-12-operators-030", "dbimpl-12-operators-036", "dbimpl-12-operators-037", "dbimpl-12-operators-038", "dbimpl-12-operators-041", "dbimpl-12-operators-042", "dbimpl-12-operators-043"],
+          "supportNote": "Applicability and cost structure of nested-loop, blockwise, sort-merge, and hash joins."
+        }
+      ],
+      "assumptions": ["Inputs are initially unsorted.", "Hashing is well distributed.", "Grace hash partitions eventually fit memory.", "The matrix's 'Grace join' means Grace hash join."],
+      "commonTraps": ["Calling block nested loop subquadratic in tuple comparisons.", "Claiming hash output is sorted.", "Forgetting that already-sorted inputs make merge linear."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-017",
+      "pages": [8],
+      "topic": "Join Algorithms",
+      "prompt": "Choose join algorithms and complexities for three supplied SQL queries and record layouts.",
+      "classification": "corrected",
+      "protocolAnswerAssessment": "The algorithm-selection guidelines are useful, but the exact queries/layouts are absent and the protocol's hash-join complexity O(n*m) is wrong. O(n*m) describes nested-loop comparisons; an in-memory equi-hash join is expected O(n+m).",
+      "examReadyAnswer": "Conditional answer: use index nested-loop when the inner has a suitable index and the outer is small: O(|outer|*log |inner| + output), ignoring page-cache details. For an independent equi-join with no useful index, use hash join in expected O(n+m), or sort-merge in O(n log n+m log m) unless both inputs are already sorted. If the right input depends on the current left tuple, use nested loop unless the optimizer can decorrelate it. For a non-equality predicate, use block nested loop unless an order-aware specialized method applies. The three exact choices cannot be verified without the missing queries.",
+      "evidenceBasis": "lecture_plus_missing_exact_queries",
+      "evidence": [
+        {
+          "chapterId": "14-relational-operators-and-joins",
+          "occurrenceIds": ["dbimpl-12-operators-028", "dbimpl-12-operators-029", "dbimpl-12-operators-030", "dbimpl-12-operators-036", "dbimpl-12-operators-041", "dbimpl-12-operators-042"],
+          "supportNote": "Join applicability and correct asymptotic costs."
+        }
+      ],
+      "assumptions": ["Complexity excludes output size unless stated.", "Hash functions are well behaved."],
+      "commonTraps": ["Writing O(n*m) for hash join.", "Writing O(m log n) for an index join without saying which side is outer and which index exists.", "Choosing a hash join for a non-equality predicate."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-018",
+      "pages": [8, 9, 10],
+      "topic": "Extendible Hashing",
+      "prompt": "Explain directory lookup, global/local depth, and bucket overflow for d<g and d=g.",
+      "classification": "corrected",
+      "protocolAnswerAssessment": "The main mechanics are correct. The phrase 'first g bits' is over-specific: an implementation may consistently use a selected prefix or suffix; the lecture examples describe using additional hash bits, not a universally mandated end.",
+      "examReadyAnswer": "Lookup hashes the complete key, uses the configured g directory bits, follows that directory pointer, and compares the full key in the bucket. Global depth g is the number of bits indexing the directory, so it has 2^g entries. Local depth d is the number of bits distinguishing one bucket; if d<g, multiple buddy entries share it. On overflow with d<g, allocate a buddy bucket, increment d, redistribute using one more bit, and redirect only the relevant entries. If d=g, first double the directory and duplicate pointers (g:=g+1), then perform the local split.",
+      "evidenceBasis": "lecture",
+      "evidence": [
+        {
+          "chapterId": "09-hash-and-specialized-indexes",
+          "occurrenceIds": ["dbimpl-06-access-eh-027", "dbimpl-06-access-eh-029", "dbimpl-06-access-eh-031", "dbimpl-06-access-eh-034"],
+          "supportNote": "Global/local depth, shared directory entries, local split, and directory doubling."
+        }
+      ],
+      "assumptions": ["The implementation uses one consistent bit orientation throughout."],
+      "commonTraps": ["Searching by hash only instead of checking the full key.", "Redistributing every bucket after doubling.", "Incrementing global depth for every local split."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-019",
+      "pages": [10],
+      "topic": "Extendible Hashing",
+      "prompt": "Seven hash values, bucket capacity one, no chaining: find the required directory size.",
+      "classification": "incomplete",
+      "protocolAnswerAssessment": "The stated rule is correct, but the seven actual hash values are missing, so the minimum depth and directory size cannot be computed.",
+      "examReadyAnswer": "Find the smallest global depth d for which the selected d-bit directory prefixes/suffixes of all seven hashes are pairwise distinct; then directory size is 2^d. Because buckets hold one entry and chaining is forbidden, any shared d-bit directory value would overflow. If two complete hashes are identical, no finite d can separate them and the stated constraints are impossible.",
+      "evidenceBasis": "lecture_plus_missing_exact_hashes",
+      "evidence": [
+        {
+          "chapterId": "09-hash-and-specialized-indexes",
+          "occurrenceIds": ["dbimpl-06-access-eh-027", "dbimpl-06-access-eh-029", "dbimpl-06-access-eh-034", "dbimpl-06-access-eh-037"],
+          "supportNote": "Directory bits, splits, doubling, and the genuine-collision fallback."
+        }
+      ],
+      "assumptions": ["All seven complete hashes are distinct and have enough bits."],
+      "commonTraps": ["Answering 8 merely because 8>=7; the distinguishing prefixes may require a much larger directory.", "Ignoring complete hash collisions."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-020",
+      "pages": [10],
+      "topic": "Extendible Hashing",
+      "prompt": "Find and fix four bugs in supplied extendible-hashing insertion pseudocode.",
+      "classification": "not-answerable",
+      "protocolAnswerAssessment": "The pseudocode is absent, so no particular four defects can be identified.",
+      "examReadyAnswer": "Cannot identify the exact bugs without the code. A review should check: full-key lookup after directory selection; correct d<g versus d=g branch; directory duplication before increasing g; local-depth increment on both split buckets; redistribution using the newly relevant bit; updating every buddy directory entry; and retrying the insertion after the split.",
+      "evidenceBasis": "missing_exact_exam_artifact_with_lecture_invariants",
+      "evidence": [
+        {
+          "chapterId": "09-hash-and-specialized-indexes",
+          "occurrenceIds": ["dbimpl-06-access-eh-027", "dbimpl-06-access-eh-029", "dbimpl-06-access-eh-034"],
+          "supportNote": "Correct insertion invariants."
+        }
+      ],
+      "assumptions": [],
+      "commonTraps": ["Claiming any four generic checks are the four bugs in the missing code."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-021",
+      "pages": [10],
+      "topic": "Extendible Hashing",
+      "prompt": "Answer two unspecified general questions about extendible hashing.",
+      "classification": "not-answerable",
+      "protocolAnswerAssessment": "The two questions are not preserved.",
+      "examReadyAnswer": "No exact answer is possible. The examinable core is: expected two-page lookup (directory then bucket), local bucket growth without full rehashing, abrupt directory doubling, and difficulty with skew/true collisions.",
+      "evidenceBasis": "missing_exact_exam_artifact_with_lecture_context",
+      "evidence": [
+        {
+          "chapterId": "09-hash-and-specialized-indexes",
+          "occurrenceIds": ["dbimpl-06-access-eh-025", "dbimpl-06-access-eh-026", "dbimpl-06-access-eh-038"],
+          "supportNote": "Scope, advantages, and disadvantages of hash indexes and extendible hashing."
+        }
+      ],
+      "assumptions": [],
+      "commonTraps": ["Pretending the overview answers unknown wording."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-022",
+      "pages": [10],
+      "topic": "Linear Hashing",
+      "prompt": "Insert supplied values into a partially split linear-hash table and draw each state.",
+      "classification": "not-answerable",
+      "protocolAnswerAssessment": "The starting table, split pointer, bucket capacity, hash values, and insertion sequence are missing.",
+      "examReadyAnswer": "The exact states cannot be drawn. Method: compute the current high-depth bucket; if it belongs to the not-yet-split range, fold it to the old-depth bucket. Overflow may create a chain. When the load/chain trigger fires, split the bucket at the split pointer, not necessarily the overflowing bucket; append its buddy, redistribute that bucket using one more bit, advance the pointer, and start a new round after all old buckets have split.",
+      "evidenceBasis": "missing_exact_exam_artifact_with_lecture_method",
+      "evidence": [
+        {
+          "chapterId": "09-hash-and-specialized-indexes",
+          "occurrenceIds": ["dbimpl-07-transactions-007", "dbimpl-07-transactions-008", "dbimpl-07-transactions-009", "dbimpl-07-transactions-010", "dbimpl-07-transactions-013"],
+          "supportNote": "Overflow chains, split-pointer progression, lookup folding, and delayed hot-bucket repair."
+        }
+      ],
+      "assumptions": [],
+      "commonTraps": ["Splitting the bucket that overflowed instead of the split-pointer bucket.", "Doubling the directory in one step as in extendible hashing."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-023",
+      "pages": [10],
+      "topic": "LLVM",
+      "prompt": "Translate supplied LLVM code into an expression, evaluate it, and optimize it when globals are compile-time constants.",
+      "classification": "not-answerable",
+      "protocolAnswerAssessment": "The LLVM function is missing.",
+      "examReadyAnswer": "No expression, value, or optimized function can be derived without the IR. General method: follow SSA definitions and control flow, reconstruct the arithmetic, substitute known globals, constant-fold operations and branches, remove dead instructions/blocks, and return the resulting constant or simplified expression.",
+      "evidenceBasis": "missing_exact_exam_artifact_with_lecture_context",
+      "evidence": [
+        {
+          "chapterId": "16-query-compilation",
+          "occurrenceIds": ["dbimpl-13-codegen-017", "dbimpl-13-codegen-018", "dbimpl-13-codegen-019"],
+          "supportNote": "LLVM and scalar-expression compilation context."
+        }
+      ],
+      "assumptions": [],
+      "commonTraps": ["Inventing constants or branch conditions.", "Optimizing before respecting SSA/control-flow semantics."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-024",
+      "pages": [10, 11],
+      "topic": "Timestamp Synchronization",
+      "prompt": "Implement basic timestamp-ordering synchronization.",
+      "classification": "unsupported",
+      "protocolAnswerAssessment": "The protocol describes the standard basic timestamp-ordering algorithm correctly, but this mechanism is not established in the supplied 12-lecture corpus.",
+      "examReadyAnswer": "External/general DB knowledge: assign each transaction TS(T). For each item x maintain readTS(x) and writeTS(x). read(T,x): if TS(T)<writeTS(x), abort/restart T; otherwise read and set readTS(x)=max(readTS(x),TS(T)). write(T,x): if TS(T)<readTS(x) or TS(T)<writeTS(x), abort/restart T; otherwise write and set writeTS(x)=TS(T). This is basic timestamp ordering; Thomas's write rule is a different optional variant for obsolete writes.",
+      "evidenceBasis": "external_general_db_knowledge",
+      "evidence": [],
+      "assumptions": ["Single-version basic timestamp ordering.", "Aborted transactions restart with a new timestamp according to the system policy."],
+      "commonTraps": ["Updating readTS before the rejection test.", "Confusing basic timestamp ordering with Thomas's write rule.", "Claiming the lecture corpus supports this exact algorithm."],
+      "confidence": "high_for_general_knowledge"
+    },
+    {
+      "id": "protocol-q-025",
+      "pages": [11, 12],
+      "topic": "Multiple-Granularity Locking",
+      "prompt": "Construct a deadlock using IS, IX, S, and X locks on a hierarchy.",
+      "classification": "unsupported",
+      "protocolAnswerAssessment": "The wait-cycle example is valid under the standard multi-granularity compatibility matrix, but MGL is absent from the supplied lecture corpus.",
+      "examReadyAnswer": "External/general DB knowledge: let root R have children A,B,C. T1 holds IX(R),X(A); T2 holds IS(R),S(B); T3 holds IX(R),X(C). Root locks are mutually compatible in these combinations. Then T1 requests X(B) and waits for T2; T2 requests S(C) and waits for T3; T3 requests X(A) and waits for T1. The waits-for graph is T1→T2→T3→T1, so it is a deadlock. Intention locks advertise lower-level intent; they do not prevent cycles.",
+      "evidenceBasis": "external_general_db_knowledge",
+      "evidence": [],
+      "assumptions": ["Standard IS/IX/S/X compatibility and no lock preemption."],
+      "commonTraps": ["Using incompatible intention locks at the root, which would block before the intended three-way cycle forms.", "Saying intention locks eliminate deadlocks."],
+      "confidence": "high_for_general_knowledge"
+    },
+    {
+      "id": "protocol-q-026",
+      "pages": [12, 13],
+      "topic": "Iterator Operators",
+      "prompt": "Implement UNION in the iterator model.",
+      "classification": "corrected",
+      "protocolAnswerAssessment": "The code implements UNION DISTINCT, not UNION ALL, and the protocol should state that distinction. It is streaming in the sense that it can emit early, but it is stateful and retains a growing seen set.",
+      "examReadyAnswer": "For UNION ALL: open both children; next() drains left, then drains right; no hash table is needed. For UNION DISTINCT: do the same but keep a hash set keyed by the complete output tuple; emit a tuple only if insertion into seen succeeds. The shown algorithm is UNION DISTINCT. It is not a full pipeline breaker because it can emit before consuming both inputs, but its seen set may grow to the number of distinct tuples and must use SQL-compatible equality/hash semantics.",
+      "evidenceBasis": "lecture",
+      "evidence": [
+        {
+          "chapterId": "15-sort-group-and-set-operations",
+          "occurrenceIds": ["dbimpl-13-codegen-008", "dbimpl-13-codegen-009", "dbimpl-13-codegen-010"],
+          "supportNote": "UNION versus UNION ALL and duplicate elimination."
+        },
+        {
+          "chapterId": "12-set-oriented-execution-models",
+          "occurrenceIds": ["dbimpl-11-setoriented-013", "dbimpl-11-setoriented-024"],
+          "supportNote": "Iterator open/next/close behavior and the meaning of exhaustion."
+        }
+      ],
+      "assumptions": ["Both inputs have union-compatible schemas."],
+      "commonTraps": ["Calling the seen-set implementation UNION ALL.", "Returning false when one child ends instead of switching to the other.", "Ignoring duplicate and NULL equality semantics."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-027",
+      "pages": [13],
+      "topic": "Iterator Operators",
+      "prompt": "Implement a right anti join in the iterator model.",
+      "classification": "corrected",
+      "protocolAnswerAssessment": "The build-left/probe-right design is correct, but the pseudocode contains a concrete variable error: it inserts l although the current tuple is t. It also needs a clear equality/residual-predicate assumption.",
+      "examReadyAnswer": "open(): consume the entire left input into a hash table keyed by leftJoinKey; store t, not an undefined l. Then open right. next(): for each right tuple r, probe candidates with rightJoinKey(r); if no candidate l satisfies the full join predicate, set current=r and return true. Continue until right exhausts. close both children and clear the table. If the join is pure key equality, a set of left keys is enough; store vectors only when duplicates/residual predicates require candidate checks. SQL NULL keys do not match ordinary equality.",
+      "evidenceBasis": "lecture",
+      "evidence": [
+        {
+          "chapterId": "14-relational-operators-and-joins",
+          "occurrenceIds": ["dbimpl-12-operators-041", "dbimpl-12-operators-042", "dbimpl-12-operators-055", "dbimpl-12-operators-056"],
+          "supportNote": "Hash-join build/probe structure and anti-join unmatched-side semantics."
+        }
+      ],
+      "assumptions": ["The implementation chooses the left side as build and emits unmatched right tuples."],
+      "commonTraps": ["Emitting a right tuple after the first nonmatching left candidate instead of proving that no candidate matches.", "Returning matched right tuples.", "The l/t variable typo."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-028",
+      "pages": [14],
+      "topic": "Pipelining",
+      "prompt": "Given a push anti-right-join implementation, determine whether it is a pipeline breaker.",
+      "classification": "verified",
+      "protocolAnswerAssessment": "The conditional answer is correct: a build-left/probe-right right anti join fully consumes and retains the left side, then can stream unmatched right tuples.",
+      "examReadyAnswer": "For the stated build-left implementation, it is a pipeline breaker on the left/build input: the left hash table must be complete before any right tuple can be proven unmatched. After the build phase, right tuples can be probed and unmatched ones pushed immediately, so it is not a full breaker on the right/probe side. If an implementation instead marks preserved-side tuples and emits them in a final scan, that preserved side also waits for completion; classify the actual code, not the operator name alone.",
+      "evidenceBasis": "lecture",
+      "evidence": [
+        {
+          "chapterId": "13-pipelining-and-parallelization",
+          "occurrenceIds": ["dbimpl-12-operators-020", "dbimpl-12-operators-021"],
+          "supportNote": "One-sided and full pipeline-breaker definitions."
+        },
+        {
+          "chapterId": "14-relational-operators-and-joins",
+          "occurrenceIds": ["dbimpl-12-operators-055", "dbimpl-12-operators-056"],
+          "supportNote": "Anti-join bookkeeping and unmatched-tuple emission."
+        }
+      ],
+      "assumptions": ["The shown implementation builds the left and probes the right."],
+      "commonTraps": ["Calling every hash join a full breaker on both sides.", "Ignoring a final marker scan when the code uses one."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-029",
+      "pages": [14],
+      "topic": "Operators",
+      "prompt": "Recognize supplied operator implementations.",
+      "classification": "not-answerable",
+      "protocolAnswerAssessment": "The operator code/diagrams are missing.",
+      "examReadyAnswer": "Cannot identify exact operators without the implementations. Recognition cues: selection filters one input; map/projection constructs output fields; nested loop restarts the right per left; hash join has build/probe phases; group-by keeps per-key aggregate state; anti-join emits tuples with no partner; sort consumes before ordered output; union/intersect/except reveal duplicate and multiplicity bookkeeping.",
+      "evidenceBasis": "missing_exact_exam_artifact_with_lecture_context",
+      "evidence": [
+        {
+          "chapterId": "14-relational-operators-and-joins",
+          "occurrenceIds": ["dbimpl-12-operators-024", "dbimpl-12-operators-026", "dbimpl-12-operators-027", "dbimpl-12-operators-029", "dbimpl-12-operators-041", "dbimpl-12-operators-055"],
+          "supportNote": "Operator signatures and algorithms."
+        },
+        {
+          "chapterId": "15-sort-group-and-set-operations",
+          "occurrenceIds": ["dbimpl-13-codegen-002", "dbimpl-13-codegen-006", "dbimpl-13-codegen-008"],
+          "supportNote": "Sort, group-by, and set-operation signatures."
+        }
+      ],
+      "assumptions": [],
+      "commonTraps": ["Naming an operator from one variable name while ignoring its output behavior."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-030",
+      "pages": [14],
+      "topic": "Query Engine",
+      "prompt": "Recover the original algebraic expression from generated pseudocode containing a filter, AVG, and an apparent left anti join.",
+      "classification": "not-answerable",
+      "protocolAnswerAssessment": "The generated pseudocode is absent, so input sides, predicates, grouping keys, and anti-join orientation cannot be established.",
+      "examReadyAnswer": "No exact algebra tree can be reconstructed. Method: identify scan loops, predicates, hash-table build/probe roles, aggregation state (sum and count imply AVG), grouping keys, and which side is emitted when no match exists. A left anti join emits unmatched left tuples; a right anti join emits unmatched right tuples. Place the filter at the loop where it is evaluated and the aggregation above the stream it consumes.",
+      "evidenceBasis": "missing_exact_exam_artifact_with_lecture_context",
+      "evidence": [
+        {
+          "chapterId": "14-relational-operators-and-joins",
+          "occurrenceIds": ["dbimpl-12-operators-055", "dbimpl-12-operators-056"],
+          "supportNote": "Anti-join orientation and unmatched-side behavior."
+        },
+        {
+          "chapterId": "16-query-compilation",
+          "occurrenceIds": ["dbimpl-13-codegen-020", "dbimpl-13-codegen-026", "dbimpl-13-codegen-029"],
+          "supportNote": "Mapping data-centric generated loops back to operators."
+        }
+      ],
+      "assumptions": [],
+      "commonTraps": ["Inferring left versus right anti join from the word anti alone.", "Treating sum without count as AVG.", "Inventing a missing predicate."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-031",
+      "pages": [14, 15],
+      "topic": "Code Generation",
+      "prompt": "Given generated push code over A(c,d,e) and B(f,g), draw and number the algebra tree and give a possible SQL-92 query.",
+      "classification": "not-answerable",
+      "protocolAnswerAssessment": "Only fragments survive. They suggest filtering A.c=42, building a hash table on A.d, probing with B.f, and updating another hash table, but omitted lines determine the result, aggregation, projection, and join semantics.",
+      "examReadyAnswer": "The justified fragment is: Scan(A) -> Selection(A.c=42) -> hash-build keyed by A.d; Scan(B) -> hash-probe using B.f. The y.get_or_insert call suggests later grouping or duplicate elimination, but its key, aggregate, and output are missing. Therefore no exact numbered tree or SQL-92 query is defensible. At most, the join condition A.d=B.f and filter A.c=42 are supported.",
+      "evidenceBasis": "missing_exact_exam_artifact_with_lecture_context",
+      "evidence": [
+        {
+          "chapterId": "16-query-compilation",
+          "occurrenceIds": ["dbimpl-13-codegen-020", "dbimpl-13-codegen-021", "dbimpl-13-codegen-026", "dbimpl-13-codegen-029", "dbimpl-13-codegen-033"],
+          "supportNote": "Data-centric pipeline code and produce/consume generation."
+        }
+      ],
+      "assumptions": [],
+      "commonTraps": ["Inventing the y hash key or aggregate.", "Claiming one unique SQL query when many queries compile to the same visible fragment."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-032",
+      "pages": [14, 15],
+      "topic": "Code Generation",
+      "prompt": "Explain why generated data-centric code is better than an iterator implementation, using the shown build loop.",
+      "classification": "verified",
+      "protocolAnswerAssessment": "The protocol's reasons are correct but can be stated more precisely: generation fuses operator logic into a pipeline loop and removes runtime virtual dispatch, rather than merely 'fewer branches' in every case.",
+      "examReadyAnswer": "The generated build loop fuses scan(A), the predicate A.c=42, key extraction A.d, and hash insertion into one tight loop. Values can remain in registers; there is no per-tuple open/next virtual-call chain, no materialized intermediate between scan and selection, and the native compiler can inline, constant-fold, schedule, and remove dead code across former operator boundaries. It may still contain data-dependent branches and a hash-table call, so the defensible claim is lower dispatch/materialization overhead and broader optimization scope, not 'branch-free.'",
+      "evidenceBasis": "lecture",
+      "evidence": [
+        {
+          "chapterId": "12-set-oriented-execution-models",
+          "occurrenceIds": ["dbimpl-11-setoriented-012", "dbimpl-11-setoriented-021"],
+          "supportNote": "Iterator overhead and push-model locality."
+        },
+        {
+          "chapterId": "16-query-compilation",
+          "occurrenceIds": ["dbimpl-13-codegen-020", "dbimpl-13-codegen-021", "dbimpl-13-codegen-026"],
+          "supportNote": "Data-centric execution and compile-time produce/consume fusion."
+        }
+      ],
+      "assumptions": ["Compilation overhead is amortized by enough query execution work."],
+      "commonTraps": ["Claiming generated code contains no branches.", "Ignoring compilation cost for tiny queries."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-033",
+      "pages": [15, 16],
+      "topic": "Parallel Query Execution",
+      "prompt": "Parallelize a plan with a left group-by, right filter, and join using exchange operators.",
+      "classification": "verified",
+      "protocolAnswerAssessment": "The proposed two-stage left aggregation, pre-exchange filter, co-partitioned join, and final gather are correct under the stated plan.",
+      "examReadyAnswer": "Left: parallel Scan(R1) -> local GroupBy(g) -> XchgHashSplit(hash(g)) so all partial groups for g meet -> final GroupBy(g), producing aggregate a -> XchgHashSplit(hash(a)) for the join. Right: parallel Scan(R2) -> Selection -> XchgHashSplit(hash(t1)); filtering before exchange reduces traffic. Use the same worker mapping for a and t1, then each worker performs its local join. If one output stream is required, finish with Xchg(N:1). The second left repartition is necessary because grouping partition g need not equal join partition a.",
+      "evidenceBasis": "lecture",
+      "evidence": [
+        {
+          "chapterId": "17-parallel-query-execution",
+          "occurrenceIds": ["dbimpl-13-codegen-037", "dbimpl-13-codegen-038", "dbimpl-13-codegen-039", "dbimpl-13-codegen-040", "dbimpl-13-codegen-043"],
+          "supportNote": "Exchange variants, parallel aggregation, and co-partitioned join."
+        }
+      ],
+      "assumptions": ["N workers use identical hash-to-worker mapping on both join inputs.", "The aggregate result attribute a is not guaranteed to preserve the partitioning by g."],
+      "commonTraps": ["Joining after partitioning the left only by g.", "Applying the selection after moving right-side tuples.", "Using different hash mappings on the two join keys."],
+      "confidence": "high"
+    },
+    {
+      "id": "protocol-q-034",
+      "pages": [17],
+      "topic": "Parallel Query Execution",
+      "prompt": "Parallelize (Gamma r1:a(A)) join a=t1 (sigma t1=...(B)) with XchgHashSplit and Xchg.",
+      "classification": "verified",
+      "protocolAnswerAssessment": "The protocol correctly identifies the logical stages but does not fully restate the physical exchanges on page 17; the complete plan is supplied here.",
+      "examReadyAnswer": "Run parallel scans of A. Each worker performs a local partial Gamma grouped by r1. XchgHashSplit on r1 sends equal groups to one worker; a final Gamma combines partials and creates a. Repartition that result with XchgHashSplit on a. In parallel, scan B, apply sigma(t1=...) locally, then XchgHashSplit on t1. Use the same destination function for a and t1 and run a local join per worker. Add Xchg(N:1) only if the consumer requires one stream.",
+      "evidenceBasis": "lecture",
+      "evidence": [
+        {
+          "chapterId": "17-parallel-query-execution",
+          "occurrenceIds": ["dbimpl-13-codegen-037", "dbimpl-13-codegen-038", "dbimpl-13-codegen-039", "dbimpl-13-codegen-040", "dbimpl-13-codegen-043"],
+          "supportNote": "Exchange-based aggregation and hash-partitioned joins."
+        }
+      ],
+      "assumptions": ["Gamma is decomposable into local and final aggregation.", "a is the aggregate output used as the join key.", "The same hash/worker mapping is used on a and t1."],
+      "commonTraps": ["Skipping the final combine after local aggregation.", "Assuming partitioning by r1 also partitions by aggregate value a.", "Gathering to one stream before the join and destroying parallelism."],
+      "confidence": "high"
+    }
+  ],
+  "summary": {
+    "recordCount": 34,
+    "classifications": {
+      "verified": 12,
+      "corrected": 8,
+      "incomplete": 5,
+      "unsupported": 2,
+      "not-answerable": 7
+    },
+    "highestRiskProtocolItems": [
+      "protocol-q-013",
+      "protocol-q-017",
+      "protocol-q-026",
+      "protocol-q-027",
+      "protocol-q-012"
+    ]
+  }
+}

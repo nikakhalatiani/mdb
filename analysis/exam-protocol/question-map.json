@@ -1,0 +1,1319 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-26",
+  "purpose": "Map fallible exam recollections and practice-format evidence to the lecture atlas without treating any recollection as ground truth.",
+  "sources": [
+    {
+      "source_id": "compiled-protocol",
+      "title": "Final Klausur DBImpl.pdf",
+      "path": "/Users/nkhalatiani/Downloads/Final Klausur DBImpl.pdf",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "warning": "Student-compiled recollection. The document explicitly says its answers are probably wrong or incomplete. It is useful for discovering possible question shapes, never as authoritative course or exam content."
+    }
+  ],
+  "pdf_confidence_legend": {
+    "yellow": "TODO or incomplete",
+    "cyan": "based on assumptions",
+    "red": "impossible to know",
+    "unmarked": "no confidence color applied; this is not a guarantee of accuracy",
+    "mixed": "only a fragment of the prompt is confidence-colored"
+  },
+  "counts": {
+    "total_questions": 38,
+    "compiled_protocol_questions": 38,
+    "compiled_protocol_colors": {
+      "yellow": 0,
+      "cyan": 3,
+      "red": 11,
+      "mixed": 1,
+      "unmarked": 23
+    }
+  },
+  "questions": [
+    {
+      "id": "protocol-q-001",
+      "order": 1,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        1
+      ],
+      "section": "General",
+      "prompt": "Given more terms than questions, match each question to the correct term. Remembered examples include “byte-wise,” “Neumann Plane Memory Space,” and “Yes, because of performance reasons.”",
+      "prompt_type": "unknowable_fragment",
+      "pdf_confidence": {
+        "color": "red",
+        "meaning": "impossible to know",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [],
+      "ambiguity": "Neither the real term list nor the questions are preserved, so a content mapping would be speculation."
+    },
+    {
+      "id": "protocol-q-002",
+      "order": 2,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        1
+      ],
+      "section": "General",
+      "prompt": "Fill missing words in a text; remembered examples include Morsel, FSI, Pages, and Segments.",
+      "prompt_type": "unknowable_fragment",
+      "pdf_confidence": {
+        "color": "red",
+        "meaning": "impossible to know",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "04-segments-space-and-update-strategies",
+          "chapter_title": "Segments, Space Management, and Update Strategies",
+          "evidence_strength": "example_terms_only",
+          "occurrence_ids": [
+            "dbimpl-02-storage-access-001",
+            "dbimpl-02-storage-access-002",
+            "dbimpl-02-storage-access-032",
+            "dbimpl-02-storage-access-034"
+          ],
+          "evidence_note": "Segments, pages, and free-space inventory are directly taught, but the missing-word passage is unknown."
+        },
+        {
+          "chapter_id": "17-parallel-query-execution",
+          "chapter_title": "Parallel Query Execution",
+          "evidence_strength": "example_term_only",
+          "occurrence_ids": [
+            "dbimpl-13-codegen-046",
+            "dbimpl-13-codegen-048"
+          ],
+          "evidence_note": "Morsel-driven execution is taught; the actual blank and surrounding sentence are not preserved."
+        }
+      ],
+      "ambiguity": "The examples indicate broad topics only. Do not manufacture the missing passage."
+    },
+    {
+      "id": "protocol-q-003",
+      "order": 3,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        1,
+        2
+      ],
+      "section": "Buffer Manager",
+      "prompt": "Name four buffer replacement algorithms and give one advantage and one disadvantage for each.",
+      "prompt_type": "exact_question",
+      "pdf_confidence": {
+        "color": "unmarked",
+        "meaning": "no confidence color applied",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "03-buffer-management",
+          "chapter_title": "Buffer Management",
+          "evidence_strength": "direct",
+          "occurrence_ids": [
+            "dbimpl-01-storage-024",
+            "dbimpl-01-storage-025",
+            "dbimpl-01-storage-026",
+            "dbimpl-01-storage-027",
+            "dbimpl-01-storage-030",
+            "dbimpl-01-storage-031"
+          ],
+          "evidence_note": "The lecture compares FIFO, LRU, LFU, second chance, and 2Q."
+        }
+      ]
+    },
+    {
+      "id": "protocol-q-004",
+      "order": 4,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        2
+      ],
+      "section": "Buffer Manager",
+      "prompt": "For a buffer manager using 2Q, name and describe the two queues, state the eviction order, advance the given state by four steps, and reconstruct the page-access order.",
+      "prompt_type": "exact_question_with_unknowable_fragment",
+      "pdf_confidence": {
+        "color": "mixed",
+        "meaning": "partly impossible to know",
+        "scope": "partial",
+        "highlighted_fragments": [
+          {
+            "color": "red",
+            "text": "Then fast-forward four steps with the new state."
+          }
+        ]
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "03-buffer-management",
+          "chapter_title": "Buffer Management",
+          "evidence_strength": "direct_for_concept_not_instance",
+          "occurrence_ids": [
+            "dbimpl-01-storage-031",
+            "dbimpl-01-storage-032"
+          ],
+          "evidence_note": "The two-queue idea and workload hints are taught. The concrete state and four transitions are missing."
+        }
+      ],
+      "ambiguity": "The remembered prompt lacks the starting diagram and reference string, so the simulation cannot be reconstructed."
+    },
+    {
+      "id": "protocol-q-005",
+      "order": 5,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        2
+      ],
+      "section": "Buffer Manager",
+      "prompt": "Is 2Q always better than random eviction? If not, give an access pattern where random eviction can be better.",
+      "prompt_type": "exact_question",
+      "pdf_confidence": {
+        "color": "unmarked",
+        "meaning": "no confidence color applied",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "03-buffer-management",
+          "chapter_title": "Buffer Management",
+          "evidence_strength": "partial",
+          "occurrence_ids": [
+            "dbimpl-01-storage-024",
+            "dbimpl-01-storage-031",
+            "dbimpl-01-storage-032"
+          ],
+          "evidence_note": "2Q and workload sensitivity are direct lecture evidence; the random-eviction comparison is not a dedicated slide."
+        }
+      ]
+    },
+    {
+      "id": "protocol-q-006",
+      "order": 6,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        3
+      ],
+      "section": "Slotted Pages",
+      "prompt": "After inserting record A, inserting record B, and removing record A, draw and explain the resulting slotted page.",
+      "prompt_type": "exact_question",
+      "pdf_confidence": {
+        "color": "unmarked",
+        "meaning": "no confidence color applied",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "05-slotted-pages-and-record-layout",
+          "chapter_title": "Slotted Pages and Record Layout",
+          "evidence_strength": "direct",
+          "occurrence_ids": [
+            "dbimpl-03-access-tuples-002",
+            "dbimpl-03-access-tuples-004",
+            "dbimpl-03-access-tuples-006",
+            "dbimpl-03-access-tuples-009"
+          ],
+          "evidence_note": "The page layout, opposing growth directions, and free-slot encoding are directly taught."
+        }
+      ]
+    },
+    {
+      "id": "protocol-q-007",
+      "order": 7,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        3
+      ],
+      "section": "Slotted Pages",
+      "prompt": "Decode a hexdump of three slotted pages using a CREATE TABLE statement: optimize attribute order, locate three TIDs, follow ordinary/redirect-target/redirected records, and decode requested attribute values.",
+      "prompt_type": "unknowable_fragment",
+      "pdf_confidence": {
+        "color": "red",
+        "meaning": "impossible to know",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "05-slotted-pages-and-record-layout",
+          "chapter_title": "Slotted Pages and Record Layout",
+          "evidence_strength": "direct_for_method_not_instance",
+          "occurrence_ids": [
+            "dbimpl-03-access-tuples-006",
+            "dbimpl-03-access-tuples-007",
+            "dbimpl-03-access-tuples-010",
+            "dbimpl-03-access-tuples-015",
+            "dbimpl-03-access-tuples-023",
+            "dbimpl-03-access-tuples-027"
+          ],
+          "evidence_note": "Slots, redirections, stable TIDs, and aligned record layouts are taught. The hexdumps, schema, and requested values are missing."
+        }
+      ],
+      "ambiguity": "Only the task shape survives; none of the byte-level inputs can be reconstructed safely."
+    },
+    {
+      "id": "protocol-q-008",
+      "order": 8,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        3
+      ],
+      "section": "Trees",
+      "prompt": "A B+-tree has one root and ten leaf/node pages. With ten LRU buffer frames and uniformly random index-only lookups, determine the page-miss probability.",
+      "prompt_type": "exact_question",
+      "pdf_confidence": {
+        "color": "unmarked",
+        "meaning": "no confidence color applied",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "03-buffer-management",
+          "chapter_title": "Buffer Management",
+          "evidence_strength": "direct_for_lru",
+          "occurrence_ids": [
+            "dbimpl-01-storage-024",
+            "dbimpl-01-storage-026"
+          ],
+          "evidence_note": "LRU residency and eviction are direct evidence."
+        },
+        {
+          "chapter_id": "07-btree-fundamentals-and-operations",
+          "chapter_title": "B-Tree and B+-Tree Fundamentals",
+          "evidence_strength": "direct_for_lookup_path",
+          "occurrence_ids": [
+            "dbimpl-04-access-btrees-041",
+            "dbimpl-04-access-btrees-043",
+            "dbimpl-05-access-btrees-002"
+          ],
+          "evidence_note": "Root-to-leaf lookup is direct evidence; the probability calculation is an application."
+        }
+      ]
+    },
+    {
+      "id": "protocol-q-009",
+      "order": 9,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        4
+      ],
+      "section": "Trees",
+      "prompt": "A B+-tree has a root and 100 leaves, and the LRU buffer has ten pages. Determine expected page faults per uniformly random tuple lookup.",
+      "prompt_type": "exact_question",
+      "pdf_confidence": {
+        "color": "unmarked",
+        "meaning": "no confidence color applied",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "03-buffer-management",
+          "chapter_title": "Buffer Management",
+          "evidence_strength": "direct_for_lru",
+          "occurrence_ids": [
+            "dbimpl-01-storage-024",
+            "dbimpl-01-storage-026"
+          ],
+          "evidence_note": "LRU behavior is direct evidence."
+        },
+        {
+          "chapter_id": "07-btree-fundamentals-and-operations",
+          "chapter_title": "B-Tree and B+-Tree Fundamentals",
+          "evidence_strength": "direct_for_lookup_path",
+          "occurrence_ids": [
+            "dbimpl-04-access-btrees-041",
+            "dbimpl-05-access-btrees-002"
+          ],
+          "evidence_note": "B+-tree lookup structure is direct evidence."
+        }
+      ]
+    },
+    {
+      "id": "protocol-q-010",
+      "order": 10,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        4
+      ],
+      "section": "Trees",
+      "prompt": "Explain the B+-tree concurrency hazard caused by a non-atomic split and parent-separator update.",
+      "prompt_type": "reconstructed_task",
+      "pdf_confidence": {
+        "color": "unmarked",
+        "meaning": "no confidence color applied",
+        "scope": "topic_label_reconstructed_as_task"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "07-btree-fundamentals-and-operations",
+          "chapter_title": "B-Tree and B+-Tree Fundamentals",
+          "evidence_strength": "direct",
+          "occurrence_ids": [
+            "dbimpl-05-access-btrees-008",
+            "dbimpl-05-access-btrees-009",
+            "dbimpl-05-access-btrees-010"
+          ],
+          "evidence_note": "The lecture directly discusses concurrent access, split propagation, lock coupling, and restart."
+        }
+      ]
+    },
+    {
+      "id": "protocol-q-011",
+      "order": 11,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        4
+      ],
+      "section": "Trees",
+      "prompt": "Explain how B-link-tree high keys and right-sibling links let a search recover from an outdated parent during concurrent splits.",
+      "prompt_type": "reconstructed_task",
+      "pdf_confidence": {
+        "color": "unmarked",
+        "meaning": "no confidence color applied",
+        "scope": "topic_label_reconstructed_as_task"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "08-advanced-btree-techniques",
+          "chapter_title": "Advanced B-Tree Techniques",
+          "evidence_strength": "direct",
+          "occurrence_ids": [
+            "dbimpl-05-access-btrees-011",
+            "dbimpl-05-access-btrees-013",
+            "dbimpl-05-access-btrees-015",
+            "dbimpl-05-access-btrees-017"
+          ],
+          "evidence_note": "B-link trees, right links, high-key routing, and split behavior are directly taught."
+        }
+      ]
+    },
+    {
+      "id": "protocol-q-012",
+      "order": 12,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        4,
+        5
+      ],
+      "section": "Trees",
+      "prompt": "Explain the concurrency advantage of a B-link tree.",
+      "prompt_type": "exact_question",
+      "pdf_confidence": {
+        "color": "unmarked",
+        "meaning": "no confidence color applied",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "08-advanced-btree-techniques",
+          "chapter_title": "Advanced B-Tree Techniques",
+          "evidence_strength": "direct",
+          "occurrence_ids": [
+            "dbimpl-05-access-btrees-011",
+            "dbimpl-05-access-btrees-013",
+            "dbimpl-05-access-btrees-015",
+            "dbimpl-05-access-btrees-017"
+          ],
+          "evidence_note": "The high-key/right-link mechanism and shorter latch holding are direct lecture evidence."
+        }
+      ],
+      "related_question_ids": [
+        "protocol-q-010",
+        "protocol-q-011"
+      ]
+    },
+    {
+      "id": "protocol-q-013",
+      "order": 13,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        5
+      ],
+      "section": "Trees",
+      "prompt": "Given page, header, key, value, child-pointer, tuple-count, and access-time variables, compute B-tree leaf capacity, inner capacity/fanout, height, and worst-case lookup time.",
+      "prompt_type": "reconstructed_task",
+      "pdf_confidence": {
+        "color": "unmarked",
+        "meaning": "no confidence color applied",
+        "scope": "reconstructed_from_composite_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "07-btree-fundamentals-and-operations",
+          "chapter_title": "B-Tree and B+-Tree Fundamentals",
+          "evidence_strength": "direct_for_structure",
+          "occurrence_ids": [
+            "dbimpl-04-access-btrees-018",
+            "dbimpl-04-access-btrees-020",
+            "dbimpl-04-access-btrees-021",
+            "dbimpl-04-access-btrees-031",
+            "dbimpl-04-access-btrees-041"
+          ],
+          "evidence_note": "B-tree invariants, page layouts, fanout, and lookup are direct evidence. The exact symbolic inputs are recollected."
+        }
+      ],
+      "ambiguity": "The protocol itself says the paired B-tree/radix-tree scenario may be remembered incorrectly."
+    },
+    {
+      "id": "protocol-q-014",
+      "order": 14,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        5
+      ],
+      "section": "Trees",
+      "prompt": "Debate why an in-memory database might use a radix tree.",
+      "prompt_type": "reconstructed_task",
+      "pdf_confidence": {
+        "color": "unmarked",
+        "meaning": "no confidence color applied",
+        "scope": "reconstructed_from_composite_prompt"
+      },
+      "chapter_mappings": [],
+      "ambiguity": "No direct radix-tree lecture occurrence exists in the current 527-slide atlas. Do not use the protocol answer as course ground truth."
+    },
+    {
+      "id": "protocol-q-015",
+      "order": 15,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        5,
+        6
+      ],
+      "section": "Trees",
+      "prompt": "Compute the node size of an uncompressed radix tree from the radix width and child-pointer size.",
+      "prompt_type": "reconstructed_task",
+      "pdf_confidence": {
+        "color": "unmarked",
+        "meaning": "no confidence color applied",
+        "scope": "reconstructed_from_composite_prompt"
+      },
+      "chapter_mappings": [],
+      "ambiguity": "No direct radix-tree lecture occurrence exists in the atlas."
+    },
+    {
+      "id": "protocol-q-016",
+      "order": 16,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        6
+      ],
+      "section": "Trees",
+      "prompt": "Compute worst-case radix-tree access time from key length, radix width, and per-level memory-access time.",
+      "prompt_type": "reconstructed_task",
+      "pdf_confidence": {
+        "color": "unmarked",
+        "meaning": "no confidence color applied",
+        "scope": "reconstructed_from_composite_prompt"
+      },
+      "chapter_mappings": [],
+      "ambiguity": "No direct radix-tree lecture occurrence exists in the atlas."
+    },
+    {
+      "id": "protocol-q-017",
+      "order": 17,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        6
+      ],
+      "section": "Trees",
+      "prompt": "State what changes in the radix-tree lookup analysis when the number of tuples doubles.",
+      "prompt_type": "reconstructed_task",
+      "pdf_confidence": {
+        "color": "unmarked",
+        "meaning": "no confidence color applied",
+        "scope": "reconstructed_from_composite_prompt"
+      },
+      "chapter_mappings": [],
+      "ambiguity": "No direct radix-tree lecture occurrence exists in the atlas."
+    },
+    {
+      "id": "protocol-q-018",
+      "order": 18,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        6,
+        7
+      ],
+      "section": "Record Layout",
+      "prompt": "Construct a minimal, constant-time, aligned record layout for two Ints, Char16, Char4, two Longs, and a Bool, including required tail padding.",
+      "prompt_type": "exact_question",
+      "pdf_confidence": {
+        "color": "unmarked",
+        "meaning": "no confidence color applied",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "05-slotted-pages-and-record-layout",
+          "chapter_title": "Slotted Pages and Record Layout",
+          "evidence_strength": "direct",
+          "occurrence_ids": [
+            "dbimpl-03-access-tuples-018",
+            "dbimpl-03-access-tuples-019",
+            "dbimpl-03-access-tuples-023",
+            "dbimpl-03-access-tuples-026",
+            "dbimpl-03-access-tuples-027"
+          ],
+          "evidence_note": "Fixed/variable parts, field reordering, and decreasing-alignment placement are direct evidence."
+        }
+      ]
+    },
+    {
+      "id": "protocol-q-019",
+      "order": 19,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        7
+      ],
+      "section": "Record Layout",
+      "prompt": "Draw the record layout for an unspecified CREATE TABLE statement.",
+      "prompt_type": "unknowable_fragment",
+      "pdf_confidence": {
+        "color": "red",
+        "meaning": "impossible to know",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "05-slotted-pages-and-record-layout",
+          "chapter_title": "Slotted Pages and Record Layout",
+          "evidence_strength": "method_only",
+          "occurrence_ids": [
+            "dbimpl-03-access-tuples-018",
+            "dbimpl-03-access-tuples-023",
+            "dbimpl-03-access-tuples-027"
+          ],
+          "evidence_note": "The layout method is taught, but the schema is absent."
+        }
+      ],
+      "ambiguity": "The CREATE TABLE statement is missing."
+    },
+    {
+      "id": "protocol-q-020",
+      "order": 20,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        7,
+        8
+      ],
+      "section": "Join Algorithms",
+      "prompt": "For R join S with |R| < |S|, equality on r.a = s.a, and unique r.a, mark which join algorithms satisfy several properties such as complexity, dependent arguments, and sorted output.",
+      "prompt_type": "exact_question",
+      "pdf_confidence": {
+        "color": "unmarked",
+        "meaning": "no confidence color applied",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "14-relational-operators-and-joins",
+          "chapter_title": "Relational Operators and Join Algorithms",
+          "evidence_strength": "direct",
+          "occurrence_ids": [
+            "dbimpl-12-operators-029",
+            "dbimpl-12-operators-030",
+            "dbimpl-12-operators-034",
+            "dbimpl-12-operators-039",
+            "dbimpl-12-operators-043"
+          ],
+          "evidence_note": "Nested-loop, block nested-loop, sort-merge, in-memory hash, and external hash joins are directly taught."
+        }
+      ],
+      "ambiguity": "The protocol's filled matrix is fallible and should be recomputed from the lecture algorithms."
+    },
+    {
+      "id": "protocol-q-021",
+      "order": 21,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        8
+      ],
+      "section": "Join Algorithms",
+      "prompt": "Given two record layouts and three SQL queries, choose a join algorithm for each and justify its time complexity.",
+      "prompt_type": "exact_question",
+      "pdf_confidence": {
+        "color": "unmarked",
+        "meaning": "no confidence color applied",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "14-relational-operators-and-joins",
+          "chapter_title": "Relational Operators and Join Algorithms",
+          "evidence_strength": "direct_for_algorithms_not_instances",
+          "occurrence_ids": [
+            "dbimpl-12-operators-029",
+            "dbimpl-12-operators-030",
+            "dbimpl-12-operators-034",
+            "dbimpl-12-operators-039",
+            "dbimpl-12-operators-043",
+            "dbimpl-12-operators-052"
+          ],
+          "evidence_note": "The candidate algorithms and singleton/dependent cases are taught; the three SQL inputs are missing."
+        }
+      ],
+      "ambiguity": "The actual layouts and queries are not preserved, so the recalled choices and complexities cannot be checked."
+    },
+    {
+      "id": "protocol-q-022",
+      "order": 22,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        8,
+        9,
+        10
+      ],
+      "section": "Hashing",
+      "prompt": "Explain or trace extendible hashing: lookup through a directory, global versus local depth, bucket overflow, local splitting, and directory doubling.",
+      "prompt_type": "reconstructed_task",
+      "pdf_confidence": {
+        "color": "unmarked",
+        "meaning": "no confidence color applied",
+        "scope": "topic_label_reconstructed_as_task"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "09-hash-and-specialized-indexes",
+          "chapter_title": "Hash and Specialized Indexes",
+          "evidence_strength": "direct",
+          "occurrence_ids": [
+            "dbimpl-06-access-eh-026",
+            "dbimpl-06-access-eh-027",
+            "dbimpl-06-access-eh-028",
+            "dbimpl-06-access-eh-032",
+            "dbimpl-06-access-eh-035",
+            "dbimpl-06-access-eh-038"
+          ],
+          "evidence_note": "All named mechanisms are directly covered."
+        }
+      ]
+    },
+    {
+      "id": "protocol-q-023",
+      "order": 23,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        10
+      ],
+      "section": "Hashing",
+      "prompt": "Given seven hash values, bucket capacity one, and no chaining, determine the minimum extendible-hash directory size.",
+      "prompt_type": "exact_question",
+      "pdf_confidence": {
+        "color": "unmarked",
+        "meaning": "no confidence color applied",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "09-hash-and-specialized-indexes",
+          "chapter_title": "Hash and Specialized Indexes",
+          "evidence_strength": "direct_for_method_not_instance",
+          "occurrence_ids": [
+            "dbimpl-06-access-eh-026",
+            "dbimpl-06-access-eh-027",
+            "dbimpl-06-access-eh-028",
+            "dbimpl-06-access-eh-032"
+          ],
+          "evidence_note": "Directory-bit routing and depth growth are direct evidence; the seven hashes are absent."
+        }
+      ]
+    },
+    {
+      "id": "protocol-q-024",
+      "order": 24,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        10
+      ],
+      "section": "Hashing",
+      "prompt": "Find and fix four bugs in an unspecified extendible-hashing insert implementation.",
+      "prompt_type": "unknowable_fragment",
+      "pdf_confidence": {
+        "color": "red",
+        "meaning": "impossible to know",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "09-hash-and-specialized-indexes",
+          "chapter_title": "Hash and Specialized Indexes",
+          "evidence_strength": "concept_only",
+          "occurrence_ids": [
+            "dbimpl-06-access-eh-026",
+            "dbimpl-06-access-eh-028",
+            "dbimpl-06-access-eh-032"
+          ],
+          "evidence_note": "Correct split/doubling behavior is taught, but the buggy code is unknown."
+        }
+      ],
+      "ambiguity": "The code and four faults are not preserved."
+    },
+    {
+      "id": "protocol-q-025",
+      "order": 25,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        10
+      ],
+      "section": "Hashing",
+      "prompt": "Answer two unspecified general questions about extendible hashing.",
+      "prompt_type": "unknowable_fragment",
+      "pdf_confidence": {
+        "color": "red",
+        "meaning": "impossible to know",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "09-hash-and-specialized-indexes",
+          "chapter_title": "Hash and Specialized Indexes",
+          "evidence_strength": "topic_only",
+          "occurrence_ids": [
+            "dbimpl-06-access-eh-026",
+            "dbimpl-06-access-eh-027",
+            "dbimpl-06-access-eh-028",
+            "dbimpl-06-access-eh-032",
+            "dbimpl-06-access-eh-038"
+          ],
+          "evidence_note": "The topic is well covered, but the questions are unknowable."
+        }
+      ],
+      "ambiguity": "No wording survives."
+    },
+    {
+      "id": "protocol-q-026",
+      "order": 26,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        10
+      ],
+      "section": "Hashing",
+      "prompt": "Given an unspecified linear-hashing state with a split, insert values and draw the table after each insertion.",
+      "prompt_type": "unknowable_fragment",
+      "pdf_confidence": {
+        "color": "red",
+        "meaning": "impossible to know",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "09-hash-and-specialized-indexes",
+          "chapter_title": "Hash and Specialized Indexes",
+          "evidence_strength": "direct_for_method_not_instance",
+          "occurrence_ids": [
+            "dbimpl-07-transactions-004",
+            "dbimpl-07-transactions-006",
+            "dbimpl-07-transactions-007",
+            "dbimpl-07-transactions-008",
+            "dbimpl-07-transactions-009",
+            "dbimpl-07-transactions-014"
+          ],
+          "evidence_note": "Linear hashing, its split pointer, chaining, and incremental splits are direct evidence."
+        }
+      ],
+      "ambiguity": "The starting table and insertion sequence are absent."
+    },
+    {
+      "id": "protocol-q-027",
+      "order": 27,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        10
+      ],
+      "section": "Low Level Virtual Machine (LLVM)",
+      "prompt": "Read unspecified LLVM code, recover and evaluate its mathematical expression, then optimize the function when global arguments are known at compile time.",
+      "prompt_type": "unknowable_fragment",
+      "pdf_confidence": {
+        "color": "red",
+        "meaning": "impossible to know",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "16-query-compilation",
+          "chapter_title": "Query Compilation and Data-Centric Execution",
+          "evidence_strength": "direct_for_language_and_scalar_compilation",
+          "occurrence_ids": [
+            "dbimpl-13-codegen-017",
+            "dbimpl-13-codegen-018",
+            "dbimpl-13-codegen-019"
+          ],
+          "evidence_note": "LLVM SSA and scalar-expression compilation are directly taught; the code and constants are missing."
+        }
+      ],
+      "ambiguity": "The expression, code, inputs, and intended optimization are not preserved."
+    },
+    {
+      "id": "protocol-q-028",
+      "order": 28,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        10,
+        11
+      ],
+      "section": "Time Stamp Synchronization",
+      "prompt": "Implement timestamp-ordering synchronization using per-item read and write timestamps.",
+      "prompt_type": "exact_question",
+      "pdf_confidence": {
+        "color": "unmarked",
+        "meaning": "no confidence color applied",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "10-transaction-foundations",
+          "chapter_title": "Transaction Foundations and Anomalies",
+          "evidence_strength": "chapter_context_only",
+          "occurrence_ids": [],
+          "evidence_note": "The atlas covers transaction foundations and anomalies but has no direct timestamp-ordering slide."
+        }
+      ],
+      "ambiguity": "The protocol answer may come from another semester or source; it is not supported directly by the current lecture evidence."
+    },
+    {
+      "id": "protocol-q-029",
+      "order": 29,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        11,
+        12
+      ],
+      "section": "Multiple Granularity Locking",
+      "prompt": "Given a lock hierarchy and transactions using IS, IX, S, and X, construct or explain a deadlock.",
+      "prompt_type": "exact_question",
+      "pdf_confidence": {
+        "color": "unmarked",
+        "meaning": "no confidence color applied",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "10-transaction-foundations",
+          "chapter_title": "Transaction Foundations and Anomalies",
+          "evidence_strength": "chapter_context_only",
+          "occurrence_ids": [],
+          "evidence_note": "The current atlas has no direct multiple-granularity locking or intention-lock occurrence."
+        }
+      ],
+      "ambiguity": "The lock hierarchy topic is not directly present in the current recording evidence."
+    },
+    {
+      "id": "protocol-q-030",
+      "order": 30,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        12,
+        13
+      ],
+      "section": "Operators",
+      "prompt": "Implement UNION in the iterator model with open, next, current, and close.",
+      "prompt_type": "exact_question",
+      "pdf_confidence": {
+        "color": "unmarked",
+        "meaning": "no confidence color applied",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "12-set-oriented-execution-models",
+          "chapter_title": "Set-Oriented Execution Models",
+          "evidence_strength": "direct_for_iterator_contract",
+          "occurrence_ids": [
+            "dbimpl-11-setoriented-012",
+            "dbimpl-11-setoriented-013",
+            "dbimpl-11-setoriented-023",
+            "dbimpl-11-setoriented-024"
+          ],
+          "evidence_note": "The iterator contract and example implementations are direct evidence."
+        },
+        {
+          "chapter_id": "15-sort-group-and-set-operations",
+          "chapter_title": "Sorting, Grouping, and Set Operations",
+          "evidence_strength": "direct_for_union_semantics",
+          "occurrence_ids": [
+            "dbimpl-13-codegen-008",
+            "dbimpl-13-codegen-009",
+            "dbimpl-13-codegen-010"
+          ],
+          "evidence_note": "UNION ALL and duplicate-eliminating UNION are directly distinguished."
+        }
+      ],
+      "ambiguity": "The protocol implementation should be checked for UNION versus UNION ALL and duplicate semantics."
+    },
+    {
+      "id": "protocol-q-031",
+      "order": 31,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        13
+      ],
+      "section": "Operators",
+      "prompt": "Implement a right anti join in the iterator model using C++-like pseudocode.",
+      "prompt_type": "exact_question",
+      "pdf_confidence": {
+        "color": "unmarked",
+        "meaning": "no confidence color applied",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "12-set-oriented-execution-models",
+          "chapter_title": "Set-Oriented Execution Models",
+          "evidence_strength": "direct_for_iterator_contract",
+          "occurrence_ids": [
+            "dbimpl-11-setoriented-012",
+            "dbimpl-11-setoriented-013",
+            "dbimpl-11-setoriented-023",
+            "dbimpl-11-setoriented-025"
+          ],
+          "evidence_note": "Iterator state and binary-operator patterns are direct evidence."
+        },
+        {
+          "chapter_id": "14-relational-operators-and-joins",
+          "chapter_title": "Relational Operators and Join Algorithms",
+          "evidence_strength": "direct_for_anti_join_semantics",
+          "occurrence_ids": [
+            "dbimpl-12-operators-055",
+            "dbimpl-12-operators-056",
+            "dbimpl-12-operators-057"
+          ],
+          "evidence_note": "Non-inner joins and match marking are directly taught."
+        }
+      ]
+    },
+    {
+      "id": "protocol-q-032",
+      "order": 32,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        14
+      ],
+      "section": "Operators",
+      "prompt": "Given a push-model implementation of a right anti join, determine whether and on which side it is a pipeline breaker.",
+      "prompt_type": "reconstructed_task",
+      "pdf_confidence": {
+        "color": "cyan",
+        "meaning": "based on assumptions",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "13-pipelining-and-parallelization",
+          "chapter_title": "Pipelining and Parallelization Infrastructure",
+          "evidence_strength": "direct_for_pipeline_behavior",
+          "occurrence_ids": [
+            "dbimpl-12-operators-020",
+            "dbimpl-12-operators-021"
+          ],
+          "evidence_note": "Pipeline boundaries and one-sided state are directly discussed."
+        },
+        {
+          "chapter_id": "14-relational-operators-and-joins",
+          "chapter_title": "Relational Operators and Join Algorithms",
+          "evidence_strength": "direct_for_anti_join_marking",
+          "occurrence_ids": [
+            "dbimpl-12-operators-055",
+            "dbimpl-12-operators-056",
+            "dbimpl-12-operators-057"
+          ],
+          "evidence_note": "Anti/outer join marking is direct evidence; the remembered side may be reversed."
+        }
+      ],
+      "ambiguity": "The PDF labels the entire reconstruction assumption-based, so right/left orientation and code shape are not reliable."
+    },
+    {
+      "id": "protocol-q-033",
+      "order": 33,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        14
+      ],
+      "section": "Operators",
+      "prompt": "Recognize unspecified relational operators from given implementations or fragments.",
+      "prompt_type": "unknowable_fragment",
+      "pdf_confidence": {
+        "color": "red",
+        "meaning": "impossible to know",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "12-set-oriented-execution-models",
+          "chapter_title": "Set-Oriented Execution Models",
+          "evidence_strength": "ambiguous_topic_only",
+          "occurrence_ids": [],
+          "evidence_note": "Operator interfaces are relevant, but the operators and fragments are unknown."
+        },
+        {
+          "chapter_id": "14-relational-operators-and-joins",
+          "chapter_title": "Relational Operators and Join Algorithms",
+          "evidence_strength": "ambiguous_topic_only",
+          "occurrence_ids": [],
+          "evidence_note": "Join operators may be relevant, but no concrete fragment survives."
+        },
+        {
+          "chapter_id": "15-sort-group-and-set-operations",
+          "chapter_title": "Sorting, Grouping, and Set Operations",
+          "evidence_strength": "ambiguous_topic_only",
+          "occurrence_ids": [],
+          "evidence_note": "Blocking and set operators may be relevant, but no concrete fragment survives."
+        }
+      ],
+      "ambiguity": "No operator list, code, or diagram is preserved."
+    },
+    {
+      "id": "protocol-q-034",
+      "order": 34,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        14
+      ],
+      "section": "Query Engine",
+      "prompt": "Recover the original relational-algebra expression from unspecified query-engine pseudocode; the recollection mentions a filter, AVG aggregation, and possible left anti join.",
+      "prompt_type": "unknowable_fragment",
+      "pdf_confidence": {
+        "color": "red",
+        "meaning": "impossible to know",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "16-query-compilation",
+          "chapter_title": "Query Compilation and Data-Centric Execution",
+          "evidence_strength": "direct_for_reverse_mapping_skill_not_instance",
+          "occurrence_ids": [
+            "dbimpl-13-codegen-020",
+            "dbimpl-13-codegen-021",
+            "dbimpl-13-codegen-022",
+            "dbimpl-13-codegen-026",
+            "dbimpl-13-codegen-031",
+            "dbimpl-13-codegen-033"
+          ],
+          "evidence_note": "Generated pipelines and produce/consume code are taught, but the actual pseudocode is missing."
+        }
+      ],
+      "ambiguity": "The operator orientation and code cannot be verified."
+    },
+    {
+      "id": "protocol-q-035",
+      "order": 35,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        14
+      ],
+      "section": "Code Generation",
+      "prompt": "Given relations A(c,d,e) and B(f,g) plus unspecified generated push-model code, draw and number the relational-algebra tree, map code lines to operators, and write a possible SQL-92 query.",
+      "prompt_type": "unknowable_fragment",
+      "pdf_confidence": {
+        "color": "red",
+        "meaning": "impossible to know",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "16-query-compilation",
+          "chapter_title": "Query Compilation and Data-Centric Execution",
+          "evidence_strength": "direct_for_method_not_instance",
+          "occurrence_ids": [
+            "dbimpl-13-codegen-020",
+            "dbimpl-13-codegen-021",
+            "dbimpl-13-codegen-022",
+            "dbimpl-13-codegen-026",
+            "dbimpl-13-codegen-029",
+            "dbimpl-13-codegen-031",
+            "dbimpl-13-codegen-033",
+            "dbimpl-13-codegen-034"
+          ],
+          "evidence_note": "Data-centric generated-code structure is direct evidence; the actual code is absent."
+        }
+      ],
+      "ambiguity": "The schema alone is insufficient to reconstruct the plan or SQL."
+    },
+    {
+      "id": "protocol-q-036",
+      "order": 36,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        14,
+        15
+      ],
+      "section": "Code Generation",
+      "prompt": "Using one example from the generated code, argue why compiled/data-centric execution can outperform the iterator model.",
+      "prompt_type": "reconstructed_task",
+      "pdf_confidence": {
+        "color": "cyan",
+        "meaning": "based on assumptions",
+        "scope": "whole_prompt_and_reconstructed_code"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "12-set-oriented-execution-models",
+          "chapter_title": "Set-Oriented Execution Models",
+          "evidence_strength": "direct_for_iterator_cost",
+          "occurrence_ids": [
+            "dbimpl-11-setoriented-012",
+            "dbimpl-11-setoriented-013",
+            "dbimpl-11-setoriented-020",
+            "dbimpl-11-setoriented-021"
+          ],
+          "evidence_note": "Iterator, blockwise, and push interfaces are directly compared."
+        },
+        {
+          "chapter_id": "16-query-compilation",
+          "chapter_title": "Query Compilation and Data-Centric Execution",
+          "evidence_strength": "direct",
+          "occurrence_ids": [
+            "dbimpl-13-codegen-020",
+            "dbimpl-13-codegen-021",
+            "dbimpl-13-codegen-022",
+            "dbimpl-13-codegen-023",
+            "dbimpl-13-codegen-026"
+          ],
+          "evidence_note": "Pipeline fusion, register-resident values, and removal of generic calls are direct evidence."
+        }
+      ],
+      "ambiguity": "The argument shape is plausible, but the example code in the protocol is explicitly assumption-based."
+    },
+    {
+      "id": "protocol-q-037",
+      "order": 37,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        15,
+        16
+      ],
+      "section": "Parallelization",
+      "prompt": "Parallelize an assumed plan with a left group-by, right filter, and join by inserting XchgHashSplit and Xchg operators.",
+      "prompt_type": "reconstructed_task",
+      "pdf_confidence": {
+        "color": "cyan",
+        "meaning": "based on assumptions",
+        "scope": "whole_prompt_and_plan"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "17-parallel-query-execution",
+          "chapter_title": "Parallel Query Execution",
+          "evidence_strength": "direct_for_method",
+          "occurrence_ids": [
+            "dbimpl-13-codegen-037",
+            "dbimpl-13-codegen-038",
+            "dbimpl-13-codegen-039",
+            "dbimpl-13-codegen-040"
+          ],
+          "evidence_note": "Exchange variants and their use for aggregation and joins are direct evidence."
+        }
+      ],
+      "ambiguity": "The PDF marks the original plan itself as assumption-based."
+    },
+    {
+      "id": "protocol-q-038",
+      "order": 38,
+      "source_id": "compiled-protocol",
+      "source_type": "compiled_student_protocol",
+      "source_reliability": "low_to_moderate",
+      "pages": [
+        17
+      ],
+      "section": "Parallelization",
+      "prompt": "Parallelize the displayed group-by/filter/join query using XchgHashSplit(n:m) and Xchg(n:m), including local/final aggregation and compatible join-key repartitioning.",
+      "prompt_type": "exact_question",
+      "pdf_confidence": {
+        "color": "unmarked",
+        "meaning": "no confidence color applied",
+        "scope": "whole_prompt"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "17-parallel-query-execution",
+          "chapter_title": "Parallel Query Execution",
+          "evidence_strength": "direct",
+          "occurrence_ids": [
+            "dbimpl-13-codegen-037",
+            "dbimpl-13-codegen-038",
+            "dbimpl-13-codegen-039",
+            "dbimpl-13-codegen-040"
+          ],
+          "evidence_note": "Xchg, XchgHashSplit, parallel aggregation, and parallel joins are directly taught."
+        }
+      ],
+      "related_question_ids": [
+        "protocol-q-037"
+      ]
+    }
+  ]
+}

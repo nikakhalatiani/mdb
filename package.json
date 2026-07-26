@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "audit": "node scripts/audit-content.mjs",
+    "build:exam-practice": "node scripts/build-exam-practice.mjs",
     "build": "vite build",
     "dev": "vite --host 127.0.0.1",
     "merge:slide-explanations": "node scripts/merge-gpt-slide-explanations.mjs",

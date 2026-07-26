@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "source": {
+    "document": "Final Klausur DBImpl.pdf",
+    "kind": "student_compilation",
+    "official": false,
+    "global_warning": "Student recollections; questions and answers may be incomplete or wrong."
+  },
+  "enums": {
+    "question_fidelity": [
+      "as_recorded",
+      "paraphrased",
+      "partial",
+      "topic_only"
+    ],
+    "protocol_flag": [
+      "none",
+      "incomplete",
+      "assumption_based",
+      "impossible_to_know"
+    ],
+    "answer_basis": [
+      "lecture_supported",
+      "protocol_recollection",
+      "assumption_based",
+      "unavailable"
+    ],
+    "mapping_status": [
+      "verified",
+      "probable",
+      "weak",
+      "coverage_gap"
+    ],
+    "attempt_status": [
+      "unseen",
+      "attempted",
+      "needs_review",
+      "solid"
+    ],
+    "self_rating": [
+      "again",
+      "hard",
+      "good"
+    ]
+  },
+  "question_shape": {
+    "id": "string",
+    "topic": "string",
+    "prompt": "string",
+    "format": "explanation | calculation | diagram | pseudocode | comparison | recognition | plan_transformation | fill_in",
+    "source_page": "integer",
+    "question_fidelity": "question_fidelity",
+    "protocol_flag": "protocol_flag",
+    "expected_points": [
+      {
+        "text": "string",
+        "answer_basis": "answer_basis",
+        "citations": [
+          "occurrence_id"
+        ]
+      }
+    ],
+    "worked_answer": {
+      "text": "string | null",
+      "answer_basis": "answer_basis"
+    },
+    "protocol_recollection": {
+      "text": "string | null",
+      "protocol_flag": "protocol_flag"
+    },
+    "links": [
+      {
+        "chapter_id": "string",
+        "occurrence_ids": [
+          "string"
+        ],
+        "mapping_status": "mapping_status",
+        "rationale": "string"
+      }
+    ],
+    "review_status": "unreviewed | lecture_checked | disputed"
+  },
+  "example_question": {
+    "id": "buffer-2q-queues-001",
+    "topic": "Buffer Manager",
+    "prompt": "Name the two queues used by 2Q, explain their roles, and state the preferred eviction order.",
+    "format": "explanation",
+    "source_page": 2,
+    "question_fidelity": "as_recorded",
+    "protocol_flag": "none",
+    "expected_points": [
+      {
+        "text": "New or first-seen pages enter the cold FIFO-style queue.",
+        "answer_basis": "lecture_supported",
+        "citations": [
+          "dbimpl-01-storage-031"
+        ]
+      },
+      {
+        "text": "A repeated reference promotes a page to the hot LRU-style queue, and eviction normally prefers the cold queue.",
+        "answer_basis": "lecture_supported",
+        "citations": [
+          "dbimpl-01-storage-031"
+        ]
+      }
+    ],
+    "worked_answer": {
+      "text": "Explain the cold queue, promotion on reuse, the hot queue, and the victim preference in that order.",
+      "answer_basis": "lecture_supported"
+    },
+    "protocol_recollection": {
+      "text": "The compilation recalls a FIFO queue for read-once pages and an LRU queue for reused pages.",
+      "protocol_flag": "none"
+    },
+    "links": [
+      {
+        "chapter_id": "03-buffer-management",
+        "occurrence_ids": [
+          "dbimpl-01-storage-031"
+        ],
+        "mapping_status": "verified",
+        "rationale": "The interval is explicitly titled Buffer Replacement - 2Q and contains the aligned explanation."
+      }
+    ],
+    "review_status": "lecture_checked"
+  },
+  "progress_shape": {
+    "question_id": "string",
+    "status": "attempt_status",
+    "scratchpad": "string",
+    "attempt_count": "integer",
+    "last_attempt_at": "ISO-8601 string | null",
+    "self_rating": "self_rating | null"
+  }
+}

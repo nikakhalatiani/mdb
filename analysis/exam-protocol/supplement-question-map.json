@@ -1,0 +1,601 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-26",
+  "purpose": "Map the added WhatsApp recollection and exercise practice evidence without changing the stable compiled-protocol question map.",
+  "sources": [
+    {
+      "source_id": "whatsapp-recollection",
+      "title": "WhatsApp recollection summarized by the user",
+      "source_type": "student_recollection",
+      "source_reliability": "low",
+      "warning": "A second, informal recollection. It corroborates themes, but exact wording, inputs, operator direction, and subparts may be distorted."
+    },
+    {
+      "source_id": "exercise-slides",
+      "title": "exercise-slides.pdf",
+      "path": "/Users/nkhalatiani/Downloads/exercise-slides.pdf",
+      "source_type": "course_exercise_practice",
+      "source_reliability": "high_for_practice_format_only",
+      "warning": "Course exercise evidence shows an authentic practice format and worked examples. It does not prove that a task appeared on a past exam or will appear on the exam."
+    },
+    {
+      "source_id": "exercise-photos",
+      "title": "Photos of the July 14 exercise walkthrough",
+      "source_type": "course_exercise_photo",
+      "source_reliability": "high_for_practice_format_only",
+      "warning": "The photos corroborate selected exercise tasks and board annotations, not exam occurrence."
+    }
+  ],
+  "counts": {
+    "total_questions": 13,
+    "whatsapp_recollection_questions": 8,
+    "exercise_practice_questions": 5
+  },
+  "questions": [
+    {
+      "id": "supplement-q-001",
+      "order": 1,
+      "source_id": "whatsapp-recollection",
+      "source_type": "student_recollection",
+      "source_reliability": "low",
+      "pages": [],
+      "section": "Fill-in",
+      "prompt": "Fill missing terms in statements contrasting disk and RAM and referring to pages and data.",
+      "prompt_type": "reconstructed_task",
+      "pdf_confidence": {
+        "color": "not_applicable",
+        "meaning": "not sourced from the color-coded PDF",
+        "scope": "none"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "02-storage-architecture-and-memory-hierarchy",
+          "chapter_title": "Storage Architecture and Memory Hierarchy",
+          "evidence_strength": "direct_for_terms_not_blanks",
+          "occurrence_ids": [
+            "dbimpl-01-storage-015",
+            "dbimpl-01-storage-016",
+            "dbimpl-01-storage-017",
+            "dbimpl-01-storage-018",
+            "dbimpl-01-storage-020"
+          ],
+          "evidence_note": "Disk/RAM hierarchy and page-granularity I/O are direct evidence; the sentences and blanks are not."
+        }
+      ],
+      "ambiguity": "Exact wording and which word belongs in which blank are not remembered.",
+      "related_question_ids": [
+        "protocol-q-002"
+      ]
+    },
+    {
+      "id": "supplement-q-002",
+      "order": 2,
+      "source_id": "whatsapp-recollection",
+      "source_type": "student_recollection",
+      "source_reliability": "low",
+      "pages": [],
+      "section": "LLVM",
+      "prompt": "Read LLVM code, recover the formula, evaluate it, and optimize it when globals are known.",
+      "prompt_type": "reconstructed_task",
+      "pdf_confidence": {
+        "color": "not_applicable",
+        "meaning": "not sourced from the color-coded PDF",
+        "scope": "none"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "16-query-compilation",
+          "chapter_title": "Query Compilation and Data-Centric Execution",
+          "evidence_strength": "direct_for_language_and_scalar_compilation",
+          "occurrence_ids": [
+            "dbimpl-13-codegen-017",
+            "dbimpl-13-codegen-018",
+            "dbimpl-13-codegen-019"
+          ],
+          "evidence_note": "LLVM and scalar-expression compilation are direct evidence."
+        }
+      ],
+      "ambiguity": "This independently corroborates the shape of protocol-q-027, not its missing code.",
+      "related_question_ids": [
+        "protocol-q-027"
+      ]
+    },
+    {
+      "id": "supplement-q-003",
+      "order": 3,
+      "source_id": "whatsapp-recollection",
+      "source_type": "student_recollection",
+      "source_reliability": "low",
+      "pages": [],
+      "section": "B+-tree Concurrency",
+      "prompt": "Reason about B+-tree lock coupling and deadlock, then fix a flawed code fragment.",
+      "prompt_type": "reconstructed_task",
+      "pdf_confidence": {
+        "color": "not_applicable",
+        "meaning": "not sourced from the color-coded PDF",
+        "scope": "none"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "07-btree-fundamentals-and-operations",
+          "chapter_title": "B-Tree and B+-Tree Fundamentals",
+          "evidence_strength": "direct_for_lock_coupling_and_split_hazards",
+          "occurrence_ids": [
+            "dbimpl-05-access-btrees-008",
+            "dbimpl-05-access-btrees-009",
+            "dbimpl-05-access-btrees-010"
+          ],
+          "evidence_note": "Concurrent access, lock coupling, split propagation, and restart are direct evidence."
+        },
+        {
+          "chapter_id": "08-advanced-btree-techniques",
+          "chapter_title": "Advanced B-Tree Techniques",
+          "evidence_strength": "direct_for_b_link_alternative",
+          "occurrence_ids": [
+            "dbimpl-05-access-btrees-011",
+            "dbimpl-05-access-btrees-013"
+          ],
+          "evidence_note": "B-link rightward recovery is relevant to safer concurrent splits."
+        }
+      ],
+      "ambiguity": "The code, lock order, and exact deadlock scenario are not preserved.",
+      "related_question_ids": [
+        "protocol-q-010",
+        "protocol-q-011",
+        "protocol-q-012"
+      ]
+    },
+    {
+      "id": "supplement-q-004",
+      "order": 4,
+      "source_id": "whatsapp-recollection",
+      "source_type": "student_recollection",
+      "source_reliability": "low",
+      "pages": [],
+      "section": "Iterator Operators",
+      "prompt": "Implement a FULL anti join in the iterator model using a hash list/table, match marks, and an iterator over marked or unmarked tuples.",
+      "prompt_type": "reconstructed_task",
+      "pdf_confidence": {
+        "color": "not_applicable",
+        "meaning": "not sourced from the color-coded PDF",
+        "scope": "none"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "12-set-oriented-execution-models",
+          "chapter_title": "Set-Oriented Execution Models",
+          "evidence_strength": "direct_for_iterator_contract",
+          "occurrence_ids": [
+            "dbimpl-11-setoriented-012",
+            "dbimpl-11-setoriented-013",
+            "dbimpl-11-setoriented-023",
+            "dbimpl-11-setoriented-025"
+          ],
+          "evidence_note": "The iterator contract and binary-operator state are direct evidence."
+        },
+        {
+          "chapter_id": "14-relational-operators-and-joins",
+          "chapter_title": "Relational Operators and Join Algorithms",
+          "evidence_strength": "direct_for_marking_semantics",
+          "occurrence_ids": [
+            "dbimpl-12-operators-055",
+            "dbimpl-12-operators-056",
+            "dbimpl-12-operators-057"
+          ],
+          "evidence_note": "Non-inner join partner marking is direct evidence."
+        }
+      ],
+      "ambiguity": "“FULL anti join” is nonstandard wording and may mean emitting unmatched tuples from both inputs. The remembered side/order must not be assumed.",
+      "related_question_ids": [
+        "protocol-q-031",
+        "protocol-q-032"
+      ]
+    },
+    {
+      "id": "supplement-q-005",
+      "order": 5,
+      "source_id": "whatsapp-recollection",
+      "source_type": "student_recollection",
+      "source_reliability": "low",
+      "pages": [],
+      "section": "Push-model Code",
+      "prompt": "Determine the output or reconstruct a plan for push-model code with a left-side filter, right-side GROUP BY SUM, and a join.",
+      "prompt_type": "reconstructed_task",
+      "pdf_confidence": {
+        "color": "not_applicable",
+        "meaning": "not sourced from the color-coded PDF",
+        "scope": "none"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "14-relational-operators-and-joins",
+          "chapter_title": "Relational Operators and Join Algorithms",
+          "evidence_strength": "direct_for_join",
+          "occurrence_ids": [
+            "dbimpl-12-operators-028",
+            "dbimpl-12-operators-039",
+            "dbimpl-12-operators-041"
+          ],
+          "evidence_note": "Join semantics and hash-join state are direct evidence."
+        },
+        {
+          "chapter_id": "15-sort-group-and-set-operations",
+          "chapter_title": "Sorting, Grouping, and Set Operations",
+          "evidence_strength": "direct_for_group_by",
+          "occurrence_ids": [
+            "dbimpl-13-codegen-006",
+            "dbimpl-13-codegen-007"
+          ],
+          "evidence_note": "Group-by aggregation implementation is direct evidence."
+        },
+        {
+          "chapter_id": "16-query-compilation",
+          "chapter_title": "Query Compilation and Data-Centric Execution",
+          "evidence_strength": "direct_for_push_generated_code",
+          "occurrence_ids": [
+            "dbimpl-13-codegen-020",
+            "dbimpl-13-codegen-021",
+            "dbimpl-13-codegen-022",
+            "dbimpl-13-codegen-026",
+            "dbimpl-13-codegen-031",
+            "dbimpl-13-codegen-033"
+          ],
+          "evidence_note": "Data-centric pipelines and generated loops are direct evidence."
+        }
+      ],
+      "ambiguity": "The relations, predicates, grouping key, and code are not preserved.",
+      "related_question_ids": [
+        "protocol-q-034",
+        "protocol-q-035",
+        "protocol-q-036"
+      ]
+    },
+    {
+      "id": "supplement-q-006",
+      "order": 6,
+      "source_id": "whatsapp-recollection",
+      "source_type": "student_recollection",
+      "source_reliability": "low",
+      "pages": [],
+      "section": "Extendible Hashing",
+      "prompt": "Trace extendible hashing and determine global and local depths.",
+      "prompt_type": "reconstructed_task",
+      "pdf_confidence": {
+        "color": "not_applicable",
+        "meaning": "not sourced from the color-coded PDF",
+        "scope": "none"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "09-hash-and-specialized-indexes",
+          "chapter_title": "Hash and Specialized Indexes",
+          "evidence_strength": "direct",
+          "occurrence_ids": [
+            "dbimpl-06-access-eh-026",
+            "dbimpl-06-access-eh-027",
+            "dbimpl-06-access-eh-028",
+            "dbimpl-06-access-eh-032",
+            "dbimpl-06-access-eh-038"
+          ],
+          "evidence_note": "Directory and bucket depths, splitting, and doubling are direct evidence."
+        }
+      ],
+      "related_question_ids": [
+        "protocol-q-022",
+        "protocol-q-023",
+        "protocol-q-024",
+        "protocol-q-025",
+        "supplement-q-009"
+      ]
+    },
+    {
+      "id": "supplement-q-007",
+      "order": 7,
+      "source_id": "whatsapp-recollection",
+      "source_type": "student_recollection",
+      "source_reliability": "low",
+      "pages": [],
+      "section": "Exchange Parallelism",
+      "prompt": "Insert exchange operators into a plan whose group-by branches feed a join.",
+      "prompt_type": "reconstructed_task",
+      "pdf_confidence": {
+        "color": "not_applicable",
+        "meaning": "not sourced from the color-coded PDF",
+        "scope": "none"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "17-parallel-query-execution",
+          "chapter_title": "Parallel Query Execution",
+          "evidence_strength": "direct",
+          "occurrence_ids": [
+            "dbimpl-13-codegen-037",
+            "dbimpl-13-codegen-038",
+            "dbimpl-13-codegen-039",
+            "dbimpl-13-codegen-040"
+          ],
+          "evidence_note": "Exchange operators for aggregation and joins are direct evidence."
+        }
+      ],
+      "ambiguity": "The remembered branch structure, grouping keys, and join key are incomplete.",
+      "related_question_ids": [
+        "protocol-q-037",
+        "protocol-q-038",
+        "supplement-q-012"
+      ]
+    },
+    {
+      "id": "supplement-q-008",
+      "order": 8,
+      "source_id": "whatsapp-recollection",
+      "source_type": "student_recollection",
+      "source_reliability": "low",
+      "pages": [],
+      "section": "Transaction Histories",
+      "prompt": "Given histories, test conflict serializability, recoverability (RC), ACA, and strictness, then determine how changing commit order changes the classification.",
+      "prompt_type": "reconstructed_task",
+      "pdf_confidence": {
+        "color": "not_applicable",
+        "meaning": "not sourced from the color-coded PDF",
+        "scope": "none"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "10-transaction-foundations",
+          "chapter_title": "Transaction Foundations and Anomalies",
+          "evidence_strength": "partial",
+          "occurrence_ids": [
+            "dbimpl-07-transactions-056",
+            "dbimpl-07-transactions-057",
+            "dbimpl-07-transactions-058",
+            "dbimpl-07-transactions-059",
+            "dbimpl-07-transactions-064"
+          ],
+          "evidence_note": "Concurrent schedules, conflicts/anomalies, and serial execution are covered. RC, ACA, and strictness are not direct atlas slides."
+        }
+      ],
+      "ambiguity": "No concrete history or changed commit order is preserved.",
+      "practice_evidence": [
+        {
+          "source_id": "exercise-slides",
+          "pages": [
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19
+          ],
+          "practice_task_id": "supplement-q-013",
+          "match": "strong_format_match",
+          "note": "The exercise asks for conflicts, conflict serializability, RC, ACA, and strictness, but not the recollected commit-order variation."
+        },
+        {
+          "source_id": "exercise-photos",
+          "files": [
+            "/var/folders/bn/kyccn2cs0f3d9xnkzqt22s1m0000gn/T/codex-clipboard-9babcb37-87f5-4749-a3a3-4effeca8d689.png"
+          ],
+          "match": "corroborates_exercise_walkthrough"
+        }
+      ],
+      "related_question_ids": [
+        "supplement-q-013"
+      ]
+    },
+    {
+      "id": "supplement-q-009",
+      "order": 9,
+      "source_id": "exercise-slides",
+      "source_type": "course_exercise_practice",
+      "source_reliability": "high_for_practice_format_only",
+      "pages": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "section": "Hashing",
+      "prompt": "Insert six given tuples, with supplied six-bit hashes, into an extendible hash table whose buckets hold two entries, drawing each split and directory-depth change.",
+      "prompt_type": "practice_task",
+      "pdf_confidence": {
+        "color": "not_applicable",
+        "meaning": "exercise evidence has no protocol-confidence color",
+        "scope": "none"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "09-hash-and-specialized-indexes",
+          "chapter_title": "Hash and Specialized Indexes",
+          "evidence_strength": "direct",
+          "occurrence_ids": [
+            "dbimpl-06-access-eh-026",
+            "dbimpl-06-access-eh-027",
+            "dbimpl-06-access-eh-028",
+            "dbimpl-06-access-eh-032"
+          ],
+          "evidence_note": "The exercise is a direct application of the lecture's extendible-hashing split rules."
+        }
+      ],
+      "exam_ground_truth": false,
+      "related_question_ids": [
+        "protocol-q-022",
+        "protocol-q-023",
+        "supplement-q-006"
+      ]
+    },
+    {
+      "id": "supplement-q-010",
+      "order": 10,
+      "source_id": "exercise-slides",
+      "source_type": "course_exercise_practice",
+      "source_reliability": "high_for_practice_format_only",
+      "pages": [
+        10
+      ],
+      "section": "Data-Centric Query Execution",
+      "prompt": "Generate push-model pseudocode for a plan with a left selection, a right map, an equi-join, and PRINT.",
+      "prompt_type": "practice_task",
+      "pdf_confidence": {
+        "color": "not_applicable",
+        "meaning": "exercise evidence has no protocol-confidence color",
+        "scope": "none"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "16-query-compilation",
+          "chapter_title": "Query Compilation and Data-Centric Execution",
+          "evidence_strength": "direct",
+          "occurrence_ids": [
+            "dbimpl-13-codegen-020",
+            "dbimpl-13-codegen-021",
+            "dbimpl-13-codegen-022",
+            "dbimpl-13-codegen-023",
+            "dbimpl-13-codegen-026"
+          ],
+          "evidence_note": "This is direct practice for code generation across a push pipeline."
+        }
+      ],
+      "exam_ground_truth": false,
+      "related_question_ids": [
+        "protocol-q-035",
+        "protocol-q-036",
+        "supplement-q-005"
+      ]
+    },
+    {
+      "id": "supplement-q-011",
+      "order": 11,
+      "source_id": "exercise-slides",
+      "source_type": "course_exercise_practice",
+      "source_reliability": "high_for_practice_format_only",
+      "pages": [
+        11
+      ],
+      "section": "Data-Centric Query Execution II",
+      "prompt": "Draw the operator tree for supplied push-generated code containing a hash-set build, a selection, an existence test, grouped counting, and PRINT.",
+      "prompt_type": "practice_task",
+      "pdf_confidence": {
+        "color": "not_applicable",
+        "meaning": "exercise evidence has no protocol-confidence color",
+        "scope": "none"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "16-query-compilation",
+          "chapter_title": "Query Compilation and Data-Centric Execution",
+          "evidence_strength": "direct",
+          "occurrence_ids": [
+            "dbimpl-13-codegen-020",
+            "dbimpl-13-codegen-021",
+            "dbimpl-13-codegen-022",
+            "dbimpl-13-codegen-026",
+            "dbimpl-13-codegen-031",
+            "dbimpl-13-codegen-033"
+          ],
+          "evidence_note": "This is direct practice in reversing generated loops into operators and pipeline regions."
+        }
+      ],
+      "exam_ground_truth": false,
+      "photo_evidence": [
+        "/var/folders/bn/kyccn2cs0f3d9xnkzqt22s1m0000gn/T/codex-clipboard-14cdae9b-1111-47c4-88df-92040fb0023f.png",
+        "/var/folders/bn/kyccn2cs0f3d9xnkzqt22s1m0000gn/T/codex-clipboard-0221ad13-ee9d-483a-bab1-688dc8afc65c.png"
+      ],
+      "related_question_ids": [
+        "protocol-q-034",
+        "protocol-q-035",
+        "supplement-q-005"
+      ]
+    },
+    {
+      "id": "supplement-q-012",
+      "order": 12,
+      "source_id": "exercise-slides",
+      "source_type": "course_exercise_practice",
+      "source_reliability": "high_for_practice_format_only",
+      "pages": [
+        12
+      ],
+      "section": "Exchange Parallelism",
+      "prompt": "Parallelize the supplied selection/map/equi-join plan for two threads by inserting XchgHashSplit(n:m) and Xchg(n:m) where needed.",
+      "prompt_type": "practice_task",
+      "pdf_confidence": {
+        "color": "not_applicable",
+        "meaning": "exercise evidence has no protocol-confidence color",
+        "scope": "none"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "17-parallel-query-execution",
+          "chapter_title": "Parallel Query Execution",
+          "evidence_strength": "direct",
+          "occurrence_ids": [
+            "dbimpl-13-codegen-037",
+            "dbimpl-13-codegen-038",
+            "dbimpl-13-codegen-040"
+          ],
+          "evidence_note": "This is direct practice in key-compatible repartitioning and final gathering."
+        }
+      ],
+      "exam_ground_truth": false,
+      "photo_evidence": [
+        "/var/folders/bn/kyccn2cs0f3d9xnkzqt22s1m0000gn/T/codex-clipboard-7ee7edf6-f59d-423c-981b-3e1dbf6216e2.png"
+      ],
+      "related_question_ids": [
+        "protocol-q-037",
+        "protocol-q-038",
+        "supplement-q-007"
+      ]
+    },
+    {
+      "id": "supplement-q-013",
+      "order": 13,
+      "source_id": "exercise-slides",
+      "source_type": "course_exercise_practice",
+      "source_reliability": "high_for_practice_format_only",
+      "pages": [
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+      ],
+      "section": "Transactions",
+      "prompt": "For a supplied three-transaction history, list conflict operations, test conflict serializability, and classify the history as recoverable, ACA, and strict.",
+      "prompt_type": "practice_task",
+      "pdf_confidence": {
+        "color": "not_applicable",
+        "meaning": "exercise evidence has no protocol-confidence color",
+        "scope": "none"
+      },
+      "chapter_mappings": [
+        {
+          "chapter_id": "10-transaction-foundations",
+          "chapter_title": "Transaction Foundations and Anomalies",
+          "evidence_strength": "partial",
+          "occurrence_ids": [
+            "dbimpl-07-transactions-056",
+            "dbimpl-07-transactions-057",
+            "dbimpl-07-transactions-058",
+            "dbimpl-07-transactions-059",
+            "dbimpl-07-transactions-064"
+          ],
+          "evidence_note": "The atlas supports schedule/conflict reasoning and serial execution; RC/ACA/strict terminology is not directly represented in its slides."
+        }
+      ],
+      "exam_ground_truth": false,
+      "photo_evidence": [
+        "/var/folders/bn/kyccn2cs0f3d9xnkzqt22s1m0000gn/T/codex-clipboard-9babcb37-87f5-4749-a3a3-4effeca8d689.png"
+      ],
+      "related_question_ids": [
+        "supplement-q-008"
+      ]
+    }
+  ]
+}

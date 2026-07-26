@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 
 const courseRoot = new URL("../public/generated/course/", import.meta.url);
 
@@ -6,13 +6,21 @@ async function loadJson(name) {
   return JSON.parse(await readFile(new URL(name, courseRoot), "utf8"));
 }
 
-const [guide, notesFile, evidenceFile, studyBriefs, slideExplanations] =
+const [
+  guide,
+  notesFile,
+  evidenceFile,
+  studyBriefs,
+  slideExplanations,
+  examBank,
+] =
   await Promise.all([
   loadJson("chapters.json"),
   loadJson("notes.json"),
   loadJson("evidence-index.json"),
   loadJson("study-briefs.json"),
   loadJson("slide-explanations.json"),
+  loadJson("exam-practice.json"),
 ]);
 
 const notes = Object.values(notesFile.records);
@@ -62,6 +70,13 @@ const audit = {
       quote.mean_word_confidence != null &&
       quote.mean_word_confidence < 0.8,
   ).length,
+  exam_practice_questions: examBank.questions.length,
+  high_priority_exam_questions: examBank.questions.filter(
+    (question) => question.priority === "high",
+  ).length,
+  exact_exercise_questions: examBank.questions.filter((question) =>
+    question.sources.some((source) => source.kind === "exercise"),
+  ).length,
 };
 
 const chapterIds = new Set(guide.chapters.map((chapter) => chapter.id));
@@ -106,6 +121,44 @@ const evidenceIds = new Set(
 const evidenceById = new Map(
   evidenceFile.evidence.map((record) => [record.occurrence_id, record]),
 );
+const examQuestionIds = new Set();
+for (const question of examBank.questions) {
+  if (examQuestionIds.has(question.id)) {
+    throw new Error(`Duplicate exam question id: ${question.id}`);
+  }
+  examQuestionIds.add(question.id);
+  if (!question.prompt?.trim() || !question.answer?.trim()) {
+    throw new Error(`Exam question is missing prompt or answer: ${question.id}`);
+  }
+  if (!Array.isArray(question.sources) || question.sources.length === 0) {
+    throw new Error(`Exam question has no provenance: ${question.id}`);
+  }
+  for (const chapterId of question.chapter_ids) {
+    if (!chapterIds.has(chapterId)) {
+      throw new Error(
+        `Exam question ${question.id} references unknown chapter ${chapterId}`,
+      );
+    }
+  }
+  for (const citation of question.citations) {
+    if (!chapterIds.has(citation.chapter_id)) {
+      throw new Error(
+        `Exam question ${question.id} cites unknown chapter ${citation.chapter_id}`,
+      );
+    }
+    for (const occurrenceId of citation.occurrence_ids) {
+      if (!evidenceIds.has(occurrenceId)) {
+        throw new Error(
+          `Exam question ${question.id} cites unknown occurrence ${occurrenceId}`,
+        );
+      }
+    }
+  }
+  for (const visual of Object.values(question.visuals ?? {})) {
+    await access(new URL(visual.image, courseRoot));
+  }
+}
+
 const allowedExplanationStatuses = new Set([
   "substantive",
   "brief",
