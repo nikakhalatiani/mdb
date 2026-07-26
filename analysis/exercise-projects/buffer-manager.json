@@ -1,0 +1,766 @@
+{
+  "id": "buffer-manager",
+  "number": 1,
+  "title": "Buffer Manager and 2Q Replacement",
+  "subtitle": "Turn page requests into safe, concurrent access to a bounded in-memory buffer while preserving dirty data.",
+  "project_label": "buffer-manager",
+  "report_status": "available",
+  "chapter_ids": [
+    "02-storage-architecture-and-memory-hierarchy",
+    "03-buffer-management",
+    "04-segments-space-and-update-strategies",
+    "11-recovery-and-aries"
+  ],
+  "assignment_brief": [
+    "Implement a buffer manager for configurable page and buffer sizes. A 64-bit page identifier uses its high 16 bits as the segment id and its low 48 bits as the page number inside that segment; each segment is persisted in a file named by the segment id.",
+    "fix_page(page_id, exclusive) must return a resident frame protected in shared or exclusive mode, loading the page on a miss. unfix_page(frame, dirty) releases the caller's fix and records modifications. When no free frame remains, a 2Q-style FIFO/LRU policy must choose an unfixed victim or throw buffer_full_error.",
+    "The concurrency requirement is part of the algorithm, not an optional optimization: unrelated page requests must continue while one thread waits for a page latch, and the global manager latch must not cover slow disk I/O."
+  ],
+  "learning_outcomes": [
+    "Trace a buffer hit, buffer miss, dirty eviction, and buffer-full failure while preserving the page-table and pin-count invariants.",
+    "Simulate the assignment's two-list replacement policy and explain why one-time scan pages stay separate from pages that demonstrate reuse.",
+    "Explain the different jobs of the page table, buffer frame, pin count, dirty flag, replacement metadata, page latch, manager mutex, and per-segment file latch.",
+    "Write deadlock-aware fix/unfix pseudocode that releases the global manager mutex before ordinary page-latch waits and disk I/O.",
+    "Separate buffer-manager durability from transaction recovery: writing dirty pages is necessary, but WAL/LSNs are outside this exercise."
+  ],
+  "artifacts": [
+    "README.md assignment contract and concurrency guidance",
+    "include/moderndbs/buffer_manager.h public API and state layout",
+    "src/buffer_manager.cc complete student implementation",
+    "include/moderndbs/file.h and src/file/posix_file.cc block-I/O contract",
+    "test/buffer_manager_test.cc functional and multithreaded specifications",
+    "bench/bm_buffer_manager.cc mixed-workload benchmark",
+    "buffer-manager-report.md retrospective report, cross-checked against code, tests, and git history"
+  ],
+  "concepts": [
+    {
+      "title": "Resident pages, frames, and the page table",
+      "takeaway": "A page is a persistent logical block; a frame is one reusable memory slot that currently contains some page.",
+      "explanation": [
+        "The manager preallocates page_count frames, each with page_size bytes. page_table maps a full 64-bit page id to the frame that currently contains it, so a buffer hit is expected O(1). Frame identity is stable, but its page_id and bytes change after eviction; callers must not retain or use get_data() after the final unfix.",
+        "The page id is split as [16-bit segment id | 48-bit segment-local page id]. The segment selects a file; the local page id multiplied by page_size gives the byte offset. A page beyond the current file end is returned as an all-zero page."
+      ],
+      "pseudocode": [
+        "segment_id       := page_id >> 48",
+        "segment_page_id  := page_id & ((1 << 48) - 1)",
+        "offset           := segment_page_id * page_size",
+        "if file_size < offset + page_size: return zero_page",
+        "else: read page_size bytes at offset"
+      ],
+      "invariants": [
+        "Every resident page has exactly one page-table entry.",
+        "Every resident frame is in exactly one replacement queue: FIFO or LRU.",
+        "A frame with fix_count > 0 cannot be selected as a victim.",
+        "The frame's bytes are valid for the advertised page_id before another thread can acquire its page latch."
+      ],
+      "pitfalls": [
+        "Confusing a page id with a frame number.",
+        "Using a frame's data after unfix, when the frame may already have been reused.",
+        "Forgetting that offset multiplication can overflow for hostile page_size/page_id inputs; this student implementation performs no explicit overflow check."
+      ],
+      "source_refs": [
+        {
+          "path": "buffer-manager/README.md",
+          "lines": "8-21",
+          "symbol": "assignment contract",
+          "note": "Defines 2Q, 64-bit page ids, segment layout, configurable sizes, and concurrent fix/unfix."
+        },
+        {
+          "path": "buffer-manager/include/moderndbs/buffer_manager.h",
+          "lines": "19-38,52-80,87-134",
+          "symbol": "BufferFrame / BufferManager",
+          "note": "Declares frame state, page table, queues, segment files, API, and page-id split helpers."
+        },
+        {
+          "path": "buffer-manager/src/buffer_manager.cc",
+          "lines": "24-35,75-92",
+          "symbol": "BufferManager / read_page_from_disk",
+          "note": "Preallocates frame storage and implements segment-offset reads with zero-fill beyond EOF."
+        }
+      ]
+    },
+    {
+      "title": "The assignment's FIFO/LRU form of 2Q",
+      "takeaway": "Give new pages one FIFO chance; only pages requested again earn space in the recency-managed hot queue.",
+      "explanation": [
+        "A miss inserts the page at the FIFO tail. A hit on a FIFO page promotes it to the LRU tail; a hit on an LRU page refreshes it to the tail. Victim selection scans from the FIFO head for the first unfixed frame, then from the LRU head.",
+        "This resists scan pollution: pages touched once remain eviction candidates, while a reused index root reaches the hot queue. For exam answers, call this the course/assignment variant of 2Q. Canonical published 2Q is often described with queue-size targets and an A1out ghost-history queue, neither of which exists here."
+      ],
+      "pseudocode": [
+        "on MISS(page): load page; FIFO.push_back(frame)",
+        "on HIT(frame in FIFO): FIFO.erase(frame); LRU.push_back(frame)",
+        "on HIT(frame in LRU): move frame to LRU.back",
+        "victim := first frame in FIFO with fix_count = 0",
+        "if none: victim := first frame in LRU with fix_count = 0",
+        "if none: throw buffer_full_error"
+      ],
+      "invariants": [
+        "Newly loaded pages enter FIFO.",
+        "A resident page's second request promotes it from FIFO to LRU.",
+        "The front of each queue is the first eviction candidate within that queue.",
+        "Fixed frames stay in their queue but are skipped during victim selection."
+      ],
+      "pitfalls": [
+        "Calling this a complete implementation of every canonical 2Q variant; it has no ghost queue or explicit queue-size partition.",
+        "Evicting the queue head without checking fix_count.",
+        "Updating queue metadata without the manager mutex.",
+        "Assuming promotion occurs on unfix: this implementation updates recency when fix_page observes the hit."
+      ],
+      "source_refs": [
+        {
+          "path": "buffer-manager/src/buffer_manager.cc",
+          "lines": "126-166",
+          "symbol": "erase_from_queue / move_to_lru / find_victim",
+          "note": "Implements queue transitions and FIFO-first victim search."
+        },
+        {
+          "path": "buffer-manager/src/buffer_manager.cc",
+          "lines": "178-219",
+          "symbol": "BufferManager::fix_page",
+          "note": "Promotes hits and inserts newly loaded frames into FIFO."
+        },
+        {
+          "path": "buffer-manager/test/buffer_manager_test.cc",
+          "lines": "67-87,108-140",
+          "symbol": "FIFOEvict / MoveToLRU / LRURefresh",
+          "note": "Specifies FIFO eviction, second-access promotion, and LRU refresh order."
+        }
+      ]
+    },
+    {
+      "title": "Fix, latch, dirty, and unfix",
+      "takeaway": "Pinning prevents replacement; latching controls concurrent byte access; dirty state decides whether replacement needs a write.",
+      "explanation": [
+        "fix_count is the replacement pin count. page_mutex is the data-access latch: shared fixes may coexist, while an exclusive fix excludes all other access. dirty is sticky until a successful write path resets or removes the frame, so any unfix marked dirty makes later eviction/destruction write the page.",
+        "The interface does not pass the original lock mode to unfix_page. This solution therefore stores, per thread and per frame, the mode and recursive fix count. That supports repeated same-mode fixes without recursively locking std::shared_mutex. It does not correctly upgrade a nested shared fix to exclusive; the implementation returns early without checking the new exclusive request."
+      ],
+      "pseudocode": [
+        "FIX(page, mode): increment global fix_count before waiting for page latch",
+        "if this thread already fixed frame: increment local nesting count; return",
+        "acquire frame latch in requested mode",
+        "remember {local_count = 1, original_mode}",
+        "UNFIX(frame, dirty): frame.dirty := frame.dirty OR dirty",
+        "if local_count > 1: decrement local_count and fix_count",
+        "else: unlock in remembered mode; erase local record; decrement fix_count"
+      ],
+      "invariants": [
+        "fix_count counts all outstanding fixes, including nested fixes.",
+        "A thread unlocks in the same shared/exclusive mode it originally acquired.",
+        "Dirty state is monotonic between load and write-back.",
+        "The last local unfix releases the page latch and one unit of fix_count."
+      ],
+      "pitfalls": [
+        "Treating pinning and latching as the same mechanism.",
+        "Forgetting to mark a modified page dirty.",
+        "Attempting a shared-to-exclusive nested upgrade: the current code silently keeps only the shared latch.",
+        "Returning from a thread without balancing every fix; neither the latch nor fix_count is repaired automatically.",
+        "Calling unfix_page from a different thread: the thread-local record is absent and this implementation silently returns."
+      ],
+      "source_refs": [
+        {
+          "path": "buffer-manager/include/moderndbs/buffer_manager.h",
+          "lines": "29-38,96-112",
+          "symbol": "BufferFrame state / fix_page / unfix_page",
+          "note": "Shows distinct dirty, fix-count, and page-latch state plus the public lifecycle contract."
+        },
+        {
+          "path": "buffer-manager/src/buffer_manager.cc",
+          "lines": "9-18,241-286",
+          "symbol": "fixed_pages / unfix_page",
+          "note": "Tracks lock mode and nesting per thread; the early return at 243-245 exposes the unsupported upgrade case."
+        },
+        {
+          "path": "buffer-manager/test/buffer_manager_test.cc",
+          "lines": "91-104,170-200",
+          "symbol": "BufferFull / MultithreadExclusiveAccess",
+          "note": "Pinned frames cannot be evicted, and exclusive page access serializes concurrent increments."
+        }
+      ]
+    },
+    {
+      "title": "Miss handling and dirty eviction",
+      "takeaway": "Reserve and protect a frame under metadata synchronization, then perform slow write/read work after releasing the global manager mutex.",
+      "explanation": [
+        "On a miss, the manager chooses an unused frame or an unfixed victim. It exclusively latches that frame, remembers a dirty victim's old page id, removes the old mapping, installs the new page's metadata and FIFO entry, and increments fix_count—all while holding manager_mutex.",
+        "After manager_mutex is released, a dirty old page is written, the requested page is read, and the exclusive frame latch is retained or converted to shared for the caller. Publishing the page-table entry before I/O is safe because other fixers increment the pin and then block on the frame latch; they cannot observe half-loaded bytes."
+      ],
+      "pseudocode": [
+        "lock manager",
+        "if unused frame exists: frame := unused frame",
+        "else: frame := FIFO/LRU victim with fix_count = 0; lock frame exclusively",
+        "remember old {page_id, dirty}; erase old page-table and queue entries",
+        "install new {page_id, fix_count = 1, dirty = false}; FIFO.push(frame); page_table[new] := frame",
+        "unlock manager",
+        "if old dirty: write old bytes to old page id",
+        "read requested page into frame",
+        "return with exclusive latch, or convert to shared"
+      ],
+      "invariants": [
+        "The dirty old bytes are written using the old page id before the frame data is overwritten.",
+        "No caller can observe a partly loaded page.",
+        "The global manager mutex is not held during disk I/O.",
+        "A miss-in-progress is pinned and therefore cannot itself become a victim."
+      ],
+      "pitfalls": [
+        "Overwriting the victim before writing its dirty bytes.",
+        "Holding manager_mutex during disk I/O and serializing unrelated requests.",
+        "Publishing an unlatched, half-loaded frame.",
+        "Ignoring I/O exceptions: this solution uses raw latch lock/unlock and publishes new metadata before I/O, so a thrown open/read/write error can leave the frame latched and the mapping inconsistent."
+      ],
+      "source_refs": [
+        {
+          "path": "buffer-manager/src/buffer_manager.cc",
+          "lines": "168-238",
+          "symbol": "BufferManager::fix_page",
+          "note": "Complete hit/miss path, victim reservation, dirty write-back, read, and latch handoff."
+        },
+        {
+          "path": "buffer-manager/README.md",
+          "lines": "39-51",
+          "symbol": "Testing and efficiency",
+          "note": "Requires deadlock resistance and short global latch hold times around millisecond-scale I/O."
+        },
+        {
+          "path": "buffer-manager/test/buffer_manager_test.cc",
+          "lines": "39-63,203-266",
+          "symbol": "PersistentRestart / BlockedThreadsHoldsNoLocks",
+          "note": "Checks persistence and that waiting on one page does not block unrelated page operations."
+        }
+      ]
+    },
+    {
+      "title": "Segment files and resize coordination",
+      "takeaway": "Cache one File object per segment and synchronize its cached size so block I/O remains race-free.",
+      "explanation": [
+        "README warns that separate File objects referring to the same file are unsafe. segment_files therefore caches one SegmentFile per 16-bit segment id. A short file_mutex protects only lookup/creation of this map.",
+        "Each SegmentFile has a cached size and shared_mutex. Reads and in-range writes hold a shared lock, which allows the File API's thread-safe pread/pwrite calls to overlap. Extending the file uses an exclusive lock and a second size check. The global manager mutex is never needed for this work."
+      ],
+      "pseudocode": [
+        "sf := get_or_create_single_segment_file(segment_id)",
+        "shared_lock sf",
+        "if sf.size >= required_size: write block; return",
+        "unlock shared; exclusive_lock sf",
+        "if sf.size < required_size: resize; sf.size := required_size",
+        "unlock exclusive; shared_lock sf; write block"
+      ],
+      "invariants": [
+        "At most one cached File object represents a segment within the manager.",
+        "The cached size is read or changed under that segment's mutex.",
+        "Resize is exclusive; block reads/writes may proceed concurrently once the size is sufficient.",
+        "Different segment files need not share one long-lived I/O latch."
+      ],
+      "pitfalls": [
+        "Opening a new File object on every page request.",
+        "Checking size concurrently with resize without synchronization.",
+        "Claiming that the implementation holds no latch during I/O: it intentionally holds the frame latch and a per-segment shared latch, while avoiding the global manager latch."
+      ],
+      "source_refs": [
+        {
+          "path": "buffer-manager/README.md",
+          "lines": "23-30",
+          "symbol": "Thread Safety",
+          "note": "States that only block reads/writes are thread-safe and duplicate File objects are unsafe."
+        },
+        {
+          "path": "buffer-manager/include/moderndbs/file.h",
+          "lines": "28-67",
+          "symbol": "File",
+          "note": "Specifies size/resize versus block-read/write thread-safety."
+        },
+        {
+          "path": "buffer-manager/src/buffer_manager.cc",
+          "lines": "57-124",
+          "symbol": "get_segment_file / read_page_from_disk / write_page_to_disk",
+          "note": "Implements the cached file, size checks, double-checked growth, and block I/O."
+        }
+      ]
+    }
+  ],
+  "trace": {
+    "title": "A scan page loses to a reused page, and a dirty victim is written",
+    "setup": "Use three frames. All pages are initially absent. Show queues from oldest to newest and assume every fix is followed by unfix.",
+    "steps": [
+      "Fix 1: miss; load it and place it in FIFO. State: FIFO [1], LRU [].",
+      "Fix 2: miss. State: FIFO [1, 2], LRU [].",
+      "Fix 1 again: hit; promote it to the LRU tail. State: FIFO [2], LRU [1].",
+      "Fix 3 exclusively, modify it, and unfix dirty. State: FIFO [2, 3], LRU [1]; page 3 is dirty.",
+      "Fix 4: the pool is full. Victim search starts at FIFO and evicts clean page 2. State after load: FIFO [3, 4], LRU [1].",
+      "Fix 5: FIFO is preferred again, so dirty page 3 is selected. While its frame is exclusively latched, write page 3 to its segment file, then read page 5 into the same frame. Final state: FIFO [4, 5], LRU [1]."
+    ],
+    "result": "The once-touched pages churn through FIFO, the reused page 1 remains protected in LRU, and dirty data is persisted before frame reuse."
+  },
+  "decisions": [
+    {
+      "title": "Store frame pointers and queue iterators",
+      "rationale": "Victim scans inspect fix_count directly, and a frame can be erased from its queue in O(1) without a second page-table lookup.",
+      "tradeoff": "Queue iterators and queue_type become metadata invariants that every transition must update consistently.",
+      "source_refs": [
+        {
+          "path": "buffer-manager/include/moderndbs/buffer_manager.h",
+          "lines": "23-35,62-66",
+          "symbol": "QueueType / queue_position / fifo_list / lru_list",
+          "note": "Stores replacement membership on each frame and frame pointers in both queues."
+        },
+        {
+          "path": "buffer-manager-report.md",
+          "lines": "271-312",
+          "symbol": "Queue Helpers",
+          "note": "Report rationale agrees with the final implementation and git commit f08255b."
+        }
+      ]
+    },
+    {
+      "title": "Release manager_mutex before page-latch waits and I/O",
+      "rationale": "One contested page or slow device request must not prevent threads from looking up and fixing unrelated pages.",
+      "tradeoff": "The miss path must publish carefully ordered metadata and use the frame latch as the completion barrier for other requesters.",
+      "source_refs": [
+        {
+          "path": "buffer-manager/src/buffer_manager.cc",
+          "lines": "175-238,241-256",
+          "symbol": "BufferManager::fix_page",
+          "note": "The manager-lock scope ends before I/O and before ordinary hit-path latch acquisition."
+        },
+        {
+          "path": "buffer-manager/test/buffer_manager_test.cc",
+          "lines": "203-266",
+          "symbol": "BlockedThreadsHoldsNoLocks",
+          "note": "Exercises progress on page 1 while another thread waits for page 0."
+        }
+      ]
+    },
+    {
+      "title": "Use atomics for dirty and fix_count",
+      "rationale": "unfix_page can record dirtiness and release a pin without reacquiring the global manager mutex; victim selection reads the pin count while holding manager_mutex.",
+      "tradeoff": "Correctness now depends on a subtle ordering protocol across the frame latch, manager mutex, and relaxed atomics; atomics alone do not make queue metadata safe.",
+      "source_refs": [
+        {
+          "path": "buffer-manager/include/moderndbs/buffer_manager.h",
+          "lines": "29-38",
+          "symbol": "BufferFrame",
+          "note": "dirty and fix_count are atomic, while queues remain protected metadata."
+        },
+        {
+          "path": "buffer-manager/src/buffer_manager.cc",
+          "lines": "152-165,259-286",
+          "symbol": "find_victim / unfix_page",
+          "note": "Victim selection reads fix_count and unfix updates dirty/pins without manager_mutex."
+        }
+      ]
+    },
+    {
+      "title": "Cache and separately latch segment files",
+      "rationale": "It obeys the File API's single-object requirement and lets unrelated segments progress independently.",
+      "tradeoff": "The manager carries a persistent open-file cache and a two-level file_mutex/per-segment-mutex protocol.",
+      "source_refs": [
+        {
+          "path": "buffer-manager/src/buffer_manager.cc",
+          "lines": "57-124",
+          "symbol": "segment file helpers",
+          "note": "Implements map-level creation protection and segment-local size/I/O coordination."
+        },
+        {
+          "path": "buffer-manager-report.md",
+          "lines": "180-198,314-365",
+          "symbol": "SegmentFile / Disk I/O",
+          "note": "The retrospective description matches the checked implementation."
+        }
+      ]
+    }
+  ],
+  "tests": [
+    {
+      "name": "FixSingle + MoveToLRU + LRURefresh",
+      "proves": "A page is writable/readable in memory, a first load enters FIFO, a second access promotes it, and further accesses refresh LRU order.",
+      "failure_mode": "The page lifecycle or replacement-list transition is wrong even if raw I/O appears to work.",
+      "source_refs": [
+        {
+          "path": "buffer-manager/test/buffer_manager_test.cc",
+          "lines": "15-35,108-140",
+          "symbol": "FixSingle / MoveToLRU / LRURefresh",
+          "note": "Direct assertions for data and queue order."
+        }
+      ]
+    },
+    {
+      "name": "PersistentRestart + FIFOEvict",
+      "proves": "Dirty pages survive manager destruction across multiple segment files, and a full FIFO evicts its oldest unfixed frame.",
+      "failure_mode": "Dirty write-back, page-id splitting, file offsets, or FIFO victim order is incorrect.",
+      "source_refs": [
+        {
+          "path": "buffer-manager/test/buffer_manager_test.cc",
+          "lines": "39-87",
+          "symbol": "PersistentRestart / FIFOEvict",
+          "note": "Checks disk persistence, segments, and queue eviction."
+        }
+      ]
+    },
+    {
+      "name": "BufferFull + MultithreadBufferFull",
+      "proves": "A full pool containing only fixed frames rejects new pages, including under simultaneous pressure, without exceeding capacity.",
+      "failure_mode": "The manager evicts a pinned frame, over-allocates, or computes fix_count incorrectly.",
+      "source_refs": [
+        {
+          "path": "buffer-manager/test/buffer_manager_test.cc",
+          "lines": "91-104,269-299",
+          "symbol": "BufferFull / MultithreadBufferFull",
+          "note": "Specifies single-thread and concurrent exhaustion behavior."
+        }
+      ]
+    },
+    {
+      "name": "MultithreadExclusiveAccess",
+      "proves": "The per-frame exclusive latch serializes 4,000 increments and the final shared read sees the complete result.",
+      "failure_mode": "Exclusive access is not actually exclusive or the dirty/data lifecycle loses updates.",
+      "source_refs": [
+        {
+          "path": "buffer-manager/test/buffer_manager_test.cc",
+          "lines": "170-200",
+          "symbol": "MultithreadExclusiveAccess",
+          "note": "A concrete lost-update detector."
+        }
+      ]
+    },
+    {
+      "name": "BlockedThreadsHoldsNoLocks",
+      "proves": "Waiting for exclusive access to page 0 does not retain the global manager mutex and prevent heavy shared traffic on page 1.",
+      "failure_mode": "The lock scope creates convoying or a deadlock across unrelated pages.",
+      "source_refs": [
+        {
+          "path": "buffer-manager/test/buffer_manager_test.cc",
+          "lines": "203-266",
+          "symbol": "BlockedThreadsHoldsNoLocks",
+          "note": "The key concurrency-design specification."
+        }
+      ]
+    },
+    {
+      "name": "MultithreadManyPages + MultithreadReaderWriter",
+      "proves": "Randomized skewed access, scans, held pins, reads, writes, retry, and abort paths remain live under contention; the mixed workload also expects fewer than 20 buffer-full aborts.",
+      "failure_mode": "A latent race, leaked pin, lock-order problem, or poor unrelated-page progress appears only under sustained contention.",
+      "source_refs": [
+        {
+          "path": "buffer-manager/test/buffer_manager_test.cc",
+          "lines": "303-455",
+          "symbol": "MultithreadManyPages / MultithreadReaderWriter",
+          "note": "Stress-level behavioral coverage; passing is evidence, not a proof of race freedom."
+        },
+        {
+          "path": "buffer-manager/bench/bm_buffer_manager.cc",
+          "lines": "13-46",
+          "symbol": "BufferManager_Multi",
+          "note": "Benchmark uses ten threads, 70% reads, five segments, and retry on buffer-full."
+        }
+      ]
+    }
+  ],
+  "drills": [
+    {
+      "prompt": "Write fix_page miss-path pseudocode that is safe under concurrent requests for the same missing page.",
+      "format": "pseudocode",
+      "answer": "Under the manager mutex choose and exclusively latch an unused/unpinned frame, remove the old mapping, install the requested page's mapping with fix_count 1 and FIFO membership, then release the manager mutex. Write the dirty victim if needed and read the new page while retaining the frame latch. A second requester may find the published mapping and increment fix_count, but must block on that latch until loading completes.",
+      "checklist": [
+        "Never choose a fixed victim.",
+        "Remember the old page id before overwriting metadata.",
+        "Publish one page-table entry and one queue membership.",
+        "Release manager_mutex before disk I/O.",
+        "Use the frame latch to hide partial loading."
+      ]
+    },
+    {
+      "prompt": "Simulate FIFO and LRU after the reference string 1, 2, 1, 3, 4 with three frames under this assignment's policy.",
+      "format": "trace",
+      "answer": "After 1: FIFO [1], LRU []. After 2: FIFO [1,2]. The second 1 promotes it: FIFO [2], LRU [1]. After 3: FIFO [2,3], LRU [1]. Request 4 evicts FIFO head 2, so FIFO [3,4], LRU [1].",
+      "checklist": [
+        "New pages enter FIFO.",
+        "A hit on FIFO promotes to LRU.",
+        "Victim search prefers FIFO.",
+        "Queue order is oldest to newest."
+      ]
+    },
+    {
+      "prompt": "Why are fix_count and page_mutex both necessary?",
+      "format": "explain",
+      "answer": "fix_count protects residency: replacement skips any frame an operator is using. page_mutex protects the bytes: many readers may share it, but a writer needs exclusive access. A page can be unfixed yet remain resident, and a fixed page still needs a latch mode, so neither mechanism substitutes for the other.",
+      "checklist": [
+        "Pinning versus mutual exclusion.",
+        "Replacement versus data races.",
+        "Shared reader and exclusive writer behavior."
+      ]
+    },
+    {
+      "prompt": "Debug this sequence in the submitted implementation: one thread calls fix_page(P, false), then fix_page(P, true) before either unfix.",
+      "format": "debug",
+      "answer": "The second call finds the frame in the thread-local map, increments only the local nesting count, and returns without upgrading the shared latch. The caller therefore does not receive the requested exclusive protection. A correct design must reject upgrades, provide an explicit safe upgrade protocol, or define that nested fixes must use a compatible mode.",
+      "checklist": [
+        "Locate the early return at src/buffer_manager.cc:241-245.",
+        "State that fix_count still increments.",
+        "Explain why shared-to-exclusive cannot be silently treated as shared.",
+        "Propose a defined API behavior."
+      ]
+    },
+    {
+      "prompt": "Compare this implementation with canonical 2Q descriptions.",
+      "format": "compare",
+      "answer": "Both separate first-touch pages from reused hot pages. This assignment uses a resident FIFO plus resident LRU and always searches FIFO first. Canonical 2Q is commonly described with capacity tuning and an A1out ghost queue that remembers recently evicted first-touch pages. Do not invent that ghost queue when tracing the submitted code, and do not generalize the code as the only form of 2Q.",
+      "checklist": [
+        "Resident FIFO for first touches.",
+        "Resident LRU for proven reuse.",
+        "No ghost history here.",
+        "Answer according to the variant named in the question."
+      ]
+    },
+    {
+      "prompt": "Does flushing every dirty victim make this buffer manager transactionally crash-safe?",
+      "format": "explain",
+      "answer": "No. Dirty write-back preserves page bytes across replacement, but a transactional DBMS must also enforce write-ahead logging, track page/log sequence information, and support undo/redo according to its steal/force policy. This exercise's BufferFrame has no page LSN and implements no log protocol.",
+      "checklist": [
+        "Separate persistence from recovery.",
+        "Mention WAL before dirty-page flush.",
+        "Mention undo/redo or steal/no-force.",
+        "Identify the exercise's scope boundary."
+      ]
+    }
+  ],
+  "lecture_links": [
+    {
+      "chapter_id": "02-storage-architecture-and-memory-hierarchy",
+      "occurrence_ids": [
+        "dbimpl-01-storage-019",
+        "dbimpl-01-storage-020"
+      ],
+      "note": "Why pages are the I/O/buffering granularity and why write-back/read-ahead amortize storage latency."
+    },
+    {
+      "chapter_id": "03-buffer-management",
+      "occurrence_ids": [
+        "dbimpl-01-storage-021",
+        "dbimpl-01-storage-022",
+        "dbimpl-01-storage-023"
+      ],
+      "note": "FIX/UNFIX, the page-table-to-frame lookup, pin/latch/dirty metadata, and the need to avoid blocking unrelated frames."
+    },
+    {
+      "chapter_id": "03-buffer-management",
+      "occurrence_ids": [
+        "dbimpl-01-storage-024",
+        "dbimpl-01-storage-025",
+        "dbimpl-01-storage-026",
+        "dbimpl-01-storage-030",
+        "dbimpl-01-storage-031",
+        "dbimpl-01-storage-032"
+      ],
+      "note": "Dirty victim handling and the FIFO, LRU, clock, 2Q, and hinting policy trade-offs."
+    },
+    {
+      "chapter_id": "04-segments-space-and-update-strategies",
+      "occurrence_ids": [
+        "dbimpl-02-storage-access-001",
+        "dbimpl-02-storage-access-002",
+        "dbimpl-02-storage-access-016"
+      ],
+      "note": "Segment abstraction plus the steal/force consequences that the exercise's write-back policy deliberately does not solve."
+    },
+    {
+      "chapter_id": "11-recovery-and-aries",
+      "occurrence_ids": [
+        "dbimpl-10-recovery-008",
+        "dbimpl-10-recovery-009",
+        "dbimpl-10-recovery-016"
+      ],
+      "note": "Recovery boundary: replacement under steal/no-force and the write-ahead rule required before dirty data pages reach disk."
+    }
+  ],
+  "limitations": [
+    "README and tests define the assignment contract. The implementation is student work and the report is a later retrospective; neither should be presented as course ground truth.",
+    "The implementation is the assignment's simplified resident FIFO/LRU form of 2Q, not every canonical 2Q variant; it has no A1out ghost queue or explicit queue-size target.",
+    "Nested same-thread shared-to-exclusive fix upgrades are not supported correctly, and the public contract does not document that limitation.",
+    "The raw lock/unlock miss path is not exception-safe: an I/O/open/resize failure after metadata publication can leave a frame latched and the page table inconsistent.",
+    "Destructor write-back assumes the manager is no longer used concurrently. No page latches are acquired while collecting/writing dirty frames.",
+    "No WAL, page LSN, transaction commit/abort, background writer, explicit flush API, or recovery protocol is implemented.",
+    "The provided gtests were inspected but not rerun in this audit because the legacy CMake build downloads external GoogleTest/benchmark dependencies. Both core implementation translation units compiled warning-free with C++20 locally."
+  ],
+  "_audit": {
+    "source_precedence": [
+      "README assignment contract",
+      "Tests as executable specification",
+      "Public headers",
+      "Student implementation",
+      "Benchmark workload",
+      "Retrospective report and git-history interpretation"
+    ],
+    "verified_report_claims": [
+      "The page-id split, page-table/frame layout, FIFO/LRU transitions, cached segment files, per-segment shared mutex, thread-local fix tracking, and global-lock/I/O separation all match the final source.",
+      "The report's named implementation commits exist in git history, including segmenting files, pointer queues, the fix_page rework, and shared_mutex.",
+      "The report's test summaries match the assertions in test/buffer_manager_test.cc."
+    ],
+    "corrections_to_report": [
+      "The report says thread-local tracking supports repeated fixes, but it does not qualify that a nested shared-to-exclusive mode change is silently not upgraded.",
+      "The shorthand 'do not hold latches during I/O' must be taught as 'do not hold the global manager latch during I/O.' The code intentionally holds the frame latch and a per-segment shared latch during I/O.",
+      "The report calls the design 2Q without noting that the exercise implements a simplified two-resident-queue variant rather than the ghost-queue form often described in literature.",
+      "Stress tests are evidence of observed behavior, not a proof that no race or deadlock can exist."
+    ],
+    "lecture_evidence_details": [
+      {
+        "occurrence_id": "dbimpl-01-storage-019",
+        "title": "Hard Disk Access (2)",
+        "source_file": "dbimpl-01-storage.mp4",
+        "start": "00:51:26.850",
+        "end": "00:54:13.350"
+      },
+      {
+        "occurrence_id": "dbimpl-01-storage-020",
+        "title": "Hard Disk Access (3)",
+        "source_file": "dbimpl-01-storage.mp4",
+        "start": "00:54:13.350",
+        "end": "00:57:21.250"
+      },
+      {
+        "occurrence_id": "dbimpl-01-storage-021",
+        "title": "Buffer Management",
+        "source_file": "dbimpl-01-storage.mp4",
+        "start": "00:57:21.250",
+        "end": "01:03:07.450"
+      },
+      {
+        "occurrence_id": "dbimpl-01-storage-022",
+        "title": "Buffer Managment",
+        "source_file": "dbimpl-01-storage.mp4",
+        "start": "01:03:07.450",
+        "end": "01:07:11.750"
+      },
+      {
+        "occurrence_id": "dbimpl-01-storage-023",
+        "title": "Buffer Frame",
+        "source_file": "dbimpl-01-storage.mp4",
+        "start": "01:07:11.750",
+        "end": "01:12:19.050"
+      },
+      {
+        "occurrence_id": "dbimpl-01-storage-024",
+        "title": "Buffer Replacement",
+        "source_file": "dbimpl-01-storage.mp4",
+        "start": "01:12:19.050",
+        "end": "01:15:45.250"
+      },
+      {
+        "occurrence_id": "dbimpl-01-storage-025",
+        "title": "Buffer Replacement - FIFO",
+        "source_file": "dbimpl-01-storage.mp4",
+        "start": "01:15:45.250",
+        "end": "01:17:03.750"
+      },
+      {
+        "occurrence_id": "dbimpl-01-storage-026",
+        "title": "Buffer Replacement - LRU",
+        "source_file": "dbimpl-01-storage.mp4",
+        "start": "01:17:03.750",
+        "end": "01:19:32.150"
+      },
+      {
+        "occurrence_id": "dbimpl-01-storage-030",
+        "title": "Buffer Replacement - Second Chance",
+        "source_file": "dbimpl-01-storage.mp4",
+        "start": "01:20:37.850",
+        "end": "01:23:37.450"
+      },
+      {
+        "occurrence_id": "dbimpl-01-storage-031",
+        "title": "Buffer Replacement - 2Q",
+        "source_file": "dbimpl-01-storage.mp4",
+        "start": "01:23:37.450",
+        "end": "01:27:17.650"
+      },
+      {
+        "occurrence_id": "dbimpl-01-storage-032",
+        "title": "Buffer Replacement - Hints",
+        "source_file": "dbimpl-01-storage.mp4",
+        "start": "01:27:17.650",
+        "end": "01:29:12.450"
+      },
+      {
+        "occurrence_id": "dbimpl-02-storage-access-001",
+        "title": "Segments",
+        "source_file": "dbimpl-02-storage-access.mp4",
+        "start": "00:00:00.000",
+        "end": "00:04:14.550"
+      },
+      {
+        "occurrence_id": "dbimpl-02-storage-access-002",
+        "title": "Segments (2)",
+        "source_file": "dbimpl-02-storage-access.mp4",
+        "start": "00:04:14.550",
+        "end": "00:05:37.450"
+      },
+      {
+        "occurrence_id": "dbimpl-02-storage-access-016",
+        "title": "Update Strategies",
+        "source_file": "dbimpl-02-storage-access.mp4",
+        "start": "00:34:48.350",
+        "end": "00:39:00.650"
+      },
+      {
+        "occurrence_id": "dbimpl-10-recovery-008",
+        "title": "Storage Hierarchy (2)",
+        "source_file": "dbimpl-10-recovery.mp4",
+        "start": "00:12:41.750",
+        "end": "00:13:54.750"
+      },
+      {
+        "occurrence_id": "dbimpl-10-recovery-009",
+        "title": "Storage Hierarchy (3)",
+        "source_file": "dbimpl-10-recovery.mp4",
+        "start": "00:13:54.750",
+        "end": "00:14:33.950"
+      },
+      {
+        "occurrence_id": "dbimpl-10-recovery-016",
+        "title": "Writing the Log (3)",
+        "source_file": "dbimpl-10-recovery.mp4",
+        "start": "00:33:30.250",
+        "end": "00:36:14.550"
+      }
+    ],
+    "implementation_findings": [
+      {
+        "severity": "important",
+        "id": "nested-mode-upgrade",
+        "finding": "A nested shared-to-exclusive fix returns without upgrading the latch.",
+        "evidence": "buffer-manager/src/buffer_manager.cc:241-245"
+      },
+      {
+        "severity": "important",
+        "id": "io-exception-safety",
+        "finding": "A throwing dirty write or page read after page-table publication can strand the raw frame latch and an invalid mapping.",
+        "evidence": "buffer-manager/src/buffer_manager.cc:194-228"
+      },
+      {
+        "severity": "teaching-caveat",
+        "id": "simplified-2q",
+        "finding": "The code has resident FIFO and LRU lists but no ghost queue or explicit target sizes.",
+        "evidence": "buffer-manager/include/moderndbs/buffer_manager.h:62-66; buffer-manager/src/buffer_manager.cc:136-165"
+      },
+      {
+        "severity": "scope-boundary",
+        "id": "no-wal",
+        "finding": "Dirty write-back is implemented without page LSN or WAL coordination, so it must not be taught as transactional recovery.",
+        "evidence": "buffer-manager/include/moderndbs/buffer_manager.h:19-38"
+      }
+    ],
+    "verification": {
+      "files_inspected": [
+        "README.md",
+        "include/moderndbs/buffer_manager.h",
+        "include/moderndbs/file.h",
+        "src/buffer_manager.cc",
+        "src/file/posix_file.cc",
+        "test/buffer_manager_test.cc",
+        "bench/bm_buffer_manager.cc",
+        "CMakeLists.txt",
+        "buffer-manager-report.md",
+        "git log"
+      ],
+      "compile_check": "src/buffer_manager.cc and src/file/posix_file.cc compiled warning-free with c++ -std=c++20 -Wall -Wextra -Wpedantic -pthread.",
+      "full_test_run": "Not run: the legacy CMake project fetches GoogleTest, benchmark, and gflags from the network."
+    }
+  }
+}

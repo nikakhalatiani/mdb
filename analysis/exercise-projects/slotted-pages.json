@@ -1,0 +1,854 @@
+{
+  "id": "slotted-pages",
+  "number": 2,
+  "title": "Slotted Pages, Stable TIDs, and Free-Space Inventory",
+  "subtitle": "Learn how a database turns one fixed-size page into movable records with stable logical addresses, then finds reusable space without inspecting every page.",
+  "project_label": "slotted-pages",
+  "report_status": "available",
+  "chapter_ids": [
+    "03-buffer-management",
+    "04-segments-space-and-update-strategies",
+    "05-slotted-pages-and-record-layout",
+    "06-compression-and-long-records"
+  ],
+  "assignment_brief": [
+    "Implement the record-access layer beneath the provided database interface: a SlottedPage for variable-size records, an SPSegment for allocate/read/write/resize/erase, and a Free-Space Inventory that locates reusable pages through the BufferManager.",
+    "A table owns one slotted-page segment and one FSI segment. TIDs combine a segment-local page number with a stable slot number. If a growing record no longer fits on its original page, the original slot becomes a forwarding entry; repeated moves must rewrite that original forwarding entry instead of creating a chain.",
+    "The FSI must use compact approximate entries, live in buffer-manager pages, and span more than one page. The README explicitly warns that the supplied tests cover only obvious bugs, so page accounting, redirect ownership, FSI false positives/negatives, and buffer interactions need independent reasoning."
+  ],
+  "learning_outcomes": [
+    "Draw the page header, upward-growing slot array, downward-growing record area, contiguous gap, and fragmented holes.",
+    "Maintain stable live-record TIDs while compaction changes physical record offsets.",
+    "Distinguish total reclaimable free space from immediately contiguous free space and decide when compaction is necessary.",
+    "Decode the project's tagged 64-bit slot as empty, local record, redirect, or redirect target.",
+    "Write one-hop resize/redirect pseudocode that preserves payload and reclaims the old target.",
+    "Explain conservative 4-bit FSI encoding, multi-page addressing, and the difference between buffer-resident visibility and actual disk persistence.",
+    "Connect the implementation to exam-style page drawings and hexdump decoding while recognizing the scan/recovery features this project omits."
+  ],
+  "artifacts": [
+    "README.md — record-access, redirect-depth, and multi-page-FSI contract",
+    "include/moderndbs/slotted_page.h — TID, header, and tagged slot format",
+    "src/slotted_page.cc — allocation, erase, relocate, fragmentation, and compaction",
+    "include/moderndbs/segment.h — FSISegment and SPSegment interfaces",
+    "src/fsi_segment.cc — nibble encoding, update, rotating scan, and page spanning",
+    "src/sp_segment.cc — segment allocation, read/write, resize redirects, and erase",
+    "src/schema_segment.cc — persistence of table.allocated_pages through schema serialization",
+    "include/moderndbs/buffer_manager.h and src/buffer_manager.cc — supplied in-memory test double",
+    "test/slotted_page_test.cc and test/segment_test.cc — behavioral specifications plus locally added edge tests",
+    "bench/bm_slotted_page.cc — mixed allocation, erase, and resize workload",
+    "slotted-pages-report.md — student-authored implementation narrative, cross-checked against code and tests"
+  ],
+  "concepts": [
+    {
+      "title": "Slots separate logical identity from physical byte position",
+      "takeaway": "A TID names (page, slot); the slot names the current byte range, so compacting records changes offsets without changing live-record TIDs.",
+      "explanation": [
+        "The page begins with a 12-byte header. Fixed-size eight-byte slots grow toward higher addresses immediately after it, while record bytes are allocated backward from the end of the page. The page is physically full when the slot frontier and record frontier meet.",
+        "TID stores a 48-bit segment-local page number above a 16-bit slot ID. get_page_id reattaches the segment ID in the upper 16 bits expected by BufferManager. Within a live record's lifetime, slot IDs are never renumbered by compaction.",
+        "Stable means stable across byte movement and redirection, not immortal. Erasing a record makes its slot reusable, so an old stale TID can later alias a different record; this format has no generation counter."
+      ],
+      "pseudocode": [
+        "TID.value = (segment_page << 16) | slot_id",
+        "buffer_page_id = (segment_id << 48) | (TID.value >> 16)",
+        "",
+        "page layout:",
+        "  [Header][Slot 0][Slot 1] ... [contiguous gap] ... [record bytes]",
+        "             grows right  ->                    <-  grows left",
+        "",
+        "read_local(tid):",
+        "  slot = page(tid.page).slots[tid.slot]",
+        "  return page.bytes[slot.offset .. slot.offset + slot.length)"
+      ],
+      "invariants": [
+        "A live local slot's offset and length identify bytes within the same page.",
+        "A real zero-length record has length zero but a nonzero offset; only the reserved empty encoding is reusable.",
+        "Compaction may rewrite slot offsets but never changes the slot index of a live record.",
+        "slot_count covers every slot position up to the highest non-trimmed slot, including reusable holes.",
+        "first_free_slot is the lowest empty slot or slot_count when the slot array must grow."
+      ],
+      "pitfalls": [
+        "Moving slot entries during compaction breaks every external TID.",
+        "Treating length zero alone as empty loses valid zero-length records.",
+        "Calling an erased TID permanently stable ignores slot reuse and the ABA/alias problem.",
+        "The project header omits the recovery LSN shown in the lecture, so this is a simplified physical format."
+      ],
+      "source_refs": [
+        {
+          "path": "include/moderndbs/slotted_page.h",
+          "lines": "14-36",
+          "symbol": "TID",
+          "note": "Packs a segment-local page and 16-bit slot, then reconstructs a segment-qualified buffer page ID."
+        },
+        {
+          "path": "include/moderndbs/slotted_page.h",
+          "lines": "38-51",
+          "symbol": "SlottedPage::Header",
+          "note": "Defines slot count, first-free hint, data frontier, and total compactable free space."
+        },
+        {
+          "path": "include/moderndbs/slotted_page.h",
+          "lines": "100-147",
+          "symbol": "SlottedPage layout API",
+          "note": "Requires the object itself to reside in frame bytes and exposes the slot array immediately after the header."
+        },
+        {
+          "path": "src/slotted_page.cc",
+          "lines": "40-65",
+          "symbol": "Constructor / get_slots",
+          "note": "Initializes an empty page and derives slots from the fixed header address."
+        },
+        {
+          "path": "test/slotted_page_test.cc",
+          "lines": "18-56",
+          "symbol": "Constructor / Allocation",
+          "note": "Checks the initial frontiers and the exact offset/free-space progression while the page fills."
+        }
+      ]
+    },
+    {
+      "title": "Total free space and contiguous free space are different state",
+      "takeaway": "Deletes and moves create holes; the page counts them as reclaimable but delays record movement until a request cannot fit in the current gap.",
+      "explanation": [
+        "header.free_space means the bytes that would be usable after compaction, including holes. The immediately usable gap is data_start minus the end of the current slot array. Their difference is fragmented free space.",
+        "Allocation first charges data bytes and, only when no reusable slot exists, one Slot. If total free space is insufficient it fails. If total space is sufficient but the current gap is too small, it compacts and retries.",
+        "Compaction visits only local data slots, orders them from high to low current offsets, memmoves live payloads against the end of the page, and updates each slot offset. Redirect and empty slots carry no local payload and are skipped."
+      ],
+      "pseudocode": [
+        "slot_end = sizeof(Header) + slot_count * sizeof(Slot)",
+        "contiguous = max(0, data_start - slot_end)",
+        "fragmented = max(0, free_space - contiguous)",
+        "",
+        "allocate(size):",
+        "  required = size + (need_new_slot ? sizeof(Slot) : 0)",
+        "  if free_space < required: FAIL",
+        "  if contiguous < required: compactify()",
+        "  choose first_free_slot",
+        "  data_start -= size",
+        "  slot = (data_start, size)",
+        "  free_space -= required",
+        "",
+        "compactify():",
+        "  for live local slots ordered by offset descending:",
+        "    move payload against page end and rewrite slot.offset",
+        "  data_start = start of packed payloads",
+        "  free_space = data_start - slot_end"
+      ],
+      "invariants": [
+        "free_space is never less than the current contiguous gap.",
+        "A middle erase adds payload length to total free space without moving unrelated live records.",
+        "A trailing empty slot can shrink slot_count and return its eight bytes to free_space.",
+        "After compaction, all reclaimable space is one contiguous gap.",
+        "Compaction preserves every live payload and the redirect-target flag stored in its slot."
+      ],
+      "pitfalls": [
+        "Using total free_space as a memcpy destination bound without compaction can overwrite a live record.",
+        "Compacting eagerly on every erase adds unnecessary write amplification.",
+        "Copying records in an unsafe order can overwrite a payload that has not been moved yet.",
+        "data_start can remain below the true packed boundary after erasing several records; it is a conservative frontier until compaction, not proof that bytes below it are live."
+      ],
+      "source_refs": [
+        {
+          "path": "src/slotted_page.cc",
+          "lines": "10-38",
+          "symbol": "slot_end / contiguous_free_space",
+          "note": "Defines the current slot frontier, data gap, and reusable-slot search."
+        },
+        {
+          "path": "src/slotted_page.cc",
+          "lines": "67-109",
+          "symbol": "get_fragmented_free_space / allocate",
+          "note": "Separates total from contiguous capacity and compacts only when required."
+        },
+        {
+          "path": "src/slotted_page.cc",
+          "lines": "169-201",
+          "symbol": "erase",
+          "note": "Creates holes for middle records, trims trailing empty slots, and preserves stable remaining slot IDs."
+        },
+        {
+          "path": "src/slotted_page.cc",
+          "lines": "203-233",
+          "symbol": "compactify",
+          "note": "Moves live payloads safely and rebuilds offsets/frontiers."
+        },
+        {
+          "path": "test/slotted_page_test.cc",
+          "lines": "174-220",
+          "symbol": "FragmentedFreeSpace / AllocateAfterFragmentation",
+          "note": "Verifies hole accounting and that compaction preserves two patterned records."
+        }
+      ]
+    },
+    {
+      "title": "Growing a record preserves its slot before it preserves its page",
+      "takeaway": "Relocate first tries the same page; if that page cannot absorb the growth, SPSegment preserves the original TID with a one-hop redirect.",
+      "explanation": [
+        "SlottedPage::relocate handles same-page changes. Shrinking keeps the offset and releases the length difference. Growing copies the old prefix, obtains a new local byte range, zero-fills the extension, and preserves the redirect-target marker.",
+        "If the original page lacks the additional total space, SPSegment allocates a target record elsewhere, copies min(old,new) payload bytes, marks the target, and replaces the original slot with the target TID. Point reads and writes follow at most one forwarding slot.",
+        "If an already redirected record moves again, the implementation resizes the existing target when possible. Otherwise it allocates a new target, rewrites the original redirect directly to it, and erases the old target. This prevents original→old→new chains and releases the abandoned space."
+      ],
+      "pseudocode": [
+        "resize(original_tid, new_length):",
+        "  source = inspect(original_tid)",
+        "  if source is local and relocate_in_page succeeds: return",
+        "  if source is local:",
+        "    payload = read prefix min(old_size, new_length)",
+        "    target = allocate(new_length)",
+        "    write target and mark target",
+        "    replace source slot with redirect(target)",
+        "    return",
+        "",
+        "  old_target = source.redirect_tid",
+        "  if relocate_in_page(old_target, new_length) succeeds: return",
+        "  payload = read prefix from old_target",
+        "  new_target = allocate(new_length)",
+        "  write and mark new_target",
+        "  rewrite original source redirect -> new_target",
+        "  erase old_target"
+      ],
+      "invariants": [
+        "The caller's original TID remains the point-access identity across every supported resize.",
+        "A normal resize copies the common prefix and zero-initializes newly added bytes.",
+        "A forwarding source contains no local payload; its old payload space is returned to its source page.",
+        "The original slot points directly to the current target, so supported API operations traverse at most one redirect.",
+        "Replacing a target erases the old target and updates both affected FSI entries."
+      ],
+      "pitfalls": [
+        "Redirecting an already redirected target instead of rewriting the original source creates an unbounded chain.",
+        "Erasing only the source redirect leaks the target record and its FSI capacity.",
+        "Updating the source before the new target is initialized exposes incomplete data; this code initializes first, but the multi-page sequence still has no crash recovery.",
+        "Calling resize directly on a hidden redirect-target TID can create behavior outside the one-hop public-original-TID assumption; the target marker is not used to forbid it."
+      ],
+      "source_refs": [
+        {
+          "path": "src/slotted_page.cc",
+          "lines": "111-167",
+          "symbol": "SlottedPage::relocate",
+          "note": "Handles shrink/grow, overlap-safe payload copying, optional compaction, zero-fill, and marker preservation."
+        },
+        {
+          "path": "src/sp_segment.cc",
+          "lines": "94-157",
+          "symbol": "try_resize_in_place / redirect_slot",
+          "note": "Checks additional capacity, updates FSI, frees the source payload, and installs a redirect."
+        },
+        {
+          "path": "src/sp_segment.cc",
+          "lines": "242-308",
+          "symbol": "read / write",
+          "note": "Visits at most two slots: original plus one target."
+        },
+        {
+          "path": "src/sp_segment.cc",
+          "lines": "310-359",
+          "symbol": "SPSegment::resize",
+          "note": "Rewrites an existing redirect to a replacement target and then reclaims the old target."
+        },
+        {
+          "path": "src/sp_segment.cc",
+          "lines": "361-373",
+          "symbol": "SPSegment::erase",
+          "note": "Erases a redirect target before erasing the stable source slot."
+        }
+      ]
+    },
+    {
+      "title": "The eight-byte slot is a tagged union",
+      "takeaway": "The same 64 bits mean either (offset,length,flags) or a forwarding TID; the top-byte tag decides which interpretation is valid.",
+      "explanation": [
+        "For a local slot, bits 0..23 hold size, bits 24..47 hold offset, bits 48..55 hold the redirect-target marker, and bits 56..63 are 0xFF. A local empty slot has offset=0, size=0, and that 0xFF local tag.",
+        "For a redirect, the entire 64-bit word is a raw TID and the top byte must not be 0xFF. A redirect target remains a local slot, but its marker byte is nonzero so a future scanner could distinguish relocated physical records.",
+        "The encoding makes a forwarding entry fit in the slot even when the page data area is completely full. That is the core lecture motivation: recovery or update can preserve the stable logical TID without finding extra bytes in the original page."
+      ],
+      "pseudocode": [
+        "if slot.bits[63:56] != 0xFF:",
+        "  slot is REDIRECT; target_tid = slot.raw64",
+        "else:",
+        "  size   = slot.bits[23:0]",
+        "  offset = slot.bits[47:24]",
+        "  target_marker = slot.bits[55:48] != 0",
+        "  empty = (offset == 0 and size == 0)"
+      ],
+      "invariants": [
+        "A slot must be interpreted only after checking its tag.",
+        "A redirect stores a same-segment target TID and no local offset/length.",
+        "A redirect target is still a local data slot and participates in compaction.",
+        "The target marker survives same-page relocation and compaction.",
+        "The 24-bit offset and size fields constrain the representable page/record range."
+      ],
+      "pitfalls": [
+        "Reading redirect bits as an offset and size yields meaningless page addresses.",
+        "The top-byte tag reserves some TID patterns: set_redirect_tid rejects a TID whose top byte is 0xFF.",
+        "The implementation marks the target but does not store the original TID in the relocated payload, so it cannot implement the lecture's stable-identity scan rule by itself.",
+        "No sequential-scan API uses is_redirect_target; do not infer complete scan behavior merely from the marker."
+      ],
+      "source_refs": [
+        {
+          "path": "include/moderndbs/slotted_page.h",
+          "lines": "53-98",
+          "symbol": "SlottedPage::Slot",
+          "note": "Defines tag tests, empty encoding, 24-bit offset/size fields, raw-TID redirects, and target marking."
+        },
+        {
+          "path": "src/sp_segment.cc",
+          "lines": "30-69",
+          "symbol": "get_slot_info / mark_redirect_target",
+          "note": "Interprets tagged slots and toggles the physical-target marker."
+        },
+        {
+          "path": "src/slotted_page.cc",
+          "lines": "203-228",
+          "symbol": "compactify",
+          "note": "Treats marked targets as local data and preserves their marker while changing offsets."
+        },
+        {
+          "path": "test/segment_test.cc",
+          "lines": "301-361",
+          "symbol": "SPRecordWriteReadRedirect",
+          "note": "Exercises repeated point access through redirects but not scan-time original-TID reconstruction."
+        }
+      ]
+    },
+    {
+      "title": "The FSI is a conservative, page-resident approximation",
+      "takeaway": "Two four-bit entries fit in each byte; decoded capacity never exceeds actual capacity, so a match is safe, but coarse buckets can miss pages that really fit.",
+      "explanation": [
+        "encode_free_space selects the largest code whose decoded lower bound is not greater than the measured free bytes. Therefore decode(encode(x)) <= x. This prevents an FSI code from promising more space than a page had when updated.",
+        "Each 1024-byte FSI page holds 2048 nibbles and therefore describes 2048 slotted pages. target page 2050 maps to FSI page 1, entry 2. update fixes that raw FSI page exclusively and changes only the selected half-byte.",
+        "find converts a requested size to the first code whose decoded lower bound can satisfy it, scans from a process-local rotating cursor, and wraps once. Comparing codes is valid because the decode table is monotone.",
+        "Conservatism has a cost. On a 1 KiB page, codes jump from 896 to max-free 1012. A page with 1000 actual free bytes encodes as 896, so find(900) rejects it. On 4 KiB pages, all non-completely-empty capacities above 896 collapse to the same code 14, making the FSI particularly incomplete for large records."
+      ],
+      "pseudocode": [
+        "encode(actual_free):",
+        "  return largest code c with decode(c) <= actual_free",
+        "",
+        "update(target_page, free):",
+        "  entries_per_fsi_page = page_size * 2",
+        "  fsi_page = target_page / entries_per_fsi_page",
+        "  entry = target_page % entries_per_fsi_page",
+        "  write nibble[entry] = encode(free)",
+        "",
+        "find(required):",
+        "  minimum = first code c with decode(c) >= required",
+        "  scan encoded entries from rotating cursor, wrapping once",
+        "  return first page with code >= minimum"
+      ],
+      "invariants": [
+        "One target page consumes exactly one four-bit FSI entry.",
+        "Updating one nibble preserves the other nibble in the byte.",
+        "decode(encode(actual_free)) never exceeds actual_free.",
+        "FSI page and nibble arithmetic works across page boundaries.",
+        "A returned page is still rechecked against exact current page state before allocation."
+      ],
+      "pitfalls": [
+        "Conservative encoding prevents false promises but does not prevent false negatives.",
+        "Calling the FSI exact is wrong; its purpose is a compact candidate filter.",
+        "The hard-coded byte thresholds do not scale with page size except for code 15.",
+        "The rotating cursor is a process-global unordered_map keyed only by segment ID; it is neither persisted nor synchronized.",
+        "The supplied persistence test shares one BufferManager and therefore proves buffer-page residency, not survival across a database restart."
+      ],
+      "source_refs": [
+        {
+          "path": "src/fsi_segment.cc",
+          "lines": "7-46",
+          "symbol": "next_search_page / nibble helpers / minimum_code_for",
+          "note": "Stores the process-local cursor, packs two entries per byte, and converts a byte request to a minimum code."
+        },
+        {
+          "path": "src/fsi_segment.cc",
+          "lines": "54-76",
+          "symbol": "encode_free_space / decode_free_space",
+          "note": "Implements conservative lower-bound encoding with fixed thresholds and a page-size-dependent code 15."
+        },
+        {
+          "path": "src/fsi_segment.cc",
+          "lines": "78-87",
+          "symbol": "FSISegment::update",
+          "note": "Maps a target page to an FSI page/nibble and writes it through BufferManager."
+        },
+        {
+          "path": "src/fsi_segment.cc",
+          "lines": "89-142",
+          "symbol": "FSISegment::find",
+          "note": "Scans multi-page nibbles from a rotating start position and wraps once."
+        },
+        {
+          "path": "test/segment_test.cc",
+          "lines": "178-244",
+          "symbol": "FSIEncoding / FSIFind / FSIPersistence",
+          "note": "Checks conservative decoding, basic lookup, and visibility through a fresh FSISegment sharing the same BufferManager."
+        },
+        {
+          "path": "test/segment_test.cc",
+          "lines": "533-576",
+          "symbol": "FSIBucketBoundaryFindsPage / FSISpansMultiplePages",
+          "note": "Covers a threshold boundary and target page 2050 beyond the first 2048-entry FSI page."
+        }
+      ]
+    },
+    {
+      "title": "SPSegment turns approximate hints into verified allocations",
+      "takeaway": "It tries a locality hint, then the FSI, then creates a page; every candidate is checked using the real page header before bytes are reserved.",
+      "explanation": [
+        "Allocation first rejects records larger than one page can hold. A process-global per-segment hint remembers the last successful page and is checked before an FSI scan, which helps append-like workloads with similarly sized tuples.",
+        "On a candidate page, the exact requirement depends on whether an empty slot can be reused. The candidate is fixed exclusively, its actual free-space state is checked, SlottedPage::allocate runs, and the new exact free-space value is written back to FSI.",
+        "If no existing page is used, table.allocated_pages is incremented, the schema is written, a fresh SlottedPage is placement-constructed in the next segment page, and both FSI and hint are updated."
+      ],
+      "pseudocode": [
+        "allocate(size):",
+        "  reject size > page_size - sizeof(Header) - sizeof(Slot)",
+        "  if allocation_hint is valid and exact_page_check(hint, size): use hint",
+        "  candidate = fsi.find(size + sizeof(Slot))",
+        "  if candidate and exact_page_check(candidate, size): use candidate",
+        "  page = table.allocated_pages++",
+        "  persist schema metadata",
+        "  construct empty SlottedPage(page)",
+        "  slot = page.allocate(size)",
+        "  fsi.update(page, page.free_space)",
+        "  allocation_hint = page",
+        "  return TID(page, slot)"
+      ],
+      "invariants": [
+        "No allocated record exceeds one page's header-plus-one-slot capacity.",
+        "An approximate FSI or stale hint is never trusted without an exact page check.",
+        "Every successful allocate, resize, redirect-source change, and erase updates the affected FSI entry.",
+        "table.allocated_pages defines the valid slotted-page scan/search range and is serialized in the schema.",
+        "A newly allocated record receives a segment-local page plus stable slot TID."
+      ],
+      "pitfalls": [
+        "The FSI request always includes a new-slot charge, so it can miss a page that could reuse an empty slot; the exact hint path is less pessimistic.",
+        "If the single FSI candidate fails exact validation, allocation immediately creates a page instead of asking FSI for another candidate.",
+        "Schema page-count metadata is persisted before page construction succeeds, so exception/crash rollback is not demonstrated.",
+        "The global hint arrays are keyed only by 16-bit segment ID and are not thread-safe or scoped to a BufferManager/database instance."
+      ],
+      "source_refs": [
+        {
+          "path": "src/sp_segment.cc",
+          "lines": "8-21",
+          "symbol": "allocation_hints / max_record_size",
+          "note": "Defines process-global locality hints and the one-page record limit."
+        },
+        {
+          "path": "src/sp_segment.cc",
+          "lines": "174-240",
+          "symbol": "SPSegment::allocate",
+          "note": "Implements hint, FSI, exact validation, new-page construction, schema write, and FSI refresh."
+        },
+        {
+          "path": "include/moderndbs/schema.h",
+          "lines": "48-65",
+          "symbol": "schema::Table",
+          "note": "Associates SP/FSI segment IDs and the allocated slotted-page count with each table."
+        },
+        {
+          "path": "src/schema_segment.cc",
+          "lines": "129-227",
+          "symbol": "SchemaSegment::write",
+          "note": "Serializes table.allocated_pages with the rest of the schema through buffer-manager pages."
+        },
+        {
+          "path": "bench/bm_slotted_page.cc",
+          "lines": "78-127",
+          "symbol": "SlottedPages benchmark",
+          "note": "Exercises allocation, random erase, larger allocation, and resize, but contains no correctness assertions."
+        }
+      ]
+    }
+  ],
+  "trace": {
+    "title": "Delete a middle record, then compact only when a larger insert needs the hole",
+    "setup": "Use a 1024-byte page with a 12-byte header and eight-byte slots. Allocate A=200 bytes in slot 0, then B=200 bytes in slot 1. This extends the exam's insert-A/insert-B/delete-A drawing with one allocation that forces the implementation to use the reclaimed hole.",
+    "steps": [
+      "After A: slot 0 points to offset 824, data_start=824, slot_count=1, and free_space=804.",
+      "After B: slot 1 points to offset 624, data_start=624, slot_count=2, and free_space=596.",
+      "Delete A. Slot 0 becomes the first reusable slot. B remains at offset 624 because deletion is lazy. Total free_space rises to 796, but the contiguous gap is still 624-(12+2·8)=596; the 200-byte difference is fragmentation.",
+      "Request C=700 bytes. Slot 0 can be reused, so only 700 bytes are required. Total free space is sufficient but the 596-byte contiguous gap is not, which triggers compactify.",
+      "Compaction moves B from offset 624 to offset 824 and updates slot 1. B's TID (page,1) and payload remain unchanged; all 796 reusable bytes become contiguous.",
+      "C is allocated into reused slot 0 at offset 124. data_start=124 and free_space=96."
+    ],
+    "result": "The final page contains C in slot 0 and B in slot 1. B moved physically but retained its logical TID. This trace demonstrates delayed compaction, stable slots, total-versus-contiguous free space, reusable slot overhead, and payload-preserving movement."
+  },
+  "decisions": [
+    {
+      "title": "Stable slot numbers; movable payload bytes",
+      "rationale": "Indexes and callers keep compact (page,slot) identifiers while the page is free to defragment record bytes and update only local offsets.",
+      "tradeoff": "Every record pays eight bytes for indirection, and erased slot reuse means stale TIDs are not protected by a generation number.",
+      "source_refs": [
+        {
+          "path": "include/moderndbs/slotted_page.h",
+          "lines": "14-36",
+          "symbol": "TID",
+          "note": "Defines the external page-and-slot identity."
+        },
+        {
+          "path": "src/slotted_page.cc",
+          "lines": "203-228",
+          "symbol": "compactify",
+          "note": "Moves payloads and updates offsets without reordering slots."
+        }
+      ]
+    },
+    {
+      "title": "Lazy compaction with a total-space counter",
+      "rationale": "Deletes and shrinks are cheap; records move only when a request can fit after defragmentation but not in the current gap.",
+      "tradeoff": "The header and allocation logic must track two notions of free space, and later allocation may incur an expensive full-page move.",
+      "source_refs": [
+        {
+          "path": "src/slotted_page.cc",
+          "lines": "67-109",
+          "symbol": "fragmentation / allocation",
+          "note": "Compares total and contiguous capacity before deciding to compact."
+        }
+      ]
+    },
+    {
+      "title": "Forwarding metadata lives in the slot",
+      "rationale": "The original page can always hold a redirect after a growing update, even if another transaction has consumed all released data bytes.",
+      "tradeoff": "The tag restricts representable bit patterns, and complete scan identity would require storing/deriving the original TID at the target—missing here.",
+      "source_refs": [
+        {
+          "path": "include/moderndbs/slotted_page.h",
+          "lines": "53-98",
+          "symbol": "Slot encoding",
+          "note": "Multiplexes local record metadata and a raw TID in one fixed-size entry."
+        }
+      ]
+    },
+    {
+      "title": "Rewrite the original redirect instead of chaining targets",
+      "rationale": "Point access remains bounded to original plus one target, and replacing a target has predictable cleanup.",
+      "tradeoff": "Resize becomes a multi-page copy/update/erase sequence with no demonstrated crash atomicity or concurrent protocol.",
+      "source_refs": [
+        {
+          "path": "src/sp_segment.cc",
+          "lines": "339-359",
+          "symbol": "redirect replacement",
+          "note": "Allocates/marks a new target, rewrites the original source, and erases the old target."
+        }
+      ]
+    },
+    {
+      "title": "Four-bit conservative FSI entries",
+      "rationale": "A tiny summary can reject obviously full pages without fetching each data page, and lower-bound decoding avoids unsafe overestimation.",
+      "tradeoff": "The fixed bucket table creates safe but sometimes severe false negatives, especially for requests above 896 bytes and page sizes above 1 KiB.",
+      "source_refs": [
+        {
+          "path": "src/fsi_segment.cc",
+          "lines": "54-76",
+          "symbol": "FSI encoding",
+          "note": "Selects the largest decoded lower bound not exceeding actual free bytes."
+        }
+      ]
+    },
+    {
+      "title": "Process-local allocation and scan hints",
+      "rationale": "The last successful data page and next FSI scan position avoid repeatedly searching from the beginning in append-heavy workloads.",
+      "tradeoff": "Both hints are global, unpersisted, keyed only by segment ID, and unsynchronized; they are performance shortcuts, not durable metadata.",
+      "source_refs": [
+        {
+          "path": "src/fsi_segment.cc",
+          "lines": "7-8",
+          "symbol": "next_search_page",
+          "note": "Global rotating FSI cursor."
+        },
+        {
+          "path": "src/sp_segment.cc",
+          "lines": "10-13",
+          "symbol": "allocation_hints",
+          "note": "Global per-segment most-recent allocation page."
+        }
+      ]
+    }
+  ],
+  "tests": [
+    {
+      "name": "Constructor / Allocation / AllocateErase",
+      "proves": "Header initialization, opposing growth, exact slot/data overhead, first-free reuse, middle holes, and trailing slot-array shrink.",
+      "failure_mode": "Off-by-one frontier, charging a slot twice, failing to reuse a hole, or moving live slot IDs during erase.",
+      "source_refs": [
+        {
+          "path": "test/slotted_page_test.cc",
+          "lines": "18-108",
+          "symbol": "Constructor / Allocation / AllocateErase",
+          "note": "Asserts every header field through allocation and several erase positions."
+        }
+      ]
+    },
+    {
+      "name": "RelocateWithoutBuffer / RelocateWithCompactification",
+      "proves": "A record can grow using a new local byte range and can recover fragmented capacity through compaction.",
+      "failure_mode": "Incorrect free-space delta, overwritten prefix, failure to clear/pack the old region, or wrong final slot offset.",
+      "source_refs": [
+        {
+          "path": "test/slotted_page_test.cc",
+          "lines": "111-170",
+          "symbol": "Relocate*",
+          "note": "Covers direct growth and a full-page growth that consumes the last 20 bytes after compaction."
+        }
+      ]
+    },
+    {
+      "name": "FragmentedFreeSpace / AllocateAfterFragmentation",
+      "proves": "Middle erase and relocation expose the expected fragmented byte count; allocation compacts without corrupting patterned neighbors.",
+      "failure_mode": "Treating holes as contiguous or moving records in an overwrite-prone order.",
+      "source_refs": [
+        {
+          "path": "test/slotted_page_test.cc",
+          "lines": "174-220",
+          "symbol": "Fragmentation edge tests",
+          "note": "Locally added tests inspect fragmentation and every byte of two surviving 200-byte records."
+        }
+      ]
+    },
+    {
+      "name": "FSIEncoding / FSIBucketBoundaryFindsPage",
+      "proves": "Decoded codes are conservative for every 0..1023 byte value and a page above a bucket threshold is still found for a smaller request.",
+      "failure_mode": "Overestimating capacity, reversed code comparison, or mishandling a nibble threshold.",
+      "source_refs": [
+        {
+          "path": "test/segment_test.cc",
+          "lines": "178-200",
+          "symbol": "FSIEncoding",
+          "note": "Checks only decode(encode(x)) <= x, not completeness of candidate search."
+        },
+        {
+          "path": "test/segment_test.cc",
+          "lines": "533-553",
+          "symbol": "FSIBucketBoundaryFindsPage",
+          "note": "Checks the 100-byte actual / 80-byte requested threshold case."
+        }
+      ]
+    },
+    {
+      "name": "FSIPersistence / FSISpansMultiplePages",
+      "proves": "FSI nibbles live in BufferManager page bytes rather than FSISegment object fields, and target page 2050 maps beyond the first FSI page.",
+      "failure_mode": "Keeping entries only in object memory, wrong two-nibbles-per-byte arithmetic, or scanning only FSI page zero.",
+      "source_refs": [
+        {
+          "path": "test/segment_test.cc",
+          "lines": "220-244",
+          "symbol": "FSIPersistence",
+          "note": "Recreates FSISegment while retaining the same in-memory BufferManager; it is not a disk-restart test."
+        },
+        {
+          "path": "test/segment_test.cc",
+          "lines": "556-576",
+          "symbol": "FSISpansMultiplePages",
+          "note": "Updates and locates target page 2050 with a 1024-byte FSI page."
+        }
+      ]
+    },
+    {
+      "name": "SPRecordWriteReadRedirect / SPRepeatedResize",
+      "proves": "The original TID retains its payload prefix through local resize, first redirect, target growth, target replacement, and repeated size changes.",
+      "failure_mode": "Losing payload, returning the physical target TID, creating a redirect chain, or failing to preserve the target marker during relocation.",
+      "source_refs": [
+        {
+          "path": "test/segment_test.cc",
+          "lines": "301-361",
+          "symbol": "SPRecordWriteReadRedirect",
+          "note": "Exercises many resize sizes through one original TID."
+        },
+        {
+          "path": "test/segment_test.cc",
+          "lines": "579-602",
+          "symbol": "SPRepeatedResizeKeepsPayloadAcrossRedirectChanges",
+          "note": "Locally added alternating growth/shrink regression test."
+        }
+      ]
+    },
+    {
+      "name": "SPEraseRedirectReleasesTargetSpace",
+      "proves": "Erasing an original redirect also frees its target and makes the target page a candidate for a later 300-byte allocation.",
+      "failure_mode": "Clearing only the forwarding slot, leaking target payload, or forgetting to refresh target-page FSI.",
+      "source_refs": [
+        {
+          "path": "test/segment_test.cc",
+          "lines": "605-635",
+          "symbol": "SPEraseRedirectReleasesTargetSpace",
+          "note": "Locally added test observes the target page and requires immediate reuse after erase."
+        }
+      ]
+    },
+    {
+      "name": "SPFuzzing",
+      "proves": "A deterministic 100-record workload preserves expected prefixes across randomized sizes, two resize rounds, and a subset of erases.",
+      "failure_mode": "Cross-record corruption, prefix loss, redirect replacement error, or erase of the wrong record.",
+      "source_refs": [
+        {
+          "path": "test/segment_test.cc",
+          "lines": "402-529",
+          "symbol": "SPFuzzing",
+          "note": "Broad deterministic coverage, but not concurrency, crash recovery, full scans, or stale-TID reuse."
+        }
+      ]
+    }
+  ],
+  "drills": [
+    {
+      "prompt": "Insert 200-byte A, insert 200-byte B, then delete A on a 1024-byte page. Draw slots, data_start, total free space, contiguous free space, and fragmentation.",
+      "format": "trace",
+      "answer": "Header is 12 bytes and each slot is 8. A is slot 0 at offset 824; B is slot 1 at offset 624. After deleting A, slot 0 is empty/reusable, slot 1 still points to B at 624, slot_count remains 2, first_free_slot=0, data_start=624, total free_space=796, contiguous space=596, and fragmentation=200. No eager compaction is needed.",
+      "checklist": [
+        "Slots and records grow from opposite ends.",
+        "Keeps B at its old offset after lazy delete.",
+        "Marks slot 0 reusable without renumbering slot 1.",
+        "Separates 796 total from 596 contiguous bytes.",
+        "Identifies the 200-byte hole."
+      ]
+    },
+    {
+      "prompt": "Write compactification pseudocode that preserves TIDs and cannot overwrite an unmoved record.",
+      "format": "pseudocode",
+      "answer": "Collect live local slot IDs, sort them by current offset descending, set next=page_size, and for each slot decrement next by its length, memmove the payload to next, and write only that slot's offset. Then set data_start=next and free_space=data_start-slot_end. Slot indices never move; redirects and empty slots are skipped.",
+      "checklist": [
+        "Operates on slot IDs, not copied slot order.",
+        "Uses a safe movement order and memmove.",
+        "Updates every moved offset.",
+        "Does not move redirect entries as payload.",
+        "Recomputes frontiers from live state."
+      ]
+    },
+    {
+      "prompt": "Decode a 64-bit slot whose top byte is 0xFF, target byte is 0x00, offset is 0x000320, and size is 0x000040.",
+      "format": "trace",
+      "answer": "Top byte 0xFF makes it a local slot, target byte zero means it is not marked as a redirect target, offset 0x320=800, and size 0x40=64. Because offset and size are not both zero, it is a live 64-byte local record at page bytes [800,864).",
+      "checklist": [
+        "Checks the tag before reading fields.",
+        "Converts offset and size correctly.",
+        "Distinguishes target marker from redirect tag.",
+        "Does not call a zero-size or nonzero-offset record empty."
+      ]
+    },
+    {
+      "prompt": "Give the one-hop algorithm for resizing a TID that already redirects when its target cannot grow in place.",
+      "format": "pseudocode",
+      "answer": "Read the prefix from the old target, allocate and initialize a new target, mark it as relocated, rewrite the original source slot directly to the new target, then erase the old target and refresh both FSI entries. Never turn old_target into a redirect.",
+      "checklist": [
+        "Starts from the original source and old target.",
+        "Copies min(old_size,new_size) bytes.",
+        "Initializes the new target before publishing it.",
+        "Rewrites the original redirect directly.",
+        "Erases the old target and updates FSI."
+      ]
+    },
+    {
+      "prompt": "Explain why decode(encode(x)) <= x is safe but insufficient to prove that FSI.find will find every page that fits.",
+      "format": "explain",
+      "answer": "The inequality means an entry never promises more free bytes than were measured, so a matching lower-bound code is safe. But rounding down loses information. With this table, 1000 free bytes on a 1 KiB page encodes to 896; a 900-byte request needs code 15 and rejects that page. Exact page validation protects against false positives, while false negatives only waste capacity.",
+      "checklist": [
+        "Defines conservative lower-bound encoding.",
+        "Separates safety from completeness.",
+        "Provides the 1000→896 / request-900 example.",
+        "Mentions exact candidate recheck.",
+        "Identifies wasted space/new-page cost."
+      ]
+    },
+    {
+      "prompt": "Audit this claim: 'FSIPersistence proves free-space entries survive a database restart.'",
+      "format": "debug",
+      "answer": "The claim is too strong. The test destroys and recreates FSISegment but keeps the same BufferManager, whose in-memory page map retains the nibble. The supplied BufferManager explicitly performs no disk I/O and ignores dirty flags. The design routes FSI through normal pages, but restart persistence requires a real buffer/file manager test.",
+      "checklist": [
+        "Identifies the shared BufferManager lifetime.",
+        "Notes dummy BufferManager has no disk I/O.",
+        "Distinguishes object state from page state.",
+        "States what an actual restart test would recreate."
+      ]
+    },
+    {
+      "prompt": "Compare the project's redirect target with the full lecture scan contract.",
+      "format": "compare",
+      "answer": "The project marks a target slot and point operations follow the original slot to it, preserving the caller's TID. The lecture additionally requires a sequential scan to ignore forwarding stubs and, on encountering the physical target, return the original stable TID. This code stores no original TID with the target payload and exposes no scan API, so the marker alone is insufficient for that behavior.",
+      "checklist": [
+        "Credits one-hop point access.",
+        "Explains forwarding stubs are skipped during scans.",
+        "Requires original logical identity at the target.",
+        "Identifies the missing original-TID payload/scan API.",
+        "Does not generalize tests beyond what they cover."
+      ]
+    }
+  ],
+  "lecture_links": [
+    {
+      "chapter_id": "03-buffer-management",
+      "occurrence_ids": [
+        "dbimpl-01-storage-021",
+        "dbimpl-01-storage-023"
+      ],
+      "note": "Pages live in frames with shared/exclusive latches and dirty state; this is the storage contract SPSegment and FSI are written against, although the supplied test double omits those behaviors."
+    },
+    {
+      "chapter_id": "04-segments-space-and-update-strategies",
+      "occurrence_ids": [
+        "dbimpl-02-storage-access-032",
+        "dbimpl-02-storage-access-033",
+        "dbimpl-02-storage-access-034",
+        "dbimpl-02-storage-access-035"
+      ],
+      "note": "Why a compact FSI exists, how four-bit approximate classes trade precision for size, why linear scanning needs hints, and how locality knowledge can improve allocation."
+    },
+    {
+      "chapter_id": "05-slotted-pages-and-record-layout",
+      "occurrence_ids": [
+        "dbimpl-03-access-tuples-001",
+        "dbimpl-03-access-tuples-004",
+        "dbimpl-03-access-tuples-005",
+        "dbimpl-03-access-tuples-006"
+      ],
+      "note": "Stable (page,slot) TIDs, opposing page growth, delayed compaction, header fields, reusable-slot hints, and the free-slot versus zero-length-record distinction."
+    },
+    {
+      "chapter_id": "05-slotted-pages-and-record-layout",
+      "occurrence_ids": [
+        "dbimpl-03-access-tuples-007",
+        "dbimpl-03-access-tuples-010",
+        "dbimpl-03-access-tuples-015"
+      ],
+      "note": "The undo/update problem that motivates slot-resident redirects, tagged eight-byte slots, redirect-target marking, and the original-TID requirement for sequential scans."
+    },
+    {
+      "chapter_id": "06-compression-and-long-records",
+      "occurrence_ids": [
+        "dbimpl-03-access-tuples-045",
+        "dbimpl-04-access-btrees-003",
+        "dbimpl-04-access-btrees-004"
+      ],
+      "note": "Scope boundary: this project rejects any one record larger than a slotted page; true long records need BLOB/CLOB representations spanning extents or tree-like structures."
+    }
+  ],
+  "limitations": [
+    "The student report is treated as commentary, not authority. Its claims were retained only where README, current source, tests, and independent traces agree.",
+    "The supplied BufferManager explicitly has no disk I/O, locking, eviction, page-count enforcement, or dirty handling. Segment and FSI code exercise the intended fix/unfix interface, but persistence, concurrency, and replacement behavior are not demonstrated.",
+    "FSIPersistence recreates only FSISegment while sharing one in-memory BufferManager. It proves page-backed rather than object-backed state, not survival across a new manager/process or disk restart.",
+    "The FSI's fixed thresholds top out at 896 before the special exactly-max bucket. This is conservative but can miss large usable gaps; the loss becomes extreme on 4 KiB pages used by the benchmark.",
+    "The lecture's page header includes an LSN for recovery; this project's 12-byte header does not. Redirect replacement and schema/page allocation are multi-page sequences with no WAL, crash atomicity, or rollback protocol.",
+    "The project marks redirect targets but stores no original TID with their payload and has no sequential scan API. It therefore does not implement the lecture rule that scans skip redirect stubs yet report a relocated record under its original logical TID.",
+    "TID/slot encodings use 24-bit size/offset fields and reserve a top-byte pattern to distinguish redirects. The implementation asserts against one class of raw TIDs but does not provide comprehensive page-size/page-number range guards.",
+    "Process-global FSI cursors and allocation hints are keyed only by segment ID, are not synchronized, are not reset per BufferManager/database, and are not persisted. They must be viewed solely as best-effort single-process shortcuts.",
+    "The full project test suite was not runnable because this checkout has no build directory and CMake is unavailable. Independent clang++ smoke programs did execute successfully for compaction/payload preservation, conservative and multi-page FSI behavior, one-hop redirect replacement, old-target reclamation, and erase.",
+    "Visible tests do not cover stale-TID slot reuse, direct operations on a redirect-target TID, cross-segment redirects, real table scans, crash points during redirect replacement, concurrent allocations/resizes, or actual disk reopen."
+  ],
+  "exam_relevance": {
+    "priority": "high",
+    "reason": "The exam corpus contains a verified page-state drawing task and a hexdump/TID/redirect topic. This implementation is especially useful for practicing exact header/slot arithmetic and redirect tagging, while the lecture must supply scan identity and aligned record-layout details missing from the code.",
+    "question_ids": [
+      "protocol-q-006",
+      "protocol-q-007"
+    ],
+    "most_important_transfer": "Be able to draw lazy deletion and compaction byte-for-byte, decode a slot only after its tag, and explain both point redirection and the stronger lecture scan contract."
+  },
+  "audit": {
+    "project_root": "/Users/nkhalatiani/Downloads/slotted-pages",
+    "report_path": "/Users/nkhalatiani/Downloads/slotted-pages-report.md",
+    "course_data_root": "/Users/nkhalatiani/Desktop/mdb/mdb-lecture-atlas-pages/public/generated/course",
+    "verification": [
+      "README contract compared with current headers and implementations.",
+      "Every SlottedPage and Segment test read as a behavioral specification, including uncommitted edge tests.",
+      "Report claims checked against exact source lines and corrected where persistence or scan semantics were broader than the evidence.",
+      "Independent clang++ smoke tests executed for page compaction, payload preservation, FSI bucket conservatism, FSI page spanning, redirect replacement, and target cleanup.",
+      "Chapter/occurrence IDs resolved against chapters.json and evidence-index.json.",
+      "Lecture interpretations checked against slide-explanations.json and study-briefs.json.",
+      "Exam transfer cross-checked against exam-practice.json."
+    ]
+  }
+}

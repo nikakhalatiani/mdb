@@ -6,7 +6,8 @@
   "scripts": {
     "audit": "node scripts/audit-content.mjs",
     "build:exam-practice": "node scripts/build-exam-practice.mjs",
-    "build": "vite build",
+    "build:exercise-labs": "node scripts/build-exercise-labs.mjs",
+    "build": "npm run build:exercise-labs && npm run audit && vite build",
     "dev": "vite --host 127.0.0.1",
     "merge:slide-explanations": "node scripts/merge-gpt-slide-explanations.mjs",
     "preview": "vite preview --host 127.0.0.1"

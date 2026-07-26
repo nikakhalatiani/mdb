@@ -1,10 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ExpandableImage } from "./ExpandableImage";
 import { ExamPractice } from "./exam/ExamPractice";
 import type { ExamBank } from "./exam/types";
+import { ExerciseLabs } from "./exercises/ExerciseLabs";
+import type {
+  ExerciseLab,
+  ExerciseLabCollection,
+} from "./exercises/types";
 
 type EvidenceFrame = {
   timestamp_s: number;
@@ -147,10 +152,11 @@ type LoadedGuide = {
   studyBriefs: StudyBriefCollection;
   slideExplanations: SlideExplanationCollection;
   examBank: ExamBank;
+  exerciseLabs: ExerciseLabCollection;
 };
 
 type Filter = "all" | "slide" | "board";
-type Mode = "lecture" | "exam";
+type Mode = "lecture" | "exam" | "exercise";
 
 function SearchIcon() {
   return (
@@ -171,6 +177,13 @@ function ChevronDownIcon() {
 
 const COURSE_ROOT = "./generated/course";
 const SOURCE_ROOT = "file:///MDB_SOURCE_FILES";
+const EMPTY_EXERCISE_LABS: ExerciseLabCollection = {
+  generated_at: "",
+  title: "Implementation Exercise Labs",
+  warning: "Exercise lab data is temporarily unavailable.",
+  methodology: [],
+  labs: [],
+};
 
 async function loadJson<T>(path: string): Promise<T> {
   const response = await fetch(path, { cache: "no-store" });
@@ -181,7 +194,15 @@ async function loadJson<T>(path: string): Promise<T> {
 }
 
 async function loadGuide(): Promise<LoadedGuide> {
-  const [guide, evidence, notes, studyBriefs, slideExplanations, examBank] =
+  const [
+    guide,
+    evidence,
+    notes,
+    studyBriefs,
+    slideExplanations,
+    examBank,
+    exerciseLabs,
+  ] =
     await Promise.all([
     loadJson<CourseGuide>(`${COURSE_ROOT}/chapters.json`),
     loadJson<{ evidence: VisualRecord[] }>(`${COURSE_ROOT}/evidence-index.json`),
@@ -193,6 +214,9 @@ async function loadGuide(): Promise<LoadedGuide> {
       `${COURSE_ROOT}/slide-explanations.json`,
     ),
     loadJson<ExamBank>(`${COURSE_ROOT}/exam-practice.json`),
+    loadJson<ExerciseLabCollection>(
+      `${COURSE_ROOT}/exercise-labs.json`,
+    ).catch(() => EMPTY_EXERCISE_LABS),
   ]);
   return {
     guide,
@@ -204,6 +228,7 @@ async function loadGuide(): Promise<LoadedGuide> {
     studyBriefs,
     slideExplanations,
     examBank,
+    exerciseLabs,
   };
 }
 
@@ -292,7 +317,7 @@ function RecordCard({
   const notes = record.notes;
   const study = record.study;
   return (
-    <article className="atlas-card" id={record.occurrence_id}>
+    <article className="atlas-card" id={record.occurrence_id} tabIndex={-1}>
       <header className="atlas-card-header">
         <div>
           <p className="atlas-card-index">
@@ -438,13 +463,17 @@ function RecordCard({
 function ChapterOverview({
   chapter,
   examQuestionCount,
+  relatedExercises,
   localSources,
   onOpenExam,
+  onOpenExercise,
 }: {
   chapter: Chapter;
   examQuestionCount: number;
+  relatedExercises: ExerciseLab[];
   localSources: boolean;
   onOpenExam: () => void;
+  onOpenExercise: (exerciseId: string) => void;
 }) {
   return (
     <>
@@ -464,6 +493,20 @@ function ChapterOverview({
               Practice {examQuestionCount} recalled exam task
               {examQuestionCount === 1 ? "" : "s"} for this chapter →
             </button>
+          ) : null}
+          {relatedExercises.length ? (
+            <div className="atlas-exercise-cta-group">
+              <span>Build the concepts:</span>
+              {relatedExercises.map((exercise) => (
+                <button
+                  key={exercise.id}
+                  onClick={() => onOpenExercise(exercise.id)}
+                  type="button"
+                >
+                  {exercise.title} →
+                </button>
+              ))}
+            </div>
           ) : null}
         </div>
         <div className="atlas-hero-stats" aria-label="Chapter statistics">
@@ -608,8 +651,10 @@ export function StudyGuideApp() {
   const [filter, setFilter] = useState<Filter>("all");
   const [chapterId, setChapterId] = useState("");
   const [examChapterId, setExamChapterId] = useState("all");
+  const [exerciseId, setExerciseId] = useState("");
   const [localSources, setLocalSources] = useState(false);
   const [pendingEvidenceId, setPendingEvidenceId] = useState("");
+  const mainRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     let active = true;
@@ -618,6 +663,7 @@ export function StudyGuideApp() {
         if (!active) return;
         setLoaded(data);
         setChapterId(data.guide.chapters[0]?.id ?? "");
+        setExerciseId(data.exerciseLabs.labs[0]?.id ?? "");
       })
       .catch((reason: unknown) => {
         if (active) {
@@ -652,6 +698,15 @@ export function StudyGuideApp() {
       }
     }
     return counts;
+  }, [loaded]);
+  const exercisesByChapter = useMemo(() => {
+    const exercises = new Map<string, ExerciseLab[]>();
+    for (const lab of loaded?.exerciseLabs.labs ?? []) {
+      for (const id of lab.chapter_ids) {
+        exercises.set(id, [...(exercises.get(id) ?? []), lab]);
+      }
+    }
+    return exercises;
   }, [loaded]);
   const chapterRecords = useMemo(() => {
     if (!loaded || !chapter) return [];
@@ -696,6 +751,7 @@ export function StudyGuideApp() {
     const target = document.getElementById(pendingEvidenceId);
     if (!target) return;
     target.scrollIntoView({ behavior: "smooth", block: "start" });
+    target.focus({ preventScroll: true });
     setPendingEvidenceId("");
   }, [chapterId, loaded, mode, pendingEvidenceId]);
 
@@ -705,6 +761,20 @@ export function StudyGuideApp() {
     setQuery("");
     setFilter("all");
     setPendingEvidenceId(occurrenceId);
+  }
+
+  function focusMain() {
+    window.requestAnimationFrame(() => {
+      mainRef.current?.focus({ preventScroll: true });
+    });
+  }
+
+  function openExercise(targetExerciseId: string) {
+    setMode("exercise");
+    setExerciseId(targetExerciseId);
+    setQuery("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    focusMain();
   }
 
   return (
@@ -724,6 +794,8 @@ export function StudyGuideApp() {
             onClick={() => {
               setMode("lecture");
               setQuery("");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+              focusMain();
             }}
             type="button"
           >
@@ -741,36 +813,76 @@ export function StudyGuideApp() {
                   ? chapterId
                   : "all",
               );
+              window.scrollTo({ top: 0, behavior: "smooth" });
+              focusMain();
             }}
             type="button"
           >
             Exam practice
           </button>
+          <button
+            aria-pressed={mode === "exercise"}
+            data-active={mode === "exercise"}
+            onClick={() =>
+              openExercise(
+                exerciseId || loaded?.exerciseLabs.labs[0]?.id || "",
+              )
+            }
+            type="button"
+          >
+            Exercise labs
+          </button>
         </nav>
         <label className="atlas-mobile-chapter">
-          <span className="atlas-mobile-chapter-label">Chapter</span>
+          <span className="atlas-mobile-chapter-label">
+            {mode === "exercise" ? "Exercise" : "Chapter"}
+          </span>
           <span className="atlas-select-control">
             <select
-              aria-label="Select course chapter"
+              aria-label={
+                mode === "exercise"
+                  ? "Select implementation exercise"
+                  : "Select course chapter"
+              }
               onChange={(event) => {
                 if (mode === "exam") {
                   setExamChapterId(event.target.value);
+                } else if (mode === "exercise") {
+                  openExercise(event.target.value);
                 } else {
                   setChapterId(event.target.value);
                 }
-                setQuery("");
+                if (mode !== "exercise") setQuery("");
               }}
-              value={mode === "exam" ? examChapterId : chapterId}
+              value={
+                mode === "exam"
+                  ? examChapterId
+                  : mode === "exercise"
+                    ? exerciseId
+                    : chapterId
+              }
             >
-              {mode === "exam" ? <option value="all">All topics</option> : null}
-              {(loaded?.guide.chapters ?? []).map((item) => (
-                <option key={item.id} value={item.id}>
-                  {String(item.number).padStart(2, "0")} · {item.title}
-                  {mode === "exam"
-                    ? ` (${examQuestionCountByChapter.get(item.id) ?? 0})`
-                    : ""}
-                </option>
-              ))}
+              {mode === "exercise" ? (
+                (loaded?.exerciseLabs.labs ?? []).map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {String(item.number).padStart(2, "0")} · {item.title}
+                  </option>
+                ))
+              ) : (
+                <>
+                  {mode === "exam" ? (
+                    <option value="all">All topics</option>
+                  ) : null}
+                  {(loaded?.guide.chapters ?? []).map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {String(item.number).padStart(2, "0")} · {item.title}
+                      {mode === "exam"
+                        ? ` (${examQuestionCountByChapter.get(item.id) ?? 0})`
+                        : ""}
+                    </option>
+                  ))}
+                </>
+              )}
             </select>
             <span className="atlas-select-icon">
               <ChevronDownIcon />
@@ -779,7 +891,11 @@ export function StudyGuideApp() {
         </label>
         <label className="atlas-search">
           <span className="sr-only">
-            {mode === "exam" ? "Search exam tasks" : "Search this chapter"}
+            {mode === "exam"
+              ? "Search exam tasks"
+              : mode === "exercise"
+                ? "Search this exercise"
+                : "Search this chapter"}
           </span>
           <span className="atlas-search-icon">
             <SearchIcon />
@@ -788,12 +904,16 @@ export function StudyGuideApp() {
             aria-label={
               mode === "exam"
                 ? "Search exam practice questions"
+                : mode === "exercise"
+                  ? "Search exercise concepts, tests, decisions, and drills"
                 : "Search slides, board work, teaching explanations, and transcript"
             }
             onChange={(event) => setQuery(event.target.value)}
             placeholder={
               mode === "exam"
                 ? "Search recalled tasks and exercise drills…"
+                : mode === "exercise"
+                  ? "Search this exercise’s algorithms, tests, and exam drills…"
                 : "Search this chapter’s slides and teaching explanations…"
             }
             type="search"
@@ -804,6 +924,8 @@ export function StudyGuideApp() {
           {loaded
             ? mode === "exam"
               ? `${loaded.examBank.questions.length} audited tasks`
+              : mode === "exercise"
+                ? `${loaded.exerciseLabs.labs.length} implementation labs`
               : `${loaded.guide.stats.recording_count} lectures · ${loaded.records.length} learning units`
             : "Loading evidence…"}
         </div>
@@ -812,21 +934,55 @@ export function StudyGuideApp() {
       <div className="atlas-layout">
         <aside className="atlas-sidebar">
           <p className="atlas-eyebrow">
-            {mode === "exam" ? "Practice topics" : "Course chapters"}
+            {mode === "exam"
+              ? "Practice topics"
+              : mode === "exercise"
+                ? "Programming assignments"
+                : "Course chapters"}
           </p>
           <h2>
-            {mode === "exam" ? "Exam Practice Lab" : "Database Implementation"}
+            {mode === "exam"
+              ? "Exam Practice Lab"
+              : mode === "exercise"
+                ? "Exercise Labs"
+                : "Database Implementation"}
           </h2>
           <p className="atlas-sidebar-note">
             {loaded
               ? mode === "exam"
                 ? "Past recollections, exact exercise drills, and lecture-checked answers."
+                : mode === "exercise"
+                  ? "Six audited implementations turned into algorithm and pseudocode practice."
                 : `${loaded.guide.stats.duration_hours} hours grouped by concept, not by file.`
               : "Loading semantic chapter map…"}
           </p>
-          <nav className="atlas-nav atlas-chapter-nav" aria-label="Course chapters">
+          <nav
+            className="atlas-nav atlas-chapter-nav"
+            aria-label={
+              mode === "exercise"
+                ? "Programming exercises"
+                : "Course chapters"
+            }
+          >
+            {mode === "exercise"
+              ? (loaded?.exerciseLabs.labs ?? []).map((lab) => (
+                  <button
+                    aria-pressed={lab.id === exerciseId}
+                    data-active={lab.id === exerciseId}
+                    key={lab.id}
+                    onClick={() => openExercise(lab.id)}
+                    type="button"
+                  >
+                    <span className="atlas-nav-code">
+                      {String(lab.number).padStart(2, "0")}
+                    </span>
+                    <span>{lab.title}</span>
+                  </button>
+                ))
+              : null}
             {mode === "exam" ? (
               <button
+                aria-pressed={examChapterId === "all"}
                 data-active={examChapterId === "all"}
                 onClick={() => {
                   setExamChapterId("all");
@@ -839,8 +995,14 @@ export function StudyGuideApp() {
                 <span>All practice topics</span>
               </button>
             ) : null}
-            {(loaded?.guide.chapters ?? []).map((item) => (
+            {mode !== "exercise"
+              ? (loaded?.guide.chapters ?? []).map((item) => (
               <button
+                aria-pressed={
+                  mode === "exam"
+                    ? item.id === examChapterId
+                    : item.id === chapterId
+                }
                 data-active={
                   mode === "exam"
                     ? item.id === examChapterId
@@ -868,12 +1030,22 @@ export function StudyGuideApp() {
                     : ""}
                 </span>
               </button>
-            ))}
+                ))
+              : null}
           </nav>
         </aside>
 
-        <main className="atlas-main">
-          {mode === "exam" && loaded ? (
+        <main className="atlas-main" ref={mainRef} tabIndex={-1}>
+          {mode === "exercise" && loaded ? (
+            <ExerciseLabs
+              chapters={loaded.guide.chapters}
+              collection={loaded.exerciseLabs}
+              evidence={loaded.records}
+              exerciseId={exerciseId}
+              onOpenEvidence={openEvidence}
+              query={query}
+            />
+          ) : mode === "exam" && loaded ? (
             <ExamPractice
               bank={loaded.examBank}
               chapterId={examChapterId}
@@ -890,6 +1062,7 @@ export function StudyGuideApp() {
               examQuestionCount={
                 examQuestionCountByChapter.get(chapter.id) ?? 0
               }
+              relatedExercises={exercisesByChapter.get(chapter.id) ?? []}
               localSources={localSources}
               onOpenExam={() => {
                 setExamChapterId(chapter.id);
@@ -897,6 +1070,7 @@ export function StudyGuideApp() {
                 setQuery("");
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
+              onOpenExercise={openExercise}
             />
           ) : null}
           {studyBrief && loaded ? (

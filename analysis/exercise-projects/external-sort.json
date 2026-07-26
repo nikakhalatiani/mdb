@@ -1,0 +1,769 @@
+{
+  "id": "external-sort",
+  "number": 4,
+  "title": "External Sort and K-Way Merge",
+  "subtitle": "Sort data larger than memory by forming disk runs, merging their heads, and accounting for every byte and I/O pass.",
+  "project_label": "external-sort",
+  "report_status": "available",
+  "chapter_ids": [
+    "02-storage-architecture-and-memory-hierarchy",
+    "14-relational-operators-and-joins",
+    "15-sort-group-and-set-operations"
+  ],
+  "assignment_brief": [
+    "Sort num_values unsigned 64-bit little-endian integers from an input File into an output File in ascending order. The data may be much larger than memory.",
+    "The required external-sort structure is run formation followed by k-way merging: read a bounded chunk, sort it in memory, write a sorted temporary run, then repeatedly combine run heads with a min-priority structure until one sorted run remains.",
+    "mem_size is a hard heap-memory ceiling, not merely the size of the value buffers. A valid budget must simultaneously include run-formation or merge buffers, the min-heap, cursor objects, vector storage, run descriptors, File objects, and allocation overhead."
+  ],
+  "learning_outcomes": [
+    "Trace run formation and a k-way merge while stating the sorted-run and heap-frontier invariants.",
+    "Calculate run count, feasible fan-in, merge levels, and total read/write volume under a stated memory and block model.",
+    "Budget merge memory for k input buffers, one output buffer, k heap entries, cursor metadata, run bookkeeping, and allocation overhead.",
+    "Explain why buffered sequential I/O dominates one-value-at-a-time I/O even when both algorithms perform the same comparison work.",
+    "Evaluate the submitted implementation critically: distinguish value-order correctness from compliance with the hard memory contract and from I/O efficiency."
+  ],
+  "artifacts": [
+    "README.md assignment contract, especially the hard heap-memory ceiling",
+    "include/moderndbs/external_sort.h public API and data format",
+    "src/external_sort.cc complete student implementation",
+    "include/moderndbs/file.h and src/file/posix_file.cc block-I/O and temporary-file API",
+    "test/external_sort_test.cc functional, advanced-run-count, and optional memory tests",
+    "tools/external_sort.cc generate/print/sort command-line harness",
+    "bench/bm_external_sort.cc random-input benchmark",
+    "external-sort-report.md retrospective report, cross-checked against source, tests, git history, and an independent allocation audit"
+  ],
+  "concepts": [
+    {
+      "title": "Phase 1: form sorted runs",
+      "takeaway": "Convert one unsorted stream into several independently sorted disk runs, each created from a memory-resident chunk.",
+      "explanation": [
+        "The implementation computes values_that_fit = floor(mem_size / 8). It repeatedly reads at most that many values, sorts the vector with std::sort, writes it to a resized temporary File, and records the file plus its value count as a Run.",
+        "The final partial chunk is handled with min(values_per_run, remaining). Each produced run is sorted, covers a disjoint input slice, and preserves every value including duplicates. This implementation uses simple memory-sized quicksort runs; it does not implement the lecture's replacement-selection optimization that can create average runs near twice the memory size."
+      ],
+      "pseudocode": [
+        "while input_pos < num_values:",
+        "  count := min(values_per_run, num_values - input_pos)",
+        "  buffer := read count values",
+        "  sort(buffer)",
+        "  run := new temporary file sized count * 8",
+        "  write buffer to run",
+        "  remember Run{file, count}",
+        "  input_pos := input_pos + count"
+      ],
+      "invariants": [
+        "Every completed run is internally nondecreasing.",
+        "The concatenation of run multisets equals the consumed input multiset.",
+        "The last run may contain fewer than values_per_run values.",
+        "File offsets and lengths are converted from values to bytes exactly once at the I/O boundary."
+      ],
+      "pitfalls": [
+        "Treating mem_size bytes as a count of uint64_t values.",
+        "Dropping or over-reading the final partial chunk.",
+        "Claiming that a value vector of size mem_size alone satisfies the heap limit; run descriptors and File allocations coexist with it.",
+        "Forgetting that this simple run-generation strategy can create many more runs than replacement selection."
+      ],
+      "source_refs": [
+        {
+          "path": "external-sort/README.md",
+          "lines": "8-23",
+          "symbol": "External Sort contract",
+          "note": "Defines input/output, hard memory limit, sorted runs, and k-way merge."
+        },
+        {
+          "path": "external-sort/src/external_sort.cc",
+          "lines": "11-16,29-42,49-88",
+          "symbol": "Run / read_values / write_values / create_initial_runs",
+          "note": "Implements value-to-byte conversion and simple sorted-run formation."
+        },
+        {
+          "path": "external-sort/test/external_sort_test.cc",
+          "lines": "132-182",
+          "symbol": "SmallNoPartialRun / SmallPartialLastRun",
+          "note": "Forces three-value runs and checks both exact and partial final chunks."
+        }
+      ]
+    },
+    {
+      "title": "Phase 2: merge the run frontier",
+      "takeaway": "Keep one current candidate per active run; the smallest candidate is the next global output.",
+      "explanation": [
+        "Each RunCursor refills a small sequential input buffer and returns values in its run's sorted order. The min-heap stores {value, run_index}; run_index identifies which cursor to advance after the minimum is emitted.",
+        "At every iteration the heap contains the smallest not-yet-emitted value from each nonempty run. Because each run is sorted, no hidden value in a run can be smaller than its head. Popping the global minimum, appending it to the output buffer, and replacing it with the next value from the same run preserves a sorted output frontier."
+      ],
+      "pseudocode": [
+        "for each run i:",
+        "  cursor[i] := buffered cursor over run i",
+        "  if cursor[i].next(x): heap.push({x, i})",
+        "while heap not empty:",
+        "  {x, i} := heap.pop_min()",
+        "  output_buffer.append(x)",
+        "  if output_buffer full: flush sequentially",
+        "  if cursor[i].next(y): heap.push({y, i})",
+        "flush remaining output values"
+      ],
+      "invariants": [
+        "The heap contains at most one entry per active input run.",
+        "Each heap entry is the smallest unconsumed value of its run.",
+        "The emitted sequence is nondecreasing.",
+        "Every pop advances exactly the run that supplied that value, so values are neither lost nor duplicated."
+      ],
+      "pitfalls": [
+        "Using std::priority_queue's default max-heap ordering.",
+        "Advancing every run after a pop instead of only the source run.",
+        "Dropping equal values; sorting here preserves bag multiplicity.",
+        "Reading one uint64_t per system call instead of buffering each run."
+      ],
+      "source_refs": [
+        {
+          "path": "external-sort/src/external_sort.cc",
+          "lines": "18-27,90-124",
+          "symbol": "HeapEntry / MinHeapCompare / RunCursor",
+          "note": "Defines the min-heap key/source pair and buffered per-run cursor."
+        },
+        {
+          "path": "external-sort/src/external_sort.cc",
+          "lines": "126-196",
+          "symbol": "merge_group",
+          "note": "Initializes one frontier value per run, repeatedly emits the minimum, and flushes output blocks."
+        },
+        {
+          "path": "external-sort/test/external_sort_test.cc",
+          "lines": "328-354",
+          "symbol": "SortRandomNumbers / SortEqualNumbers",
+          "note": "Compares the complete result with std::sort and verifies duplicate preservation."
+        }
+      ]
+    },
+    {
+      "title": "The hard memory contract",
+      "takeaway": "A memory budget is a sum over all simultaneously live heap allocations, not the largest vector considered in isolation.",
+      "explanation": [
+        "The submitted merge divides values_that_fit between input payload buffers and one output payload buffer. Those payloads alone consume approximately mem_size. It then allocates, outside that accounting, a vector of RunCursor objects, one allocation per cursor buffer, the priority_queue's HeapEntry vector, Run vectors, and heap-allocated PosixFile objects.",
+        "On the audited 64-bit ABI, RunCursor is 64 bytes, HeapEntry is 16 bytes, and Run is 16 bytes. With mem_size = 1024, V = 128 values and k = V/4 = 32, input/output payloads request 1024 bytes, cursors request 2048, heap entries need at least 512, the run vector needs at least 512, and 32 File objects add more. An independent global-operator-new counter measured 4,888 additional requested heap bytes—4.77 times the promised 1,024 bytes, excluding allocator metadata.",
+        "Run formation and final copy also allocate a value buffer of exactly mem_size while Run/File bookkeeping remains live. Therefore the implementation violates the README's hard ceiling even under a generous interpretation that ignores allocator headers."
+      ],
+      "pseudocode": [
+        "budget := mem_size",
+        "reserve fixed metadata and allocator safety margin first",
+        "choose k only if:",
+        "  k * input_buffer_bytes",
+        "  + output_buffer_bytes",
+        "  + k * heap_entry_bytes",
+        "  + k * cursor_bytes",
+        "  + run/file bookkeeping bytes",
+        "  + allocation overhead <= budget",
+        "use one preallocated arena or explicitly budget every container capacity"
+      ],
+      "invariants": [
+        "Peak simultaneous requested heap memory must never exceed mem_size.",
+        "Heap capacity, not merely heap size, belongs in the budget.",
+        "All k input buffers and the output buffer coexist during a merge.",
+        "Run descriptors, cursor arrays, File objects, and vector allocations coexist with payload buffers."
+      ],
+      "pitfalls": [
+        "Budgeting only uint64_t payloads and ignoring container/metadata storage.",
+        "Using max_runs_per_merge = values_that_fit / 4 without deriving the actual byte cost per run.",
+        "Forcing every buffer to at least one value when mem_size cannot hold k inputs plus output.",
+        "Treating the optional LimitedMemory test as proof of compliance: it is excluded unless RUN_LIMITED_MEMORY_TEST is defined and permits roughly 2x mem_size plus output storage.",
+        "Ignoring transient vector reallocation peaks and allocator bookkeeping."
+      ],
+      "source_refs": [
+        {
+          "path": "external-sort/README.md",
+          "lines": "15-18",
+          "symbol": "Result",
+          "note": "Uses mandatory language: no more heap bytes than mem_size."
+        },
+        {
+          "path": "external-sort/src/external_sort.cc",
+          "lines": "133-160",
+          "symbol": "merge_group memory division",
+          "note": "Payload buffers are sized from the full budget, then cursors and heap are independently allocated."
+        },
+        {
+          "path": "external-sort/src/external_sort.cc",
+          "lines": "218-269",
+          "symbol": "copy_run_to_output / external_sort",
+          "note": "Final copy allocates values_that_fit values while the Run/File bookkeeping still exists."
+        },
+        {
+          "path": "external-sort/test/external_sort_test.cc",
+          "lines": "217-299",
+          "symbol": "RUN_LIMITED_MEMORY_TEST / LimitedMemory",
+          "note": "The only memory test is compile-time optional and its tighter check still allows twice the internal budget."
+        }
+      ]
+    },
+    {
+      "title": "Fan-in, merge levels, and I/O cost",
+      "takeaway": "Larger fan-in reduces merge levels, but only if every run gets enough input buffering and the complete memory budget still holds.",
+      "explanation": [
+        "A balanced external merge sort with R initial runs and feasible fan-in k needs about ceil(log_k R) merge levels. Each full level reads and writes the data once, so run formation plus merge levels dominate I/O. The exact answer must state whether the final output write is counted as a merge write and whether pages or values are the unit.",
+        "This implementation caps run count by merging as soon as runs.size() reaches k. That bounds open temporary files, but it collapses the whole current set to one run and later repeatedly merges the ever-growing accumulated run with k-1 fresh runs. The result remains sorted, yet old data is rewritten in many batches instead of balanced levels. For k = 2 it degenerates into merging the accumulated prefix with every new run, yielding quadratic rewrite work in the number of runs."
+      ],
+      "pseudocode": [
+        "R := ceil(N / initial_run_capacity)",
+        "levels := ceil(log_base_k(R))",
+        "balanced plan: merge disjoint groups of <= k runs per level",
+        "repeat until one run remains",
+        "avoid: merge the entire accumulated result after every k-1 new runs"
+      ],
+      "invariants": [
+        "Every merge input is already sorted.",
+        "A merge pass partitions the current run set into disjoint groups.",
+        "Each input run is consumed exactly once within a balanced pass.",
+        "Fan-in must be derived from memory and useful I/O block sizes, not only the count of uint64_t payload slots."
+      ],
+      "pitfalls": [
+        "Counting comparisons but ignoring full-data read/write passes.",
+        "Choosing enormous k that leaves one-value input buffers and causes tiny I/O.",
+        "Assuming 'bounded number of temporary files' also implies near-optimal I/O.",
+        "Forgetting the partial final group in a merge pass."
+      ],
+      "source_refs": [
+        {
+          "path": "external-sort/src/external_sort.cc",
+          "lines": "79-84,198-216,251-267",
+          "symbol": "periodic merge / merge_pass / fan-in",
+          "note": "Shows early whole-set merges, groupwise passes, and max_runs_per_merge = max(2, V/4)."
+        },
+        {
+          "path": "external-sort-report.md",
+          "lines": "206-253,339-359,413-429",
+          "symbol": "Run Creation / Merge Pass / fan-in rationale",
+          "note": "Correctly identifies the temporary-file motive, but does not account for repeated rewrite cost or prove the memory budget."
+        },
+        {
+          "path": "external-sort/test/external_sort_test.cc",
+          "lines": "357-385",
+          "symbol": "ExternalSortTest / AdvancedExternalSortTest parameters",
+          "note": "Exercises both single-level and many-more-runs-than-fan-in cases."
+        }
+      ]
+    },
+    {
+      "title": "Block I/O and boundary behavior",
+      "takeaway": "The algorithm should turn sorted computation into large sequential reads and writes while preserving the File contract.",
+      "explanation": [
+        "read_values and write_values keep algorithmic positions in values but multiply by 8 when calling the byte-addressed File API. Every temporary and final output file is resized before write, satisfying the test File's strict bounds checks.",
+        "RunCursor amortizes read calls by refilling an input vector; output_buffer similarly batches writes. The command-line tool can generate descending or random binary inputs, print them, and invoke the sorter. The benchmark sorts 20,000 random values with an 8 KiB advertised memory size.",
+        "For nonempty input and mem_size < 8, the implementation silently truncates output to zero. That is not a valid sorted result and is not specified by the assignment; a production-quality API should reject an impossible budget or define a correct minimal-memory path."
+      ],
+      "pseudocode": [
+        "byte_offset := value_offset * sizeof(uint64_t)",
+        "byte_count  := value_count * sizeof(uint64_t)",
+        "resize destination before write",
+        "read/write sequential blocks, not one value per syscall"
+      ],
+      "invariants": [
+        "The output size is num_values * 8 for every successful nonempty sort.",
+        "No File write extends beyond the size established by resize.",
+        "Only the first num_values input integers are part of the requested sort.",
+        "The final output multiset equals the requested input multiset."
+      ],
+      "pitfalls": [
+        "Returning an empty output for an impossible memory budget.",
+        "Overflowing value_offset * 8, count * 8, or total_values * 8; the implementation has no checked arithmetic.",
+        "Trusting native uint64_t reinterpretation on a big-endian host even though the public format is little-endian.",
+        "Passing num_values larger than the actual input file."
+      ],
+      "source_refs": [
+        {
+          "path": "external-sort/include/moderndbs/external_sort.h",
+          "lines": "12-22",
+          "symbol": "external_sort",
+          "note": "Defines little-endian uint64_t input, output mode, and mem_size API."
+        },
+        {
+          "path": "external-sort/src/external_sort.cc",
+          "lines": "29-42,106-123,218-249",
+          "symbol": "I/O helpers / RunCursor::next / edge cases",
+          "note": "Implements block conversion/refill and the incorrect mem_size < 8 behavior."
+        },
+        {
+          "path": "external-sort/tools/external_sort.cc",
+          "lines": "15-34,38-69,144-165",
+          "symbol": "usage / write_values / mode_sort",
+          "note": "Provides reproducible file generation, inspection, and sorting."
+        },
+        {
+          "path": "external-sort/bench/bm_external_sort.cc",
+          "lines": "14-36",
+          "symbol": "ExternalSort_Random",
+          "note": "Defines the random-input benchmark workload."
+        }
+      ]
+    }
+  ],
+  "trace": {
+    "title": "Ten values with room for only three payload values",
+    "setup": "Use the test input [10, 5, 2, 9, 3, 8, 1, 4, 6, 7] and mem_size = 24 bytes. The implementation sets V = 3 and k = 2. This trace follows its actual early-merge schedule; it does not imply that the 24-byte heap contract is met.",
+    "steps": [
+      "Read [10,5,2], sort it, and write run A = [2,5,10].",
+      "Read [9,3,8], sort it, and write run B = [3,8,9]. runs.size() reaches 2, so merge A and B. Heap starts with heads 2(A), 3(B); repeated pop-and-refill creates C = [2,3,5,8,9,10].",
+      "Read [1,4,6], sort it, and write D = [1,4,6]. The run set [C,D] again reaches 2, so merge to E = [1,2,3,4,5,6,8,9,10]. Notice that all six values already in C are read and written again.",
+      "Read the partial final chunk [7] and write F = [7]. Merge [E,F] to G = [1,2,3,4,5,6,7,8,9,10]. The accumulated nine-value run is rewritten once more.",
+      "Resize the provided output to 80 bytes and copy G to it in chunks."
+    ],
+    "result": "The result is correctly sorted and duplicates would be preserved, but early whole-set merges repeatedly rewrite the accumulated prefix. During each two-way merge, the implementation also allocates two input buffers, an output buffer, cursor storage, a heap, runs, and File objects, so actual heap use exceeds 24 bytes."
+  },
+  "decisions": [
+    {
+      "title": "Materialize runs in anonymous temporary files",
+      "rationale": "Data larger than memory must leave RAM; make_temporary_file creates an unlinked file whose lifetime follows the Run's unique_ptr.",
+      "tradeoff": "Every live run consumes a file descriptor and a heap-allocated File object, so both descriptor fan-out and memory bookkeeping must be bounded.",
+      "source_refs": [
+        {
+          "path": "external-sort/src/external_sort.cc",
+          "lines": "13-16,70-74,156-157",
+          "symbol": "Run / temporary file creation",
+          "note": "Each initial or merged run owns one File."
+        },
+        {
+          "path": "external-sort/src/file/posix_file.cc",
+          "lines": "121-132",
+          "symbol": "File::make_temporary_file",
+          "note": "Uses mkstemp, immediately unlinks the name, and returns a heap-allocated PosixFile."
+        }
+      ]
+    },
+    {
+      "title": "Use {value, run_index} in a min-priority queue",
+      "rationale": "The minimum head is selected in O(log k), and the source index identifies exactly which cursor to refill.",
+      "tradeoff": "Each frontier item is 16 bytes on the audited ABI—twice the uint64_t payload—and priority_queue capacity is another unbudgeted heap allocation. A loser tree may reduce comparisons for repeated replace-min.",
+      "source_refs": [
+        {
+          "path": "external-sort/src/external_sort.cc",
+          "lines": "18-27,140-153,164-184",
+          "symbol": "HeapEntry / MinHeapCompare / heap loop",
+          "note": "Implements the merge frontier and source-run advancement."
+        }
+      ]
+    },
+    {
+      "title": "Buffer every input run and the output",
+      "rationale": "Chunked sequential I/O avoids one pread/pwrite per value and better uses device bandwidth.",
+      "tradeoff": "k independent vector allocations, cursor metadata, and an output vector make strict memory accounting substantially harder; very large k also makes each input buffer too small for efficient I/O.",
+      "source_refs": [
+        {
+          "path": "external-sort/src/external_sort.cc",
+          "lines": "90-124,133-160,168-193",
+          "symbol": "RunCursor / buffer split / output flush",
+          "note": "Owns one input vector per cursor and reserves an output vector."
+        },
+        {
+          "path": "external-sort-report.md",
+          "lines": "255-337",
+          "symbol": "RunCursor / Merge Group",
+          "note": "The performance rationale is valid; the report omits the container/metadata byte cost."
+        }
+      ]
+    },
+    {
+      "title": "Periodically merge while creating initial runs",
+      "rationale": "It bounds the number of simultaneously open temporary files when the number of initial chunks is enormous.",
+      "tradeoff": "The implementation repeatedly merges the previously accumulated large run with fresh runs, causing far more I/O than a balanced pass schedule. Bounded file descriptors and I/O optimality are separate goals.",
+      "source_refs": [
+        {
+          "path": "external-sort/src/external_sort.cc",
+          "lines": "79-84,198-216",
+          "symbol": "create_initial_runs / merge_pass",
+          "note": "Triggers a pass at the threshold and collapses the current run set."
+        },
+        {
+          "path": "external-sort-report.md",
+          "lines": "41-72,240-253",
+          "symbol": "Git history / periodic merge rationale",
+          "note": "Git commit 420124f confirms the file-count motivation, not memory or I/O optimality."
+        }
+      ]
+    },
+    {
+      "title": "Keep positions in values until the File boundary",
+      "rationale": "Algorithm code is easier to audit when all counts share the same unit and only I/O helpers multiply by sizeof(uint64_t).",
+      "tradeoff": "Every multiplication still needs overflow validation for robust untrusted inputs; this implementation does not check it.",
+      "source_refs": [
+        {
+          "path": "external-sort/src/external_sort.cc",
+          "lines": "11,29-42",
+          "symbol": "VALUE_SIZE / read_values / write_values",
+          "note": "Centralizes value-to-byte conversion."
+        }
+      ]
+    }
+  ],
+  "tests": [
+    {
+      "name": "EmptyFile + OneValue",
+      "proves": "The ordinary zero- and one-element boundaries resize output correctly and preserve the value.",
+      "failure_mode": "Base-case control flow, output sizing, or final-copy logic is broken.",
+      "source_refs": [
+        {
+          "path": "external-sort/test/external_sort_test.cc",
+          "lines": "105-128",
+          "symbol": "EmptyFile / OneValue",
+          "note": "Direct base-case assertions."
+        }
+      ]
+    },
+    {
+      "name": "SmallNoPartialRun + SmallPartialLastRun",
+      "proves": "With only 24 advertised bytes, multiple initial runs are merged and a final short run is handled.",
+      "failure_mode": "Chunk boundaries, last-run sizing, merge refill, or final output size is wrong.",
+      "source_refs": [
+        {
+          "path": "external-sort/test/external_sort_test.cc",
+          "lines": "131-182",
+          "symbol": "small run tests",
+          "note": "Uses 12 and 10 explicit values with room for three payload values."
+        }
+      ]
+    },
+    {
+      "name": "SortDescendingNumbers + SortRandomNumbers",
+      "proves": "Across in-memory and external cases, complete output matches a trusted std::sort result for adversarial order and random values.",
+      "failure_mode": "Run order, heap comparator, pass composition, or final copying corrupts global ordering.",
+      "source_refs": [
+        {
+          "path": "external-sort/test/external_sort_test.cc",
+          "lines": "303-337,357-372",
+          "symbol": "parameterized descending/random tests",
+          "note": "Covers 1 KiB and 1 MiB memory sizes with and without merging."
+        }
+      ]
+    },
+    {
+      "name": "SortEqualNumbers",
+      "proves": "The merge preserves duplicate multiplicity instead of accidentally implementing duplicate elimination.",
+      "failure_mode": "Equal heap keys are lost or coalesced.",
+      "source_refs": [
+        {
+          "path": "external-sort/test/external_sort_test.cc",
+          "lines": "340-354",
+          "symbol": "SortEqualNumbers",
+          "note": "Checks the entire equal-valued multiset."
+        }
+      ]
+    },
+    {
+      "name": "AdvancedExternalSortTest",
+      "proves": "Correctness survives cases where the number of initial runs is far larger than the chosen fan-in and multiple reductions are necessary.",
+      "failure_mode": "The implementation opens too many files, fails to reduce run count, or loses data across repeated merges.",
+      "source_refs": [
+        {
+          "path": "external-sort/test/external_sort_test.cc",
+          "lines": "375-385",
+          "symbol": "AdvancedExternalSortTest",
+          "note": "Uses 1 KiB memory with 131,073 and 1,048,576 values."
+        }
+      ]
+    },
+    {
+      "name": "LimitedMemory (compile-time optional)",
+      "proves": "When explicitly enabled on Linux, it can catch extremely large allocations and checks a loose approximately-2x internal-memory envelope for a workload with only eight initial runs.",
+      "failure_mode": "It does not prove the README's hard mem_size ceiling: the test is normally excluded, uses process RLIMIT_DATA/RSS approximations, and deliberately permits more than mem_size.",
+      "source_refs": [
+        {
+          "path": "external-sort/test/external_sort_test.cc",
+          "lines": "217-299",
+          "symbol": "RUN_LIMITED_MEMORY_TEST / LimitedMemory",
+          "note": "Guarded by a macro not defined in the supplied CMake files; allowance includes output and twice mem_size in the tighter phase."
+        },
+        {
+          "path": "external-sort/test/local.cmake",
+          "lines": "9-18",
+          "symbol": "tester target",
+          "note": "Adds the test source but does not define RUN_LIMITED_MEMORY_TEST."
+        }
+      ]
+    }
+  ],
+  "drills": [
+    {
+      "prompt": "Write the k-way merge pseudocode and prove that the next heap minimum is globally safe to emit.",
+      "format": "pseudocode",
+      "answer": "Initialize one current head from every nonempty sorted run. The heap minimum is no larger than every other run head; every unseen value is no smaller than its own run head, so no unseen value can precede the minimum. Emit it, advance only that source run, and insert its new head. Repeat until the heap is empty.",
+      "checklist": [
+        "One frontier value per active run.",
+        "Min-heap rather than max-heap.",
+        "Advance only the source run.",
+        "State the sorted-run invariant.",
+        "Flush output without changing logical order."
+      ]
+    },
+    {
+      "prompt": "Given N pages, B buffer pages, initial runs of B pages, and fan-in B-1, calculate run count, merge levels, and total page I/O.",
+      "format": "trace",
+      "answer": "Initial runs R = ceil(N/B). Merge levels L = ceil(log base (B-1) of R), adjusted for partial groups. Run formation reads and writes N pages. Every complete merge level also reads and writes N pages, so a conventional count is 2N(1+L), unless the final merge streams directly to a consumer or the question uses a different output convention.",
+      "checklist": [
+        "Ceiling for run count.",
+        "Feasible fan-in from buffers.",
+        "Ceiling for levels.",
+        "Both reads and writes per level.",
+        "State final-output convention."
+      ]
+    },
+    {
+      "prompt": "Audit the claim that max_runs_per_merge = values_that_fit / 4 leaves enough heap memory.",
+      "format": "debug",
+      "answer": "It does not. The input and output uint64_t buffers already total about mem_size. For k = V/4, the cursor vector alone is 64k = 2 mem_size on the audited ABI; k HeapEntry items add at least 0.5 mem_size, before Run vectors, File objects, vector capacities, and allocator overhead. The measured 1 KiB case requested 4,888 extra heap bytes.",
+      "checklist": [
+        "Count simultaneous input and output buffers.",
+        "Count HeapEntry storage.",
+        "Count RunCursor and Run arrays.",
+        "Count File objects and allocation overhead.",
+        "Use capacity/peak, not logical element count."
+      ]
+    },
+    {
+      "prompt": "Why can periodic early merging pass correctness tests but still be a poor external-sort schedule?",
+      "format": "explain",
+      "answer": "Every merge combines sorted runs correctly, so final ordering is preserved. But after each threshold the implementation collapses all current runs, then later merges that increasingly large accumulated run with fresh ones. Old values are repeatedly read and written. Balanced disjoint groups per level rewrite each value only once per level and have logarithmic depth.",
+      "checklist": [
+        "Separate ordering correctness from I/O efficiency.",
+        "Identify the growing accumulated run.",
+        "Describe balanced disjoint passes.",
+        "Mention the k=2 quadratic degeneration."
+      ]
+    },
+    {
+      "prompt": "Compare simple memory-sized run formation with replacement selection.",
+      "format": "compare",
+      "answer": "Simple formation fills memory, sorts, writes, and produces runs no longer than memory. Replacement selection maintains eligible and deferred heaps: it emits the smallest eligible value and admits new inputs that do not violate the current run order, often producing average runs about twice memory and one long run for sorted input. It reduces later merge work but adds heap and variable-record memory complexity.",
+      "checklist": [
+        "Simple run length bound.",
+        "Eligible versus next-run values.",
+        "Expected longer runs.",
+        "Complexity trade-off."
+      ]
+    },
+    {
+      "prompt": "For nonempty input and mem_size = 4, what should the API do, and what does this implementation do?",
+      "format": "debug",
+      "answer": "The assignment does not authorize losing the data. A defensible implementation should reject the impossible budget with a documented error or implement a valid minimal-memory path. The submitted code computes values_that_fit = 0, resizes output to zero, and returns, which violates the required result.",
+      "checklist": [
+        "Locate src/external_sort.cc:244-249.",
+        "Distinguish impossible precondition from empty input.",
+        "Do not silently return an incorrect sorted multiset."
+      ]
+    }
+  ],
+  "lecture_links": [
+    {
+      "chapter_id": "02-storage-architecture-and-memory-hierarchy",
+      "occurrence_ids": [
+        "dbimpl-01-storage-016",
+        "dbimpl-01-storage-017",
+        "dbimpl-01-storage-018",
+        "dbimpl-01-storage-019"
+      ],
+      "note": "Memory hierarchy, storage latency, sequential block transfer, and why the algorithm must batch I/O."
+    },
+    {
+      "chapter_id": "15-sort-group-and-set-operations",
+      "occurrence_ids": [
+        "dbimpl-13-codegen-002",
+        "dbimpl-13-codegen-003"
+      ],
+      "note": "External-sort purpose, memory-sized run formation, partial final flush, and multi-level merging."
+    },
+    {
+      "chapter_id": "15-sort-group-and-set-operations",
+      "occurrence_ids": [
+        "dbimpl-13-codegen-004",
+        "dbimpl-13-codegen-005"
+      ],
+      "note": "Simple quicksort runs versus replacement selection, and priority queue/loser-tree merging under fan-in limits."
+    },
+    {
+      "chapter_id": "14-relational-operators-and-joins",
+      "occurrence_ids": [
+        "dbimpl-12-operators-036",
+        "dbimpl-12-operators-037",
+        "dbimpl-12-operators-038"
+      ],
+      "note": "Sort-merge join as an important downstream consumer of ordered runs and duplicate-aware merge logic."
+    }
+  ],
+  "limitations": [
+    "The submitted implementation does not satisfy the README's hard heap-memory ceiling. An independent requested-allocation counter measured 4,888 bytes at mem_size = 1,024 bytes (4.77x), excluding allocator headers.",
+    "The report weakens the mandatory memory requirement to 'respect the memory limit as much as possible' and incorrectly claims that /4 leaves room for buffers; its memory analysis is not reliable.",
+    "Periodic whole-set merging bounds temporary-file count but repeatedly rewrites the accumulated run and can degenerate to quadratic I/O in the number of runs when k = 2.",
+    "For nonempty input with mem_size < sizeof(uint64_t), the function silently writes an empty output instead of producing a correct result or reporting an impossible budget.",
+    "Byte-offset and output-size arithmetic is unchecked for size_t overflow, and num_values is not validated against input.size().",
+    "The public format is explicitly little-endian, but the implementation reinterprets native uint64_t bytes and therefore assumes a little-endian host.",
+    "The implementation supports only fixed-width uint64_t values and simple quicksort run generation; variable-length tuples, replacement selection, loser trees, direct final streaming, and asynchronous I/O are outside its scope.",
+    "The supplied gtests were inspected but not rerun because the legacy CMake project fetches external Google dependencies. The core source and command-line tool compiled warning-free, and a 50-value sort with a 24-byte advertised budget produced 1 through 50 correctly."
+  ],
+  "_audit": {
+    "source_precedence": [
+      "README hard contract",
+      "Tests as executable functional specification",
+      "Public header and File API",
+      "Student implementation",
+      "Tool and benchmark",
+      "Retrospective report and git-history interpretation"
+    ],
+    "verified_report_claims": [
+      "The implementation uses simple memory-sized sorted runs, temporary files, a {value, run_index} min-heap, buffered cursors, buffered output, and repeated merge passes.",
+      "Git history contains the report's initial implementation, 'too many tmp files', and read-optimization commits.",
+      "The report's functional summaries of partial runs, duplicates, and advanced high-run-count tests match the source."
+    ],
+    "corrections_to_report": [
+      "README says the implementation must not exceed mem_size heap bytes; report line 38 changes that into 'respect ... as much as possible,' which is not the contract.",
+      "Report line 485 says memory-sized phase-1 chunks stay within memory, but the mem_size-sized vector coexists with Run vector storage and heap-allocated File objects.",
+      "Report lines 421-426 claim fan-in /4 leaves room for buffers. In fact input/output payload buffers already consume about all mem_size, and cursor/heap/run/file storage is additional.",
+      "Report praises periodic merging only as a temporary-file bound and omits the repeated accumulated-run rewrite cost.",
+      "Report calls values_that_fit == 0 an acceptable defensive edge case; for nonempty input it returns the wrong multiset.",
+      "The optional LimitedMemory test is not normally compiled and permits substantially more than the advertised hard limit."
+    ],
+    "heap_memory_audit": {
+      "method": "Compiled the actual external_sort.cc and PosixFile implementation with a harness overriding global operator new/new[] to track simultaneously live requested allocation sizes. Input/output PosixFile objects were created before the baseline. Allocator headers and non-C++ mallocs were not counted, making this a conservative lower measurement.",
+      "case": {
+        "mem_size_bytes": 1024,
+        "num_values": 4096,
+        "values_that_fit": 128,
+        "max_runs_per_merge": 32,
+        "peak_additional_requested_heap_bytes": 4888,
+        "ratio_to_contract": 4.7734375
+      },
+      "abi_record_layout": {
+        "Run_bytes": 16,
+        "HeapEntry_bytes": 16,
+        "RunCursor_bytes": 64
+      },
+      "analytical_lower_bound_at_full_32_way_merge": [
+        "Input cursor payloads: 32 * 2 * 8 = 512 bytes.",
+        "Output payload buffer: 64 * 8 = 512 bytes.",
+        "RunCursor array: 32 * 64 = 2,048 bytes.",
+        "Heap entries: at least 32 * 16 = 512 bytes, excluding spare capacity.",
+        "Existing Run array: at least 32 * 16 = 512 bytes.",
+        "Subtotal is already 4,096 bytes (4x mem_size) before PosixFile objects, new run bookkeeping, allocator metadata, and transient reallocations."
+      ]
+    },
+    "implementation_findings": [
+      {
+        "severity": "critical-contract",
+        "id": "heap-budget-violation",
+        "finding": "Simultaneously live payload, cursor, heap, Run, and File allocations exceed mem_size by several multiples.",
+        "evidence": "external-sort/src/external_sort.cc:64-74,133-160,218-269"
+      },
+      {
+        "severity": "important-performance",
+        "id": "incremental-rewrite",
+        "finding": "Merging the complete current run set at each threshold repeatedly rewrites the accumulated prefix instead of using balanced levels.",
+        "evidence": "external-sort/src/external_sort.cc:79-84,198-216"
+      },
+      {
+        "severity": "correctness",
+        "id": "sub-value-memory",
+        "finding": "For nonempty input and mem_size < 8 the result is silently truncated to empty.",
+        "evidence": "external-sort/src/external_sort.cc:238-249"
+      },
+      {
+        "severity": "robustness",
+        "id": "unchecked-size-arithmetic",
+        "finding": "Value-to-byte multiplications and total output sizes can overflow size_t without validation.",
+        "evidence": "external-sort/src/external_sort.cc:29-42,71,157,219,244"
+      }
+    ],
+    "lecture_evidence_details": [
+      {
+        "occurrence_id": "dbimpl-01-storage-016",
+        "title": "Memory Hierarchy",
+        "source_file": "dbimpl-01-storage.mp4",
+        "start": "00:37:01.150",
+        "end": "00:45:01.750"
+      },
+      {
+        "occurrence_id": "dbimpl-01-storage-017",
+        "title": "Memory Hierarchy (2)",
+        "source_file": "dbimpl-01-storage.mp4",
+        "start": "00:45:01.750",
+        "end": "00:45:36.050"
+      },
+      {
+        "occurrence_id": "dbimpl-01-storage-018",
+        "title": "Hard Disk Access",
+        "source_file": "dbimpl-01-storage.mp4",
+        "start": "00:45:36.050",
+        "end": "00:51:26.850"
+      },
+      {
+        "occurrence_id": "dbimpl-01-storage-019",
+        "title": "Hard Disk Access (2)",
+        "source_file": "dbimpl-01-storage.mp4",
+        "start": "00:51:26.850",
+        "end": "00:54:13.350"
+      },
+      {
+        "occurrence_id": "dbimpl-13-codegen-002",
+        "title": "Sort",
+        "source_file": "dbimpl-13-codegen.mp4",
+        "start": "00:00:09.950",
+        "end": "00:02:24.650"
+      },
+      {
+        "occurrence_id": "dbimpl-13-codegen-003",
+        "title": "Sort (2)",
+        "source_file": "dbimpl-13-codegen.mp4",
+        "start": "00:02:24.650",
+        "end": "00:03:50.650"
+      },
+      {
+        "occurrence_id": "dbimpl-13-codegen-004",
+        "title": "Sort (3)",
+        "source_file": "dbimpl-13-codegen.mp4",
+        "start": "00:03:50.650",
+        "end": "00:11:00.650"
+      },
+      {
+        "occurrence_id": "dbimpl-13-codegen-005",
+        "title": "Sort (4)",
+        "source_file": "dbimpl-13-codegen.mp4",
+        "start": "00:11:00.650",
+        "end": "00:14:03.350"
+      },
+      {
+        "occurrence_id": "dbimpl-12-operators-036",
+        "title": "Sort-Merge Join",
+        "source_file": "dbimpl-12-operators.mp4",
+        "start": "00:44:34.550",
+        "end": "00:48:48.850"
+      },
+      {
+        "occurrence_id": "dbimpl-12-operators-037",
+        "title": "Sort-Merge Join (2)",
+        "source_file": "dbimpl-12-operators.mp4",
+        "start": "00:48:48.850",
+        "end": "00:49:48.950"
+      },
+      {
+        "occurrence_id": "dbimpl-12-operators-038",
+        "title": "Sort-Merge Join (3)",
+        "source_file": "dbimpl-12-operators.mp4",
+        "start": "00:49:48.950",
+        "end": "00:54:53.450"
+      }
+    ],
+    "verification": {
+      "files_inspected": [
+        "README.md",
+        "include/moderndbs/external_sort.h",
+        "include/moderndbs/file.h",
+        "src/external_sort.cc",
+        "src/file/posix_file.cc",
+        "test/external_sort_test.cc",
+        "test/local.cmake",
+        "tools/external_sort.cc",
+        "bench/bm_external_sort.cc",
+        "CMakeLists.txt",
+        "external-sort-report.md",
+        "git log"
+      ],
+      "compile_and_smoke_check": "The core implementation and command-line tool compiled warning-free with C++20. Sorting 50 descending values with mem_size = 24 produced exactly 1 through 50.",
+      "allocation_check": "The actual implementation requested 4,888 additional live heap bytes at a 1,024-byte contract in the audit harness.",
+      "full_gtest_run": "Not run: the legacy CMake project fetches GoogleTest, benchmark, and gflags from the network."
+    }
+  }
+}

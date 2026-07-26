@@ -1,0 +1,1151 @@
+{
+  "schema_version": 1,
+  "id": "algebraic-operators",
+  "number": 5,
+  "title": "Algebraic Operators in the Iterator Model",
+  "subtitle": "Build and reason about pull-based physical operators, pipeline boundaries, hash state, and set-versus-bag semantics.",
+  "project_label": "algebraic-operators",
+  "report_status": "available",
+  "chapter_ids": [
+    "01-foundations-and-relational-model",
+    "12-set-oriented-execution-models",
+    "13-pipelining-and-parallelization",
+    "14-relational-operators-and-joins",
+    "15-sort-group-and-set-operations"
+  ],
+  "project_path": "/Users/nkhalatiani/Downloads/algebraic-operators",
+  "report_path": "/Users/nkhalatiani/Downloads/algebraic-operators-report.md",
+  "audit": {
+    "status": "deep_audited",
+    "source_policy": "The README and tests define the intended simplified behavior. The submitted implementation demonstrates one solution. The student-authored report is useful explanation but is not treated as authoritative.",
+    "inspected": [
+      "README.md",
+      "include/moderndbs/algebra.h",
+      "src/algebra.cc",
+      "test/iterator_model_test.cc",
+      "bench/bm_iterator.cc",
+      "algebraic-operators-report.md",
+      "course chapters, evidence index, slide explanations, study briefs, and relevant existing exam-practice records"
+    ],
+    "verification": {
+      "static_review": "completed",
+      "tests_claimed_by_report": "19/19 focused tests passed",
+      "tests_run_in_current_environment": false,
+      "reason": "The bundled tester is a non-executable-permissions ARM64 Linux ELF binary while the current host is macOS, and cmake is not installed. The report's pass claim is therefore recorded as a claim, not independently re-verified.",
+      "report_reference": "/Users/nkhalatiani/Downloads/algebraic-operators-report.md:1465"
+    }
+  },
+  "assignment_brief": [
+    "Implement a simplified physical relational-algebra engine in the iterator model. Every operator follows open/next/close, and parents pull one tuple at a time.",
+    "Tuples are passed out of line: open exposes stable Register pointers once, while each successful next call overwrites the values at those same addresses.",
+    "The required operators cover printing, projection, selection, sorting, inner hash join, hash aggregation, UNION, and UNION ALL; bonus work adds INTERSECT/EXCEPT with set and bag semantics."
+  ],
+  "artifacts": [
+    "README.md assignment specification",
+    "include/moderndbs/algebra.h operator and Register interfaces",
+    "src/algebra.cc submitted implementation",
+    "test/iterator_model_test.cc behavioral tests",
+    "bench/bm_iterator.cc composed-plan benchmark",
+    "algebraic-operators-report.md student report, cross-checked against code and tests"
+  ],
+  "concepts": [
+    {
+      "title": "The iterator contract and stable output registers",
+      "takeaway": "Control moves downward through next calls, but tuple values move upward through stable Register locations.",
+      "explanation": [
+        "open prepares an operator and its children, get_output exposes the addresses of its current tuple registers, repeated next calls mutate those values, and close releases state.",
+        "Projection can expose a subset of child pointers, while a blocking operator must own one fixed-size output buffer. Reallocating that buffer during next would invalidate pointers already cached by the parent."
+      ],
+      "pseudocode": [
+        "open(): child.open(); out = child.get_output()",
+        "next(): advance child or local state; overwrite *out; return success",
+        "close(): clear local state; child.close()"
+      ],
+      "invariants": [
+        "A successful next leaves every exposed output Register valid for the current tuple.",
+        "The addresses returned after open remain stable until close.",
+        "A false next means the stream is exhausted, not merely that one input tuple was rejected."
+      ],
+      "pitfalls": [
+        "Returning pointers into a vector that grows during next.",
+        "Copying full tuples through every pass-through operator.",
+        "Forgetting to open or close children in the same lifecycle."
+      ],
+      "source_refs": [
+        {
+          "path": "algebraic-operators/README.md",
+          "lines": "29-34",
+          "note": "Defines out-of-line passing and stable locations."
+        },
+        {
+          "path": "algebraic-operators/include/moderndbs/algebra.h",
+          "lines": "81-108",
+          "symbol": "Operator",
+          "note": "Defines the pull interface."
+        },
+        {
+          "path": "algebraic-operators/src/algebra.cc",
+          "lines": "37-47",
+          "symbol": "initialize_output_storage",
+          "note": "Builds stable owned output storage."
+        }
+      ]
+    },
+    {
+      "title": "Streaming operators and pipeline breakers",
+      "takeaway": "Classify the concrete algorithm, not just the operator name.",
+      "explanation": [
+        "Select and Projection pass child tuples through immediately. Sort must consume the complete input before it can know the first result. HashAggregation must finish group state before final output.",
+        "HashJoin must finish its build side before probing, but a general implementation can stream probe matches. This submission additionally materializes all joined results. UNION ALL streams; UNION DISTINCT needs a growing seen set but need not inherently wait for both inputs."
+      ],
+      "pseudocode": [
+        "streaming: next() pulls until one output is ready",
+        "one-sided breaker: build entire left; then probe right",
+        "full breaker: consume all required input; then next() scans materialized results"
+      ],
+      "invariants": [
+        "A pipeline begins only after the state required by its upstream breaker exists.",
+        "The label reflects when the first output can appear and which inputs must be consumed."
+      ],
+      "pitfalls": [
+        "Calling every hash-based operator a full breaker.",
+        "Calling UNION ALL blocking.",
+        "Confusing this submission's full join materialization with a requirement of hash join itself."
+      ],
+      "source_refs": [
+        {
+          "path": "algebraic-operators/src/algebra.cc",
+          "lines": "350-375",
+          "symbol": "Projection",
+          "note": "Passes selected child pointers through."
+        },
+        {
+          "path": "algebraic-operators/src/algebra.cc",
+          "lines": "450-496",
+          "symbol": "Sort",
+          "note": "Consumes and sorts all rows before output."
+        },
+        {
+          "path": "algebraic-operators/src/algebra.cc",
+          "lines": "861-885",
+          "symbol": "UnionAll",
+          "note": "Streams left and then right."
+        }
+      ]
+    },
+    {
+      "title": "Hash join: build, probe, and multiplicity",
+      "takeaway": "A correct general hash join maps one key to all build tuples with that key.",
+      "explanation": [
+        "The implementation builds a hash table over the left join attribute, scans the right side, and concatenates matching left/right rows.",
+        "The assignment explicitly permits unique left keys, so the submitted map stores only one row offset per key. In a normal exam answer, use key to list-of-tuples unless uniqueness is stated, and check any residual predicate after the hash lookup."
+      ],
+      "pseudocode": [
+        "for each left tuple l: H[key(l)].append(copy(l))",
+        "for each right tuple r:",
+        "    for each l in H[key(r)]:",
+        "        if full_predicate(l,r): emit(l concatenated with r)"
+      ],
+      "invariants": [
+        "Every matching build tuple is considered for every probe tuple.",
+        "Hash lookup narrows candidates; the complete join predicate determines matches.",
+        "Output contains left and right attributes in the declared order."
+      ],
+      "pitfalls": [
+        "Overwriting duplicate build tuples in a one-value map without a uniqueness guarantee.",
+        "Emitting after the first equal hash instead of checking equality and residual predicates.",
+        "Ignoring external-memory fallback when the build table does not fit."
+      ],
+      "source_refs": [
+        {
+          "path": "algebraic-operators/include/moderndbs/algebra.h",
+          "lines": "302-307",
+          "symbol": "HashJoin",
+          "note": "States the unique-left-key simplification."
+        },
+        {
+          "path": "algebraic-operators/src/algebra.cc",
+          "lines": "530-569",
+          "symbol": "HashJoin::open",
+          "note": "Concrete build/probe implementation."
+        },
+        {
+          "path": "algebraic-operators/test/iterator_model_test.cc",
+          "lines": "398-421",
+          "symbol": "IteratorModelTest.HashJoin",
+          "note": "Verifies multiple right matches for one unique build key."
+        }
+      ]
+    },
+    {
+      "title": "Hash aggregation as per-group state",
+      "takeaway": "A group key selects state; each input tuple initializes or updates every requested aggregate.",
+      "explanation": [
+        "The generic path projects group-by Registers into a vector key and maps that key to MIN, MAX, SUM, and COUNT state.",
+        "Hash grouping is an in-memory alternative to sort-based grouping. It is a final-result pipeline breaker here; an external implementation must partition or spill when state exceeds memory."
+      ],
+      "pseudocode": [
+        "for each tuple t:",
+        "    k = t[group_by_attributes]",
+        "    if k absent: state[k] = initialize(t)",
+        "    else: state[k] = update(state[k], t)",
+        "for each (k,state): emit(k, finalize(state))"
+      ],
+      "invariants": [
+        "Exactly one state vector exists per equal group key.",
+        "COUNT increases once per input row in the group.",
+        "Output fields are group attributes followed by aggregate results."
+      ],
+      "pitfalls": [
+        "Initializing SUM or COUNT to the wrong first-row value.",
+        "Grouping by Register addresses instead of Register values.",
+        "Assuming the empty-input SQL result is defined by these simplified tests."
+      ],
+      "source_refs": [
+        {
+          "path": "algebraic-operators/src/algebra.cc",
+          "lines": "107-159",
+          "symbol": "initialize_aggregates/update_aggregates",
+          "note": "Defines per-function state transitions."
+        },
+        {
+          "path": "algebraic-operators/src/algebra.cc",
+          "lines": "695-764",
+          "symbol": "HashAggregation::open",
+          "note": "Generic and specialized grouping paths."
+        },
+        {
+          "path": "algebraic-operators/test/iterator_model_test.cc",
+          "lines": "425-478",
+          "note": "Specifies global MIN/MAX and grouped SUM/COUNT."
+        }
+      ]
+    },
+    {
+      "title": "Set semantics versus bag multiplicities",
+      "takeaway": "The ALL keyword changes the answer from membership to arithmetic on occurrence counts.",
+      "explanation": [
+        "UNION, INTERSECT, and EXCEPT return distinct tuples. Their ALL variants preserve or calculate multiplicities.",
+        "INTERSECT ALL emits min(left count,right count) copies; EXCEPT ALL emits max(0,left count minus right count). DISTINCT INTERSECT resembles a semi-join and DISTINCT EXCEPT resembles an anti-join only after duplicates are removed."
+      ],
+      "pseudocode": [
+        "count L[x] and R[x]",
+        "UNION ALL multiplicity = L[x] + R[x]",
+        "INTERSECT ALL multiplicity = min(L[x], R[x])",
+        "EXCEPT ALL multiplicity = max(0, L[x] - R[x])",
+        "without ALL: clamp result multiplicity to 0 or 1"
+      ],
+      "invariants": [
+        "Distinct variants emit each result tuple at most once.",
+        "Bag intersection never emits more copies than either input contains.",
+        "Bag difference never yields a negative multiplicity."
+      ],
+      "pitfalls": [
+        "Calling concatenation UNION rather than UNION ALL.",
+        "Using membership only for an ALL variant.",
+        "Treating EXCEPT as symmetric."
+      ],
+      "source_refs": [
+        {
+          "path": "algebraic-operators/src/algebra.cc",
+          "lines": "801-901",
+          "note": "UNION distinct and UNION ALL implementations."
+        },
+        {
+          "path": "algebraic-operators/src/algebra.cc",
+          "lines": "911-1138",
+          "note": "INTERSECT/EXCEPT set and bag implementations."
+        },
+        {
+          "path": "algebraic-operators/test/iterator_model_test.cc",
+          "lines": "482-646",
+          "note": "Concrete duplicate-sensitive expected results."
+        }
+      ]
+    }
+  ],
+  "trace": {
+    "title": "Derive four set-operation results from counts",
+    "setup": "A = {1,1,2,3,3,3}; B = {2,4,4,3,3}. Count each value before applying operator semantics.",
+    "steps": [
+      "Counts are A: 1→2, 2→1, 3→3; B: 2→1, 3→2, 4→2.",
+      "INTERSECT ignores counts above one and keeps values present in both: {2,3}.",
+      "INTERSECT ALL takes minimum counts: one 2 and two 3s, so {2,3,3}.",
+      "EXCEPT A−B keeps distinct A values absent from B: {1}.",
+      "EXCEPT ALL subtracts counts and clamps at zero: two 1s remain, 2 is cancelled, and one 3 remains."
+    ],
+    "result": "INTERSECT={2,3}; INTERSECT ALL={2,3,3}; EXCEPT={1}; EXCEPT ALL={1,1,3}."
+  },
+  "decisions": [
+    {
+      "title": "Reuse child pointers in Projection",
+      "rationale": "The assignment guarantees stable output locations, so Projection can expose selected child Registers without copying tuple values.",
+      "tradeoff": "This is fast but depends completely on the child's pointer-stability contract.",
+      "source_refs": [
+        {
+          "path": "algebraic-operators/src/algebra.cc",
+          "lines": "350-375",
+          "symbol": "Projection",
+          "note": "Zero-copy pass-through."
+        }
+      ]
+    },
+    {
+      "title": "Store blocking rows flat and sort offsets",
+      "rationale": "One contiguous Register vector avoids a heap allocation per tuple, while sorting offsets avoids moving full rows.",
+      "tradeoff": "Index arithmetic is less readable and requires a fixed tuple width.",
+      "source_refs": [
+        {
+          "path": "algebraic-operators/src/algebra.cc",
+          "lines": "450-483",
+          "symbol": "Sort::open",
+          "note": "Flat storage and offset sort."
+        },
+        {
+          "path": "algebraic-operators-report.md",
+          "lines": "1176-1218",
+          "note": "Student-reported rationale, consistent with code."
+        }
+      ]
+    },
+    {
+      "title": "Fuse HashJoin with two-key COUNT",
+      "rationale": "The benchmark immediately groups joined rows, so the specialization increments group counts without materializing rows that would be collapsed.",
+      "tradeoff": "It couples operators, is guarded to one exact shape, and is not suitable as the canonical exam implementation.",
+      "source_refs": [
+        {
+          "path": "algebraic-operators/src/algebra.cc",
+          "lines": "601-680",
+          "symbol": "HashJoin::collect_count_by_two_attrs",
+          "note": "Fused collection helper."
+        },
+        {
+          "path": "algebraic-operators/src/algebra.cc",
+          "lines": "706-714",
+          "symbol": "HashAggregation::open",
+          "note": "Narrow dynamic dispatch guard."
+        }
+      ]
+    },
+    {
+      "title": "Store CHAR16 inline",
+      "rationale": "A fixed-width array makes frequent Register copies allocation-free and matches the assignment's fixed-length type.",
+      "tradeoff": "Values longer than 16 bytes are truncated and the simplified type has no NULL state.",
+      "source_refs": [
+        {
+          "path": "algebraic-operators/src/algebra.cc",
+          "lines": "218-250",
+          "symbol": "Register",
+          "note": "Copies and hashes exactly 16 bytes."
+        }
+      ]
+    }
+  ],
+  "tests": [
+    {
+      "name": "IteratorModelTest.SelectAttrAttr",
+      "proves": "Selection compares two current tuple attributes and continues pulling until a match.",
+      "failure_mode": "The operator may compare the wrong indexes, mishandle GE, or stop after a rejected tuple.",
+      "source_refs": [
+        {
+          "path": "algebraic-operators/test/iterator_model_test.cc",
+          "lines": "349-371",
+          "note": "Attribute-to-attribute GE expected rows."
+        }
+      ]
+    },
+    {
+      "name": "IteratorModelTest.Sort",
+      "proves": "Criteria are applied lexicographically: first key descending, then tie-breaker ascending.",
+      "failure_mode": "Descending inversion or failure to continue to the next criterion changes the expected order.",
+      "source_refs": [
+        {
+          "path": "algebraic-operators/test/iterator_model_test.cc",
+          "lines": "375-394",
+          "note": "Two-key expected order."
+        }
+      ]
+    },
+    {
+      "name": "IteratorModelTest.HashJoin",
+      "proves": "One unique left row can match and emit multiple right rows.",
+      "failure_mode": "A probe implementation that stops after the first right match loses valid joined tuples.",
+      "source_refs": [
+        {
+          "path": "algebraic-operators/test/iterator_model_test.cc",
+          "lines": "398-421",
+          "note": "Three joined rows from two build keys."
+        }
+      ]
+    },
+    {
+      "name": "IteratorModelTest.HashAggregationSumCount",
+      "proves": "Each group maintains independent SUM and COUNT state and emits group keys before aggregate fields.",
+      "failure_mode": "State shared between keys, wrong initialization, or wrong output layout changes both rows.",
+      "source_refs": [
+        {
+          "path": "algebraic-operators/test/iterator_model_test.cc",
+          "lines": "453-478",
+          "note": "Grouped SUM/COUNT expected output."
+        }
+      ]
+    },
+    {
+      "name": "BonusIteratorModelTest.IntersectAll / ExceptAll",
+      "proves": "ALL variants use tuple multiplicities rather than distinct membership.",
+      "failure_mode": "A set-only implementation emits too few duplicates or fails to cancel one occurrence at a time.",
+      "source_refs": [
+        {
+          "path": "algebraic-operators/test/iterator_model_test.cc",
+          "lines": "571-646",
+          "note": "min-count intersection and subtract-count difference."
+        }
+      ]
+    }
+  ],
+  "drills": [
+    {
+      "prompt": "Implement UNION ALL and UNION DISTINCT in the iterator model.",
+      "format": "pseudocode",
+      "answer": "UNION ALL opens both children, drains left, switches to right, and returns false only after right exhausts. UNION DISTINCT additionally keeps a hash set over complete tuples and emits only when insertion succeeds.",
+      "checklist": [
+        "Name which version preserves duplicates.",
+        "Keep state recording whether left is exhausted.",
+        "For DISTINCT, hash and compare the complete tuple.",
+        "Do not return false merely because the left child ended."
+      ]
+    },
+    {
+      "prompt": "Adapt build/probe hash join into a right anti-join iterator.",
+      "format": "pseudocode",
+      "answer": "Build the left side by key. For each right tuple, inspect every candidate with the same key and the full predicate; emit the right tuple only if none match.",
+      "checklist": [
+        "State that right anti-join emits unmatched right tuples.",
+        "A first nonmatching candidate is not proof that no candidate matches.",
+        "Explain when a set of keys is enough and when candidate lists are required.",
+        "State how NULL keys are treated if the question uses SQL semantics."
+      ]
+    },
+    {
+      "prompt": "The remembered task says 'FULL anti join.' Define it before implementing marker-based output.",
+      "format": "explain",
+      "answer": "Because the term is nonstandard, state whether the result means unmatched tuples from both sides. If so, mark every matching build tuple, emit or buffer probe tuples only when no candidate matches, then scan the build table and emit every unmarked tuple.",
+      "checklist": [
+        "Call out the ambiguity.",
+        "Mark all matching duplicates.",
+        "Separate probe-side unmatched output from the final unmarked build scan.",
+        "Do not accidentally describe a full outer join."
+      ]
+    },
+    {
+      "prompt": "Draw and color the pipelines for Projection(Sort(HashAggregation(HashJoin(Select(R),S)))).",
+      "format": "trace",
+      "answer": "Select and Projection pass through. HashJoin must build one side before probing. HashAggregation finalizes groups before output. Sort consumes all aggregate rows before ordered output. The submitted join also materializes all results, but that is an implementation choice.",
+      "checklist": [
+        "Mark Sort as a full breaker.",
+        "Mark final HashAggregation as a breaker.",
+        "Distinguish join build from probe.",
+        "Do not call Projection a breaker."
+      ]
+    },
+    {
+      "prompt": "Compute INTERSECT, INTERSECT ALL, EXCEPT, and EXCEPT ALL for A={1,1,2,3,3,3}, B={2,4,4,3,3}.",
+      "format": "trace",
+      "answer": "INTERSECT={2,3}; INTERSECT ALL={2,3,3}; EXCEPT A−B={1}; EXCEPT ALL A−B={1,1,3}.",
+      "checklist": [
+        "Count occurrences before computing ALL variants.",
+        "Use min for INTERSECT ALL.",
+        "Use max(0,L−R) for EXCEPT ALL.",
+        "Remember that EXCEPT is directional."
+      ]
+    }
+  ],
+  "limitations": [
+    "The hash join stores one build row per key and is correct only under the README's unique-left-key simplification.",
+    "Register supports only INT64 and CHAR16; there is no SQL NULL state or variable-width value.",
+    "Schema compatibility and attribute-index bounds are assumed to have been validated by the plan.",
+    "Global aggregation over an empty input is not defined by the provided tests and does not model SQL COUNT(*)=0.",
+    "The fused join-plus-COUNT path is a narrow benchmark optimization, not a general operator contract.",
+    "The report's 19/19 test and benchmark claims were not rerun because the bundled tester targets ARM64 Linux and cmake is unavailable on this macOS host."
+  ],
+  "assignment_scope": {
+    "summary": "Implement a small physical relational-algebra engine using pull-based open/next/close operators and out-of-line register passing.",
+    "required_operators": [
+      "Print",
+      "Projection",
+      "Select",
+      "Sort",
+      "HashJoin",
+      "HashAggregation",
+      "Union",
+      "UnionAll"
+    ],
+    "bonus_operators": [
+      "Intersect",
+      "IntersectAll",
+      "Except",
+      "ExceptAll"
+    ],
+    "data_model": "A Register stores either INT64 or fixed-width CHAR16. Operators expose stable Register pointers once during open; next overwrites the pointed-to values.",
+    "source_references": [
+      "/Users/nkhalatiani/Downloads/algebraic-operators/README.md:3",
+      "/Users/nkhalatiani/Downloads/algebraic-operators/README.md:25",
+      "/Users/nkhalatiani/Downloads/algebraic-operators/README.md:29",
+      "/Users/nkhalatiani/Downloads/algebraic-operators/include/moderndbs/algebra.h:15",
+      "/Users/nkhalatiani/Downloads/algebraic-operators/include/moderndbs/algebra.h:81"
+    ]
+  },
+  "learning_outcomes": [
+    "Trace control flow through a composed pull pipeline from a root next call down to scans and back.",
+    "Distinguish pointer-stable pass-through operators from operators that must own materialized output storage.",
+    "Classify operators as streaming, one-sided pipeline breakers, or full pipeline breakers based on their implementation rather than their name.",
+    "Write hash-build/probe pseudocode and state the simplifying assumptions under which one row per key is sufficient.",
+    "Derive set and bag operator behavior from tuple multiplicities.",
+    "Translate an operator construction pipeline into a query-plan tree and explain which state each operator retains."
+  ],
+  "core_invariants": [
+    {
+      "name": "Iterator lifecycle",
+      "rule": "open initializes the operator and children; next returns true only while the current output buffer contains a valid tuple; close releases local state and closes children.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators/include/moderndbs/algebra.h:91",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:308",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:331"
+      ],
+      "lecture_occurrence_ids": [
+        "dbimpl-11-setoriented-013",
+        "dbimpl-11-setoriented-023",
+        "dbimpl-11-setoriented-024"
+      ]
+    },
+    {
+      "name": "Stable output locations",
+      "rule": "A parent may cache child Register pointers after open, so an operator must not reallocate its exposed output buffer during next. Streaming projection and selection can expose child pointers directly; blocking operators allocate one stable buffer and overwrite it.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators/README.md:29",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:37",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:350",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:407"
+      ],
+      "lecture_occurrence_ids": [
+        "dbimpl-11-setoriented-016"
+      ]
+    },
+    {
+      "name": "Hash and equality agreement",
+      "rule": "Equal Registers and equal tuples must hash equally. Collisions are allowed because unordered containers still run equality checks.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:163",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:175",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:246",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:254"
+      ],
+      "lecture_occurrence_ids": [
+        "dbimpl-12-operators-041",
+        "dbimpl-12-operators-042"
+      ]
+    },
+    {
+      "name": "Multiplicity is part of semantics",
+      "rule": "UNION, INTERSECT, and EXCEPT eliminate duplicates; ALL variants use bag semantics. INTERSECT ALL emits min(left_count,right_count), and EXCEPT ALL emits max(0,left_count-right_count).",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators/README.md:17",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:971",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:1089",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:545",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:623"
+      ],
+      "lecture_occurrence_ids": [
+        "dbimpl-13-codegen-008",
+        "dbimpl-13-codegen-012",
+        "dbimpl-13-codegen-014"
+      ]
+    }
+  ],
+  "operator_cards": [
+    {
+      "operator": "Register",
+      "role": "One typed scalar attribute with INT64 or inline CHAR16 storage, comparison, and hashing.",
+      "implementation": "CHAR16 copies exactly the first 16 bytes into std::array<char,16>; ordering is lexicographic and hashes are type-tagged.",
+      "exam_focus": "Explain why the type tag belongs in the hash and why fixed-width inline storage avoids allocations during tuple copying.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators/include/moderndbs/algebra.h:15",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:218",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:246",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:30"
+      ],
+      "lecture_occurrence_ids": [
+        "dbimpl-11-setoriented-016"
+      ]
+    },
+    {
+      "operator": "Projection",
+      "role": "Expose only selected attributes.",
+      "implementation": "open builds a vector containing selected child Register pointers; next simply delegates to the child. No tuple values are copied.",
+      "pipeline_behavior": "streaming pass-through",
+      "exam_focus": "Given numeric attribute indexes, draw the output register mapping and explain why the pointers remain valid.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:350",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:363",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:212"
+      ],
+      "lecture_occurrence_ids": [
+        "dbimpl-11-setoriented-016",
+        "dbimpl-12-operators-020"
+      ]
+    },
+    {
+      "operator": "Select",
+      "role": "Skip input tuples until one satisfies attribute-constant or attribute-attribute comparison.",
+      "implementation": "open exposes the child pointers. next loops over child.next and returns immediately on the first matching predicate.",
+      "pipeline_behavior": "streaming filter",
+      "exam_focus": "Write the short iterator pseudocode and explain why exhaustion is returned only after the child is exhausted.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:380",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:413",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:422",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:235",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:349"
+      ],
+      "lecture_occurrence_ids": [
+        "dbimpl-11-setoriented-024",
+        "dbimpl-12-operators-026"
+      ]
+    },
+    {
+      "operator": "Sort",
+      "role": "Order tuples lexicographically by multiple ascending/descending criteria.",
+      "implementation": "open consumes all input into a flat Register vector, sorts row offsets, and prepares stable output storage. next copies one row at the next sorted offset.",
+      "pipeline_behavior": "full pipeline breaker",
+      "exam_focus": "Trace the multi-key comparator and identify why the first output cannot be produced until all input is consumed.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:450",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:468",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:487",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:375"
+      ],
+      "lecture_occurrence_ids": [
+        "dbimpl-12-operators-020",
+        "dbimpl-13-codegen-004"
+      ]
+    },
+    {
+      "operator": "HashJoin",
+      "role": "Simplified inner equi-join.",
+      "implementation": "open materializes the complete left side in flat storage, maps each left key to one row offset, scans the right, and materializes concatenated matches. next only iterates the already-built result buffer.",
+      "pipeline_behavior": "The hash algorithm inherently breaks the left/build pipeline; this particular implementation also materializes all joined output and is therefore a full breaker. A general hash join can stream matches while probing.",
+      "assumption": "Left join keys are unique, explicitly allowed by the assignment. A real non-unique build requires key -> list of tuples and must emit every match.",
+      "exam_focus": "State build/probe sides, match multiplicity, residual-predicate handling, and memory fallback assumptions before writing pseudocode.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators/include/moderndbs/algebra.h:302",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:530",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:539",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:552",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:398"
+      ],
+      "lecture_occurrence_ids": [
+        "dbimpl-12-operators-028",
+        "dbimpl-12-operators-041",
+        "dbimpl-12-operators-042",
+        "dbimpl-12-operators-043"
+      ]
+    },
+    {
+      "operator": "HashAggregation",
+      "role": "Group by zero or more keys and calculate MIN, MAX, SUM, and COUNT.",
+      "implementation": "The generic path maps a vector-valued group key to aggregate state; first tuples initialize state and later tuples update it. Output is group keys followed by aggregates.",
+      "pipeline_behavior": "full pipeline breaker for final aggregates",
+      "exam_focus": "Show initial/update/finalize phases and distinguish hash aggregation from sort-based aggregation.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:107",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:130",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:695",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:741",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:425",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:453"
+      ],
+      "lecture_occurrence_ids": [
+        "dbimpl-13-codegen-006"
+      ]
+    },
+    {
+      "operator": "Union and UnionAll",
+      "role": "Concatenate union-compatible inputs, either removing or preserving duplicates.",
+      "implementation": "Union materializes unique complete tuples in a hash set plus result vector. UnionAll drains left and then right through one stable output buffer.",
+      "pipeline_behavior": "UnionAll is streaming; this Union implementation is blocking, although UNION DISTINCT can also emit unseen tuples incrementally while retaining a growing seen set.",
+      "exam_focus": "Never call the seen-set algorithm UNION ALL. Handle the left-to-right child switch instead of returning false when the left child ends.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:801",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:861",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:872",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:482",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:510"
+      ],
+      "lecture_occurrence_ids": [
+        "dbimpl-13-codegen-008",
+        "dbimpl-13-codegen-009",
+        "dbimpl-13-codegen-010"
+      ]
+    },
+    {
+      "operator": "Intersect, IntersectAll, Except, ExceptAll",
+      "role": "Compute set/bag intersection and difference.",
+      "implementation": "Set variants use membership plus duplicate suppression. Bag variants count right multiplicities and decrement one counter per matching left tuple.",
+      "pipeline_behavior": "blocking in this implementation",
+      "exam_focus": "Derive output counts instead of memorizing code: intersect-all is min(L,R), except-all is max(0,L-R). Relate distinct INTERSECT to semi-join and distinct EXCEPT to anti-join only after duplicate elimination.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:911",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:971",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:1029",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:1089",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:545",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:623"
+      ],
+      "lecture_occurrence_ids": [
+        "dbimpl-13-codegen-011",
+        "dbimpl-13-codegen-012",
+        "dbimpl-13-codegen-013",
+        "dbimpl-13-codegen-014"
+      ]
+    }
+  ],
+  "pseudocode_patterns": [
+    {
+      "id": "iterator-select",
+      "title": "Streaming selection",
+      "pseudocode": [
+        "open(): child.open(); out = child.get_output()",
+        "next(): while child.next(): if predicate(out): return true",
+        "next(): return false",
+        "close(): child.close()"
+      ],
+      "teaching_note": "The current tuple already lives in the child output registers; selection need not copy it.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:407",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:422"
+      ],
+      "lecture_occurrence_ids": [
+        "dbimpl-11-setoriented-024"
+      ]
+    },
+    {
+      "id": "hash-inner-join",
+      "title": "Build/probe inner equi-join",
+      "pseudocode": [
+        "open both children",
+        "for each left tuple l: H[key(l)].append(copy(l))",
+        "for each right tuple r: for each l in H[key(r)]:",
+        "    if full_predicate(l,r): materialize_or_emit(l concatenate r)",
+        "next(): return one prepared match at a time"
+      ],
+      "teaching_note": "The append/list form is the safe general algorithm. The exercise stores one offset because the README explicitly grants unique left keys.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators/include/moderndbs/algebra.h:302",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:530"
+      ],
+      "lecture_occurrence_ids": [
+        "dbimpl-12-operators-041",
+        "dbimpl-12-operators-042"
+      ]
+    },
+    {
+      "id": "hash-aggregation",
+      "title": "Hash group-by",
+      "pseudocode": [
+        "open child",
+        "for each tuple t:",
+        "    k = project group-by attributes from t",
+        "    if k absent: initialize aggregate state from t",
+        "    else: update every aggregate state with t",
+        "after exhaustion, next() iterates [k, finalized aggregates]"
+      ],
+      "teaching_note": "For external memory, partitions may need spilling; this assignment is the in-memory core.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:695",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:741"
+      ],
+      "lecture_occurrence_ids": [
+        "dbimpl-13-codegen-006"
+      ]
+    },
+    {
+      "id": "bag-set-operations",
+      "title": "Multiplicity table",
+      "pseudocode": [
+        "count L[x] and R[x]",
+        "UNION ALL copies(x) = L[x] + R[x]",
+        "INTERSECT ALL copies(x) = min(L[x], R[x])",
+        "EXCEPT ALL copies(x) = max(0, L[x] - R[x])",
+        "without ALL, clamp each result multiplicity to 0 or 1"
+      ],
+      "teaching_note": "This formulation is the shortest reliable route from semantics to pseudocode.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:971",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:1089"
+      ],
+      "lecture_occurrence_ids": [
+        "dbimpl-13-codegen-008",
+        "dbimpl-13-codegen-012",
+        "dbimpl-13-codegen-014"
+      ]
+    }
+  ],
+  "worked_examples": [
+    {
+      "id": "bag-multiplicity-trace",
+      "input": {
+        "A": [
+          1,
+          1,
+          2,
+          3,
+          3,
+          3
+        ],
+        "B": [
+          2,
+          4,
+          4,
+          3,
+          3
+        ]
+      },
+      "results": {
+        "union": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "union_all_counts": {
+          "1": 2,
+          "2": 2,
+          "3": 5,
+          "4": 2
+        },
+        "intersect": [
+          2,
+          3
+        ],
+        "intersect_all": [
+          2,
+          3,
+          3
+        ],
+        "except_A_minus_B": [
+          1
+        ],
+        "except_all_A_minus_B": [
+          1,
+          1,
+          3
+        ]
+      },
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:161",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:482",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:545",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:623"
+      ]
+    },
+    {
+      "id": "benchmark-plan-tree",
+      "sql_shape": "Filter students, hash-join attendance, group by student id/name with count, sort count descending, then project name.",
+      "tree_top_down": [
+        "Projection(name)",
+        "Sort(count DESC)",
+        "HashAggregation(GROUP BY id,name; COUNT)",
+        "HashJoin(student.id = attendance.student_id)",
+        "Select(student.id > threshold)",
+        "Student source and Attendance source"
+      ],
+      "teaching_note": "Use this as a code-to-plan-tree and pipeline-breaker coloring drill. Select and Projection stream; Sort and final HashAggregation break pipelines; HashJoin builds one side. The submitted specialization fuses join plus two-key COUNT, but that is an implementation optimization, not the logical tree.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators/bench/bm_iterator.cc:116",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/bench/bm_iterator.cc:138",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:601",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:706"
+      ],
+      "lecture_occurrence_ids": [
+        "dbimpl-12-operators-020"
+      ]
+    }
+  ],
+  "exam_transfer": {
+    "priority": "high",
+    "why": "Existing protocol records independently recall iterator pseudocode for UNION and anti-join, and the last exercise emphasized code-to-tree and pipeline coloring. This assignment directly exercises the same state-management skills.",
+    "existing_exam_practice_ids": [
+      "protocol-q-026",
+      "protocol-q-027",
+      "supplement-full-anti-join"
+    ],
+    "recommended_drills": [
+      {
+        "prompt": "Implement UNION ALL and UNION DISTINCT in open/next/close form, then state which one needs a seen set.",
+        "answer_outline": "UNION ALL drains left then right; UNION DISTINCT also keeps a full-tuple seen set and emits only first insertion.",
+        "occurrence_ids": [
+          "dbimpl-11-setoriented-013",
+          "dbimpl-13-codegen-009",
+          "dbimpl-13-codegen-010"
+        ]
+      },
+      {
+        "prompt": "Adapt build/probe hash join into a right anti-join iterator.",
+        "answer_outline": "Build left keys/candidates, scan right, test every candidate and the full predicate, emit a right tuple only if no match exists. A nonmatching candidate is not proof of no match.",
+        "occurrence_ids": [
+          "dbimpl-12-operators-041",
+          "dbimpl-12-operators-042",
+          "dbimpl-12-operators-055",
+          "dbimpl-12-operators-056"
+        ]
+      },
+      {
+        "prompt": "Define the nonstandard remembered term 'full anti join' before coding and implement unmatched tuples from both sides with marker bits.",
+        "answer_outline": "Mark every matching build tuple; buffer or emit unmatched probe tuples after checking all candidates; after probe exhaustion, scan and emit unmarked build tuples.",
+        "occurrence_ids": [
+          "dbimpl-11-setoriented-013",
+          "dbimpl-12-operators-055",
+          "dbimpl-12-operators-056",
+          "dbimpl-12-operators-057"
+        ]
+      },
+      {
+        "prompt": "Color the pipelines in the benchmark plan and identify the state retained at every boundary.",
+        "answer_outline": "Selection and projection are pass-through. Sort consumes all rows. Hash aggregation consumes all groups. Hash join consumes its build side before probing; the submitted implementation additionally materializes all output.",
+        "occurrence_ids": [
+          "dbimpl-12-operators-020"
+        ]
+      },
+      {
+        "prompt": "For A={1,1,2,3,3,3} and B={2,4,4,3,3}, compute INTERSECT, INTERSECT ALL, EXCEPT, and EXCEPT ALL.",
+        "answer_outline": "Use distinct membership for non-ALL operations and min/max multiplicity formulas for ALL operations.",
+        "occurrence_ids": [
+          "dbimpl-13-codegen-011",
+          "dbimpl-13-codegen-012",
+          "dbimpl-13-codegen-013",
+          "dbimpl-13-codegen-014"
+        ]
+      }
+    ]
+  },
+  "test_derived_behavior": [
+    {
+      "behavior": "Register equality is type-sensitive and CHAR16 ordering is lexicographic.",
+      "source_reference": "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:30"
+    },
+    {
+      "behavior": "Selection covers integer/string constants and attribute-to-attribute predicates across all six comparison operators.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:235",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:349"
+      ]
+    },
+    {
+      "behavior": "Sort applies criteria in order: student id descending, then grade ascending.",
+      "source_reference": "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:375"
+    },
+    {
+      "behavior": "Hash join emits all matching right rows for each unique left student key.",
+      "source_reference": "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:398"
+    },
+    {
+      "behavior": "Aggregation supports no-key global MIN/MAX and one-key SUM/COUNT.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:425",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:453"
+      ]
+    },
+    {
+      "behavior": "Set and bag tests explicitly demonstrate duplicate elimination versus multiplicity preservation.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:482",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:510",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:545",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:623"
+      ]
+    }
+  ],
+  "caveats_and_common_bugs": [
+    {
+      "severity": "important",
+      "title": "Unique-left-key simplification is not a general hash join",
+      "detail": "The map stores one offset per key, so later duplicate left keys overwrite earlier ones. This is correct only because the assignment explicitly permits unique left keys. Exam pseudocode should normally use key -> list of tuples unless uniqueness is stated.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators/include/moderndbs/algebra.h:302",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:541"
+      ]
+    },
+    {
+      "severity": "important",
+      "title": "Do not learn the benchmark fusion as canonical operator behavior",
+      "detail": "HashAggregation dynamically recognizes HashJoin plus exactly two grouping attributes and one COUNT, then bypasses ordinary join materialization. It is a valid guarded optimization for this implementation, but it couples operators and is not the generic iterator answer expected in most pseudocode questions.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:601",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:706",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/bench/bm_iterator.cc:138"
+      ]
+    },
+    {
+      "severity": "important",
+      "title": "Blocking classification depends on implementation",
+      "detail": "The report broadly calls set/bag variants blocking, but UnionAll is explicitly streaming. UNION DISTINCT can also emit unseen tuples incrementally while retaining a seen set. HashJoin must build one side, yet need not materialize all probe results as this submission does.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators-report.md:80",
+        "/Users/nkhalatiani/Downloads/algebraic-operators-report.md:94",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:861",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:530"
+      ],
+      "lecture_occurrence_ids": [
+        "dbimpl-12-operators-020"
+      ]
+    },
+    {
+      "severity": "medium",
+      "title": "Simplified type system omits SQL NULL semantics",
+      "detail": "Register has only INT64 and CHAR16; it has no NULL state. Production SQL joins, comparisons, grouping, and duplicate elimination need explicit NULL semantics. Exam answers should follow the question's stated simplified model.",
+      "source_reference": "/Users/nkhalatiani/Downloads/algebraic-operators/include/moderndbs/algebra.h:15"
+    },
+    {
+      "severity": "medium",
+      "title": "Global aggregation on empty input is not covered",
+      "detail": "The generic implementation creates no group when the input is empty. SQL COUNT without GROUP BY normally returns one row with zero, but the assignment's simplified tests do not define or cover this case.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:741",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/test/iterator_model_test.cc:425"
+      ]
+    },
+    {
+      "severity": "medium",
+      "title": "Schema compatibility and index bounds are assumed",
+      "detail": "Projection, predicates, joins, sort criteria, and set operations index output vectors directly. Inputs are assumed union-compatible and indexes valid; robust systems validate the plan before execution.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:357",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:414",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:470",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:545"
+      ]
+    },
+    {
+      "severity": "medium",
+      "title": "The report's benchmark numbers are machine-specific evidence",
+      "detail": "The report describes substantial improvements from inline CHAR16, flat storage, and fused aggregation, but its millisecond values are local observations and were not reproduced in this environment.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators-report.md:1047",
+        "/Users/nkhalatiani/Downloads/algebraic-operators-report.md:1465"
+      ]
+    }
+  ],
+  "lecture_links": [
+    {
+      "chapter_id": "01-foundations-and-relational-model",
+      "note": "Logical relational algebra and derived semi/anti joins provide the semantics that physical operators implement.",
+      "occurrence_ids": [
+        "dbimpl-00-introduction-012",
+        "dbimpl-00-introduction-013"
+      ]
+    },
+    {
+      "chapter_id": "12-set-oriented-execution-models",
+      "note": "Primary chapter for operator composition, iterator lifecycle, out-of-line passing, and stateful iterator examples.",
+      "occurrence_ids": [
+        "dbimpl-11-setoriented-010",
+        "dbimpl-11-setoriented-012",
+        "dbimpl-11-setoriented-013",
+        "dbimpl-11-setoriented-016",
+        "dbimpl-11-setoriented-023",
+        "dbimpl-11-setoriented-024",
+        "dbimpl-11-setoriented-025"
+      ]
+    },
+    {
+      "chapter_id": "13-pipelining-and-parallelization",
+      "note": "Pipeline and pipeline-breaker classification explains which exercise operators must materialize state.",
+      "occurrence_ids": [
+        "dbimpl-12-operators-020"
+      ]
+    },
+    {
+      "chapter_id": "14-relational-operators-and-joins",
+      "note": "Selection and hash-join implementation choices, plus marker-based semi/anti/outer joins.",
+      "occurrence_ids": [
+        "dbimpl-12-operators-024",
+        "dbimpl-12-operators-026",
+        "dbimpl-12-operators-028",
+        "dbimpl-12-operators-041",
+        "dbimpl-12-operators-042",
+        "dbimpl-12-operators-043",
+        "dbimpl-12-operators-055",
+        "dbimpl-12-operators-056",
+        "dbimpl-12-operators-057"
+      ]
+    },
+    {
+      "chapter_id": "15-sort-group-and-set-operations",
+      "note": "Sorting, hash grouping, and exact set versus bag operation algorithms.",
+      "occurrence_ids": [
+        "dbimpl-13-codegen-004",
+        "dbimpl-13-codegen-006",
+        "dbimpl-13-codegen-008",
+        "dbimpl-13-codegen-009",
+        "dbimpl-13-codegen-010",
+        "dbimpl-13-codegen-011",
+        "dbimpl-13-codegen-012",
+        "dbimpl-13-codegen-013",
+        "dbimpl-13-codegen-014"
+      ]
+    }
+  ],
+  "report_insights": [
+    {
+      "insight": "Inline CHAR16, direct tuple hashing, and flat row storage reduce allocations in a copy-heavy iterator engine.",
+      "assessment": "Supported by the implementation structure; performance magnitude remains report-only.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators-report.md:1103",
+        "/Users/nkhalatiani/Downloads/algebraic-operators-report.md:1128",
+        "/Users/nkhalatiani/Downloads/algebraic-operators-report.md:1176"
+      ]
+    },
+    {
+      "insight": "Projection can be zero-copy because the exercise contract guarantees stable child Register addresses.",
+      "assessment": "Directly supported by README and implementation.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators/README.md:29",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:350"
+      ]
+    },
+    {
+      "insight": "The fused join plus two-key COUNT path avoids materializing rows that aggregation immediately collapses.",
+      "assessment": "Supported as a narrow optimization, but unsuitable as the first teaching implementation.",
+      "source_references": [
+        "/Users/nkhalatiani/Downloads/algebraic-operators-report.md:695",
+        "/Users/nkhalatiani/Downloads/algebraic-operators/src/algebra.cc:601"
+      ]
+    }
+  ],
+  "recommended_site_integration": {
+    "format": "One implementation lab linked from chapters 12, 13, 14, and 15, with chapter-specific entry points into the same lab.",
+    "sections": [
+      "Mission and operator contract",
+      "Interactive open/next/close pipeline trace",
+      "Operator cards with streaming/breaker labels",
+      "Build/probe hash-join trace",
+      "Set-versus-bag multiplicity workbench",
+      "Code-to-plan-tree and pipeline-coloring drill",
+      "Exam transfer: UNION, right anti-join, and ambiguous full anti-join",
+      "Implementation caveats and report provenance",
+      "Jump to exact lecture evidence"
+    ],
+    "do_not_do": [
+      "Do not dump the complete C++ source into the study page.",
+      "Do not present the report's performance specialization as the canonical iterator algorithm.",
+      "Do not label all hash/set operators simply 'blocking' without stating which side or which submitted implementation is meant.",
+      "Do not merge ALL and DISTINCT variants into one explanation."
+    ],
+    "chapter_entry_labels": {
+      "12-set-oriented-execution-models": "Practice the iterator contract",
+      "13-pipelining-and-parallelization": "Color this plan's pipelines",
+      "14-relational-operators-and-joins": "Trace build/probe and anti-join state",
+      "15-sort-group-and-set-operations": "Master grouping and bag multiplicities"
+    }
+  }
+}

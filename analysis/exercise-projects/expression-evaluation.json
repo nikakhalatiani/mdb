@@ -1,0 +1,605 @@
+{
+  "schema_version": 1,
+  "id": "expression-evaluation",
+  "number": 6,
+  "title": "Expression Interpretation and LLVM Compilation",
+  "subtitle": "Evaluate one typed expression tree two ways: recursively in C++ and as optimized native code generated through LLVM.",
+  "project_label": "expression-evaluation",
+  "report_status": "not_provided",
+  "chapter_ids": [
+    "16-query-compilation"
+  ],
+  "assignment_brief": [
+    "Implement constants, indexed arguments, explicit casts, and binary arithmetic over signed 64-bit integers and doubles.",
+    "Every expression supports two execution paths. evaluate recursively interprets the tree and returns an opaque 64-bit payload; build recursively emits typed LLVM IR for the same semantics.",
+    "ExpressionCompiler wraps the generated tree in a function with the raw ABI data64_t compiled_expression(data64_t* args), hands the module to the LLVM ORC JIT, resolves the machine-code address, and executes it."
+  ],
+  "learning_outcomes": [
+    "Trace one expression tree through both recursive interpretation and recursive LLVM construction.",
+    "Explain why data64_t is a transport container for bits rather than the semantic numeric type.",
+    "Distinguish a representation-preserving bitcast from a value-changing numeric cast.",
+    "Select typed LLVM instructions for integer and floating arithmetic, including signed integer division.",
+    "Reconstruct a formula from SSA definitions and constant-fold it when inputs become compile-time constants.",
+    "State the generated function ABI and the lifetime requirements of its module, JIT, context, arguments, and function pointer.",
+    "Interpret the benchmark as steady-state execution cost only, and identify the operations and edge cases it does not measure."
+  ],
+  "artifacts": [
+    "README.md assignment specification",
+    "include/moderndbs/codegen/expression.h expression hierarchy and compiler interface",
+    "src/codegen/expression.cc interpreter and LLVM construction",
+    "include/moderndbs/codegen/jit.h and src/codegen/jit.cc ORC JIT wrapper",
+    "test/expression_test.cc 29 provided tests",
+    "bench/bm_expression.cc interpreter-versus-JIT microbenchmark",
+    "src/codegen/example/printf.cc and printf.ll module-construction examples"
+  ],
+  "concepts": [
+    {
+      "title": "One tree, two execution strategies",
+      "takeaway": "The interpreter computes now; the compiler constructs a typed program that computes later.",
+      "explanation": [
+        "evaluate walks the expression tree at runtime. A binary node recursively evaluates its children, decodes their raw payloads according to the node's ValueType, performs the C++ operation, and re-encodes the result.",
+        "build performs the same structural recursion but returns llvm::Value objects. It emits IR nodes such as add or fadd instead of calculating the answer. ExpressionCompiler supplies the function and entry block around the recursively generated body."
+      ],
+      "pseudocode": [
+        "interpret(node,args):",
+        "    if leaf: decode/load and return raw result bits",
+        "    l = interpret(node.left,args); r = interpret(node.right,args)",
+        "    return encode(apply_typed_operation(l,r))",
+        "compile(node,builder,argsPtr):",
+        "    recursively build typed child llvm::Value objects",
+        "    return builder.Create<typed operation>(leftIR,rightIR)"
+      ],
+      "invariants": [
+        "Both children of a binary node have the same semantic ValueType.",
+        "Interpreter and compiled paths implement the same value semantics for defined inputs.",
+        "The expression objects must outlive interpretation or compilation because parents store child references."
+      ],
+      "pitfalls": [
+        "Computing a value inside build instead of emitting IR.",
+        "Choosing an integer LLVM instruction for a DOUBLE node or an FP instruction for INT64.",
+        "Assuming the raw uint64_t payload itself determines the semantic type."
+      ],
+      "source_refs": [
+        {
+          "path": "expression-evaluation/README.md",
+          "lines": "25-39",
+          "note": "Defines the interpreter and compiler methods."
+        },
+        {
+          "path": "expression-evaluation/include/moderndbs/codegen/expression.h",
+          "lines": "17-42",
+          "symbol": "Expression",
+          "note": "Carries semantic type and dual virtual interface."
+        },
+        {
+          "path": "expression-evaluation/src/codegen/expression.cc",
+          "lines": "44-113",
+          "note": "Recursive interpreted arithmetic."
+        },
+        {
+          "path": "expression-evaluation/src/codegen/expression.cc",
+          "lines": "156-201",
+          "note": "Recursive LLVM arithmetic construction."
+        }
+      ]
+    },
+    {
+      "title": "Opaque data64_t transport and the generated ABI",
+      "takeaway": "Every argument and result crosses the C++/JIT boundary as exactly 64 raw bits; ValueType tells the code how to interpret those bits.",
+      "explanation": [
+        "data64_t is uint64_t because signed integers and IEEE doubles are both eight bytes. An integer payload contains the two's-complement bits of int64_t; a double payload contains the double's IEEE representation.",
+        "The generated function has the ABI i64 compiled_expression(ptr args). INT64 Argument nodes load i64. DOUBLE Argument nodes load double from the corresponding eight-byte slot. A DOUBLE root is bitcast to i64 before return so the external function signature remains uniform."
+      ],
+      "pseudocode": [
+        "external slot: raw 64 bits",
+        "INT64 argument: load i64 from slot[index]",
+        "DOUBLE argument: load double from the same eight-byte slot[index]",
+        "DOUBLE result: bitcast double -> i64 for transport",
+        "caller decodes returned bits using root ValueType"
+      ],
+      "invariants": [
+        "Each argument slot is exactly eight bytes.",
+        "The caller encodes each slot according to the Argument node's declared ValueType.",
+        "A DOUBLE result is representation-bitcast, not numerically converted, at the ABI boundary."
+      ],
+      "pitfalls": [
+        "Treating the uint64_t decimal value as the represented double.",
+        "Passing a null args pointer to an expression that contains Argument nodes.",
+        "Reading an argument with a different ValueType than the caller used to encode it.",
+        "Using reinterpret_cast lvalue dereferences where std::bit_cast or memcpy would avoid C++ aliasing undefined behavior."
+      ],
+      "source_refs": [
+        {
+          "path": "expression-evaluation/include/moderndbs/codegen/expression.h",
+          "lines": "11-15",
+          "symbol": "data64_t",
+          "note": "Declares the opaque eight-byte carrier."
+        },
+        {
+          "path": "expression-evaluation/src/codegen/expression.cc",
+          "lines": "130-141",
+          "symbol": "Argument::build",
+          "note": "Emits typed loads from eight-byte argument slots."
+        },
+        {
+          "path": "expression-evaluation/src/codegen/expression.cc",
+          "lines": "217-234",
+          "symbol": "ExpressionCompiler::compile",
+          "note": "Creates the i64(ptr) wrapper and bitcasts a DOUBLE root for return."
+        }
+      ]
+    },
+    {
+      "title": "Numeric conversion is not bit reinterpretation",
+      "takeaway": "Cast changes the numeric value's representation; bitcast merely preserves the same bits under another type.",
+      "explanation": [
+        "The assignment highlights that integer 42 and double 42.0 have different bit patterns. A semantic cast must decode the source, numerically convert it, and encode the target.",
+        "The interpreter uses static_cast after std::bit_cast decoding. The compiler uses signed-integer-to-floating SIToFP and floating-to-signed-integer FPToSI. By contrast, the final DOUBLE result uses a bitcast only because it is being packed into the raw return ABI without changing its value."
+      ],
+      "pseudocode": [
+        "INT64 -> DOUBLE: decode signed i64; numeric convert; encode double bits",
+        "DOUBLE -> INT64: decode double; truncate toward zero; encode signed i64 bits",
+        "same type: leave the payload/value unchanged",
+        "ABI packing: bitcast typed result without numeric conversion"
+      ],
+      "invariants": [
+        "A cast to the same type is an identity.",
+        "INT64 to DOUBLE treats the source as signed.",
+        "DOUBLE to INT64 is defined only for finite values whose truncated result is representable."
+      ],
+      "pitfalls": [
+        "Implementing Cast with bitcast, so integer 42 becomes a tiny nonsensical double.",
+        "Using UIToFP rather than SIToFP for negative integers.",
+        "Ignoring NaN, infinity, and out-of-range FPToSI behavior.",
+        "Assuming the provided tests cover both cast directions and both execution paths."
+      ],
+      "source_refs": [
+        {
+          "path": "expression-evaluation/include/moderndbs/codegen/expression.h",
+          "lines": "76-92",
+          "symbol": "Cast",
+          "note": "Explicitly requires a converting cast."
+        },
+        {
+          "path": "expression-evaluation/src/codegen/expression.cc",
+          "lines": "28-41",
+          "symbol": "Cast::evaluate",
+          "note": "Interpreter numeric conversions."
+        },
+        {
+          "path": "expression-evaluation/src/codegen/expression.cc",
+          "lines": "144-153",
+          "symbol": "Cast::build",
+          "note": "LLVM SIToFP and FPToSI conversion instructions."
+        },
+        {
+          "path": "expression-evaluation/test/expression_test.cc",
+          "lines": "451-496",
+          "symbol": "CompiledCastingExpression",
+          "note": "Tests only compiled DOUBLE-to-INT64 inside a mixed expression."
+        }
+      ]
+    },
+    {
+      "title": "Typed arithmetic and signed integer semantics",
+      "takeaway": "LLVM arithmetic opcodes encode both the value domain and, for division, signedness.",
+      "explanation": [
+        "Integer and floating addition, subtraction, and multiplication use separate opcode families: add/sub/mul versus fadd/fsub/fmul. Signed and unsigned integer add have the same low 64-bit result when no overflow flags are attached.",
+        "Division is different: the implementation correctly emits sdiv for signed INT64 and fdiv for DOUBLE. The interpreter decodes INT64 before C++ division. Neither path guards division by zero or INT64_MIN divided by -1."
+      ],
+      "pseudocode": [
+        "INT64: add, sub, mul, sdiv",
+        "DOUBLE: fadd, fsub, fmul, fdiv",
+        "before integer division: require divisor != 0",
+        "also reject or define INT64_MIN / -1",
+        "before FPToSI: require finite, in-range input if defined behavior is needed"
+      ],
+      "invariants": [
+        "sdiv, not udiv, implements signed integer division.",
+        "Interpreter and compiler must choose operations from the same semantic type.",
+        "Overflow and exceptional inputs need an explicit shared policy if equivalence is required."
+      ],
+      "pitfalls": [
+        "Using unsigned division because the transport carrier is uint64_t.",
+        "Calling signed C++ overflow equivalent to LLVM wrapping arithmetic; C++ signed overflow is undefined while plain LLVM add/sub/mul wrap modulo 2^64.",
+        "Relying on tests whose expected C++ expression itself overflows.",
+        "Assuming floating division by zero behaves like integer division by zero."
+      ],
+      "source_refs": [
+        {
+          "path": "expression-evaluation/src/codegen/expression.cc",
+          "lines": "44-113",
+          "note": "C++ typed arithmetic and unguarded division."
+        },
+        {
+          "path": "expression-evaluation/src/codegen/expression.cc",
+          "lines": "156-201",
+          "note": "LLVM typed opcode selection, including CreateSDiv."
+        },
+        {
+          "path": "expression-evaluation/include/moderndbs/codegen/expression.h",
+          "lines": "143-152",
+          "symbol": "DivExpression",
+          "note": "Acknowledges that edge cases are not tested."
+        }
+      ]
+    },
+    {
+      "title": "Module construction, optimization, lookup, and lifetime",
+      "takeaway": "Compilation is a lifecycle: build valid IR, transfer module ownership to the JIT, resolve a symbol, then keep the JIT alive while calling it.",
+      "explanation": [
+        "ExpressionCompiler creates one module in its constructor. compile declares compiled_expression, creates one entry block, recursively emits the root, returns its raw i64 payload, optionally prints IR, moves the module into the JIT, and stores the resolved machine-code pointer.",
+        "The ORC wrapper verifies and optimizes modules, compiles them for the host target, and owns executable memory until its execution session ends. In this submission, ExpressionCompiler is effectively one-shot because compile moves away its only module and always uses the same symbol name."
+      ],
+      "pseudocode": [
+        "create context, module, builder",
+        "declare i64 @compiled_expression(ptr args)",
+        "entry: typedResult = root.build(builder,args)",
+        "if root is DOUBLE: rawResult = bitcast typedResult to i64",
+        "ret rawResult",
+        "verify; optimize; add module; lookup symbol; call while JIT lives"
+      ],
+      "invariants": [
+        "The LLVM context outlives the module/JIT operations that reference it.",
+        "A module is not used after ownership is moved into the JIT.",
+        "run is legal only after a successful non-null symbol lookup.",
+        "Generated function code remains valid only while the owning JIT session exists."
+      ],
+      "pitfalls": [
+        "Calling compile twice on the same ExpressionCompiler: module is null after the first move and the symbol name is fixed.",
+        "Calling run before compile or after a failed lookup.",
+        "Printing verifier diagnostics but still adding an invalid module.",
+        "Destroying the compiler/JIT and retaining a stale function pointer."
+      ],
+      "source_refs": [
+        {
+          "path": "expression-evaluation/src/codegen/expression.cc",
+          "lines": "208-251",
+          "symbol": "ExpressionCompiler",
+          "note": "One-module compile and raw function-pointer lifecycle."
+        },
+        {
+          "path": "expression-evaluation/src/codegen/jit.cc",
+          "lines": "35-67",
+          "symbol": "JIT",
+          "note": "ORC layers, verification, optimization, ownership, and lookup."
+        },
+        {
+          "path": "expression-evaluation/src/codegen/example/printf.cc",
+          "lines": "13-54",
+          "symbol": "buildPrintfExample",
+          "note": "Reference module/function/basic-block construction."
+        }
+      ]
+    },
+    {
+      "title": "What the benchmark does—and does not—measure",
+      "takeaway": "It compares repeated execution of one left-deep integer tree after compilation; it does not measure compile latency or general expression coverage.",
+      "explanation": [
+        "The benchmark creates 1,000 Add/Sub/Mul nodes over 10, 100, or 1,000 arguments. The JIT path compiles once before the timed loop; both paths then evaluate the same fixed argument array repeatedly.",
+        "The result mainly exposes recursive virtual-dispatch and tree-walk overhead versus a straight-line optimized native function. It says nothing about DOUBLE, Cast, Div, branches, compilation amortization, changing inputs, or full query compilation."
+      ],
+      "pseudocode": [
+        "setup: build left-deep tree; initialize fixed args",
+        "compiled setup only: compile(root)",
+        "timed compiled loop: fnPtr(args)",
+        "timed interpreted loop: root.evaluate(args)",
+        "report items/sec separately; compilation cost excluded"
+      ],
+      "invariants": [
+        "The compared expression shape and inputs are identical.",
+        "Compilation time is outside the timed compiled loop.",
+        "The benchmark label must state its covered operations and tree shape."
+      ],
+      "pitfalls": [
+        "Claiming the numbers include JIT startup cost.",
+        "Generalizing from integer Add/Sub/Mul to all expressions.",
+        "Ignoring that random large signed arithmetic likely overflows in the interpreter, where C++ signed overflow is undefined.",
+        "Treating a microbenchmark as end-to-end query-engine performance."
+      ],
+      "source_refs": [
+        {
+          "path": "expression-evaluation/bench/bm_expression.cc",
+          "lines": "22-69",
+          "symbol": "TestExpression",
+          "note": "Builds a left-deep INT64 Add/Sub/Mul tree."
+        },
+        {
+          "path": "expression-evaluation/bench/bm_expression.cc",
+          "lines": "71-121",
+          "note": "Compilation is setup; timed loops run fixed inputs."
+        }
+      ]
+    }
+  ],
+  "trace": {
+    "title": "Follow a mixed DOUBLE-to-INT64 expression across the raw ABI",
+    "setup": "Use the test shape int64(((42.0 + a1) - (21.0 - a0))) + a2 + 100 with a0=2.5 encoded as DOUBLE bits, a1=-1.25 encoded as DOUBLE bits, and a2=7 encoded as INT64 bits.",
+    "steps": [
+      "Argument nodes select slots by index and decode them by declared type; the slots themselves carry no runtime type tag.",
+      "The DOUBLE subtree computes 42.0 + (-1.25) = 40.75 and 21.0 - 2.5 = 18.5.",
+      "DOUBLE subtraction produces 22.25.",
+      "Cast numerically converts 22.25 to signed INT64 22 by truncation toward zero. A bitcast here would be wrong.",
+      "INT64 additions produce 22 + 7 + 100 = 129.",
+      "The interpreter returns the raw bits of signed 129. The compiled function already has an i64 result and returns the same bits through data64_t."
+    ],
+    "result": "Both execution strategies should return the data64_t bit pattern for signed integer 129."
+  },
+  "decisions": [
+    {
+      "title": "Use one eight-byte carrier for mixed scalar values",
+      "rationale": "A uniform argument-array and function ABI makes JIT lookup and invocation simple while expression metadata preserves semantic types.",
+      "tradeoff": "The ABI has no runtime tags, bounds, or NULL indicators; caller and expression tree must agree perfectly.",
+      "source_refs": [
+        {
+          "path": "expression-evaluation/include/moderndbs/codegen/expression.h",
+          "lines": "11-24",
+          "note": "Opaque carrier plus semantic ValueType."
+        },
+        {
+          "path": "expression-evaluation/src/codegen/expression.cc",
+          "lines": "217-234",
+          "note": "Uniform i64-returning generated function."
+        }
+      ]
+    },
+    {
+      "title": "Keep generated values typed inside LLVM",
+      "rationale": "INT64 nodes produce i64 and DOUBLE nodes produce double, so LLVM can verify and optimize the expression using strongly typed SSA values.",
+      "tradeoff": "The compiler must emit explicit numeric conversions at every type-changing Cast and pack DOUBLE only at the external ABI boundary.",
+      "source_refs": [
+        {
+          "path": "expression-evaluation/src/codegen/expression.cc",
+          "lines": "118-201",
+          "note": "Typed constants, loads, conversions, and arithmetic."
+        }
+      ]
+    },
+    {
+      "title": "Optimize through ORC before symbol lookup",
+      "rationale": "Instruction combining, reassociation, GVN, and CFG simplification can fold constants and remove redundant work before host compilation.",
+      "tradeoff": "Optimization adds compile latency and can expose undefined-semantics mismatches if the interpreter relies on C++ signed overflow.",
+      "source_refs": [
+        {
+          "path": "expression-evaluation/src/codegen/jit.cc",
+          "lines": "16-31",
+          "symbol": "optimizeModule",
+          "note": "Configured function-level optimization passes."
+        },
+        {
+          "path": "expression-evaluation/src/codegen/jit.cc",
+          "lines": "35-48",
+          "symbol": "JIT::JIT",
+          "note": "Connects transform and compile layers."
+        }
+      ]
+    },
+    {
+      "title": "Treat the compiler object as one-shot",
+      "rationale": "The current implementation creates one module in the constructor and transfers it to the JIT on compile.",
+      "tradeoff": "A second compile dereferences a moved-away module and would also reuse the fixed compiled_expression symbol; reusable compilation requires a fresh module and symbol/resource policy.",
+      "source_refs": [
+        {
+          "path": "expression-evaluation/src/codegen/expression.cc",
+          "lines": "208-246",
+          "symbol": "ExpressionCompiler::compile",
+          "note": "Creates once, then moves module ownership."
+        }
+      ]
+    }
+  ],
+  "tests": [
+    {
+      "name": "CompiledIntegerSubtraction",
+      "proves": "The compiled ABI preserves the bit pattern of a negative signed result.",
+      "failure_mode": "A wrong return convention or value representation turns -21 into an unrelated positive payload.",
+      "source_refs": [
+        {
+          "path": "expression-evaluation/test/expression_test.cc",
+          "lines": "59-68",
+          "note": "Checks a negative compiled integer result."
+        }
+      ]
+    },
+    {
+      "name": "CompiledComplexIntegerExpression / InterpretedComplexIntegerExpression",
+      "proves": "Both paths can traverse a multi-level tree with indexed arguments and all four integer operations for the sampled inputs.",
+      "failure_mode": "Wrong argument offsets, opcode selection, or tree wiring diverges from the formula; however the random oracle itself can invoke signed-overflow undefined behavior.",
+      "source_refs": [
+        {
+          "path": "expression-evaluation/test/expression_test.cc",
+          "lines": "152-235",
+          "note": "Separate compiled and interpreted random tests over one complex formula."
+        }
+      ]
+    },
+    {
+      "name": "CompiledComplexFPExpression / InterpretedComplexFPExpression",
+      "proves": "Both paths support multi-node DOUBLE addition and subtraction over indexed arguments.",
+      "failure_mode": "Wrong FP opcodes or typed loads change results, but the tolerance of 1.0 is too loose to catch many smaller errors.",
+      "source_refs": [
+        {
+          "path": "expression-evaluation/test/expression_test.cc",
+          "lines": "370-447",
+          "note": "Separate compiled and interpreted DOUBLE tree tests."
+        }
+      ]
+    },
+    {
+      "name": "CompiledCastingExpression",
+      "proves": "The compiled path performs DOUBLE-to-signed-INT64 numeric conversion inside a mixed-type argument array.",
+      "failure_mode": "Using bitcast instead of FPToSI produces the double's raw IEEE bits rather than its truncated integer value.",
+      "source_refs": [
+        {
+          "path": "expression-evaluation/test/expression_test.cc",
+          "lines": "451-496",
+          "note": "Only provided Cast test; compiled DOUBLE-to-INT64 direction."
+        }
+      ]
+    },
+    {
+      "name": "InterpretedIntegerConstant",
+      "proves": "Nothing: EXPECT_EQ(result,result) is tautological and passes for every returned value.",
+      "failure_mode": "A broken Constant::evaluate can escape this test; it should compare against 42 or the encoded signed value.",
+      "source_refs": [
+        {
+          "path": "expression-evaluation/test/expression_test.cc",
+          "lines": "95-100",
+          "note": "Tautological test assertion."
+        }
+      ]
+    },
+    {
+      "name": "Missing differential and edge-case coverage",
+      "proves": "The suite has no direct interpreter-versus-JIT comparison, no interpreted Cast, no INT64-to-DOUBLE Cast, no same-type Cast, no negative division unit test, no overflow policy test, and no compiler reuse/lifecycle test.",
+      "failure_mode": "The two execution strategies can disagree on uncovered inputs while all 29 supplied tests still pass.",
+      "source_refs": [
+        {
+          "path": "expression-evaluation/test/expression_test.cc",
+          "lines": "25-498",
+          "note": "Complete provided suite."
+        },
+        {
+          "path": "expression-evaluation/include/moderndbs/codegen/expression.h",
+          "lines": "143-152",
+          "note": "Division edge cases explicitly not tested."
+        }
+      ]
+    }
+  ],
+  "drills": [
+    {
+      "prompt": "Read a supplied straight-line LLVM function, rewrite its SSA definitions as one arithmetic expression, substitute known globals, and constant-fold the result.",
+      "format": "trace",
+      "answer": "Start at ret and recursively substitute each SSA definition. Respect opcode types and signedness. Replace compile-time-known globals, evaluate constant arithmetic and comparisons, select the surviving branch, then remove dead definitions and unreachable blocks.",
+      "checklist": [
+        "Follow SSA use-def chains from the return value.",
+        "Track each value's LLVM type.",
+        "Distinguish sdiv/udiv and signed/unsigned comparisons.",
+        "Substitute only values explicitly known at compile time.",
+        "Remove dead code only after proving it cannot affect the result."
+      ]
+    },
+    {
+      "prompt": "Explain why casting integer 42 to DOUBLE must not use a bitcast.",
+      "format": "compare",
+      "answer": "The raw bits for integer 42 represent a tiny unrelated double. Numeric cast SIToFP computes double 42.0 with its own IEEE bit pattern; bitcast is appropriate only when packing or unpacking an already-computed value across the raw data64_t ABI.",
+      "checklist": [
+        "Name the two distinct bit patterns.",
+        "Use SIToFP for signed INT64 to DOUBLE.",
+        "Use FPToSI for DOUBLE to signed INT64.",
+        "Reserve bitcast for representation transport."
+      ]
+    },
+    {
+      "prompt": "Debug an implementation that emits udiv for every INT64 division.",
+      "format": "debug",
+      "answer": "The expression type is signed INT64 even though data64_t is uint64_t. Decode/interpret the payload as signed and emit sdiv. A direct case such as -7/2 should produce -3 with truncation toward zero.",
+      "checklist": [
+        "Do not infer semantic signedness from the transport type.",
+        "Use a negative direct test.",
+        "Mention division-by-zero and INT64_MIN/-1.",
+        "Keep interpreter and compiled policies aligned."
+      ]
+    },
+    {
+      "prompt": "Sketch the LLVM wrapper function for a DOUBLE root and explain every conversion.",
+      "format": "pseudocode",
+      "answer": "Declare i64 @compiled_expression(ptr args), recursively build a typed double result, bitcast that double to i64 without changing bits, and ret i64. Typed child Cast nodes still use numeric conversion instructions.",
+      "checklist": [
+        "Use a uniform raw external ABI.",
+        "Load each Argument using its semantic type.",
+        "Bitcast only the final DOUBLE result for transport.",
+        "Keep the JIT alive while calling the resolved address."
+      ]
+    },
+    {
+      "prompt": "What conclusion can and cannot be drawn from the provided interpreter-versus-compiled benchmark?",
+      "format": "explain",
+      "answer": "It compares steady-state calls for one 1,000-node left-deep INT64 Add/Sub/Mul tree after JIT compilation. It can show virtual tree-walk overhead versus optimized straight-line code, but excludes compilation cost and does not cover casts, division, doubles, branches, changing inputs, or end-to-end queries.",
+      "checklist": [
+        "State that compile time is outside the timed loop.",
+        "Name the exact operations and tree shape.",
+        "Note that inputs are fixed during timing.",
+        "Flag signed-overflow undefined behavior in the interpreted workload."
+      ]
+    }
+  ],
+  "lecture_links": [
+    {
+      "chapter_id": "16-query-compilation",
+      "occurrence_ids": [
+        "dbimpl-13-codegen-016",
+        "dbimpl-13-codegen-017",
+        "dbimpl-13-codegen-018",
+        "dbimpl-13-codegen-019",
+        "dbimpl-13-codegen-020",
+        "dbimpl-13-codegen-023"
+      ],
+      "note": "Motivation for native compilation; LLVM typed SSA and phi nodes; direct scalar-expression lowering; and the larger goal of retaining values in registers inside data-centric pipelines."
+    }
+  ],
+  "limitations": [
+    "The project has no accompanying student report; all conclusions come from README, code, tests, benchmark, JIT wrapper, examples, and lecture evidence.",
+    "The current host lacks cmake and an LLVM 21 development installation, so the 29 provided tests and benchmark were not executed in this audit.",
+    "Constant constructors and many tests decode/encode via reinterpret_cast lvalue dereferences; std::bit_cast or memcpy is safer under C++ aliasing rules.",
+    "Interpreter INT64 add/sub/mul use signed C++ arithmetic, where overflow is undefined, while plain LLVM integer arithmetic wraps modulo 2^64; equivalence is not defined on overflow.",
+    "Integer division by zero and INT64_MIN/-1 are unguarded; DOUBLE-to-INT64 conversion of NaN, infinity, or out-of-range values is also undefined/poison territory.",
+    "Argument lookup has no runtime argument count, bounds check, type tag, NULL flag, or alignment check.",
+    "Expression nodes hold child references rather than ownership, so child lifetimes must exceed parent evaluation or compilation.",
+    "ExpressionCompiler is effectively one-shot, does not guard run-before-compile, and does not reject a null symbol pointer.",
+    "JIT::addModule prints invalid-module diagnostics but still forwards the module to the optimization/compile layer.",
+    "The benchmark excludes compilation cost, covers only INT64 Add/Sub/Mul in a left-deep tree, uses fixed inputs, and likely invokes signed-overflow undefined behavior in the interpreter."
+  ],
+  "audit": {
+    "status": "deep_audited",
+    "source_policy": "README and tests define intended assignment scope; implementation is inspected as one student solution. No report was supplied.",
+    "verification": {
+      "static_review": "completed",
+      "tests_present": 29,
+      "tests_run_in_current_environment": false,
+      "reason": "cmake and LLVM 21 development tooling are absent on the current macOS host"
+    },
+    "high_priority_findings": [
+      {
+        "title": "Interpreter/compiler overflow mismatch",
+        "detail": "C++ signed overflow is undefined; emitted LLVM add/sub/mul without nsw/nuw wrap. Random complex tests and benchmark use values that make overflow likely.",
+        "source_refs": [
+          "expression-evaluation/src/codegen/expression.cc:44-94",
+          "expression-evaluation/src/codegen/expression.cc:156-189",
+          "expression-evaluation/test/expression_test.cc:152-235",
+          "expression-evaluation/bench/bm_expression.cc:71-109"
+        ]
+      },
+      {
+        "title": "Provided constant test is tautological",
+        "detail": "InterpretedIntegerConstant compares result with itself and cannot detect a wrong implementation.",
+        "source_refs": [
+          "expression-evaluation/test/expression_test.cc:95-100"
+        ]
+      },
+      {
+        "title": "Cast coverage is one-sided",
+        "detail": "Only compiled DOUBLE-to-INT64 is tested; interpreter Cast and INT64-to-DOUBLE are uncovered.",
+        "source_refs": [
+          "expression-evaluation/test/expression_test.cc:451-496"
+        ]
+      },
+      {
+        "title": "Compilation lifecycle lacks defensive checks",
+        "detail": "The module is moved on first compile, fnPtr may remain null, run calls it unconditionally, and verifier failure does not reject the module.",
+        "source_refs": [
+          "expression-evaluation/src/codegen/expression.cc:208-251",
+          "expression-evaluation/src/codegen/jit.cc:57-67"
+        ]
+      }
+    ],
+    "exam_relevance": {
+      "priority": "high",
+      "existing_exam_practice_ids": [
+        "protocol-q-023"
+      ],
+      "reason": "The protocol independently recalls reading LLVM, reconstructing a formula, evaluating it, and simplifying with compile-time-known globals—the exact conceptual transfer from this exercise."
+    }
+  }
+}

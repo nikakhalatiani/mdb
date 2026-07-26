@@ -1,0 +1,732 @@
+{
+  "id": "b-tree",
+  "number": 3,
+  "title": "Page-Resident B+-Tree",
+  "subtitle": "Turn page bytes, separator rules, and split propagation into an index you can trace and explain under exam pressure.",
+  "project_label": "b-tree",
+  "report_status": "available",
+  "chapter_ids": [
+    "03-buffer-management",
+    "04-segments-space-and-update-strategies",
+    "07-btree-fundamentals-and-operations",
+    "08-advanced-btree-techniques"
+  ],
+  "assignment_brief": [
+    "Implement a templated B+-tree whose nodes live inside fixed-size buffer-manager pages and whose child references are page IDs rather than process pointers. The required public operations are insert, lookup, and erase; the assignment explicitly permits omitting links between leaf pages.",
+    "The concrete tests instantiate 64-bit keys and values, std::less ordering, and 1024-byte pages. They treat a repeated key as an update, force both leaf and multi-level splits, and require thread-safe behavior under four concurrent writers.",
+    "The README also asks for the concurrency techniques from the lecture's Concurrent Access (2) and (3) slides. The submitted implementation does not implement those techniques: it serializes every public operation with one tree-wide mutex. That distinction is essential for learning and for the recalled lock-coupling exam task."
+  ],
+  "learning_outcomes": [
+    "Derive the physical capacity of leaf and inner nodes from page size, alignment, and entry width.",
+    "State one separator convention precisely and use it consistently for lookup, split, and parent insertion.",
+    "Write point-lookup and recursive split-propagation pseudocode without relying on C++ details.",
+    "Trace a full-leaf insertion through split, separator propagation, and root creation.",
+    "Distinguish the assignment's simple leaf erase from complete B+-tree deletion with redistribution and merge.",
+    "Explain why the tree-wide mutex is safe but not the lock-coupling, safe-page, or restart strategy taught in the lecture."
+  ],
+  "artifacts": [
+    "README.md — assignment contract and concurrency requirement",
+    "include/moderndbs/btree.h — complete templated node and tree implementation",
+    "include/moderndbs/segment.h — segment identity and buffer-manager ownership",
+    "include/moderndbs/buffer_manager.h and src/buffer_manager.cc — in-memory fake page/latch environment",
+    "test/btree_test.cc — executable behavioral specification",
+    "bench/bm_btree.cc — four-thread mixed insert/erase benchmark",
+    "b-tree-report.md — student-authored implementation narrative, cross-checked against code and tests"
+  ],
+  "concepts": [
+    {
+      "title": "A node is a typed view over one database page",
+      "takeaway": "The index is page-resident: a node is constructed in frame bytes, and durable-style page IDs—not C++ pointers—connect the tree.",
+      "explanation": [
+        "Every page begins with a small Node header containing level and count. Level zero identifies a leaf. Leaf count means records; inner count means children, so an inner node with c children has only c-1 valid separators.",
+        "The template parameter PageSize allows capacities to be computed at compile time after aligning the data area. With the tested 1024-byte page and 64-bit key/value/page-ID fields, both capacities are 63 entries or children and each node occupies 1016 bytes.",
+        "The constructor allocates the first segment page, fixes it exclusively, and placement-constructs an empty LeafNode. New page IDs combine the 16-bit segment ID with a 48-bit segment-local page number."
+      ],
+      "pseudocode": [
+        "page_id(local) = (segment_id << 48) | local",
+        "root = allocate_page()",
+        "frame = fix_page(root, EXCLUSIVE)",
+        "construct LeafNode in frame.bytes",
+        "unfix_page(frame, DIRTY)"
+      ],
+      "invariants": [
+        "Every LeafNode and InnerNode fits completely inside PageSize bytes.",
+        "level == 0 means leaf; a split preserves the level of the split node.",
+        "Leaf count is the number of aligned key/value pairs.",
+        "Inner count is the number of children; exactly count-1 separator keys are meaningful.",
+        "A child reference is a page ID in the B-tree's segment, never an in-memory node pointer."
+      ],
+      "pitfalls": [
+        "Using inner count as the number of keys causes an off-by-one child access.",
+        "Ignoring alignment can make the arrays misaligned or push the object past the end of the page.",
+        "The implementation's next_segment_page and root are in-memory fields; it does not demonstrate restart-time metadata persistence.",
+        "The header depends on transitive includes for vector, optional, and mutex, which is brittle even though this project builds in its original environment."
+      ],
+      "source_refs": [
+        {
+          "path": "include/moderndbs/btree.h",
+          "lines": "12-45",
+          "symbol": "BTree::Node / InnerNode",
+          "note": "Defines the common header, aligned layout, inner capacity, separator array, and child page IDs."
+        },
+        {
+          "path": "include/moderndbs/btree.h",
+          "lines": "126-140",
+          "symbol": "BTree::LeafNode",
+          "note": "Computes leaf capacity and lays out parallel key/value arrays."
+        },
+        {
+          "path": "include/moderndbs/btree.h",
+          "lines": "234-249",
+          "symbol": "static_assert / BTree constructor",
+          "note": "Checks page fit and constructs the initial root leaf inside a fixed frame."
+        },
+        {
+          "path": "include/moderndbs/btree.h",
+          "lines": "343-354",
+          "symbol": "make_page_id / allocate_page",
+          "note": "Builds segment-qualified page IDs and advances the local allocator."
+        },
+        {
+          "path": "test/btree_test.cc",
+          "lines": "21-39",
+          "symbol": "BTreeTest.Capacity",
+          "note": "Requires computed nodes to nearly fill, but never exceed, both 1 KiB and 64 KiB pages."
+        }
+      ]
+    },
+    {
+      "title": "One separator convention controls every descent",
+      "takeaway": "This implementation stores separator[i] = maximum key in child[i], so equality must descend left.",
+      "explanation": [
+        "Both leaf and inner search use comparator-based lower_bound: the first stored key that is not less than the target. Equality is detected with !(a<b) and !(b<a), so KeyT need not implement operator==.",
+        "For an inner node, lower_bound searches only count-1 separators and its returned position is directly the child index. If the target exceeds every separator, the returned index is count-1, the rightmost child.",
+        "This max-of-left convention differs from the common min-of-right diagrams. Either convention can work, but lookup, split return values, and parent insertion must agree exactly."
+      ],
+      "pseudocode": [
+        "function child_index(inner, key):",
+        "  lo = first i in [0, inner.count-1) with inner.keys[i] >= key",
+        "  return lo                 // equality stays in child[lo]",
+        "",
+        "function lookup(key):",
+        "  page = root",
+        "  while page is inner:",
+        "    i = child_index(page, key)",
+        "    page = page.children[i]",
+        "  i = lower_bound(page.keys, key)",
+        "  return page.values[i] if exact match else NOT_FOUND"
+      ],
+      "invariants": [
+        "Leaf keys are strictly sorted because a repeated key overwrites its value.",
+        "For every non-rightmost child i, keys[i] is an upper bound and initially the exact maximum of children[i].",
+        "A key equal to keys[i] is routed to children[i], not children[i+1].",
+        "All tree operations call the same child-selection helper, avoiding divergent routing rules."
+      ],
+      "pitfalls": [
+        "Returning the first key of the right page while retaining equality-goes-left lookup misroutes the boundary key.",
+        "Searching inner.count separators reads one unused array slot; the valid key count is inner.count-1.",
+        "Using operator== directly breaks the generic comparator contract.",
+        "Deletion may leave a stale but still safe upper bound in the parent; calling it the exact child maximum after arbitrary erases would be inaccurate."
+      ],
+      "source_refs": [
+        {
+          "path": "include/moderndbs/btree.h",
+          "lines": "50-69",
+          "symbol": "InnerNode::lower_bound",
+          "note": "Binary-searches count-1 separators and returns the routing index."
+        },
+        {
+          "path": "include/moderndbs/btree.h",
+          "lines": "141-159",
+          "symbol": "LeafNode::lower_bound",
+          "note": "Binary-searches records and detects equality only through ComparatorT."
+        },
+        {
+          "path": "include/moderndbs/btree.h",
+          "lines": "254-284",
+          "symbol": "BTree::lookup",
+          "note": "Traverses page IDs and applies lower_bound in the final leaf."
+        },
+        {
+          "path": "include/moderndbs/btree.h",
+          "lines": "356-363",
+          "symbol": "less_or_equal / child_index_for",
+          "note": "Centralizes equality-left comparison and child selection."
+        },
+        {
+          "path": "b-tree-report.md",
+          "lines": "219-248",
+          "symbol": "Separator-Key Convention",
+          "note": "The report correctly identifies max-of-left; this claim agrees with lookup and split code."
+        }
+      ]
+    },
+    {
+      "title": "Insertion propagates a small split result upward",
+      "takeaway": "A recursive call returns only separator, right-page ID, and level; the parent either absorbs that result or splits and forwards a new one.",
+      "explanation": [
+        "At a leaf, an existing key is updated. A non-full leaf shifts larger records right and inserts in sorted order. A full leaf is split first; the new key is then inserted into the left or right half according to the returned max-of-left separator.",
+        "At an inner node, recursion follows one child. No returned result means no structural change. Otherwise the parent inserts the child's separator and right-page pointer. If the parent is full, it too splits and sends a SplitResult upward.",
+        "If the old root splits, public insert allocates a fresh inner root with exactly two children. This is the only height-increasing operation, preserving equal leaf depth."
+      ],
+      "pseudocode": [
+        "function insert_recursive(page, key, value):",
+        "  if page is leaf:",
+        "    if key exists: update value; return NO_SPLIT",
+        "    if page has room: sorted_insert(page, key, value); return NO_SPLIT",
+        "    right = allocate_page()",
+        "    sep = split_leaf(page, right)      // sep = max(left)",
+        "    sorted_insert(key <= sep ? page : right, key, value)",
+        "    return SPLIT(sep, right.id, level=0)",
+        "",
+        "  child = page.children[child_index(page, key)]",
+        "  s = insert_recursive(child, key, value)",
+        "  if s is NO_SPLIT: return NO_SPLIT",
+        "  if page has room: insert_separator(page, s); return NO_SPLIT",
+        "  right = allocate_page()",
+        "  sep = split_inner(page, right)",
+        "  insert_separator(s.separator <= sep ? page : right, s)",
+        "  return SPLIT(sep, right.id, page.level)",
+        "",
+        "if insert_recursive(root, key, value) returns s:",
+        "  root = new InnerNode(level=s.level+1, children=[old_root,s.right], keys=[s.separator])"
+      ],
+      "invariants": [
+        "Duplicate insert updates exactly one existing value and does not increase leaf count.",
+        "Leaf split preserves sorted key/value pairing and returns max(left).",
+        "Inner insertion shifts keys and children in lockstep while the old left child stays at key_index.",
+        "A propagated split adds one child and one separator to its parent.",
+        "Root split creates a new level but never changes the levels of existing pages."
+      ],
+      "pitfalls": [
+        "Overwriting children[key_index] instead of inserting the new right child at children[key_index+1] disconnects the old left half.",
+        "Creating a new root without retaining old_root as child zero loses half the tree.",
+        "Forgetting the duplicate-key update can create equal separators and violate the intended unique-key behavior.",
+        "The code holds exclusive page latches along the entire recursive path; its safety currently also relies on the outer tree mutex."
+      ],
+      "source_refs": [
+        {
+          "path": "include/moderndbs/btree.h",
+          "lines": "71-117",
+          "symbol": "InnerNode::insert_split / split",
+          "note": "Shifts a new right-child reference into the parent and divides a full inner node."
+        },
+        {
+          "path": "include/moderndbs/btree.h",
+          "lines": "161-184",
+          "symbol": "LeafNode::insert",
+          "note": "Implements update-or-sorted-insert semantics."
+        },
+        {
+          "path": "include/moderndbs/btree.h",
+          "lines": "202-221",
+          "symbol": "LeafNode::split",
+          "note": "Copies the right half and returns the maximum key retained by the left leaf."
+        },
+        {
+          "path": "include/moderndbs/btree.h",
+          "lines": "311-334",
+          "symbol": "BTree::insert",
+          "note": "Consumes a root split by constructing a new two-child root."
+        },
+        {
+          "path": "include/moderndbs/btree.h",
+          "lines": "365-431",
+          "symbol": "BTree::insert_recursive",
+          "note": "Implements update, leaf split, parent absorption, inner split, and upward propagation."
+        }
+      ]
+    },
+    {
+      "title": "The submitted erase is lookup-correct, not a full B+-tree delete",
+      "takeaway": "It removes a record from its leaf but deliberately omits redistribution, merge, parent repair, root shrink, and page release.",
+      "explanation": [
+        "Leaf erase lower-bounds the key, does nothing if absent, shifts later key/value pairs left, and decrements count. Tree erase descends with the same separator routing as lookup.",
+        "This is enough for the visible Erase test: every removed key becomes unfindable. Stale parent separators remain safe upper bounds, so point lookup still reaches the only page where the key could reside.",
+        "It does not preserve the lecture's non-root minimum-occupancy invariant. A complete deletion must borrow from a sibling with the same parent or merge, remove/update the parent separator, repair parent underflow recursively, and possibly shrink the root."
+      ],
+      "pseudocode": [
+        "function assignment_erase(key):",
+        "  leaf = descend_to_leaf(key)",
+        "  i = lower_bound(leaf.keys, key)",
+        "  if exact match:",
+        "    shift leaf.records[i+1..] one slot left",
+        "    leaf.count -= 1",
+        "",
+        "function full_btree_delete(key):",
+        "  erase key from target leaf",
+        "  while non-root node is underfull:",
+        "    sibling = adjacent child of the same parent",
+        "    if sibling can lend: redistribute and repair separator; stop",
+        "    else: merge nodes, remove parent entry, continue at parent",
+        "  if root has one child: make that child the new root"
+      ],
+      "invariants": [
+        "After the submitted erase, remaining records in the leaf stay sorted and key/value positions stay aligned.",
+        "Erasing an absent key is idempotent.",
+        "Point lookup remains correct even if an ancestor separator is a stale upper bound.",
+        "The minimum half-full occupancy invariant is not maintained by this implementation."
+      ],
+      "pitfalls": [
+        "Presenting this method as complete B+-tree deletion would contradict both the lecture and the report's own limitation.",
+        "Marking the leaf dirty even when the key was absent is harmless in the fake manager but needlessly signals a write in a real system.",
+        "Never releasing empty pages can create arbitrarily sparse trees under adversarial workloads.",
+        "The visible tests do not verify that surviving keys remain findable after complex mixed insert/delete sequences."
+      ],
+      "source_refs": [
+        {
+          "path": "include/moderndbs/btree.h",
+          "lines": "186-200",
+          "symbol": "LeafNode::erase",
+          "note": "Removes one record by shifting; it contains no underflow handling."
+        },
+        {
+          "path": "include/moderndbs/btree.h",
+          "lines": "286-309",
+          "symbol": "BTree::erase",
+          "note": "Descends to one leaf and returns immediately after leaf deletion."
+        },
+        {
+          "path": "test/btree_test.cc",
+          "lines": "398-415",
+          "symbol": "BTreeTest.Erase",
+          "note": "Checks only that each inserted key is absent immediately after erase."
+        },
+        {
+          "path": "b-tree-report.md",
+          "lines": "307-330",
+          "symbol": "Leaf erase limitation",
+          "note": "The report accurately discloses that occupancy is not restored."
+        },
+        {
+          "path": "b-tree-report.md",
+          "lines": "588-602",
+          "symbol": "Tree erase",
+          "note": "The report correctly distinguishes this pragmatic implementation from rebalance/merge deletion."
+        }
+      ]
+    },
+    {
+      "title": "Safety today comes from serialization, not lecture lock coupling",
+      "takeaway": "The tree-wide mutex prevents races, but it bypasses the concurrency algorithm that is both assigned and independently recalled as exam material.",
+      "explanation": [
+        "lookup, insert, and erase each acquire the same std::mutex for their entire execution. Therefore no two public operations overlap; even read-only lookups are serialized. The page manager still exposes shared/exclusive frame latches, but the global mutex makes structural interleavings impossible.",
+        "Lecture lock coupling instead latches parent, identifies the child, latches the child, and only then releases the parent. The root-to-leaf acquisition order avoids deadlock during ordinary descent. Insert is harder because a split propagates upward; acquiring an ancestor while holding a descendant reverses the order.",
+        "The lecture's safe-page strategy splits a full inner page while its parent is still latched, bounding later propagation. For variable-length keys, the restart strategy releases latches and retries with a deliberately protected full path. These are the techniques the learner must know even though the project code does not implement them."
+      ],
+      "pseudocode": [
+        "function lock_coupled_descent(key):",
+        "  parent = latch(root)",
+        "  while parent is inner:",
+        "    child_id = choose_child(parent, key)",
+        "    child = latch(child_id)          // acquire before release",
+        "    unlatch(parent)",
+        "    parent = child",
+        "  return parent                     // target leaf remains latched",
+        "",
+        "insert rule:",
+        "  never hold child and then acquire an ancestor",
+        "  use safe inner pages during top-down descent",
+        "  or release and restart with a controlled full-path strategy"
+      ],
+      "invariants": [
+        "Ordinary lock coupling always acquires page latches from root toward leaves.",
+        "The parent remains latched until child latch acquisition succeeds.",
+        "Every return, retry, and error path releases each held latch exactly once.",
+        "A split strategy must avoid leaf-to-root latch acquisition while descendants are held.",
+        "The current code's global mutex, not its page-latch protocol, is what serializes root changes and split propagation."
+      ],
+      "pitfalls": [
+        "Calling the submitted implementation lock coupling is incorrect; recursive insert retains ancestors and the public mutex serializes the tree.",
+        "Releasing the parent before acquiring the child reopens the concurrent-split false-miss window.",
+        "Acquiring a parent while holding a child can deadlock against a normal root-to-leaf traversal.",
+        "Confusing short-lived page latches with transaction-level logical locks leads to the wrong correctness argument."
+      ],
+      "source_refs": [
+        {
+          "path": "README.md",
+          "lines": "10-13",
+          "symbol": "Concurrency requirement",
+          "note": "Explicitly requires techniques from Concurrent Access (2) and (3)."
+        },
+        {
+          "path": "include/moderndbs/btree.h",
+          "lines": "257-259",
+          "symbol": "BTree::lookup",
+          "note": "Acquires tree_mutex before any page access."
+        },
+        {
+          "path": "include/moderndbs/btree.h",
+          "lines": "288-290",
+          "symbol": "BTree::erase",
+          "note": "Uses the same global serialization."
+        },
+        {
+          "path": "include/moderndbs/btree.h",
+          "lines": "314-317",
+          "symbol": "BTree::insert",
+          "note": "Serializes the complete recursive insertion and possible root replacement."
+        },
+        {
+          "path": "include/moderndbs/btree.h",
+          "lines": "343-345",
+          "symbol": "tree_mutex",
+          "note": "Single mutex protecting all operations."
+        },
+        {
+          "path": "test/btree_test.cc",
+          "lines": "417-444",
+          "symbol": "BTreeTest.MultithreadWriters",
+          "note": "Four threads insert disjoint ranges, synchronize, and read their own ranges; it proves basic safety, not concurrent progress."
+        },
+        {
+          "path": "b-tree-report.md",
+          "lines": "604-634",
+          "symbol": "Concurrency Decision",
+          "note": "The report candidly acknowledges coarse serialization and the absence of latch crabbing."
+        }
+      ]
+    }
+  ],
+  "trace": {
+    "title": "The 64th key splits a 1 KiB root leaf",
+    "setup": "For uint64_t keys and values with PageSize=1024, LeafNode::kCapacity is 63. Start with the root leaf containing sorted keys 0 through 62 and values 2k, then insert (424242, 42), exactly as the root-split test does.",
+    "steps": [
+      "insert_recursive fixes the root leaf exclusively; lower_bound reports that 424242 is absent and the leaf is full.",
+      "allocate_page creates the right-page ID. LeafNode::split keeps left_count = 63/2 + 1 = 32 records in the old page and copies 31 records to the right page.",
+      "The left page now contains 0..31, the right page contains 32..62, and the returned max-of-left separator is 31.",
+      "Because 424242 > 31, the new record is inserted into the right leaf, whose count becomes 32.",
+      "The root call returns SplitResult(separator=31, right_page, level=0). Public insert allocates a new InnerNode at level 1.",
+      "The new root stores count=2, keys[0]=31, children[0]=old_root, and children[1]=right_page."
+    ],
+    "result": "The tree has two leaf pages at equal depth beneath one inner root. Lookup(31) descends left; lookup(32) and lookup(424242) descend right. This trace simultaneously exercises capacity, split balance, separator semantics, and root creation."
+  },
+  "decisions": [
+    {
+      "title": "Compile-time page layout in a header-only template",
+      "rationale": "Key type, value type, comparator, and page size are template arguments, so the compiler can derive capacities and instantiate the full implementation for each combination.",
+      "tradeoff": "Static arrays make fixed-width pages simple and fast, but the design does not address variable-length keys and relies on implementation visibility in the header.",
+      "source_refs": [
+        {
+          "path": "README.md",
+          "lines": "16-21",
+          "symbol": "Template requirement",
+          "note": "Requires compile-time PageSize and primary implementation in btree.h."
+        },
+        {
+          "path": "include/moderndbs/btree.h",
+          "lines": "12-13",
+          "symbol": "BTree template",
+          "note": "Declares all four template parameters."
+        }
+      ]
+    },
+    {
+      "title": "Maximum-of-left separators",
+      "rationale": "The split methods keep the boundary key in the left page and return it to the parent, allowing lower_bound's first-greater-or-equal position to be used directly as the child index.",
+      "tradeoff": "It is internally coherent, but learners must not mix it with min-of-right pseudocode or diagrams.",
+      "source_refs": [
+        {
+          "path": "include/moderndbs/btree.h",
+          "lines": "101-116",
+          "symbol": "InnerNode::split",
+          "note": "Returns the last separator retained by the left inner node."
+        },
+        {
+          "path": "include/moderndbs/btree.h",
+          "lines": "208-220",
+          "symbol": "LeafNode::split",
+          "note": "Keeps and returns the maximum key of the left leaf."
+        }
+      ]
+    },
+    {
+      "title": "No leaf links and no deletion rebalancing",
+      "rationale": "The assignment explicitly allows omitting leaf links, and the visible deletion test requires only point-key disappearance.",
+      "tradeoff": "The project teaches point access and splits, but not efficient range scans, minimum occupancy restoration, page reclamation, or root shrinking.",
+      "source_refs": [
+        {
+          "path": "README.md",
+          "lines": "3-10",
+          "symbol": "Required operations",
+          "note": "Lists insert/erase/lookup and permits omitting leaf links."
+        },
+        {
+          "path": "include/moderndbs/btree.h",
+          "lines": "186-221",
+          "symbol": "Leaf erase and split",
+          "note": "Contains neither next-leaf metadata nor underflow repair."
+        }
+      ]
+    },
+    {
+      "title": "One mutex for the whole tree",
+      "rationale": "A global critical section makes root replacement, allocation, and recursive splits easy to reason about and is sufficient for the visible multithreaded test.",
+      "tradeoff": "All readers and writers serialize; this does not fulfill the intended safe-page/restart exercise and cannot demonstrate scalable page-level concurrency.",
+      "source_refs": [
+        {
+          "path": "include/moderndbs/btree.h",
+          "lines": "257-317",
+          "symbol": "Public operations",
+          "note": "Each public operation takes tree_mutex for its entire duration."
+        },
+        {
+          "path": "bench/bm_btree.cc",
+          "lines": "11-44",
+          "symbol": "Btree_Multi",
+          "note": "Measures a four-thread workload whose tree operations are nevertheless globally serialized."
+        }
+      ]
+    }
+  ],
+  "tests": [
+    {
+      "name": "Capacity",
+      "proves": "Node sizes are computed from PageSize and almost fill both 1 KiB and 64 KiB pages without overflowing them.",
+      "failure_mode": "Hard-coded capacity, forgotten header/alignment bytes, or a layout larger than one page.",
+      "source_refs": [
+        {
+          "path": "test/btree_test.cc",
+          "lines": "21-39",
+          "symbol": "BTreeTest.Capacity",
+          "note": "Checks near-page-size bounds for two template instantiations."
+        }
+      ]
+    },
+    {
+      "name": "LeafNodeInsert",
+      "proves": "Sequential insertion increments count and preserves matching sorted key/value arrays through a full leaf.",
+      "failure_mode": "Incorrect shift bounds, lost value alignment, or count changed by the wrong amount.",
+      "source_refs": [
+        {
+          "path": "test/btree_test.cc",
+          "lines": "42-99",
+          "symbol": "BTreeTest.LeafNodeInsert",
+          "note": "Fills one leaf and inspects every key and value."
+        }
+      ]
+    },
+    {
+      "name": "LeafNodeSplit",
+      "proves": "A full leaf splits into 32 left and 31 right records for capacity 63, with separator equal to the left maximum.",
+      "failure_mode": "Boundary record duplicated/lost, wrong separator convention, or key/value arrays copied with different offsets.",
+      "source_refs": [
+        {
+          "path": "test/btree_test.cc",
+          "lines": "102-154",
+          "symbol": "BTreeTest.LeafNodeSplit",
+          "note": "Asserts counts, separator, and every record in both halves."
+        }
+      ]
+    },
+    {
+      "name": "InsertLeafNodeSplit",
+      "proves": "The first overflow of the root leaf creates an inner root with exactly two children.",
+      "failure_mode": "Split does not reach the root, old root is lost, or new-root child count is not two.",
+      "source_refs": [
+        {
+          "path": "test/btree_test.cc",
+          "lines": "197-227",
+          "symbol": "BTreeTest.InsertLeafNodeSplit",
+          "note": "Fills the root, inserts one extra key, and inspects the new root type/count."
+        }
+      ]
+    },
+    {
+      "name": "LookupMultipleSplits / LookupRandomRepeating",
+      "proves": "Lookup survives increasing, decreasing, and shuffled split patterns; repeated keys overwrite their previous values.",
+      "failure_mode": "Inconsistent separator routing, broken recursive propagation, or duplicate records instead of updates.",
+      "source_refs": [
+        {
+          "path": "test/btree_test.cc",
+          "lines": "287-395",
+          "symbol": "LookupMultipleSplits* / LookupRandom*",
+          "note": "Exercises 100 leaf capacities of increasing keys plus decreasing, random, and repeated-key workloads."
+        }
+      ]
+    },
+    {
+      "name": "Erase",
+      "proves": "A key can be removed from a leaf and immediately becomes unfindable.",
+      "failure_mode": "Leaf shift/count error or lookup still sees the erased record.",
+      "source_refs": [
+        {
+          "path": "test/btree_test.cc",
+          "lines": "398-415",
+          "symbol": "BTreeTest.Erase",
+          "note": "Does not test rebalancing, merging, page release, or root shrink."
+        }
+      ]
+    },
+    {
+      "name": "MultithreadWriters",
+      "proves": "Four threads can insert disjoint ranges and read them back without visible corruption under the global mutex.",
+      "failure_mode": "Unsynchronized root/allocation/split updates or lost inserted records.",
+      "source_refs": [
+        {
+          "path": "test/btree_test.cc",
+          "lines": "417-444",
+          "symbol": "BTreeTest.MultithreadWriters",
+          "note": "The barrier separates insertion from readback; the test does not measure overlap or check mixed structural conflicts."
+        }
+      ]
+    }
+  ],
+  "drills": [
+    {
+      "prompt": "Write max-of-left B+-tree lookup pseudocode and state what happens when the search key equals a separator.",
+      "format": "pseudocode",
+      "answer": "At each inner page, binary-search the count-1 separators for the first separator >= key and follow the child at that same index; if no separator qualifies, follow the rightmost child. Equality goes left because separator[i] is the maximum key of child[i]. At the leaf, lower_bound again and return the value only on an exact comparator-based match.",
+      "checklist": [
+        "Searches count-1 inner keys, not count.",
+        "Uses first separator >= key.",
+        "Routes equality to the left child.",
+        "Uses the rightmost child when the key exceeds all separators.",
+        "Checks exact match in the leaf."
+      ]
+    },
+    {
+      "prompt": "Trace inserting key 424242 into a root leaf already containing 0..62 on 1 KiB pages.",
+      "format": "trace",
+      "answer": "Capacity is 63. Split keeps 0..31 in the old leaf and moves 32..62 right; separator 31 remains in the left leaf. Insert 424242 into the right leaf. Propagate (31,right-page) and create a level-1 root with two children.",
+      "checklist": [
+        "Computes capacity 63 and left count 32.",
+        "Returns separator 31.",
+        "Places the new key in the right leaf.",
+        "Creates a new root with old root as child zero.",
+        "States the equality-left routing consequence."
+      ]
+    },
+    {
+      "prompt": "Debug a parent insertion that stores the split page at children[key_index] and increments count.",
+      "format": "debug",
+      "answer": "The old left child must remain at children[key_index]. Shift later children right, write the new right page at children[key_index+1], insert the separator at keys[key_index], then increment the child count. Otherwise the old left half becomes unreachable.",
+      "checklist": [
+        "Preserves the old left child.",
+        "Shifts keys and child IDs with their different offsets.",
+        "Writes the right child at index+1.",
+        "Treats count as number of children."
+      ]
+    },
+    {
+      "prompt": "Compare the project's erase with complete B+-tree deletion.",
+      "format": "compare",
+      "answer": "Project erase deletes from one leaf only. Complete deletion detects underflow, chooses a sibling under the same parent, redistributes if the sibling can lend or merges otherwise, repairs/removes the parent separator, propagates underflow upward, releases obsolete pages, and may shrink the root.",
+      "checklist": [
+        "Identifies missing minimum-occupancy repair.",
+        "Mentions same-parent sibling selection.",
+        "Distinguishes redistribution from merge.",
+        "Includes recursive parent repair and possible root shrink.",
+        "Does not claim the visible Erase test proves full deletion."
+      ]
+    },
+    {
+      "prompt": "A traversal releases the parent latch, then fixes/latches the chosen child. Correct it and explain the deadlock rule for insertion.",
+      "format": "debug",
+      "answer": "Keep the parent latched until the child latch has been acquired, then release the parent. This closes the split window. Always acquire ordinary traversal latches root-to-leaf; never retain a child and then acquire an ancestor. For inserts, use safe inner pages while descending or release and restart with the lecture's controlled full-path strategy.",
+      "checklist": [
+        "Acquires child before releasing parent.",
+        "States root-to-leaf acquisition order.",
+        "Rejects upward acquisition while holding a child.",
+        "Names safe-page or restart handling for split propagation.",
+        "Distinguishes a page latch from a transaction lock."
+      ]
+    },
+    {
+      "prompt": "Assess this claim: 'The project implements the lecture's concurrent B+-tree because fix_page uses shared and exclusive latches.'",
+      "format": "explain",
+      "answer": "False. Page fix modes are present, but every public tree operation first takes one global mutex, so operations do not run concurrently. Recursive insert also retains ancestors while descending. The code is race-safe for its tests, but it does not demonstrate scalable lock coupling, safe pages, or restart.",
+      "checklist": [
+        "Points to the tree-wide mutex.",
+        "Explains serialization of readers and writers.",
+        "Separates correctness from concurrency.",
+        "Names the missing lecture techniques."
+      ]
+    }
+  ],
+  "lecture_links": [
+    {
+      "chapter_id": "03-buffer-management",
+      "occurrence_ids": [
+        "dbimpl-01-storage-021",
+        "dbimpl-01-storage-023"
+      ],
+      "note": "Why indexes access pages through a buffer manager, and what a buffer frame's page number, latch, dirty state, and pin/fix lifetime mean."
+    },
+    {
+      "chapter_id": "04-segments-space-and-update-strategies",
+      "occurrence_ids": [
+        "dbimpl-02-storage-access-001",
+        "dbimpl-02-storage-access-002"
+      ],
+      "note": "Segments as the virtual page address space used here to qualify node page IDs and allocate tree pages."
+    },
+    {
+      "chapter_id": "07-btree-fundamentals-and-operations",
+      "occurrence_ids": [
+        "dbimpl-04-access-btrees-018",
+        "dbimpl-04-access-btrees-022",
+        "dbimpl-04-access-btrees-031",
+        "dbimpl-04-access-btrees-041"
+      ],
+      "note": "B-tree balance and occupancy, B+-tree payload placement, physical page layout, and first-greater-or-equal lookup routing."
+    },
+    {
+      "chapter_id": "07-btree-fundamentals-and-operations",
+      "occurrence_ids": [
+        "dbimpl-05-access-btrees-003",
+        "dbimpl-05-access-btrees-004",
+        "dbimpl-05-access-btrees-005"
+      ],
+      "note": "Insertion and split propagation, full deletion with borrow/merge, and the next-leaf links that this assignment permits omitting."
+    },
+    {
+      "chapter_id": "07-btree-fundamentals-and-operations",
+      "occurrence_ids": [
+        "dbimpl-05-access-btrees-008",
+        "dbimpl-05-access-btrees-009",
+        "dbimpl-05-access-btrees-010"
+      ],
+      "note": "Lock coupling, why upward split propagation is dangerous, and the safe-inner-page and restart strategies named by the assignment."
+    },
+    {
+      "chapter_id": "08-advanced-btree-techniques",
+      "occurrence_ids": [
+        "dbimpl-05-access-btrees-011",
+        "dbimpl-05-access-btrees-012"
+      ],
+      "note": "B-link trees as the lower-contention alternative: right links and high keys repair stale parent routing after concurrent splits."
+    }
+  ],
+  "limitations": [
+    "The student report is explanatory evidence, not an authority. Its main algorithmic claims were retained only where README, implementation, and tests agree.",
+    "The prebuilt tester is a non-executable Linux AArch64 ELF binary on this macOS host, and CMake is not installed in the current environment. The code/tests were therefore audited statically; no claim here relies on a newly executed test run.",
+    "The supplied BufferManager is explicitly a fake: it performs no disk I/O, ignores page_count, never evicts, and ignores dirty flags. This project cannot validate real replacement, persistence, or write-back behavior.",
+    "The implementation omits leaf links, range scans, delete rebalancing, page reclamation, and root shrinking. Those omissions must remain visible rather than being generalized into full B+-tree support.",
+    "The implementation uses a tree-wide mutex instead of the required lecture safe-page/restart concurrency techniques. Its concurrency test establishes basic race safety only, not page-level parallelism or deadlock behavior.",
+    "Visible tests do not directly unit-test InnerNode::split/insert_split, non-default comparators, persistence/reopen behavior, limited-buffer eviction, mixed concurrent erase/insert races, or all structural invariants after deletion."
+  ],
+  "exam_relevance": {
+    "priority": "high",
+    "reason": "The current exam-practice corpus contains an independently recalled pseudocode/debug task on B+-tree lock coupling and deadlock avoidance, plus verified questions on concurrent splits and B+-tree capacity/height.",
+    "question_ids": [
+      "protocol-q-010",
+      "protocol-q-013",
+      "supplement-lock-coupling"
+    ],
+    "most_important_transfer": "Use the implementation to master page layout, separator semantics, and split propagation; use the lecture anchors—not the project's tree-wide mutex—as the authoritative concurrency algorithm."
+  },
+  "audit": {
+    "project_root": "/Users/nkhalatiani/Downloads/b-tree",
+    "report_path": "/Users/nkhalatiani/Downloads/b-tree-report.md",
+    "course_data_root": "/Users/nkhalatiani/Desktop/mdb/mdb-lecture-atlas-pages/public/generated/course",
+    "verification": [
+      "README contract compared with implementation behavior.",
+      "Implementation claims compared with every BTreeTest and the benchmark.",
+      "Report claims checked against exact source lines and tests.",
+      "Chapter/occurrence IDs resolved against chapters.json and evidence-index.json.",
+      "Lecture interpretations checked against aligned transcript explanations in slide-explanations.json and chapter study briefs.",
+      "Exam transfer cross-checked against exam-practice.json."
+    ]
+  }
+}
