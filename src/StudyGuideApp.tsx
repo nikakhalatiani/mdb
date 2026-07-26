@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { ExpandableImage } from "./ExpandableImage";
 import { ExamPractice } from "./exam/ExamPractice";
 import type { ExamBank } from "./exam/types";
 
@@ -151,6 +152,23 @@ type LoadedGuide = {
 type Filter = "all" | "slide" | "board";
 type Mode = "lecture" | "exam";
 
+function SearchIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <circle cx="10.75" cy="10.75" r="6.25" />
+      <path d="m15.5 15.5 4 4" />
+    </svg>
+  );
+}
+
+function ChevronDownIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="m6.5 9 5.5 5.5L17.5 9" />
+    </svg>
+  );
+}
+
 const COURSE_ROOT = "./generated/course";
 const SOURCE_ROOT = "file:///MDB_SOURCE_FILES";
 
@@ -214,6 +232,11 @@ function durationLabel(seconds: number) {
 function VisualEvidence({ record }: { record: VisualRecord }) {
   const isBoard = recordKind(record) === "board";
   const frames = record.evidence_frames ?? [];
+  const frameGallery = frames.map((frame) => ({
+    alt: `${record.title}, ${frame.role} state at ${frame.timestamp}`,
+    label: `${compactTimestamp(frame.timestamp)} · ${frame.role}`,
+    src: recordImage(frame.image),
+  }));
 
   if (isBoard && frames.length > 0) {
     return (
@@ -222,13 +245,15 @@ function VisualEvidence({ record }: { record: VisualRecord }) {
           Progressive full-board evidence · {frames.length} frames
         </p>
         <div className="atlas-frame-strip">
-          {frames.map((frame) => (
+          {frames.map((frame, index) => (
             <figure
               className="atlas-frame"
               key={`${record.occurrence_id}-${frame.timestamp_s}`}
             >
-              <img
+              <ExpandableImage
                 alt={`${record.title}, ${frame.role} state at ${frame.timestamp}`}
+                gallery={frameGallery}
+                initialIndex={index}
                 loading="lazy"
                 src={recordImage(frame.image)}
               />
@@ -245,7 +270,7 @@ function VisualEvidence({ record }: { record: VisualRecord }) {
   return (
     <>
       <p className="atlas-evidence-label">Completed annotation state</p>
-      <img
+      <ExpandableImage
         className="atlas-slide-image"
         alt={`${record.title}, final annotated state`}
         loading="lazy"
@@ -694,6 +719,7 @@ export function StudyGuideApp() {
         </div>
         <nav className="atlas-mode-switch" aria-label="Study mode">
           <button
+            aria-pressed={mode === "lecture"}
             data-active={mode === "lecture"}
             onClick={() => {
               setMode("lecture");
@@ -704,11 +730,17 @@ export function StudyGuideApp() {
             Lecture guide
           </button>
           <button
+            aria-pressed={mode === "exam"}
             data-active={mode === "exam"}
             onClick={() => {
               setMode("exam");
               setQuery("");
-              setExamChapterId(chapterId || "all");
+              setExamChapterId(
+                chapterId &&
+                  (examQuestionCountByChapter.get(chapterId) ?? 0) > 0
+                  ? chapterId
+                  : "all",
+              );
             }}
             type="button"
           >
@@ -716,32 +748,42 @@ export function StudyGuideApp() {
           </button>
         </nav>
         <label className="atlas-mobile-chapter">
-          <span>Chapter</span>
-          <select
-            aria-label="Select course chapter"
-            onChange={(event) => {
-              if (mode === "exam") {
-                setExamChapterId(event.target.value);
-              } else {
-                setChapterId(event.target.value);
-              }
-              setQuery("");
-            }}
-            value={mode === "exam" ? examChapterId : chapterId}
-          >
-            {mode === "exam" ? <option value="all">All topics</option> : null}
-            {(loaded?.guide.chapters ?? []).map((item) => (
-              <option key={item.id} value={item.id}>
-                {String(item.number).padStart(2, "0")} · {item.title}
-                {mode === "exam"
-                  ? ` (${examQuestionCountByChapter.get(item.id) ?? 0})`
-                  : ""}
-              </option>
-            ))}
-          </select>
+          <span className="atlas-mobile-chapter-label">Chapter</span>
+          <span className="atlas-select-control">
+            <select
+              aria-label="Select course chapter"
+              onChange={(event) => {
+                if (mode === "exam") {
+                  setExamChapterId(event.target.value);
+                } else {
+                  setChapterId(event.target.value);
+                }
+                setQuery("");
+              }}
+              value={mode === "exam" ? examChapterId : chapterId}
+            >
+              {mode === "exam" ? <option value="all">All topics</option> : null}
+              {(loaded?.guide.chapters ?? []).map((item) => (
+                <option key={item.id} value={item.id}>
+                  {String(item.number).padStart(2, "0")} · {item.title}
+                  {mode === "exam"
+                    ? ` (${examQuestionCountByChapter.get(item.id) ?? 0})`
+                    : ""}
+                </option>
+              ))}
+            </select>
+            <span className="atlas-select-icon">
+              <ChevronDownIcon />
+            </span>
+          </span>
         </label>
         <label className="atlas-search">
-          <span className="sr-only">Search this chapter</span>
+          <span className="sr-only">
+            {mode === "exam" ? "Search exam tasks" : "Search this chapter"}
+          </span>
+          <span className="atlas-search-icon">
+            <SearchIcon />
+          </span>
           <input
             aria-label={
               mode === "exam"
@@ -761,8 +803,8 @@ export function StudyGuideApp() {
         <div className="atlas-processing">
           {loaded
             ? mode === "exam"
-              ? `${loaded.examBank.questions.length} tasks · locally reviewed`
-              : `${loaded.guide.stats.recording_count} lectures · audit passed`
+              ? `${loaded.examBank.questions.length} audited tasks`
+              : `${loaded.guide.stats.recording_count} lectures · ${loaded.records.length} learning units`
             : "Loading evidence…"}
         </div>
       </header>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
+import { ExpandableImage } from "../ExpandableImage";
 import type {
   ExamBank,
   ExamChapterRef,
@@ -66,6 +67,25 @@ function questionMatchesFilter(
   );
 }
 
+function practiceRank(question: ExamQuestion) {
+  if (question.sources.some((source) => source.kind === "exercise")) return 0;
+  if (
+    question.priority === "high" &&
+    question.verification !== "unsupported" &&
+    question.verification !== "not_answerable"
+  ) {
+    return 1;
+  }
+  if (
+    question.verification === "verified" ||
+    question.verification === "corrected"
+  ) {
+    return 2;
+  }
+  if (question.verification === "incomplete") return 3;
+  return 4;
+}
+
 function PipelineExample({
   example,
 }: {
@@ -129,35 +149,37 @@ export function ExamPractice({
 
   const filteredQuestions = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    return bank.questions.filter((question) => {
-      if (
-        chapterId !== "all" &&
-        !question.chapter_ids.includes(chapterId)
-      ) {
-        return false;
-      }
-      if (
-        !questionMatchesFilter(
-          question,
-          filter,
-          progress[question.id]?.status ?? "unseen",
-        )
-      ) {
-        return false;
-      }
-      if (!normalizedQuery) return true;
-      const haystack = [
-        question.topic,
-        question.prompt,
-        question.format,
-        question.sources.map((source) => source.label).join(" "),
-        question.signals?.join(" "),
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(normalizedQuery);
-    });
+    return bank.questions
+      .filter((question) => {
+        if (
+          chapterId !== "all" &&
+          !question.chapter_ids.includes(chapterId)
+        ) {
+          return false;
+        }
+        if (
+          !questionMatchesFilter(
+            question,
+            filter,
+            progress[question.id]?.status ?? "unseen",
+          )
+        ) {
+          return false;
+        }
+        if (!normalizedQuery) return true;
+        const haystack = [
+          question.topic,
+          question.prompt,
+          question.format,
+          question.sources.map((source) => source.label).join(" "),
+          question.signals?.join(" "),
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return haystack.includes(normalizedQuery);
+      })
+      .sort((left, right) => practiceRank(left) - practiceRank(right));
   }, [bank.questions, chapterId, filter, progress, query]);
 
   useEffect(() => {
@@ -241,6 +263,7 @@ export function ExamPractice({
             ] as const
           ).map(([value, label]) => (
             <button
+              aria-pressed={filter === value}
               data-active={filter === value}
               key={value}
               onClick={() => setFilter(value)}
@@ -278,7 +301,7 @@ export function ExamPractice({
             ) : null}
             {activeQuestion.visuals?.prompt ? (
               <figure className="exam-task-visual">
-                <img
+                <ExpandableImage
                   alt={activeQuestion.visuals.prompt.alt}
                   src={`${COURSE_ROOT}/${activeQuestion.visuals.prompt.image}`}
                 />
@@ -322,6 +345,7 @@ export function ExamPractice({
             />
             <div className="exam-attempt-actions">
               <button
+                aria-expanded={isRevealed}
                 className="exam-reveal"
                 onClick={() =>
                   setRevealedQuestionId(
@@ -351,7 +375,7 @@ export function ExamPractice({
 
               {activeQuestion.visuals?.solution ? (
                 <figure className="exam-task-visual exam-solution-visual">
-                  <img
+                  <ExpandableImage
                     alt={activeQuestion.visuals.solution.alt}
                     src={`${COURSE_ROOT}/${activeQuestion.visuals.solution.image}`}
                   />
@@ -446,21 +470,27 @@ export function ExamPractice({
                 </div>
                 <div>
                   <button
+                    aria-pressed={activeProgress.self_rating === "again"}
                     data-rating="again"
+                    data-selected={activeProgress.self_rating === "again"}
                     onClick={() => rate(activeQuestion.id, "again")}
                     type="button"
                   >
                     Again
                   </button>
                   <button
+                    aria-pressed={activeProgress.self_rating === "hard"}
                     data-rating="hard"
+                    data-selected={activeProgress.self_rating === "hard"}
                     onClick={() => rate(activeQuestion.id, "hard")}
                     type="button"
                   >
                     Hard
                   </button>
                   <button
+                    aria-pressed={activeProgress.self_rating === "good"}
                     data-rating="good"
+                    data-selected={activeProgress.self_rating === "good"}
                     onClick={() => rate(activeQuestion.id, "good")}
                     type="button"
                   >
